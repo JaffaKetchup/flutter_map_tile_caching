@@ -15,7 +15,7 @@ export './tile_storage_caching_manager.dart';
 /// which determines the need for a request for remote tile server. Default value
 /// is one day, that means - all cached tiles today and day before don't need rewriting.
 class StorageCachingTileProvider extends TileProvider {
-  static final kMaxPreloadTileAreaCount = 3000;
+  static final kMaxPreloadTileAreaCount = 10000;
   final Duration cachedValidDuration;
 
   StorageCachingTileProvider(
