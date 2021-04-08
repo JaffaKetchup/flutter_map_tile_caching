@@ -32,9 +32,8 @@ class StorageCachingTileProvider extends TileProvider {
   /// The maximum number of tiles to load is [kMaxPreloadTileAreaCount].
   /// To check tiles number before calling this method, use
   /// [approximateTileAmount].
-  /// Return [Tuple3] with uploaded tile index as [Tuple3.item1],
-  /// errors count as [Tuple3.item2], and total tiles count need to be downloaded
-  /// as [Tuple3.item3]
+  /// Return [Tuple3] with number of downloaded tiles as [Tuple3.item1],
+  /// number of errored tiles as [Tuple3.item2], and number of total tiles that need to be downloaded as [Tuple3.item3]
   Stream<Tuple3<int, int, int>> loadTiles(
       LatLngBounds bounds, int minZoom, int maxZoom, TileLayerOptions options,
       {Function(dynamic) errorHandler}) async* {
