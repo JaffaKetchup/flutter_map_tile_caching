@@ -4,7 +4,7 @@ A plugin for the `flutter_map` library. Adds full tile caching functionality and
 
 ## Example
 
-To view the example, copy the `main.dart` file inside the examples directory, and run it inside your own new project. Make sure to have the libraries: `tuple`, `latlong` & `flutter_map` accessible.
+To view the example, copy the `main.dart` file inside the `example` directory, and run it inside your own new project. You shouldn't need to add any extra dependencies except this package (see below).
 
 ## Installation
 
@@ -34,7 +34,6 @@ This plugin adds the new classes: `StorageCachingTileProvider` & `TileStorageCac
 #### `StorageCachingTileProvider`
 
 You can call `loadTiles(...)` on `StorageCachingTileProvider(...)`, and pass in the appropriate bounds and min/max zoom levels. This will download and precache all the tiles in the specified area for all the specified zoom levels. It can be listened to for a `Tuple3<int, int, int>`, with the number of downloaded tiles, number of errored tiles (eg. tiles that couldn't be downloaded due to lack of Internet connection), and the total number of tiles to be downloaded, in that order. A maximum of 10000 tiles can be downloaded at once, or the `maxCachedTilesAmount` in total, whichever comes first. You can see an example of this in the example file.
-
 
 You can call `approximateTileAmount(...)` on `StorageCachingTileProvider`, and pass in the appropriate bounds and min/max zoom levels. This will return an `int` which is the approximate number of tiles within the specified area.
 

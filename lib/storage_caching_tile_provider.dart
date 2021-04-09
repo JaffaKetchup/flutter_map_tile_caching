@@ -43,7 +43,7 @@ class StorageCachingTileProvider extends TileProvider {
         maxZoom: maxZoom,
         tileSize: CustomPoint(options.tileSize, options.tileSize));
     assert(tilesRange.length <= kMaxPreloadTileAreaCount,
-        '${tilesRange.length} to many tiles for caching');
+        '${tilesRange.length} exceeds maximum number of pre-cacheable tiles');
     var errorsCount = 0;
     for (var i = 0; i < tilesRange.length; i++) {
       try {

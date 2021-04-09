@@ -11,9 +11,8 @@ import 'package:tuple/tuple.dart';
 class TileStorageCachingManager {
   static TileStorageCachingManager _instance;
 
-  /// default value of maximum number of persisted tiles,
-  /// and average tile size ~ 0.017 mb -> so default cache size ~ 51 mb
-  static const int kDefaultMaxTileAmount = 3000;
+  /// Default value of maximum number of persisted tiles, on average equates to 170 MB.
+  static const int kDefaultMaxTileAmount = 10000;
   static final kMaxRefreshRowsCount = 10;
   static final String _kDbName = 'tile_cach.db';
   static final String _kTilesTable = 'tiles';

@@ -133,7 +133,7 @@ class _AutoCachedTilesPageContentState
     if (approximateTileCount >
         StorageCachingTileProvider.kMaxPreloadTileAreaCount) {
       _showErrorSnack(
-          'tiles ammount $approximateTileCount bigger than default ${StorageCachingTileProvider.kMaxPreloadTileAreaCount}');
+          '$approximateTileCount exceeds maximum number of pre-cachable tiles (${StorageCachingTileProvider.kMaxPreloadTileAreaCount}). Try a smaller amount first.');
       return;
     }
     await showDialog<void>(
@@ -378,9 +378,10 @@ class _AutoCachedTilesPageContentState
           visible: tilesErrored > 0,
           child: Text(
             'Errored Tiles: $tilesErrored',
-            style: Theme.of(context).textTheme.subtitle2.merge(
-                  TextStyle(color: Colors.red),
-                ),
+            style: Theme.of(context)
+                .textTheme
+                .subtitle2
+                .merge(TextStyle(color: Colors.red)),
             textAlign: TextAlign.center,
           ),
         ),
@@ -409,20 +410,22 @@ class _AutoCachedTilesPageContentState
             layers: [
               tileLayerOptions,
               PolygonLayerOptions(
-                  polygons: _selectedBounds == null
-                      ? []
-                      : [
-                          Polygon(
-                              color: Colors.red.withAlpha(128),
-                              borderColor: Colors.red,
-                              borderStrokeWidth: 3,
-                              points: [
-                                _selectedBounds.southWest,
-                                _selectedBounds.southEast,
-                                _selectedBounds.northEast,
-                                _selectedBounds.northWest
-                              ])
-                        ]),
+                polygons: _selectedBounds == null
+                    ? []
+                    : [
+                        Polygon(
+                          color: Colors.red.withAlpha(128),
+                          borderColor: Colors.red,
+                          borderStrokeWidth: 3,
+                          points: [
+                            _selectedBounds.southWest,
+                            _selectedBounds.southEast,
+                            _selectedBounds.northEast,
+                            _selectedBounds.northWest
+                          ],
+                        )
+                      ],
+              ),
             ],
           ),
         ),
