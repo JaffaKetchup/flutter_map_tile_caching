@@ -11,12 +11,8 @@ To view the example, copy the `main.dart` file inside the `example` directory, a
 To install this plugin, add the below code snippet to your `pubspec.yaml` file.
 
 ```dart
-    flutter_map_tile_caching:
-        git:
-            url: https://github.com/JaffaKetchup/flutter_map_tile_caching
+    flutter_map_tile_caching: ^1.0.1
 ```
-
-In the future, the ownership of this package may be transferred, which will result in the above URL no longer being valid. Alternatively, I hope to publish this plugin to [pub.dev](https://pub.dev) in the future, and then this package will be able to be imported in a cleaner way.
 
 ## Usage
 
