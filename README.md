@@ -11,7 +11,7 @@ To view the example, copy the `main.dart` file inside the `example` directory, a
 To install this plugin, add the below code snippet to your `pubspec.yaml` file.
 
 ```dart
-    flutter_map_tile_caching: ^1.0.1
+    flutter_map_tile_caching: ^2.0.0
 ```
 
 ## Usage
@@ -49,7 +49,7 @@ You can call `cleanCache()` on `TileStorageCachingManager`. This will clear all 
 
 ## Limitations
 
-This package currently uses `flutter_map: ^0.12.0`, and is therefore not null-safe. It does not support the web platform (due to the usage of `dart:io`), and the code has not been tested on desktop platforms.
+This package does not support the web platform (due to the usage of `dart:io`) and the code has not been tested on desktop platforms.
 
 ## Credits
 
