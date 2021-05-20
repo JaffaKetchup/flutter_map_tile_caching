@@ -4,7 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/storage_caching_tile_provider.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:tuple/tuple.dart';
 
 void main() {
@@ -51,7 +51,7 @@ class _AutoCachedTilesPageContentState
 
   final mapController = MapController();
 
-  LatLngBounds _selectedBounds;
+  LatLngBounds? _selectedBounds;
 
   final decimalInputFormatter = FilteringTextInputFormatter(
       RegExp(r'^-?\d{0,3}\.?\d{0,6}$'),
@@ -95,8 +95,8 @@ class _AutoCachedTilesPageContentState
   }
 
   void _showErrorSnack(String errorMessage) async {
-    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-      Scaffold.of(context).showSnackBar(SnackBar(
+    SchedulerBinding.instance!.addPostFrameCallback((timeStamp) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(errorMessage),
       ));
     });
@@ -112,7 +112,7 @@ class _AutoCachedTilesPageContentState
           'Invalid zoom level. Minimum zoom level must be defined.');
       return;
     }
-    if (zoomMin < 1 || zoomMin > 19 || zoomMax < 1 || zoomMax > 19) {
+    if (zoomMin < 1 || zoomMin > 19 || zoomMax! < 1 || zoomMax > 19) {
       _showErrorSnack(
           'Invalid zoom level. Must be inside 1-19 range (inclusive).');
       return;
@@ -128,7 +128,7 @@ class _AutoCachedTilesPageContentState
     }
     final approximateTileCount =
         StorageCachingTileProvider.approximateTileRange(
-                bounds: _selectedBounds, minZoom: zoomMin, maxZoom: zoomMax)
+                bounds: _selectedBounds!, minZoom: zoomMin, maxZoom: zoomMax)
             .length;
     if (approximateTileCount >
         StorageCachingTileProvider.kMaxPreloadTileAreaCount) {
@@ -143,7 +143,7 @@ class _AutoCachedTilesPageContentState
         content: StreamBuilder<Tuple3<int, int, int>>(
           initialData: Tuple3(0, 0, 0),
           stream: tileProvider.loadTiles(
-              _selectedBounds, zoomMin, zoomMax, options),
+              _selectedBounds!, zoomMin, zoomMax, options),
           builder: (ctx, snapshot) {
             if (snapshot.hasError) {
               return Text('error: ${snapshot.error.toString()}');
@@ -204,7 +204,7 @@ class _AutoCachedTilesPageContentState
 
   void _focusToBounds() {
     _hideKeyboard();
-    mapController.fitBounds(_selectedBounds,
+    mapController.fitBounds(_selectedBounds!,
         options: FitBoundsOptions(padding: EdgeInsets.all(32)));
   }
 
@@ -380,7 +380,7 @@ class _AutoCachedTilesPageContentState
             'Errored Tiles: $tilesErrored',
             style: Theme.of(context)
                 .textTheme
-                .subtitle2
+                .subtitle2!
                 .merge(TextStyle(color: Colors.red)),
             textAlign: TextAlign.center,
           ),
@@ -418,10 +418,10 @@ class _AutoCachedTilesPageContentState
                           borderColor: Colors.red,
                           borderStrokeWidth: 3,
                           points: [
-                            _selectedBounds.southWest,
-                            _selectedBounds.southEast,
-                            _selectedBounds.northEast,
-                            _selectedBounds.northWest
+                            _selectedBounds!.southWest!,
+                            _selectedBounds!.southEast,
+                            _selectedBounds!.northEast!,
+                            _selectedBounds!.northWest
                           ],
                         )
                       ],

@@ -8,8 +8,8 @@ documentation: https://github.com/JaffaKetchup/flutter_map_tile_caching/blob/mai
 issue_tracker: https://github.com/JaffaKetchup/flutter_map_tile_caching/issues
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
-  flutter: ">=1.17.0"
+  sdk: '>=2.12.0 <3.0.0'
+  flutter: '>=2.0.0'
 
 dependencies:
   flutter:
@@ -19,7 +19,13 @@ dependencies:
   path: ^1.8.0
   sqflite: ^2.0.0+3
   synchronized: ^3.0.0
-  tuple: ^1.0.2
+  tuple: ^2.0.0
+
+dependency_overrides:
+  flutter_map:
+    git:
+      url: https://github.com/fleaflet/flutter_map.git
+      ref: issues/829-nullsafety
 
 dev_dependencies: null
 flutter: null

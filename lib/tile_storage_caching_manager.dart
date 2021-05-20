@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -9,7 +10,7 @@ import 'package:tuple/tuple.dart';
 
 /// Singleton for managing tile sqlite db.
 class TileStorageCachingManager {
-  static TileStorageCachingManager _instance;
+  static TileStorageCachingManager? _instance;
 
   /// Default value of maximum number of persisted tiles, on average equates to 170 MB.
   static const int kDefaultMaxTileAmount = 10000;
@@ -27,13 +28,13 @@ class TileStorageCachingManager {
   static final String _kConfigKeyColumn = 'config_key';
   static final String _kConfigValueColumn = 'config_value';
   static final String _kMaxTileAmountConfig = 'max_tiles_amount_config';
-  Database _db;
+  Database? _db;
 
   final _lock = Lock();
 
   static TileStorageCachingManager _getInstance() {
     _instance ??= TileStorageCachingManager._internal();
-    return _instance;
+    return _instance!;
   }
 
   factory TileStorageCachingManager() => _getInstance();
@@ -55,7 +56,7 @@ class TileStorageCachingManager {
         }
       });
     }
-    return _db;
+    return _db!;
   }
 
   static Future<String> get _path async {
@@ -129,8 +130,8 @@ class TileStorageCachingManager {
   /// Get local tile by tile index [Coords].
   /// Return [Tuple2], where [Tuple2.item1] is bytes of tile image,
   /// [Tuple2.item2] - last update [DateTime] of this tile.
-  static Future<Tuple2<Uint8List, DateTime>> getTile(Coords coords,
-      {Duration valid}) async {
+  static Future<Tuple2<Uint8List, DateTime>?> getTile(Coords coords,
+      {Duration? valid}) async {
     List<Map> result = await (await _getInstance().database)
         .rawQuery('select $_kTileDataColumn, $_kUpdateDateColumn from tiles '
             'where $_kZoomLevelColumn = ${coords.z} AND '
@@ -140,7 +141,7 @@ class TileStorageCachingManager {
         ? Tuple2(
             result.first[_kTileDataColumn],
             DateTime.fromMillisecondsSinceEpoch(
-                1000 * result.first[_kUpdateDateColumn]))
+                1000 * result.first[_kUpdateDateColumn] as int))
         : null;
   }
 
