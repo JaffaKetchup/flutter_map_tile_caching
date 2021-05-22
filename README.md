@@ -11,7 +11,7 @@ To view the example, copy the `main.dart` file inside the `example` directory, a
 To install this plugin, add the below code snippet to your `pubspec.yaml` file.
 
 ```dart
-    flutter_map_tile_caching: ^2.0.0
+    flutter_map_tile_caching: ^1.0.1
 ```
 
 ## Usage
