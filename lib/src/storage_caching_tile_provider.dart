@@ -8,26 +8,24 @@ import 'package:flutter_map/src/layer/tile_provider/tile_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:tuple/tuple.dart';
 
-import './tile_storage_caching_manager.dart';
-
-export './tile_storage_caching_manager.dart';
+import 'tile_storage_caching_manager.dart';
 
 ///Provider that persist loaded raster tiles inside local sqlite db
 /// [cachedValidDuration] - valid time period since [DateTime.now]
 /// which determines the need for a request for remote tile server. Default value
 /// is one day, that means - all cached tiles today and day before don't need rewriting.
 class StorageCachingTileProvider extends TileProvider {
-  static final kMaxPreloadTileAreaCount = 10000;
+  static final kMaxPreloadTileAreaCount = 20000;
   final Duration cachedValidDuration;
 
   StorageCachingTileProvider(
-      {this.cachedValidDuration = const Duration(days: 1)});
+      {this.cachedValidDuration = const Duration(days: 31)});
 
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     final tileUrl = getTileUrl(coords, options);
-    return CachedTileImageProvider(tileUrl,
-        Coords<int>(coords.x.toInt(), coords.y.toInt())..z = coords.z.toInt());
+    return CachedTileImageProvider(
+        tileUrl, Coords<num>(coords.x, coords.y)..z = coords.z);
   }
 
   /// Caching tile area by provided [bounds], zoom edges and [options].
@@ -50,10 +48,10 @@ class StorageCachingTileProvider extends TileProvider {
     for (var i = 0; i < tilesRange.length; i++) {
       try {
         final cord = tilesRange[i];
-        final url = getTileUrl(cord, options);
-        // get network tile
+        final cordDouble = Coords(cord.x.toDouble(), cord.y.toDouble());
+        cordDouble.z = cord.z.toDouble();
+        final url = getTileUrl(cordDouble, options);
         final bytes = (await http.get(Uri.parse(url))).bodyBytes;
-        // save tile to cache
         await TileStorageCachingManager.saveTile(bytes, cord);
       } catch (e) {
         errorsCount++;
@@ -122,10 +120,10 @@ class StorageCachingTileProvider extends TileProvider {
   }
 }
 
-class CachedTileImageProvider extends ImageProvider<Coords<int>> {
+class CachedTileImageProvider extends ImageProvider<Coords<num>> {
   final Function(dynamic)? netWorkErrorHandler;
   final String url;
-  final Coords<int> coords;
+  final Coords<num> coords;
   final Duration cacheValidDuration;
 
   CachedTileImageProvider(this.url, this.coords,
@@ -133,7 +131,7 @@ class CachedTileImageProvider extends ImageProvider<Coords<int>> {
       this.netWorkErrorHandler});
 
   @override
-  ImageStreamCompleter load(Coords<int> key, decode) =>
+  ImageStreamCompleter load(Coords<num> key, decode) =>
       MultiFrameImageStreamCompleter(
           codec: _loadAsync(),
           scale: 1,
@@ -143,7 +141,7 @@ class CachedTileImageProvider extends ImageProvider<Coords<int>> {
           });
 
   @override
-  Future<Coords<int>> obtainKey(ImageConfiguration configuration) =>
+  Future<Coords<num>> obtainKey(ImageConfiguration configuration) =>
       SynchronousFuture(coords);
 
   Future<Codec> _loadAsync() async {
@@ -153,9 +151,7 @@ class CachedTileImageProvider extends ImageProvider<Coords<int>> {
             (localBytes?.item2.millisecondsSinceEpoch ?? 0)) >
         cacheValidDuration.inMilliseconds) {
       try {
-        // get network tile
         bytes = (await http.get(Uri.parse(url))).bodyBytes;
-        // save tile to cache
         await TileStorageCachingManager.saveTile(bytes, coords);
       } catch (e) {
         if (netWorkErrorHandler != null) netWorkErrorHandler!(e);

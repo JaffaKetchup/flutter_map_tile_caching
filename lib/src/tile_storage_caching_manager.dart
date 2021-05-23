@@ -12,8 +12,7 @@ import 'package:tuple/tuple.dart';
 class TileStorageCachingManager {
   static TileStorageCachingManager? _instance;
 
-  /// Default value of maximum number of persisted tiles, on average equates to 170 MB.
-  static const int kDefaultMaxTileAmount = 10000;
+  static const int kDefaultMaxTileAmount = 20000;
   static final kMaxRefreshRowsCount = 10;
   static final String _kDbName = 'tile_cach.db';
   static final String _kTilesTable = 'tiles';
@@ -160,8 +159,9 @@ class TileStorageCachingManager {
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  /// [maxTileAmount] - maximum number of persisted tiles, default value is 3000,
-  /// and average tile size ~ 0.017 mb -> so default cache size ~ 51 mb.
+  /// Change the maximum number of persisted tiles.
+  ///
+  /// Default value is 20000, and average tile size is ~0.017 MB, so default cache size is ~340 MB.
   /// To avoid collisions this method should be called before widget build.
   static Future<void> changeMaxTileAmount(int maxTileAmount) async {
     assert(maxTileAmount > 0, 'maxTileAmount must be bigger then 0');
@@ -181,8 +181,6 @@ class TileStorageCachingManager {
       final currentTilesAmount = currentTilesAmountResult.isNotEmpty
           ? currentTilesAmountResult.first['count(*)']
           : 0;
-      // if current tileAmount bigger then new one, then
-      // from tile tables deleted most oldest overflow rows.
       if (currentTilesAmount > maxTileAmount) {
         List<Map> lastValidTileDateResult = await txn
             .rawQuery('select $_kUpdateDateColumn from $_kTilesTable order by'
@@ -198,7 +196,7 @@ class TileStorageCachingManager {
     });
   }
 
-  /// clean cached tiles db
+  /// Clean all cached tiles without further notice. Not undoable.
   static Future<void> cleanCache() async {
     if (!(await isDbFileExists)) return;
     final db = await _getInstance().database;
@@ -212,13 +210,15 @@ class TileStorageCachingManager {
   /// [bool] flag for [dbFile] existence
   static Future<bool> get isDbFileExists async => (await dbFile).exists();
 
-  /// cached tiles db sizes in bytes
+  /// Get total size of cached tiles in bytes
+  ///
+  /// Divide by 1049000 for number of MB
   static Future<int> get cacheDbSize async {
     if (!(await isDbFileExists)) return 0;
     return File((await _path)).length();
   }
 
-  /// cached tiles amount
+  /// Get total number of cached tiles
   static Future<int> get cachedTilesAmount async {
     if (!(await isDbFileExists)) return 0;
     final db = await _getInstance().database;
@@ -226,7 +226,7 @@ class TileStorageCachingManager {
     return result.isNotEmpty ? result.first['count(*)'] : 0;
   }
 
-  /// current maxCachedTilesAmount
+  /// Get current maxCachedTilesAmount
   static Future<int> get maxCachedTilesAmount async {
     if (!(await isDbFileExists)) return kDefaultMaxTileAmount;
     final db = await _getInstance().database;

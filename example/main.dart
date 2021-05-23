@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_tile_caching/storage_caching_tile_provider.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:tuple/tuple.dart';
 
@@ -28,8 +28,7 @@ class AutoCachedTilesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text('AutoCachedTiles Map')),
-        //drawer: buildDrawer(context, route),
+        appBar: AppBar(title: Text('Map Caching/Downloading Demo')),
         body: _AutoCachedTilesPageContent());
   }
 }
@@ -218,7 +217,6 @@ class _AutoCachedTilesPageContentState
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         children: <Widget>[
-          //BOUNDS
           Expanded(
             child: Container(
               padding: EdgeInsets.only(left: 8, right: 8, bottom: 8),
@@ -289,7 +287,6 @@ class _AutoCachedTilesPageContentState
           SizedBox(
             width: 16,
           ),
-          //ZOOM
           Container(
             padding: EdgeInsets.only(left: 8, right: 8, bottom: 8),
             decoration: BoxDecoration(
