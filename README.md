@@ -1,5 +1,9 @@
 # flutter_map_tile_caching
 
+>## Branch 'v3-testing'
+>
+>Please note, you are currently not in the 'main' branch, which is the branch that is kept production ready. This branch is only currently for development, and should not be used except for development or testing.
+
 A plugin for the [`flutter_map`](https://pub.dev/packages/flutter_map) library. Adds full tile caching functionality and methods to download areas of tiles.
 
 [![Pub](https://img.shields.io/pub/v/flutter_map_tile_caching.svg)](https://pub.dev/packages/flutter_map_tile_caching) [![likes](https://badges.bar/flutter_map_tile_caching/likes)](https://pub.dev/packages/flutter_map_tile_caching/score) [![pub points](https://badges.bar/flutter_map_tile_caching/pub%20points)](https://pub.dev/packages/flutter_map_tile_caching/score)
