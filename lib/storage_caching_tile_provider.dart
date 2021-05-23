@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/src/layer/tile_layer.dart';
-import './tile_storage_caching_manager.dart';
 import 'package:flutter_map/src/layer/tile_provider/tile_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:tuple/tuple.dart';
+
+import './tile_storage_caching_manager.dart';
+
 export './tile_storage_caching_manager.dart';
 
 ///Provider that persist loaded raster tiles inside local sqlite db
@@ -36,7 +38,7 @@ class StorageCachingTileProvider extends TileProvider {
   /// number of errored tiles as [Tuple3.item2], and number of total tiles that need to be downloaded as [Tuple3.item3]
   Stream<Tuple3<int, int, int>> loadTiles(
       LatLngBounds bounds, int minZoom, int maxZoom, TileLayerOptions options,
-      {Function(dynamic) errorHandler}) async* {
+      {Function(dynamic)? errorHandler}) async* {
     final tilesRange = approximateTileRange(
         bounds: bounds,
         minZoom: minZoom,
@@ -64,9 +66,9 @@ class StorageCachingTileProvider extends TileProvider {
   ///Get approximate tile amount from bounds and zoom edges.
   ///[crs] and [tileSize] is optional.
   static int approximateTileAmount(
-      {@required LatLngBounds bounds,
-      @required int minZoom,
-      @required int maxZoom,
+      {required LatLngBounds bounds,
+      required int minZoom,
+      required int maxZoom,
       Crs crs = const Epsg3857(),
       tileSize = const CustomPoint(256, 256)}) {
     assert(minZoom <= maxZoom, 'minZoom > maxZoom');
@@ -84,7 +86,7 @@ class StorageCachingTileProvider extends TileProvider {
           CustomPoint(1, 1);
       final a = sePoint.x - nwPoint.x + 1;
       final b = sePoint.y - nwPoint.y + 1;
-      amount += a * b;
+      amount += a * b as int;
     }
     return amount;
   }
@@ -92,9 +94,9 @@ class StorageCachingTileProvider extends TileProvider {
   ///Get tileRange from bounds and zoom edges.
   ///[crs] and [tileSize] is optional.
   static List<Coords> approximateTileRange(
-      {@required LatLngBounds bounds,
-      @required int minZoom,
-      @required int maxZoom,
+      {required LatLngBounds bounds,
+      required int minZoom,
+      required int maxZoom,
       Crs crs = const Epsg3857(),
       tileSize = const CustomPoint(256, 256)}) {
     assert(minZoom <= maxZoom, 'minZoom > maxZoom');
@@ -121,7 +123,7 @@ class StorageCachingTileProvider extends TileProvider {
 }
 
 class CachedTileImageProvider extends ImageProvider<Coords<int>> {
-  final Function(dynamic) netWorkErrorHandler;
+  final Function(dynamic)? netWorkErrorHandler;
   final String url;
   final Coords<int> coords;
   final Duration cacheValidDuration;
@@ -148,7 +150,7 @@ class CachedTileImageProvider extends ImageProvider<Coords<int>> {
     final localBytes = await TileStorageCachingManager.getTile(coords);
     var bytes = localBytes?.item1;
     if ((DateTime.now().millisecondsSinceEpoch -
-            (localBytes?.item2?.millisecondsSinceEpoch ?? 0)) >
+            (localBytes?.item2.millisecondsSinceEpoch ?? 0)) >
         cacheValidDuration.inMilliseconds) {
       try {
         // get network tile
@@ -156,12 +158,12 @@ class CachedTileImageProvider extends ImageProvider<Coords<int>> {
         // save tile to cache
         await TileStorageCachingManager.saveTile(bytes, coords);
       } catch (e) {
-        if (netWorkErrorHandler != null) netWorkErrorHandler(e);
+        if (netWorkErrorHandler != null) netWorkErrorHandler!(e);
       }
     }
     if (bytes == null) {
       return Future<Codec>.error('Failed to load tile for coords: $coords');
     }
-    return await PaintingBinding.instance.instantiateImageCodec(bytes);
+    return await PaintingBinding.instance!.instantiateImageCodec(bytes);
   }
 }

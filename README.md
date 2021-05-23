@@ -49,7 +49,7 @@ You can call `cleanCache()` on `TileStorageCachingManager`. This will clear all 
 
 ## Limitations
 
-This package currently uses `flutter_map: ^0.12.0`, and is therefore not null-safe. It does not support the web platform (due to the usage of `dart:io`), and the code has not been tested on desktop platforms.
+This package does not support the web platform (due to the usage of `dart:io`) and the code has not been tested on desktop platforms.
 
 ## Credits
 
