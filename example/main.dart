@@ -106,13 +106,13 @@ class _AutoCachedTilesPageContentState
       StorageCachingTileProvider tileProvider, TileLayerOptions options) async {
     _hideKeyboard();
     final zoomMin = int.tryParse(minZoomController.text);
-    final zoomMax = int.tryParse(maxZoomController.text) ?? zoomMin;
     if (zoomMin == null) {
       _showErrorSnack(
           'Invalid zoom level. Minimum zoom level must be defined.');
       return;
     }
-    if (zoomMin < 1 || zoomMin > 19 || zoomMax! < 1 || zoomMax > 19) {
+    final zoomMax = int.tryParse(maxZoomController.text) ?? zoomMin;
+    if (zoomMin < 1 || zoomMin > 19 || zoomMax < 1 || zoomMax > 19) {
       _showErrorSnack(
           'Invalid zoom level. Must be inside 1-19 range (inclusive).');
       return;
