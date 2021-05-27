@@ -51,7 +51,9 @@ class StorageCachingTileProvider extends TileProvider {
         final cordDouble = Coords(cord.x.toDouble(), cord.y.toDouble());
         cordDouble.z = cord.z.toDouble();
         final url = getTileUrl(cordDouble, options);
-        final bytes = (await http.get(Uri.parse(url))).bodyBytes;
+        final response = await http.get(Uri.parse(url));
+        if (response.statusCode != 200) throw new FormatException();
+        final bytes = response.bodyBytes;
         await TileStorageCachingManager.saveTile(bytes, cord);
       } catch (e) {
         errorsCount++;
@@ -151,7 +153,9 @@ class CachedTileImageProvider extends ImageProvider<Coords<num>> {
             (localBytes?.item2.millisecondsSinceEpoch ?? 0)) >
         cacheValidDuration.inMilliseconds) {
       try {
-        bytes = (await http.get(Uri.parse(url))).bodyBytes;
+        final response = await http.get(Uri.parse(url));
+        if (response.statusCode != 200) throw new FormatException();
+        bytes = response.bodyBytes;
         await TileStorageCachingManager.saveTile(bytes, coords);
       } catch (e) {
         if (netWorkErrorHandler != null) netWorkErrorHandler!(e);
