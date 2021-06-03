@@ -45,13 +45,14 @@ class StorageCachingTileProvider extends TileProvider {
     assert(tilesRange.length <= kMaxPreloadTileAreaCount,
         '${tilesRange.length} exceeds maximum number of pre-cacheable tiles');
     var errorsCount = 0;
+    var client = http.Client();
     for (var i = 0; i < tilesRange.length; i++) {
       try {
         final cord = tilesRange[i];
         final cordDouble = Coords(cord.x.toDouble(), cord.y.toDouble());
         cordDouble.z = cord.z.toDouble();
         final url = getTileUrl(cordDouble, options);
-        final response = await http.get(Uri.parse(url));
+        final response = await client.get(Uri.parse(url));
         if (response.statusCode != 200) throw new FormatException();
         final bytes = response.bodyBytes;
         await TileStorageCachingManager.saveTile(bytes, cord);
@@ -61,6 +62,7 @@ class StorageCachingTileProvider extends TileProvider {
       }
       yield Tuple3(i + 1, errorsCount, tilesRange.length);
     }
+    client.close();
   }
 
   ///Get approximate tile amount from bounds and zoom edges.
