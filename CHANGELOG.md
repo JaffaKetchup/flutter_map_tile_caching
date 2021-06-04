@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.0.2] - 04/06/2021
+
+* Publish to pub.dev
+* Null safety finalised
+
+## [2.0.1] - XX/XX/2021
+
+* Attempt to publish (failed)
+
 ## [2.0.0] - 23/05/2021 - Breaking
 
 * Increased default values (increased default cache limit (tiles) to 20000 and default cache duration to 31 days)

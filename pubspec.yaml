@@ -1,7 +1,7 @@
 name: flutter_map_tile_caching
 description: Plugin package for flutter_map to provide an easy way to cache and
   download tiles for later offline use.
-version: 2.0.0
+version: 2.0.2
 repository: https://github.com/JaffaKetchup/flutter_map_tile_caching
 documentation: https://github.com/JaffaKetchup/flutter_map_tile_caching/blob/main/README.md
 issue_tracker: https://github.com/JaffaKetchup/flutter_map_tile_caching/issues
@@ -13,11 +13,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_map:
-    git:
-      url: https://github.com/fleaflet/flutter_map.git
-      ref: issues/829-nullsafety
-  http: ^0.13.1
+  flutter_map: ^0.13.0
+  http: ^0.13.3
   path: ^1.8.0
   sqflite: ^2.0.0+3
   synchronized: ^3.0.0
