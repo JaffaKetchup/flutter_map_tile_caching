@@ -3,8 +3,6 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map/src/layer/tile_layer.dart';
-import 'package:flutter_map/src/layer/tile_provider/tile_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:tuple/tuple.dart';
 
@@ -18,25 +16,25 @@ class StorageCachingTileProvider extends TileProvider {
   static final kMaxPreloadTileAreaCount = 20000;
   final Duration cachedValidDuration;
 
-  StorageCachingTileProvider(
-      {this.cachedValidDuration = const Duration(days: 31)});
+  StorageCachingTileProvider({
+    this.cachedValidDuration = const Duration(days: 31),
+  });
 
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     final tileUrl = getTileUrl(coords, options);
     return CachedTileImageProvider(
-        tileUrl, Coords<num>(coords.x, coords.y)..z = coords.z);
+      tileUrl,
+      Coords<num>(coords.x, coords.y)..z = coords.z,
+    );
   }
 
-  /// Caching tile area by provided [bounds], zoom edges and [options].
-  /// The maximum number of tiles to load is [kMaxPreloadTileAreaCount].
-  /// To check tiles number before calling this method, use
-  /// [approximateTileAmount].
-  /// Return [Tuple3] with number of downloaded tiles as [Tuple3.item1],
-  /// number of errored tiles as [Tuple3.item2], and number of total tiles that need to be downloaded as [Tuple3.item3]
-  Stream<Tuple3<int, int, int>> loadTiles(
+  /// Caching tile area by provided [bounds], zoom edges and [options]. The maximum number of tiles to load is [kMaxPreloadTileAreaCount]. To check tiles number before calling this method, use [approximateTileAmount].
+  ///
+  /// Returns [Tuple3] with number of currently downloaded tiles and errored tiles as [Tuple3.item1], list of URLs of errored tiles as [Tuple3.item2], and number of total tiles that need to be downloaded as [Tuple3.item3]
+  Stream<Tuple3<int, List<String>, int>> loadTiles(
       LatLngBounds bounds, int minZoom, int maxZoom, TileLayerOptions options,
-      {Function(dynamic)? errorHandler}) async* {
+      {Function(Object, String)? errorHandler}) async* {
     final tilesRange = approximateTileRange(
         bounds: bounds,
         minZoom: minZoom,
@@ -44,23 +42,28 @@ class StorageCachingTileProvider extends TileProvider {
         tileSize: CustomPoint(options.tileSize, options.tileSize));
     assert(tilesRange.length <= kMaxPreloadTileAreaCount,
         '${tilesRange.length} exceeds maximum number of pre-cacheable tiles');
-    var errorsCount = 0;
     var client = http.Client();
+    List<String> erroredUrls = [];
     for (var i = 0; i < tilesRange.length; i++) {
+      final cord = tilesRange[i];
+      final cordDouble = Coords(cord.x.toDouble(), cord.y.toDouble());
+      cordDouble.z = cord.z.toDouble();
+      final url = getTileUrl(cordDouble, options);
       try {
-        final cord = tilesRange[i];
-        final cordDouble = Coords(cord.x.toDouble(), cord.y.toDouble());
-        cordDouble.z = cord.z.toDouble();
-        final url = getTileUrl(cordDouble, options);
         final response = await client.get(Uri.parse(url));
-        if (response.statusCode != 200) throw new FormatException();
+        if (response.statusCode != 200) {
+          throw new FormatException(response.statusCode.toString() +
+              (response.reasonPhrase == null
+                  ? ''
+                  : ': ' + response.reasonPhrase!));
+        }
         final bytes = response.bodyBytes;
         await TileStorageCachingManager.saveTile(bytes, cord);
       } catch (e) {
-        errorsCount++;
-        if (errorHandler != null) errorHandler(e);
+        erroredUrls.add(url);
+        if (errorHandler != null) errorHandler(e, url);
       }
-      yield Tuple3(i + 1, errorsCount, tilesRange.length);
+      yield Tuple3(i + 1, erroredUrls, tilesRange.length);
     }
     client.close();
   }
@@ -125,14 +128,14 @@ class StorageCachingTileProvider extends TileProvider {
 }
 
 class CachedTileImageProvider extends ImageProvider<Coords<num>> {
-  final Function(dynamic)? netWorkErrorHandler;
+  final Function(dynamic)? networkErrorHandler;
   final String url;
   final Coords<num> coords;
   final Duration cacheValidDuration;
 
   CachedTileImageProvider(this.url, this.coords,
       {this.cacheValidDuration = const Duration(days: 1),
-      this.netWorkErrorHandler});
+      this.networkErrorHandler});
 
   @override
   ImageStreamCompleter load(Coords<num> key, decode) =>
@@ -160,7 +163,7 @@ class CachedTileImageProvider extends ImageProvider<Coords<num>> {
         bytes = response.bodyBytes;
         await TileStorageCachingManager.saveTile(bytes, coords);
       } catch (e) {
-        if (netWorkErrorHandler != null) netWorkErrorHandler!(e);
+        if (networkErrorHandler != null) networkErrorHandler!(e);
       }
     }
     if (bytes == null) {

@@ -1,11 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart' show SchedulerBinding;
+import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:tuple/tuple.dart';
+import 'package:latlong2/latlong.dart' show LatLng;
+import 'package:tuple/tuple.dart' show Tuple3;
 
 void main() {
   runApp(DemoApp());
@@ -139,8 +138,8 @@ class _AutoCachedTilesPageContentState
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Downloading Area...'),
-        content: StreamBuilder<Tuple3<int, int, int>>(
-          initialData: Tuple3(0, 0, 0),
+        content: StreamBuilder<Tuple3<int, List<String>, int>>(
+          initialData: Tuple3(0, [], 0),
           stream: tileProvider.loadTiles(
               _selectedBounds!, zoomMin, zoomMax, options),
           builder: (ctx, snapshot) {
@@ -152,7 +151,7 @@ class _AutoCachedTilesPageContentState
             }
             final tileIndex = snapshot.data?.item1 ?? 0;
             final tilesAmount = snapshot.data?.item3 ?? 0;
-            final tilesErrored = snapshot.data?.item2 ?? 0;
+            final tilesErrored = snapshot.data?.item2 ?? [];
             return getLoadProgresWidget(
                 ctx, tileIndex, tilesAmount, tilesErrored);
           },
@@ -332,8 +331,8 @@ class _AutoCachedTilesPageContentState
     );
   }
 
-  Widget getLoadProgresWidget(
-      BuildContext context, int tileIndex, int tileAmount, int tilesErrored) {
+  Widget getLoadProgresWidget(BuildContext context, int tileIndex,
+      int tileAmount, List<String> tilesErrored) {
     if (tileAmount == 0) {
       tileAmount = 1;
     }
@@ -367,19 +366,76 @@ class _AutoCachedTilesPageContentState
           height: 8,
         ),
         Text(
-          '$tileIndex/$tileAmount\nPlease Wait',
+          '${tilesErrored.length == 0 ? '' : ((tileIndex - tilesErrored.length).toString() + '/')}$tileIndex/$tileAmount\nPlease Wait',
           style: Theme.of(context).textTheme.subtitle2,
           textAlign: TextAlign.center,
         ),
         Visibility(
-          visible: tilesErrored > 0,
-          child: Text(
-            'Errored Tiles: $tilesErrored',
-            style: Theme.of(context)
-                .textTheme
-                .subtitle2!
-                .merge(TextStyle(color: Colors.red)),
-            textAlign: TextAlign.center,
+          visible: tilesErrored.length != 0,
+          child: Expanded(
+            child: Column(
+              children: [
+                SizedBox(height: 10),
+                Text(
+                  'Errored Tiles: ${tilesErrored.length}',
+                  style: Theme.of(context).textTheme.subtitle2!.merge(TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      )),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 5),
+                Expanded(
+                  child: Container(
+                    width: double.maxFinite,
+                    child: ListView.builder(
+                      reverse: true,
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        String test = '';
+                        try {
+                          test = tilesErrored.reversed.toList()[index];
+                        } catch (e) {} finally {
+                          // ignore: control_flow_in_finally
+                          return Column(
+                            children: [
+                              Text(
+                                test
+                                    .replaceAll('https://', '')
+                                    .replaceAll('http://', '')
+                                    .split('/')[0],
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .subtitle2!
+                                    .merge(TextStyle(color: Colors.red)),
+                                textAlign: TextAlign.start,
+                              ),
+                              Text(
+                                test
+                                    .replaceAll(
+                                        test
+                                            .replaceAll('https://', '')
+                                            .replaceAll('http://', '')
+                                            .split('/')[0],
+                                        '')
+                                    .replaceAll('https:///', '')
+                                    .replaceAll('http:///', ''),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .subtitle2!
+                                    .merge(TextStyle(color: Colors.red)),
+                                textAlign: TextAlign.start,
+                              ),
+                            ],
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
