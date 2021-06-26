@@ -6,7 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:tuple/tuple.dart';
+import 'package:tuple/tuple.dart' show Tuple2;
 
 /// Singleton for managing tile sqlite db.
 class TileStorageCachingManager {

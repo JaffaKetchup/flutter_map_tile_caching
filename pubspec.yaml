@@ -18,7 +18,6 @@ dependencies:
   path: ^1.8.0
   sqflite: ^2.0.0+3
   synchronized: ^3.0.0
-  tuple: ^2.0.0
 
 dev_dependencies: null
 flutter: null

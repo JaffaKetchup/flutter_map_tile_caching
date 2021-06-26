@@ -1,12 +1,13 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart'
     show Polygon, PolygonLayerOptions, TileLayerOptions;
 import 'package:latlong2/latlong.dart';
-import 'dart:math' as math;
 
 import 'downloadableRegion.dart';
 
-/// Creates a circular region
+/// Creates a circular region using a center point and a radius
 class CircleRegion {
   /// The center of the circle as a `LatLng`
   final LatLng center;
@@ -14,6 +15,7 @@ class CircleRegion {
   /// The radius of the circle as a `double` in km
   final double radius;
 
+  /// Creates a circular region using a center point and a radius
   CircleRegion(this.center, this.radius);
 }
 
@@ -34,11 +36,12 @@ List<LatLng> _circleToOutline(
   return output;
 }
 
-/// A number of extensions for a circular region
 extension circleExt on CircleRegion {
   /// Create a downloadable region out of this region
   ///
-  /// Returns a `DownloadableRegion` to be passed to the `StorageCachingTileProvider().downloadRegion()` function
+  /// Returns a `DownloadableRegion` to be passed to the `StorageCachingTileProvider().downloadRegion()` function.
+  ///
+  /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   DownloadableRegion toDownloadable(
     int minZoom,
     int maxZoom,
@@ -46,6 +49,7 @@ extension circleExt on CircleRegion {
     Function(dynamic)? errorHandler,
     int circleDegrees = 360,
   }) {
+    assert(minZoom <= maxZoom, 'minZoom is more than maxZoom');
     return DownloadableRegion(
       _circleToOutline(
         this.center.latitudeInRad,
@@ -63,7 +67,9 @@ extension circleExt on CircleRegion {
 
   /// Create a list of all the `LatLng`s on every degree of the outline of this region
   ///
-  /// Returns a `List<LatLng>` which can be used anywhere
+  /// Returns a `List<LatLng>` which can be used anywhere.
+  ///
+  /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   List<LatLng> toList([int circleDegrees = 360]) {
     return _circleToOutline(
       this.center.latitudeInRad,
@@ -75,7 +81,9 @@ extension circleExt on CircleRegion {
 
   /// Create a drawable area for `FlutterMap()` out of this region
   ///
-  /// Returns a `PolygonLayerOptions` to be added to the `layer` property of a `FlutterMap()`
+  /// Returns a `PolygonLayerOptions` to be added to the `layer` property of a `FlutterMap()`.
+  ///
+  /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   PolygonLayerOptions toDrawable(
     Color fillColor,
     Color borderColor, {
@@ -93,5 +101,12 @@ extension circleExt on CircleRegion {
         )
       ],
     );
+  }
+}
+
+extension circleConvert on LatLng {
+  /// Converts a `LatLng` to a `CircleRegion` given a radius in km
+  CircleRegion toCircleRegion(double radius) {
+    return CircleRegion(this, radius);
   }
 }

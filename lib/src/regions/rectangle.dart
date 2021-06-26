@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart'
     show LatLngBounds, Polygon, PolygonLayerOptions, TileLayerOptions;
-
 import 'package:latlong2/latlong.dart';
 
 import 'downloadableRegion.dart';
 
-class SquareRegion {
+/// Creates a rectangular region using two or more corners
+class RectangleRegion {
+  /// The `LatLngBounds` used to create the rectangle
   final LatLngBounds bounds;
 
-  SquareRegion(this.bounds);
+  /// Creates a rectangular region using two or more corners
+  RectangleRegion(this.bounds);
 }
 
-extension squareExt on SquareRegion {
+extension rectangleExt on RectangleRegion {
   /// Create a downloadable region out of this region
   ///
   /// Returns a `DownloadableRegion` to be passed to the `StorageCachingTileProvider().downloadRegion()` function
@@ -22,24 +24,25 @@ extension squareExt on SquareRegion {
     TileLayerOptions options, {
     Function(dynamic)? errorHandler,
   }) {
+    assert(minZoom <= maxZoom, 'minZoom is more than maxZoom');
     return DownloadableRegion(
       [this.bounds.northWest, this.bounds.southEast],
       minZoom,
       maxZoom,
       options,
-      RegionType.square,
+      RegionType.rectangle,
       errorHandler,
     );
   }
 
   /// Create a list of all the `LatLng`s on every corner of the outline of this region
   ///
-  /// Returns a `List<LatLng?>` which can be used anywhere
-  List<LatLng?> toList() {
+  /// Returns a `List<LatLng>` which can be used anywhere
+  List<LatLng> toList() {
     return [
-      this.bounds.southWest,
+      LatLng(this.bounds.southEast.latitude, this.bounds.northWest.longitude),
       this.bounds.southEast,
-      this.bounds.northEast,
+      LatLng(this.bounds.northWest.latitude, this.bounds.southEast.longitude),
       this.bounds.northWest,
     ];
   }
@@ -71,5 +74,12 @@ extension squareExt on SquareRegion {
         )
       ],
     );
+  }
+}
+
+extension rectangleConvert on LatLngBounds {
+  /// Converts a `LatLngBounds` to a `RectangleRegion`
+  RectangleRegion toRectangleRegion() {
+    return RectangleRegion(this);
   }
 }
