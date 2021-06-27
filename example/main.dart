@@ -127,7 +127,10 @@ class _AutoCachedTilesPageContentState
   }
 
   Future<void> _loadMap(
-      StorageCachingTileProvider tileProvider, TileLayerOptions options) async {
+    StorageCachingTileProvider tileProvider,
+    TileLayerOptions options,
+    bool background,
+  ) async {
     _hideKeyboard();
     final zoomMin = int.tryParse(minZoomController.text);
     if (zoomMin == null) {
@@ -164,12 +167,6 @@ class _AutoCachedTilesPageContentState
             '$approximateTileCount exceeds maximum number of pre-cachable tiles (${StorageCachingTileProvider.kMaxPreloadTileAreaCount}). Try a smaller amount first.');
         return;
       }
-      tileProvider.downloadRegion(
-        CircleRegion(
-          LatLng(_selectedBoundsCir![0], _selectedBoundsCir![1]),
-          _selectedBoundsCir![2],
-        ).toDownloadable(zoomMin, zoomMax, options),
-      );
     } else if (selectedType == RegionType.rectangle) {
       final approximateTileCount = StorageCachingTileProvider.checkRegion(
         RectangleRegion(_selectedBoundsSqr!)
@@ -181,51 +178,62 @@ class _AutoCachedTilesPageContentState
             '$approximateTileCount exceeds maximum number of pre-cachable tiles (${StorageCachingTileProvider.kMaxPreloadTileAreaCount}). Try a smaller amount first.');
         return;
       }
-      tileProvider.downloadRegion(
-        RectangleRegion(_selectedBoundsSqr!)
-            .toDownloadable(zoomMin, zoomMax, options),
-      );
     } else {
       throw UnimplementedError();
     }
-
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Downloading Area...'),
-        content: StreamBuilder<DownloadProgress>(
-          initialData: DownloadProgress.placeholder(),
-          stream: (selectedType == RegionType.rectangle
-              ? tileProvider.downloadRegion(RectangleRegion(_selectedBoundsSqr!)
-                  .toDownloadable(zoomMin, zoomMax, options))
-              : (selectedType == RegionType.circle
-                  ? tileProvider.downloadRegion(
-                      CircleRegion(
-                        LatLng(_selectedBoundsCir![0], _selectedBoundsCir![1]),
-                        _selectedBoundsCir![2],
-                      ).toDownloadable(zoomMin, zoomMax, options),
-                    )
-                  : null)),
-          builder: (ctx, snapshot) {
-            if (snapshot.hasError) {
-              return Text('error: ${snapshot.error.toString()}');
-            }
-            final tileIndex = snapshot.data?.completedTiles ?? 0;
-            final tilesAmount = snapshot.data?.totalTiles ?? 0;
-            final tilesErrored = snapshot.data?.erroredTiles ?? [];
-            final progressPercentage = snapshot.data?.percentageProgress ?? 0;
-            return getLoadProgresWidget(
-                ctx, tileIndex, tilesAmount, tilesErrored, progressPercentage);
-          },
+    if (!background)
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Downloading Area...'),
+          content: StreamBuilder<DownloadProgress>(
+            initialData: DownloadProgress.placeholder(),
+            stream: (selectedType == RegionType.rectangle
+                ? tileProvider.downloadRegion(
+                    RectangleRegion(_selectedBoundsSqr!)
+                        .toDownloadable(zoomMin, zoomMax, options))
+                : (selectedType == RegionType.circle
+                    ? tileProvider.downloadRegion(
+                        CircleRegion(
+                          LatLng(
+                              _selectedBoundsCir![0], _selectedBoundsCir![1]),
+                          _selectedBoundsCir![2],
+                        ).toDownloadable(zoomMin, zoomMax, options),
+                      )
+                    : null)),
+            builder: (ctx, snapshot) {
+              if (snapshot.hasError) {
+                return Text('error: ${snapshot.error.toString()}');
+              }
+              final tileIndex = snapshot.data?.completedTiles ?? 0;
+              final tilesAmount = snapshot.data?.totalTiles ?? 0;
+              final tilesErrored = snapshot.data?.erroredTiles ?? [];
+              final progressPercentage = snapshot.data?.percentageProgress ?? 0;
+              return getLoadProgresWidget(ctx, tileIndex, tilesAmount,
+                  tilesErrored, progressPercentage);
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel & Exit'),
+              onPressed: () => Navigator.of(ctx).pop(),
+            )
+          ],
         ),
-        actions: <Widget>[
-          TextButton(
-            child: Text('Cancel & Exit'),
-            onPressed: () => Navigator.of(ctx).pop(),
-          )
-        ],
-      ),
-    );
+      );
+    else {
+      tileProvider.downloadRegionBackground(
+        (selectedType == RegionType.rectangle
+            ? RectangleRegion(_selectedBoundsSqr!)
+                .toDownloadable(zoomMin, zoomMax, options)
+            : (selectedType == RegionType.circle
+                ? CircleRegion(
+                    LatLng(_selectedBoundsCir![0], _selectedBoundsCir![1]),
+                    _selectedBoundsCir![2],
+                  ).toDownloadable(zoomMin, zoomMax, options)
+                : null))!,
+      );
+    }
   }
 
   Future<void> _deleteCachedMap() async {
@@ -690,7 +698,13 @@ class _AutoCachedTilesPageContentState
               IconButton(
                 icon: Icon(Icons.download),
                 onPressed: () {
-                  _loadMap(tileProvider, tileLayerOptions);
+                  _loadMap(tileProvider, tileLayerOptions, false);
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.downloading),
+                onPressed: () {
+                  _loadMap(tileProvider, tileLayerOptions, true);
                 },
               ),
             ],
