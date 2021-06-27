@@ -1,5 +1,6 @@
 import 'package:flutter_map/plugin_api.dart' show TileLayerOptions;
 import 'package:latlong2/latlong.dart';
+import 'package:meta/meta.dart';
 
 /// Describes what shape, and therefore rules, a `DownloadableRegion` conforms to.
 enum RegionType {
@@ -74,6 +75,7 @@ class DownloadProgress {
   /// An object representing the progress of a download
   ///
   /// Should avoid manual construction, use `DownloadProgress.placeholder()`. Is yielded from `StorageCachingTileProvider().downloadRegion()`, or returned from `DownloadProgress.placeholder()`.
+  @internal
   DownloadProgress(
     this.completedTiles,
     this.totalTiles,

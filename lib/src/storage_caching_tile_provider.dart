@@ -8,6 +8,7 @@ import 'package:flutter_map/src/layer/tile_layer.dart';
 import 'package:flutter_map/src/layer/tile_provider/tile_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:tuple/tuple.dart';
 
 import 'regions/downloadableRegion.dart';
 import 'tile_storage_caching_manager.dart';
@@ -48,10 +49,7 @@ class StorageCachingTileProvider extends TileProvider {
   /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   ///
   /// Returns a `DownloadProgress` object containing the number of completed tiles, total number of tiles to download, a list of errored URLs and the percentage completion.
-  Stream<DownloadProgress> downloadRegion(
-    DownloadableRegion region, [
-    bool excludeSea = false,
-  ]) async* {
+  Stream<DownloadProgress> downloadRegion(DownloadableRegion region) async* {
     if (region.type == RegionType.circle) {
       await for (var data in _downloadCircle(
         region.points,
@@ -59,7 +57,6 @@ class StorageCachingTileProvider extends TileProvider {
         region.maxZoom,
         region.options,
         region.errorHandler,
-        excludeSea,
       )) {
         yield data;
       }
@@ -70,7 +67,6 @@ class StorageCachingTileProvider extends TileProvider {
         region.maxZoom,
         region.options,
         region.errorHandler,
-        excludeSea,
       )) {
         yield data;
       }
@@ -82,8 +78,6 @@ class StorageCachingTileProvider extends TileProvider {
   }
 
   /// Check how many downloadable tiles are within a specified `DownloadableRegion`
-  ///
-  /// May return more tiles than downloadable if `excludeSea` is enabled when starting a download.
   ///
   /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   static int checkRegion(DownloadableRegion region) {
@@ -111,7 +105,6 @@ class StorageCachingTileProvider extends TileProvider {
     Coords<num> coord,
     TileLayerOptions options,
     http.Client client,
-    bool excludeSea,
     Function(String, dynamic) errorHandler,
   ) async {
     String url = "";
@@ -184,7 +177,6 @@ class StorageCachingTileProvider extends TileProvider {
     int maxZoom,
     TileLayerOptions options, [
     Function(dynamic)? errorHandler,
-    bool excludeSea = false,
   ]) async* {
     final List<Coords> tiles = _circleTiles(circleOutline, minZoom, maxZoom);
     assert(tiles.length <= kMaxPreloadTileAreaCount,
@@ -194,7 +186,7 @@ class StorageCachingTileProvider extends TileProvider {
     final http.Client client = http.Client();
 
     for (var i = 0; i < tiles.length; i++) {
-      await _getAndSaveTile(tiles[i], options, client, excludeSea, (url, e) {
+      await _getAndSaveTile(tiles[i], options, client, (url, e) {
         erroredUrls.add(url);
         if (errorHandler != null) errorHandler(e);
       });
@@ -245,7 +237,6 @@ class StorageCachingTileProvider extends TileProvider {
     int maxZoom,
     TileLayerOptions options, [
     Function(dynamic)? errorHandler,
-    bool excludeSea = false,
   ]) async* {
     final List<Coords<num>> tiles = _rectangleTiles(
       bounds,
@@ -260,7 +251,7 @@ class StorageCachingTileProvider extends TileProvider {
     final http.Client client = http.Client();
 
     for (var i = 0; i < tiles.length; i++) {
-      await _getAndSaveTile(tiles[i], options, client, excludeSea, (url, e) {
+      await _getAndSaveTile(tiles[i], options, client, (url, e) {
         erroredUrls.add(url);
         if (errorHandler != null) errorHandler(e);
       });
@@ -273,6 +264,110 @@ class StorageCachingTileProvider extends TileProvider {
     }
 
     client.close();
+  }
+
+  //! DEPRECATED FUNCTIONS !//
+
+  /// Caching tile area by provided [bounds], zoom edges and [options].
+  /// The maximum number of tiles to load is [kMaxPreloadTileAreaCount].
+  /// To check tiles number before calling this method, use
+  /// [approximateTileAmount].
+  /// Return [Tuple3] with number of downloaded tiles as [Tuple3.item1],
+  /// number of errored tiles as [Tuple3.item2], and number of total tiles that need to be downloaded as [Tuple3.item3]
+  ///
+  /// Deprecated. Migrate to [downloadRegion()]
+  @Deprecated(
+      'This function will be removed in the next release. Migrate to the Regions API as soon as possible (see docs)')
+  Stream<Tuple3<int, int, int>> loadTiles(
+      LatLngBounds bounds, int minZoom, int maxZoom, TileLayerOptions options,
+      {Function(dynamic)? errorHandler}) async* {
+    final tilesRange = approximateTileRange(
+        bounds: bounds,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        tileSize: CustomPoint(options.tileSize, options.tileSize));
+    assert(tilesRange.length <= kMaxPreloadTileAreaCount,
+        '${tilesRange.length} exceeds maximum number of pre-cacheable tiles');
+    var errorsCount = 0;
+    for (var i = 0; i < tilesRange.length; i++) {
+      try {
+        final cord = tilesRange[i];
+        final cordDouble = Coords(cord.x.toDouble(), cord.y.toDouble());
+        cordDouble.z = cord.z.toDouble();
+        final url = getTileUrl(cordDouble, options);
+        final bytes = (await http.get(Uri.parse(url))).bodyBytes;
+        await TileStorageCachingManager.saveTile(bytes, cord);
+      } catch (e) {
+        errorsCount++;
+        if (errorHandler != null) errorHandler(e);
+      }
+      yield Tuple3(i + 1, errorsCount, tilesRange.length);
+    }
+  }
+
+  /// Get approximate tile amount from bounds and zoom edges
+  ///
+  /// Deprecated. Migrate to [checkRegion()]
+  @Deprecated(
+      'This function will be removed in the next release. Migrate to the Regions API as soon as possible (see docs)')
+  static int approximateTileAmount({
+    required LatLngBounds bounds,
+    required int minZoom,
+    required int maxZoom,
+    Crs crs = const Epsg3857(),
+    tileSize = const CustomPoint(256, 256),
+  }) {
+    assert(minZoom <= maxZoom, 'minZoom > maxZoom');
+    var amount = 0;
+    for (var zoomLevel in List<int>.generate(
+        maxZoom - minZoom + 1, (index) => index + minZoom)) {
+      final nwPoint = crs
+          .latLngToPoint(bounds.northWest, zoomLevel.toDouble())
+          .unscaleBy(tileSize)
+          .floor();
+      final sePoint = crs
+              .latLngToPoint(bounds.southEast, zoomLevel.toDouble())
+              .unscaleBy(tileSize)
+              .ceil() -
+          CustomPoint(1, 1);
+      final a = sePoint.x - nwPoint.x + 1;
+      final b = sePoint.y - nwPoint.y + 1;
+      amount += a * b as int;
+    }
+    return amount;
+  }
+
+  /// Get tileRange from bounds and zoom edges.
+  ///
+  /// Deprecated.
+  @Deprecated(
+      'This function will be removed in the next release, and merged to another function. Migrate to the Regions API as soon as possible (see docs)')
+  static List<Coords> approximateTileRange(
+      {required LatLngBounds bounds,
+      required int minZoom,
+      required int maxZoom,
+      Crs crs = const Epsg3857(),
+      tileSize = const CustomPoint(256, 256)}) {
+    assert(minZoom <= maxZoom, 'minZoom > maxZoom');
+    final cords = <Coords>[];
+    for (var zoomLevel in List<int>.generate(
+        maxZoom - minZoom + 1, (index) => index + minZoom)) {
+      final nwPoint = crs
+          .latLngToPoint(bounds.northWest, zoomLevel.toDouble())
+          .unscaleBy(tileSize)
+          .floor();
+      final sePoint = crs
+              .latLngToPoint(bounds.southEast, zoomLevel.toDouble())
+              .unscaleBy(tileSize)
+              .ceil() -
+          CustomPoint(1, 1);
+      for (var x = nwPoint.x; x <= sePoint.x; x++) {
+        for (var y = nwPoint.y; y <= sePoint.y; y++) {
+          cords.add(Coords(x, y)..z = zoomLevel);
+        }
+      }
+    }
+    return cords;
   }
 }
 

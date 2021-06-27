@@ -682,7 +682,10 @@ class _AutoCachedTilesPageContentState
               ),
               IconButton(
                 icon: Icon(Icons.filter_center_focus),
-                onPressed: _selectedBoundsSqr == null ? null : _focusToBounds,
+                onPressed: _selectedBoundsSqr == null ||
+                        selectedType != RegionType.rectangle
+                    ? null
+                    : _focusToBounds,
               ),
               IconButton(
                 icon: Icon(Icons.download),
