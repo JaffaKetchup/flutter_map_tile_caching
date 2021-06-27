@@ -1,6 +1,12 @@
 # flutter_map_tile_caching
 
+> ## v3 Update Branch
+>
+> Just to let you know, you're currently in a branch not ready for production. Please switch to the main branch to find stable code and accurate documentation.
+
 A plugin for the [`flutter_map`](https://pub.dev/packages/flutter_map) library. Adds full tile caching functionality and methods to download areas of tiles.
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/N4N151INN)
 
 [![Pub](https://img.shields.io/pub/v/flutter_map_tile_caching.svg)](https://pub.dev/packages/flutter_map_tile_caching) [![likes](https://badges.bar/flutter_map_tile_caching/likes)](https://pub.dev/packages/flutter_map_tile_caching/score) [![pub points](https://badges.bar/flutter_map_tile_caching/pub%20points)](https://pub.dev/packages/flutter_map_tile_caching/score)
 [![GitHub stars](https://img.shields.io/github/stars/JaffaKetchup/flutter_map_tile_caching.svg?style=social&label=Stars)](https://GitHub.com/JaffaKetchup/flutter_map_tile_caching/stargazers/) [![GitHub issues](https://img.shields.io/github/issues/JaffaKetchup/flutter_map_tile_caching.svg?style=social&label=Issues)](https://GitHub.com/JaffaKetchup/flutter_map_tile_caching/issues/) [![GitHub PRs](https://img.shields.io/github/issues-pr/JaffaKetchup/flutter_map_tile_caching.svg?style=social&label=Pull%20Requests)](https://GitHub.com/JaffaKetchup/flutter_map_tile_caching/pulls/)
@@ -67,10 +73,22 @@ You can call `cleanCache()` on `TileStorageCachingManager`. This will clear all 
 
 ## Limitations
 
-This package does not support the web platform (due to the usage of `dart:io`) and the code has not been tested on desktop platforms.
+This package does not support the web platform (due to the usage of `dart:io`).
+
+The background download functionality does not work on any platform other than Android, so has been disabled on other platforms.
+
+This package has only been tested on Android devices.
+
+## Supporting Me
+
+A donation through my Ko-fi page would be infinitly appriciated:
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/N4N151INN)
+but, if you can't or won't, a star on GitHub and a like on pub.dev would also go a long way!
+
+Every donation gives me fuel to continue my open-source projects and lets me know that I'm doing a good job.
 
 ## Credits
 
-This code was originally created by [bugDim88](https://github.com/bugDim88), and improved upon by multiple people. You can see the original pull request here: [pull request #564 on fleaflet/flutter_map](https://github.com/fleaflet/flutter_map/pull/564). JaffaKetchup seperated the code into this external package on behalf of [bugDim88](https://github.com/bugDim88) & other contributors to keep the base package small. All credit therefore goes to [bugDim88](https://github.com/bugDim88) and the other contributors.
+The basis of this library was originally coded by [bugDim88](https://github.com/bugDim88), and improved upon by multiple people. You can see the original pull request here: [pull request #564 on fleaflet/flutter_map](https://github.com/fleaflet/flutter_map/pull/564).
 
-If this package is beneficial to you, please leave a star on GitHub and a like on pub.dev!
+I seperated the code into this external package on behalf of [bugDim88](https://github.com/bugDim88) & other contributors to keep the base package small. Majority credit therefore goes to [bugDim88](https://github.com/bugDim88) and the other contributors, for starting this all.
