@@ -6,18 +6,14 @@ import 'package:latlong2/latlong.dart';
 import 'downloadableRegion.dart';
 
 /// Creates a rectangular region using two or more corners
-class RectangleRegion {
+class RectangleRegion extends BaseRegion {
   /// The `LatLngBounds` used to create the rectangle
   final LatLngBounds bounds;
 
   /// Creates a rectangular region using two or more corners
   RectangleRegion(this.bounds);
-}
 
-extension rectangleExt on RectangleRegion {
-  /// Create a downloadable region out of this region
-  ///
-  /// Returns a `DownloadableRegion` to be passed to the `StorageCachingTileProvider().downloadRegion()` function
+  @override
   DownloadableRegion toDownloadable(
     int minZoom,
     int maxZoom,
@@ -35,21 +31,7 @@ extension rectangleExt on RectangleRegion {
     );
   }
 
-  /// Create a list of all the `LatLng`s on every corner of the outline of this region
-  ///
-  /// Returns a `List<LatLng>` which can be used anywhere
-  List<LatLng> toList() {
-    return [
-      LatLng(this.bounds.southEast.latitude, this.bounds.northWest.longitude),
-      this.bounds.southEast,
-      LatLng(this.bounds.northWest.latitude, this.bounds.southEast.longitude),
-      this.bounds.northWest,
-    ];
-  }
-
-  /// Create a drawable area for `FlutterMap()` out of this region
-  ///
-  /// Returns a `PolygonLayerOptions` to be added to the `layer` property of a `FlutterMap()`
+  @override
   PolygonLayerOptions toDrawable(
     Color fillColor,
     Color borderColor, {
@@ -74,6 +56,16 @@ extension rectangleExt on RectangleRegion {
         )
       ],
     );
+  }
+
+  @override
+  List<LatLng> toList() {
+    return [
+      LatLng(this.bounds.southEast.latitude, this.bounds.northWest.longitude),
+      this.bounds.southEast,
+      LatLng(this.bounds.northWest.latitude, this.bounds.southEast.longitude),
+      this.bounds.northWest,
+    ];
   }
 }
 

@@ -14,7 +14,7 @@ class TileStorageCachingManager {
 
   static const int kDefaultMaxTileAmount = 20000;
   static final int kMaxRefreshRowsCount = 10;
-  static final String _kDbName = 'tile_cach.db';
+  static final String _kDbName = 'tileStore.db';
   static final String _kTilesTable = 'tiles';
   static final String _kZoomLevelColumn = 'zoom_level';
   static final String _kTileRowColumn = 'tile_row';
