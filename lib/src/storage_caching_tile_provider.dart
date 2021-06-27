@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
+import 'dart:io' as io;
 
+import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map/src/layer/tile_layer.dart';
-import 'package:flutter_map/src/layer/tile_provider/tile_provider.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:tuple/tuple.dart';
@@ -42,13 +44,13 @@ class StorageCachingTileProvider extends TileProvider {
 
   //! DOWNLOAD FUNCTIONS !//
 
-  /// Download a specified `DownloadableRegion`
+  /// Download a specified `DownloadableRegion` in the foreground
   ///
   /// To check the number of tiles that need to be downloaded before using this function, use `checkRegion()`.
   ///
   /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   ///
-  /// Returns a `DownloadProgress` object containing the number of completed tiles, total number of tiles to download, a list of errored URLs and the percentage completion.
+  /// Streams a `DownloadProgress` object containing the number of completed tiles, total number of tiles to download, a list of errored URLs and the percentage completion.
   Stream<DownloadProgress> downloadRegion(DownloadableRegion region) async* {
     if (region.type == RegionType.circle) {
       await for (var data in _downloadCircle(
@@ -117,6 +119,118 @@ class StorageCachingTileProvider extends TileProvider {
     } catch (e) {
       errorHandler(url, e);
     }
+  }
+
+  //! BACKGROUND FUNCTIONS !//
+
+  /// Download a specified `DownloadableRegion` in the background, and show a notification progress bar (by default)
+  ///
+  /// To check the number of tiles that need to be downloaded before using this function, use `checkRegion()`.
+  ///
+  /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
+  ///
+  /// Notification only displays on Android and only if `showNotification` is set to true (default).
+  ///
+  /// Optionally specify a `callback` that gets fired every time another tile is downloaded/failed, takes one `DownloadProgress` argument, and returns a boolean.
+  ///
+  /// Download can be cancelled by returning `true` from `callback` function or by force stopping app.
+  ///
+  /// Returns nothing.
+  void downloadRegionBackground(
+    DownloadableRegion region, {
+    bool showNotification = true,
+    bool Function(DownloadProgress)? callback,
+  }) async {
+    bool sendNotification = false;
+    FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
+    if (io.Platform.isAndroid && showNotification) {
+      sendNotification = true;
+      flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      final InitializationSettings initializationSettings =
+          InitializationSettings(android: initializationSettingsAndroid);
+      await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    }
+
+    await BackgroundFetch.configure(
+      BackgroundFetchConfig(
+        minimumFetchInterval: 15,
+      ),
+      (String taskId) async {
+        if (taskId == 'backgroundTileDownload') {
+          StreamSubscription<DownloadProgress>? sub;
+          sub = downloadRegion(region).listen((event) async {
+            AndroidNotificationDetails androidPlatformChannelSpecifics =
+                AndroidNotificationDetails(
+              'MapDownloading',
+              'Map Background Downloader',
+              'Displays progress notifications to inform the user about the progress of their map download.',
+              importance: Importance.defaultImportance,
+              priority: Priority.low,
+              showWhen: false,
+              showProgress: true,
+              maxProgress: event.totalTiles,
+              progress: event.completedTiles,
+              visibility: NotificationVisibility.public,
+              playSound: false,
+              onlyAlertOnce: true,
+              subText: 'Map Downloader',
+            );
+            NotificationDetails platformChannelSpecifics =
+                NotificationDetails(android: androidPlatformChannelSpecifics);
+            if (sendNotification) {
+              await flutterLocalNotificationsPlugin!.show(
+                0,
+                'Map Downloading...',
+                '${event.completedTiles}/${event.totalTiles} (${event.percentageProgress.toStringAsFixed(1)}%)',
+                platformChannelSpecifics,
+              );
+            }
+
+            if (callback != null) {
+              if (callback(event)) {
+                sub!.cancel();
+                if (showNotification) {
+                  flutterLocalNotificationsPlugin!.cancel(0);
+                  await flutterLocalNotificationsPlugin.show(
+                    0,
+                    'Map Download Cancelled',
+                    '${event.totalTiles - event.completedTiles} tiles remained',
+                    platformChannelSpecifics,
+                  );
+                }
+                BackgroundFetch.finish(taskId);
+              }
+            }
+
+            if (event.percentageProgress == 100) {
+              sub!.cancel();
+              if (showNotification) {
+                flutterLocalNotificationsPlugin!.cancel(0);
+                await flutterLocalNotificationsPlugin.show(
+                  0,
+                  'Map Downloaded',
+                  '${event.erroredTiles.length} failed tiles',
+                  platformChannelSpecifics,
+                );
+              }
+              BackgroundFetch.finish(taskId);
+            }
+          });
+        } else
+          BackgroundFetch.finish(taskId);
+      },
+      (String taskId) async {
+        BackgroundFetch.finish(taskId);
+      },
+    );
+    BackgroundFetch.scheduleTask(
+      TaskConfig(
+        taskId: 'backgroundTileDownload',
+        delay: 0,
+      ),
+    );
   }
 
   //! CIRCLE FUNCTIONS !//
