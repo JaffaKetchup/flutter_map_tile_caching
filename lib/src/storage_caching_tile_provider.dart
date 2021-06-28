@@ -3,13 +3,16 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'dart:io' as io;
 
+import 'package:app_settings/app_settings.dart';
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:tuple/tuple.dart';
 
 import 'regions/downloadableRegion.dart';
@@ -121,19 +124,48 @@ class StorageCachingTileProvider extends TileProvider {
 
   //! BACKGROUND FUNCTIONS !//
 
+  /// Request to be excluded from battery optimizations (allows background task to run when app minimized)
+  ///
+  /// Only available on Android devices, due to limitations with other operating systems.
+  ///
+  /// Pops up an intrusive system dialog asking to be given the permission. There is no explanation for the user, except that the app will be allowed to run in the background all the time, so less technical users may be put off. It is up to you to decide (and program accordingly) if you want to show a reason first, then request the permission.
+  ///
+  /// Not needed if background download is only intented to be used whilst still within the app. If this is not granted, minimizing the app will pause the task. Closing the app fully will always cancel the task, no matter what this permission is.
+  ///
+  /// Will return (`Future`) `true` if permission was granted, `false` if the permission was denied.
+  static Future<bool> requestIgnoreBatteryOptimizations(
+      BuildContext context) async {
+    if (io.Platform.isAndroid) {
+      final PermissionStatus status =
+          await Permission.ignoreBatteryOptimizations.status;
+      if (status.isDenied || status.isLimited) {
+        final PermissionStatus statusAfter =
+            await Permission.ignoreBatteryOptimizations.request();
+        if (statusAfter.isGranted) return true;
+        return false;
+      } else if (status.isGranted) {
+        return true;
+      } else {
+        return false;
+      }
+    } else
+      throw UnsupportedError(
+          'The background download feature is only available on Android due to limitations with other operating systems.');
+  }
+
   /// Download a specified `DownloadableRegion` in the background, and show a notification progress bar (by default)
   ///
-  /// Only available on Android devices, due to limitations with the iOS/MacOS OS.
+  /// Only available on Android devices, due to limitations with other operating systems.
   ///
   /// To check the number of tiles that need to be downloaded before using this function, use `checkRegion()`.
   ///
   /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   ///
-  /// Notifications only display if `showNotification` is set to true (default).
+  /// You may want to call `requestIgnoreBatteryOptimizations()` before hand, depending on how/where/why this background download will be used. See documentation on that function for more information.
   ///
   /// Optionally specify a `callback` that gets fired every time another tile is downloaded/failed, takes one `DownloadProgress` argument, and returns a boolean.
   ///
-  /// Download can be cancelled by returning `true` from `callback` function or by force stopping app.
+  /// Download can be cancelled by returning `true` from `callback` function or by fully closing the app.
   ///
   /// Returns nothing.
   void downloadRegionBackground(
@@ -230,7 +262,7 @@ class StorageCachingTileProvider extends TileProvider {
       );
     } else
       throw UnsupportedError(
-          'The background download feature is only available on Android due to limitations with the iOS OS.');
+          'The background download feature is only available on Android due to limitations with other operating systems.');
   }
 
   //! CIRCLE FUNCTIONS !//
