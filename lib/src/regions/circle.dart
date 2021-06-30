@@ -1,8 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart'
-    show Polygon, PolygonLayerOptions, TileLayerOptions;
+import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'downloadableRegion.dart';
@@ -25,6 +24,8 @@ class CircleRegion extends BaseRegion {
     TileLayerOptions options, {
     Function(dynamic)? errorHandler,
     int circleDegrees = 360,
+    Crs crs = const Epsg3857(),
+    CustomPoint<num> tileSize = const CustomPoint(256, 256),
   }) {
     assert(minZoom <= maxZoom, 'minZoom is more than maxZoom');
     return DownloadableRegion(
@@ -38,7 +39,9 @@ class CircleRegion extends BaseRegion {
       maxZoom,
       options,
       RegionType.circle,
-      errorHandler,
+      errorHandler: errorHandler,
+      crs: crs,
+      tileSize: tileSize,
     );
   }
 
@@ -84,7 +87,12 @@ List<LatLng> _circleToOutline(
         math.atan2(math.sin(brng) * math.sin(d) * math.cos(lat),
             math.cos(d) - math.sin(lat) * math.sin(latRadians));
 
-    output.add(LatLng(latRadians * 180 / math.pi, lngRadians * 180 / math.pi));
+    output.add(
+      LatLng(
+        latRadians * 180 / math.pi,
+        (lngRadians * 180 / math.pi).clamp(-180, 180),
+      ),
+    );
   }
 
   return output;

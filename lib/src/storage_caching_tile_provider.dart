@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'dart:io' as io;
 
-import 'package:app_settings/app_settings.dart';
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -18,31 +17,32 @@ import 'package:tuple/tuple.dart';
 import 'regions/downloadableRegion.dart';
 import 'tile_storage_caching_manager.dart';
 
-double _asinh(double value) {
-  if (value.abs() >= 268435456.0)
-    return value.sign * (math.log(value.abs()) + math.log(2.0));
-
-  return value.sign * math.log(value.abs() + math.sqrt((value * value) + 1));
-}
-
 /// `TileProvider` to cache/download raster tiles inside a local caching database for `cachedValidDuration`, which default to 31 days.
 ///
 /// See online documentation for more information about the caching/downloading behaviour of this library.
 class StorageCachingTileProvider extends TileProvider {
   static final kMaxPreloadTileAreaCount = 20000;
   final Duration cachedValidDuration;
+  final String cacheName;
 
   /// `TileProvider` to cache/download raster tiles inside a local caching database for `cachedValidDuration`, which default to 31 days.
   ///
+  /// Optionally create multiple caches by choosing a unique name for each cache.
+  ///
   /// See online documentation for more information about the caching/downloading behaviour of this library.
-  StorageCachingTileProvider(
-      {this.cachedValidDuration = const Duration(days: 31)});
+  StorageCachingTileProvider({
+    this.cachedValidDuration = const Duration(days: 31),
+    this.cacheName = 'mainCache',
+  });
 
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     final tileUrl = getTileUrl(coords, options);
     return CachedTileImageProvider(
-        tileUrl, Coords<num>(coords.x, coords.y)..z = coords.z);
+      tileUrl,
+      Coords<num>(coords.x, coords.y)..z = coords.z,
+      cacheName: cacheName,
+    );
   }
 
   //! DOWNLOAD FUNCTIONS !//
@@ -50,8 +50,6 @@ class StorageCachingTileProvider extends TileProvider {
   /// Download a specified `DownloadableRegion` in the foreground
   ///
   /// To check the number of tiles that need to be downloaded before using this function, use `checkRegion()`.
-  ///
-  /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   ///
   /// Streams a `DownloadProgress` object containing the number of completed tiles, total number of tiles to download, a list of errored URLs and the percentage completion.
   Stream<DownloadProgress> downloadRegion(DownloadableRegion region) async* {
@@ -79,8 +77,6 @@ class StorageCachingTileProvider extends TileProvider {
   }
 
   /// Check how many downloadable tiles are within a specified `DownloadableRegion`
-  ///
-  /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   ///
   /// Returns an `int` which is the number of tiles.
   static int checkRegion(DownloadableRegion region) {
@@ -130,7 +126,7 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Pops up an intrusive system dialog asking to be given the permission. There is no explanation for the user, except that the app will be allowed to run in the background all the time, so less technical users may be put off. It is up to you to decide (and program accordingly) if you want to show a reason first, then request the permission.
   ///
-  /// Not needed if background download is only intented to be used whilst still within the app. If this is not granted, minimizing the app will pause the task. Closing the app fully will always cancel the task, no matter what this permission is.
+  /// Not needed if background download is only intented to be used whilst still within the app. If this is not granted, minimizing the app will usually pause the task. Closing the app fully will always cancel the task, no matter what this permission is.
   ///
   /// Will return (`Future`) `true` if permission was granted, `false` if the permission was denied.
   static Future<bool> requestIgnoreBatteryOptimizations(
@@ -158,8 +154,6 @@ class StorageCachingTileProvider extends TileProvider {
   /// Only available on Android devices, due to limitations with other operating systems.
   ///
   /// To check the number of tiles that need to be downloaded before using this function, use `checkRegion()`.
-  ///
-  /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   ///
   /// You may want to call `requestIgnoreBatteryOptimizations()` before hand, depending on how/where/why this background download will be used. See documentation on that function for more information.
   ///
@@ -270,8 +264,10 @@ class StorageCachingTileProvider extends TileProvider {
   static List<Coords<num>> _circleTiles(
     List<LatLng> circleOutline,
     int minZoom,
-    int maxZoom,
-  ) {
+    int maxZoom, {
+    Crs crs = const Epsg3857(),
+    CustomPoint<num> tileSize = const CustomPoint(256, 256),
+  }) {
     final Map<int, Map<int, List<int>>> outlineTileNums = {};
 
     final List<Coords<num>> coords = [];
@@ -280,26 +276,36 @@ class StorageCachingTileProvider extends TileProvider {
       outlineTileNums[zoomLvl] = {};
 
       for (LatLng node in circleOutline) {
+        /*
+        The below code has been retained on purpose.
+        DO NOT remove it.
+        
         final double n = math.pow(2, zoomLvl).toDouble();
         final int x = ((node.longitude + 180.0) / 360.0 * n).toInt();
         final int y =
             ((1.0 - _asinh(math.tan(node.latitudeInRad)) / math.pi) / 2.0 * n)
                 .toInt();
+        */
 
-        if (outlineTileNums[zoomLvl]![x] == null) {
-          outlineTileNums[zoomLvl]![x] = [
+        final CustomPoint<num> tile = crs
+            .latLngToPoint(node, zoomLvl.toDouble())
+            .unscaleBy(tileSize)
+            .floor();
+
+        if (outlineTileNums[zoomLvl]![tile.x.toInt()] == null) {
+          outlineTileNums[zoomLvl]![tile.x.toInt()] = [
             999999999999999999,
             -999999999999999999
           ];
         }
 
-        outlineTileNums[zoomLvl]![x] = [
-          y < (outlineTileNums[zoomLvl]![x]![0])
-              ? y
-              : (outlineTileNums[zoomLvl]![x]![0]),
-          y > (outlineTileNums[zoomLvl]![x]![1])
-              ? y
-              : (outlineTileNums[zoomLvl]![x]![1]),
+        outlineTileNums[zoomLvl]![tile.x.toInt()] = [
+          tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0])
+              ? tile.y.toInt()
+              : (outlineTileNums[zoomLvl]![tile.x.toInt()]![0]),
+          tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1])
+              ? tile.y.toInt()
+              : (outlineTileNums[zoomLvl]![tile.x.toInt()]![1]),
         ];
       }
 
@@ -323,8 +329,16 @@ class StorageCachingTileProvider extends TileProvider {
     int maxZoom,
     TileLayerOptions options, [
     Function(dynamic)? errorHandler,
+    Crs crs = const Epsg3857(),
+    CustomPoint<num> tileSize = const CustomPoint(256, 256),
   ]) async* {
-    final List<Coords> tiles = _circleTiles(circleOutline, minZoom, maxZoom);
+    final List<Coords<num>> tiles = _circleTiles(
+      circleOutline,
+      minZoom,
+      maxZoom,
+      crs: crs,
+      tileSize: tileSize,
+    );
     assert(tiles.length <= kMaxPreloadTileAreaCount,
         '${tiles.length} exceeds maximum number of pre-cacheable tiles');
 
@@ -383,12 +397,15 @@ class StorageCachingTileProvider extends TileProvider {
     int maxZoom,
     TileLayerOptions options, [
     Function(dynamic)? errorHandler,
+    Crs crs = const Epsg3857(),
+    CustomPoint<num> tileSize = const CustomPoint(256, 256),
   ]) async* {
     final List<Coords<num>> tiles = _rectangleTiles(
       bounds,
       minZoom,
       maxZoom,
-      tileSize: CustomPoint(options.tileSize, options.tileSize),
+      crs: crs,
+      tileSize: tileSize,
     );
     assert(tiles.length <= kMaxPreloadTileAreaCount,
         '${tiles.length} exceeds maximum number of pre-cacheable tiles');
@@ -423,7 +440,7 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Deprecated. Migrate to [downloadRegion()]
   @Deprecated(
-      'This function will be removed in the next release. Migrate to the Regions API as soon as possible (see docs)')
+      'This function will be removed in the next release. Migrate to the Regions API as soon as possible (see docs).')
   Stream<Tuple3<int, int, int>> loadTiles(
       LatLngBounds bounds, int minZoom, int maxZoom, TileLayerOptions options,
       {Function(dynamic)? errorHandler}) async* {
@@ -455,7 +472,7 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Deprecated. Migrate to [checkRegion()]
   @Deprecated(
-      'This function will be removed in the next release. Migrate to the Regions API as soon as possible (see docs)')
+      'This function will be removed in the next release. Migrate to the Regions API as soon as possible (see docs).')
   static int approximateTileAmount({
     required LatLngBounds bounds,
     required int minZoom,
@@ -487,7 +504,7 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Deprecated.
   @Deprecated(
-      'This function will be removed in the next release, and merged to another function. Migrate to the Regions API as soon as possible (see docs)')
+      'This function will be removed in the next release, and merged to another function. Migrate to the Regions API as soon as possible (see docs).')
   static List<Coords> approximateTileRange(
       {required LatLngBounds bounds,
       required int minZoom,
@@ -518,19 +535,24 @@ class StorageCachingTileProvider extends TileProvider {
 }
 
 class CachedTileImageProvider extends ImageProvider<Coords<num>> {
-  final Function(dynamic)? netWorkErrorHandler;
+  final Function(dynamic)? networkErrorHandler;
   final String url;
   final Coords<num> coords;
   final Duration cacheValidDuration;
+  final String cacheName;
 
-  CachedTileImageProvider(this.url, this.coords,
-      {this.cacheValidDuration = const Duration(days: 1),
-      this.netWorkErrorHandler});
+  CachedTileImageProvider(
+    this.url,
+    this.coords, {
+    this.cacheValidDuration = const Duration(days: 1),
+    this.networkErrorHandler,
+    this.cacheName = 'mainCache',
+  });
 
   @override
   ImageStreamCompleter load(Coords<num> key, decode) =>
       MultiFrameImageStreamCompleter(
-          codec: _loadAsync(),
+          codec: _loadAsync(cacheName: cacheName),
           scale: 1,
           informationCollector: () sync* {
             yield DiagnosticsProperty<ImageProvider>('Image provider', this);
@@ -541,17 +563,24 @@ class CachedTileImageProvider extends ImageProvider<Coords<num>> {
   Future<Coords<num>> obtainKey(ImageConfiguration configuration) =>
       SynchronousFuture(coords);
 
-  Future<Codec> _loadAsync() async {
-    final localBytes = await TileStorageCachingManager.getTile(coords);
+  Future<Codec> _loadAsync({String cacheName = 'mainCache'}) async {
+    final localBytes = await TileStorageCachingManager.getTile(
+      coords,
+      cacheName: cacheName,
+    );
     var bytes = localBytes?.item1;
     if ((DateTime.now().millisecondsSinceEpoch -
             (localBytes?.item2.millisecondsSinceEpoch ?? 0)) >
         cacheValidDuration.inMilliseconds) {
       try {
         bytes = (await http.get(Uri.parse(url))).bodyBytes;
-        await TileStorageCachingManager.saveTile(bytes, coords);
+        await TileStorageCachingManager.saveTile(
+          bytes,
+          coords,
+          cacheName: cacheName,
+        );
       } catch (e) {
-        if (netWorkErrorHandler != null) netWorkErrorHandler!(e);
+        if (networkErrorHandler != null) networkErrorHandler!(e);
       }
     }
     if (bytes == null) {

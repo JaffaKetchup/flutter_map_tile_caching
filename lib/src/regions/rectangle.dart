@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart'
-    show LatLngBounds, Polygon, PolygonLayerOptions, TileLayerOptions;
+import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'downloadableRegion.dart';
@@ -19,6 +18,8 @@ class RectangleRegion extends BaseRegion {
     int maxZoom,
     TileLayerOptions options, {
     Function(dynamic)? errorHandler,
+    Crs crs = const Epsg3857(),
+    CustomPoint<num> tileSize = const CustomPoint(256, 256),
   }) {
     assert(minZoom <= maxZoom, 'minZoom is more than maxZoom');
     return DownloadableRegion(
@@ -27,7 +28,9 @@ class RectangleRegion extends BaseRegion {
       maxZoom,
       options,
       RegionType.rectangle,
-      errorHandler,
+      errorHandler: errorHandler,
+      crs: crs,
+      tileSize: tileSize,
     );
   }
 

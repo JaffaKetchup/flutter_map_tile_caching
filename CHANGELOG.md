@@ -1,6 +1,6 @@
 # Changelog
 
-## [3.0.0] - 04/06/2021
+## [3.0.0-dev.1] - 30/06/2021
 
 * Huge refactoring to make methods easier to use and more flexible
 * Addition of circle region
@@ -9,7 +9,11 @@
 * Addition of ability to exclude pure sea tiles
 * Addition of multiple caching tables
 * Performance improvements
-* Edited README to reflect recent changes and add donation method
+* Add donation method
+* Add GitHub actions
+* STILL NEED TO rewrite documentation
+* STILL NEED TO improve circle generation to handle large distances
+* STILL NEED TO finalise API for `ShapeChooser()`
 
 ## [2.0.2] - 04/06/2021
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart'
-    show PolygonLayerOptions, TileLayerOptions;
+import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
@@ -51,7 +50,9 @@ abstract class BaseRegion {
 ///
 /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
 ///
-/// Should avoid manual construction (hidden class). Use a supported region shape and the `.toDownloadable()` extension on it. Is returned from `.toDownloadable()`.
+/// Should avoid manual construction (hidden class). Use a supported region shape and the `.toDownloadable()` extension on it.
+///
+/// Is returned from `.toDownloadable()`.
 class DownloadableRegion {
   /// All the verticies on the outline of a polygon
   final List<LatLng> points;
@@ -71,24 +72,36 @@ class DownloadableRegion {
   /// A function that takes any type of error as an argument to be called in the event a tile fetch fails
   final Function(dynamic)? errorHandler;
 
+  /// The map projection to use to calculate tiles. Defaults to `Espg3857()`.
+  final Crs crs;
+
+  /// The size of each tile. Defaults to 256 by 256.
+  final CustomPoint<num> tileSize;
+
   /// A downloadable region to be passed to the `StorageCachingTileProvider().downloadRegion()` function
   ///
   /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   ///
-  /// Should avoid manual construction (hidden class). Use a supported region shape and the `.toDownloadable()` extension on it. Is returned from `.toDownloadable()`.
+  /// Should avoid manual construction (hidden class). Use a supported region shape and the `.toDownloadable()` extension on it.
+  ///
+  /// Is returned from `.toDownloadable()`.
   DownloadableRegion(
     this.points,
     this.minZoom,
     this.maxZoom,
     this.options,
-    this.type, [
+    this.type, {
     this.errorHandler,
-  ]);
+    this.crs = const Epsg3857(),
+    this.tileSize = const CustomPoint(256, 256),
+  });
 }
 
 /// An object representing the progress of a download
 ///
-/// Should avoid manual construction, use `DownloadProgress.placeholder()`. Is yielded from `StorageCachingTileProvider().downloadRegion()`, or returned from `DownloadProgress.placeholder()`.
+/// Should avoid manual construction, use `DownloadProgress.placeholder()`.
+///
+/// Is yielded from `StorageCachingTileProvider().downloadRegion()`, or returned from `DownloadProgress.placeholder()`.
 class DownloadProgress {
   /// Number of attempted tile downloads (includes failures)
   final int completedTiles;
@@ -104,7 +117,9 @@ class DownloadProgress {
 
   /// An object representing the progress of a download
   ///
-  /// Should avoid manual construction, use `DownloadProgress.placeholder()`. Is yielded from `StorageCachingTileProvider().downloadRegion()`, or returned from `DownloadProgress.placeholder()`.
+  /// Should avoid manual construction, use `DownloadProgress.placeholder()`.
+  ///
+  /// Is yielded from `StorageCachingTileProvider().downloadRegion()`, or returned from `DownloadProgress.placeholder()`.
   @internal
   DownloadProgress(
     this.completedTiles,
