@@ -1,7 +1,6 @@
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 
-/// Useful extensions on LatLng
 extension latlngExts on LatLng {
   /// Calculate distance to another LatLng in km
   ///
@@ -20,7 +19,6 @@ extension latlngExts on LatLng {
   }
 }
 
-/// Two extensions on num to convert between degrees and radians
 extension degRad on num {
   /// Convert degrees to radians
   T degToRad<T>() {

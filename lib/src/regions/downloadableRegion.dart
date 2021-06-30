@@ -3,7 +3,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
-/// Describes what shape, and therefore rules, a `DownloadableRegion` conforms to.
+/// Describes what shape, and therefore rules, a `DownloadableRegion` conforms to
 enum RegionType {
   /// A region containing 4 points representing each corner
   rectangle,
@@ -11,7 +11,7 @@ enum RegionType {
   /// A region containing all the points along it's outline (one every degree)
   circle,
 
-  /// A region containing all the points along it's outline (one per side every node)
+  /// A region containing all the points along it's loci (one per side for every node)
   line,
 
   /// A region containing any number of points representing it's outline (one per vertice)

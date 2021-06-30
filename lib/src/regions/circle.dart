@@ -6,7 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'downloadableRegion.dart';
 
-/// Creates a circular region using a center point and a radius
+/// A circular region with a center point and a radius
 class CircleRegion extends BaseRegion {
   /// The center of the circle as a `LatLng`
   final LatLng center;

@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'downloadableRegion.dart';
 
-/// Creates a rectangular region using two or more corners
+/// A rectangular region with two or more corners
 class RectangleRegion extends BaseRegion {
   /// The `LatLngBounds` used to create the rectangle
   final LatLngBounds bounds;

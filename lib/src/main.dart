@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'dart:ui';
 import 'dart:io' as io;
 
@@ -15,9 +14,13 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:tuple/tuple.dart';
 
 import 'regions/downloadableRegion.dart';
-import 'tile_storage_caching_manager.dart';
+import 'databaseManager.dart';
 
-/// `TileProvider` to cache/download raster tiles inside a local caching database for `cachedValidDuration`, which default to 31 days.
+/// A `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database
+///
+/// A class containing methods to download regions of a map to a local caching database
+///
+/// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a caching table to use that cache
 ///
 /// See online documentation for more information about the caching/downloading behaviour of this library.
 class StorageCachingTileProvider extends TileProvider {
@@ -25,9 +28,11 @@ class StorageCachingTileProvider extends TileProvider {
   final Duration cachedValidDuration;
   final String cacheName;
 
-  /// `TileProvider` to cache/download raster tiles inside a local caching database for `cachedValidDuration`, which default to 31 days.
+  /// Create a `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database
   ///
-  /// Optionally create multiple caches by choosing a unique name for each cache.
+  /// Create a class containing methods to download regions of a map to a local caching database
+  ///
+  /// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a caching table to use that cache
   ///
   /// See online documentation for more information about the caching/downloading behaviour of this library.
   StorageCachingTileProvider({
@@ -35,17 +40,18 @@ class StorageCachingTileProvider extends TileProvider {
     this.cacheName = 'mainCache',
   });
 
+  /// Get a browsed tile as an image and save it's bytes to cache for later
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     final tileUrl = getTileUrl(coords, options);
-    return CachedTileImageProvider(
+    return _CachedTileImageProvider(
       tileUrl,
       Coords<num>(coords.x, coords.y)..z = coords.z,
       cacheName: cacheName,
     );
   }
 
-  //! DOWNLOAD FUNCTIONS !//
+  //! DOWNLOAD (FOREGROUND) FUNCTIONS !//
 
   /// Download a specified `DownloadableRegion` in the foreground
   ///
@@ -100,25 +106,7 @@ class StorageCachingTileProvider extends TileProvider {
     throw UnimplementedError();
   }
 
-  Future<void> _getAndSaveTile(
-    Coords<num> coord,
-    TileLayerOptions options,
-    http.Client client,
-    Function(String, dynamic) errorHandler,
-  ) async {
-    String url = "";
-    try {
-      final coordDouble = Coords(coord.x.toDouble(), coord.y.toDouble())
-        ..z = coord.z.toDouble();
-      url = getTileUrl(coordDouble, options);
-      final bytes = (await client.get(Uri.parse(url))).bodyBytes;
-      await TileStorageCachingManager.saveTile(bytes, coord);
-    } catch (e) {
-      errorHandler(url, e);
-    }
-  }
-
-  //! BACKGROUND FUNCTIONS !//
+  //! DOWNLOAD (BACKGROUND) FUNCTIONS !//
 
   /// Request to be excluded from battery optimizations (allows background task to run when app minimized)
   ///
@@ -429,6 +417,26 @@ class StorageCachingTileProvider extends TileProvider {
     client.close();
   }
 
+  //! MISCELLANEOUS FUNCTIONS !//
+
+  Future<void> _getAndSaveTile(
+    Coords<num> coord,
+    TileLayerOptions options,
+    http.Client client,
+    Function(String, dynamic) errorHandler,
+  ) async {
+    String url = "";
+    try {
+      final coordDouble = Coords(coord.x.toDouble(), coord.y.toDouble())
+        ..z = coord.z.toDouble();
+      url = getTileUrl(coordDouble, options);
+      final bytes = (await client.get(Uri.parse(url))).bodyBytes;
+      await TileStorageCachingManager.saveTile(bytes, coord);
+    } catch (e) {
+      errorHandler(url, e);
+    }
+  }
+
   //! DEPRECATED FUNCTIONS !//
 
   /// Caching tile area by provided [bounds], zoom edges and [options].
@@ -534,17 +542,32 @@ class StorageCachingTileProvider extends TileProvider {
   }
 }
 
-class CachedTileImageProvider extends ImageProvider<Coords<num>> {
+/// An `ImageProvider` to deal with the communication between `TileProvider` and caching manager
+class _CachedTileImageProvider extends ImageProvider<Coords<num>> {
+  /// The function to use if the network request fails
   final Function(dynamic)? networkErrorHandler;
+
+  /// The URL used to get the image from the network
   final String url;
+
+  /// The coordinates of the tile to get from the network
   final Coords<num> coords;
+
+  /// How long the image is valid for before it needs to be requested again
+  ///
+  /// Defaults to 31 days.
   final Duration cacheValidDuration;
+
+  /// The name of the caching table to write the image bytes to for future use
+  ///
+  /// Defaults to the default caching table.
   final String cacheName;
 
-  CachedTileImageProvider(
+  /// Creates an `ImageProvider` to deal with the communication between `TileProvider` and caching manager
+  _CachedTileImageProvider(
     this.url,
     this.coords, {
-    this.cacheValidDuration = const Duration(days: 1),
+    this.cacheValidDuration = const Duration(days: 31),
     this.networkErrorHandler,
     this.cacheName = 'mainCache',
   });

@@ -5,8 +5,8 @@ export 'src/regions/circle.dart';
 export 'src/regions/downloadableRegion.dart' show RegionType, DownloadProgress;
 export 'src/regions/rectangle.dart';
 
-export 'src/shape_chooser.dart';
+export 'src/shapeChooser.dart';
 export 'src/general.dart';
 
-export 'src/storage_caching_tile_provider.dart';
-export 'src/tile_storage_caching_manager.dart';
+export 'src/main.dart';
+export 'src/databaseManager.dart';

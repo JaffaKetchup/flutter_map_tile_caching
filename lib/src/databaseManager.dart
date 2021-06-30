@@ -8,7 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:tuple/tuple.dart' show Tuple2;
 
-/// Singleton for managing tile sqlite db.
+/// Manages caching database using sqflite
 class TileStorageCachingManager {
   static TileStorageCachingManager? _instance;
 
@@ -37,6 +37,7 @@ class TileStorageCachingManager {
     return _instance!;
   }
 
+  /// Create an instance of the caching database
   factory TileStorageCachingManager() => _getInstance();
 
   TileStorageCachingManager._internal();

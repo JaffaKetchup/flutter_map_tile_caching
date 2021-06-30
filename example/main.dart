@@ -59,6 +59,13 @@ class _AutoCachedTilesPageContentState
       RegExp(r'^-?\d{0,3}\.?\d{0,6}$'),
       allow: true);
 
+  ShapeChooser shapeChooser = ShapeChooser(
+    RegionType.rectangle,
+    fillColor: Colors.green.withAlpha(128),
+    borderColor: Colors.green,
+  );
+  ShapeChooserResult? shapeChooserResult;
+
   @override
   void initState() {
     super.initState();
@@ -240,31 +247,55 @@ class _AutoCachedTilesPageContentState
     _hideKeyboard();
     final currentCacheSize =
         await TileStorageCachingManager.cacheDbSize / 1024 / 1024;
-    final currentCacheAmount =
-        await TileStorageCachingManager.cachedTilesAmount;
-    final result = await showDialog<bool>(
+    String currentCacheAmountString = '';
+    final List<String> cacheNames = [];
+    for (String cacheName in await TileStorageCachingManager.allCacheNames) {
+      currentCacheAmountString +=
+          '\nCached Tiles In \'$cacheName\': ${await TileStorageCachingManager.cachedTilesAmountName(cacheName)}';
+      cacheNames.add(cacheName);
+    }
+    List<TextButton> buttons = [
+      TextButton(
+        child: Text('Cancel'),
+        onPressed: () => Navigator.pop(context, 'false'),
+      ),
+      TextButton(
+        child: Text('Clear All Cache'),
+        onPressed: () => Navigator.pop(context, 'all'),
+      ),
+    ];
+    if (currentCacheAmountString.trim() != '')
+      cacheNames.forEach((cacheName) {
+        if (cacheName.trim() != '')
+          buttons.add(TextButton(
+            child: Text(
+              'Clear \'$cacheName\'',
+            ),
+            onPressed: () => Navigator.pop(
+              context,
+              cacheName,
+            ),
+          ));
+      });
+    final result = await showDialog<String>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         title: Text('Clear Cache'),
         content:
             Text('Total Cache Size: ${currentCacheSize.toStringAsFixed(2)} MB'
-                '\nTotal Cached Tiles: $currentCacheAmount'
+                '$currentCacheAmountString'
                 '\nAre you sure you want to clear the cache?'),
-        actions: <Widget>[
-          TextButton(
-            child: Text('Cancel'),
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          TextButton(
-            child: Text('Clear Cache'),
-            onPressed: () => Navigator.pop(context, true),
-          )
-        ],
+        actions: buttons,
       ),
     );
-    if (result == true) {
-      await TileStorageCachingManager.cleanCache();
+    if (result != 'false') {
+      if (result == 'all')
+        await TileStorageCachingManager.cleanAllCache();
+      else
+        await TileStorageCachingManager.cleanCacheName(result!);
       _showErrorSnack('Cache cleared successfully');
+      setState(() {});
     }
   }
 
@@ -593,6 +624,11 @@ class _AutoCachedTilesPageContentState
               maxZoom: 19.0,
               zoom: 13.0,
               interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+              onTap: (point) {
+                setState(() {
+                  shapeChooserResult = shapeChooser.onTapReciever(point);
+                });
+              },
             ),
             layers: [
               tileLayerOptions,
@@ -613,6 +649,7 @@ class _AutoCachedTilesPageContentState
                       Colors.green.withAlpha(128),
                       Colors.green,
                     ),
+              shapeChooserResult.toDrawable(),
             ],
           ),
         ),
@@ -703,7 +740,11 @@ class _AutoCachedTilesPageContentState
               ),
               IconButton(
                 icon: Icon(Icons.downloading),
-                onPressed: () {
+                onPressed: () async {
+                  if (!await StorageCachingTileProvider
+                      .requestIgnoreBatteryOptimizations(context))
+                    _showErrorSnack(
+                        'Ignore Battery Optimizations permission denied. Background download will only work whilst app is in foreground.');
                   _loadMap(tileProvider, tileLayerOptions, true);
                 },
               ),

@@ -135,7 +135,6 @@ class ShapeChooser {
   }
 }
 
-/// Contains an extension method to perform conversions between two types easily
 extension shapeChooserResultExts on ShapeChooserResult? {
   /// Convert the `ShapeChooserResult`, which is normally nullable, to a `PolygonLayerOptions` (never null) to be drawn immediately
   PolygonLayerOptions toDrawable() {
