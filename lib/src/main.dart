@@ -170,6 +170,7 @@ class StorageCachingTileProvider extends TileProvider {
         ),
         (String taskId) async {
           if (taskId == 'backgroundTileDownload') {
+            // ignore: cancel_subscriptions
             StreamSubscription<DownloadProgress>? sub;
             sub = downloadRegion(region).listen((event) async {
               AndroidNotificationDetails androidPlatformChannelSpecifics =
