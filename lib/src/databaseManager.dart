@@ -6,21 +6,22 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:tuple/tuple.dart';
+import 'package:tuple/tuple.dart' show Tuple2;
 
-/// Singleton for managing tile sqlite db.
+/// Manages caching database using sqflite
 class TileStorageCachingManager {
   static TileStorageCachingManager? _instance;
 
   static const int kDefaultMaxTileAmount = 20000;
-  static final kMaxRefreshRowsCount = 10;
-  static final String _kDbName = 'tile_cach.db';
+  static final int kMaxRefreshRowsCount = 10;
+  static final String _kDbName = 'tileStore.db';
   static final String _kTilesTable = 'tiles';
   static final String _kZoomLevelColumn = 'zoom_level';
   static final String _kTileRowColumn = 'tile_row';
   static final String _kTileColumnColumn = 'tile_column';
   static final String _kTileDataColumn = 'tile_data';
   static final String _kUpdateDateColumn = '_lastUpdateColumn';
+  static final String _kCacheNameColumn = 'cache_id';
   static final String _kSizeTriggerName = 'size_trigger';
 
   static final String _kTileCacheConfigTable = 'config';
@@ -36,6 +37,7 @@ class TileStorageCachingManager {
     return _instance!;
   }
 
+  /// Create an instance of the caching database
   factory TileStorageCachingManager() => _getInstance();
 
   TileStorageCachingManager._internal();
@@ -65,15 +67,17 @@ class TileStorageCachingManager {
     return path;
   }
 
-  static String _getSizeTriggerQuery(int tileCount) => '''
+  static String _getSizeTriggerQuery(int tileCount,
+          {String cacheName = 'mainCache'}) =>
+      '''
         CREATE TRIGGER $_kSizeTriggerName 
 	      AFTER INSERT on $_kTilesTable
-	      WHEN (select count(*) from $_kTilesTable) > $tileCount
+	      WHEN (select count(*) from $_kTilesTable where $_kCacheNameColumn == \'$cacheName\') > $tileCount
 	        BEGIN
 		        DELETE from $_kTilesTable where $_kUpdateDateColumn <= 
 		          (select $_kUpdateDateColumn  from $_kTilesTable 
 		            order by $_kUpdateDateColumn asc 
-		            LIMIT 1 OFFSET $kMaxRefreshRowsCount);
+		            LIMIT 1 OFFSET $kMaxRefreshRowsCount) AND $_kCacheNameColumn == \'$cacheName\';
 	        END;
       ''';
 
@@ -112,14 +116,16 @@ class TileStorageCachingManager {
         $_kTileColumnColumn INTEGER NOT NULL,
         $_kTileRowColumn INTEGER NOT NULL,
         $_kTileDataColumn BLOB NOT NULL,
-        $_kUpdateDateColumn INTEGER NOT NULL
+        $_kUpdateDateColumn INTEGER NOT NULL,
+        $_kCacheNameColumn TEXT NOT NULL
       )
     ''');
     batch.execute('''
        CREATE UNIQUE INDEX  tile_index ON $_kTilesTable (
          $_kZoomLevelColumn, 
          $_kTileColumnColumn, 
-         $_kTileRowColumn
+         $_kTileRowColumn,
+         $_kCacheNameColumn
        )
     ''');
     batch.execute(_getSizeTriggerQuery(maxTileAmount));
@@ -130,12 +136,13 @@ class TileStorageCachingManager {
   /// Return [Tuple2], where [Tuple2.item1] is bytes of tile image,
   /// [Tuple2.item2] - last update [DateTime] of this tile.
   static Future<Tuple2<Uint8List, DateTime>?> getTile(Coords coords,
-      {Duration? valid}) async {
-    List<Map> result = await (await _getInstance().database)
-        .rawQuery('select $_kTileDataColumn, $_kUpdateDateColumn from tiles '
-            'where $_kZoomLevelColumn = ${coords.z} AND '
-            '$_kTileColumnColumn = ${coords.x} AND '
-            '$_kTileRowColumn = ${coords.y} limit 1');
+      {String cacheName = 'mainCache'}) async {
+    List<Map> result = await (await _getInstance().database).rawQuery(
+        'select $_kTileDataColumn, $_kUpdateDateColumn from $_kTilesTable '
+        'where $_kZoomLevelColumn = ${coords.z} AND '
+        '$_kTileColumnColumn = ${coords.x} AND '
+        '$_kTileRowColumn = ${coords.y} AND '
+        '$_kCacheNameColumn = \'$cacheName\' limit 1');
     return result.isNotEmpty
         ? Tuple2(
             result.first[_kTileDataColumn],
@@ -144,24 +151,26 @@ class TileStorageCachingManager {
         : null;
   }
 
-  /// Save tile bytes [tile] with [cords] to local database.
+  /// Save tile bytes [tile] with [coords] to local database.
   /// Also saves update timestamp [DateTime.now].
-  static Future<void> saveTile(Uint8List tile, Coords cords) async {
+  static Future<void> saveTile(Uint8List tile, Coords coords,
+      {String cacheName = 'mainCache'}) async {
     await (await _getInstance().database).insert(
         _kTilesTable,
         {
-          _kZoomLevelColumn: cords.z,
-          _kTileColumnColumn: cords.x,
-          _kTileRowColumn: cords.y,
+          _kZoomLevelColumn: coords.z,
+          _kTileColumnColumn: coords.x,
+          _kTileRowColumn: coords.y,
           _kUpdateDateColumn: (DateTime.now().millisecondsSinceEpoch ~/ 1000),
-          _kTileDataColumn: tile
+          _kTileDataColumn: tile,
+          _kCacheNameColumn: cacheName
         },
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   /// Change the maximum number of persisted tiles.
   ///
-  /// Default value is 20000, and average tile size is ~0.017 MB, so default cache size is ~340 MB.
+  /// Default value is 20000, and this applies to each cache.
   /// To avoid collisions this method should be called before widget build.
   static Future<void> changeMaxTileAmount(int maxTileAmount) async {
     assert(maxTileAmount > 0, 'maxTileAmount must be bigger then 0');
@@ -197,11 +206,28 @@ class TileStorageCachingManager {
   }
 
   /// Clean all cached tiles without further notice. Not undoable.
-  static Future<void> cleanCache() async {
+  static Future<void> cleanAllCache() async {
     if (!(await isDbFileExists)) return;
     final db = await _getInstance().database;
     final maxTileAmount = await maxCachedTilesAmount;
     await _createCacheTable(db, maxTileAmount: maxTileAmount);
+  }
+
+  /// Clean all cached tiles without further notice. Not undoable.
+  ///
+  /// Deprecated. Use `cleanAllCache()` instead.
+  @Deprecated(
+      'This function will be removed in the next release. Migrate to the Caches API as soon as possible (see docs).')
+  static Future<void> cleanCache() async {
+    await cleanAllCache();
+  }
+
+  /// Clean all cached tiles under a specific cache name. Not undoable.
+  static Future<int> cleanCacheName(String cacheName) async {
+    if (!(await isDbFileExists)) return 0;
+    final db = await _getInstance().database;
+    return await db.delete(_kTilesTable,
+        where: '$_kCacheNameColumn == \'$cacheName\'');
   }
 
   /// [File] with cached tiles db
@@ -224,6 +250,29 @@ class TileStorageCachingManager {
     final db = await _getInstance().database;
     List<Map> result = await db.rawQuery('select count(*) from $_kTilesTable');
     return result.isNotEmpty ? result.first['count(*)'] : 0;
+  }
+
+  /// Get number of cached tiles in a specific cache
+  static Future<int> cachedTilesAmountName(String cacheName) async {
+    if (!(await isDbFileExists)) return 0;
+    final db = await _getInstance().database;
+    List<Map> result = await db.rawQuery(
+        'select count(*) from $_kTilesTable where $_kCacheNameColumn == \'$cacheName\'');
+    return result.isNotEmpty ? result.first['count(*)'] : 0;
+  }
+
+  /// Get all the cache names that currently exist
+  static Future<List<String>> get allCacheNames async {
+    if (!(await isDbFileExists)) return [];
+    final db = await _getInstance().database;
+    List<Map> result = await db
+        .rawQuery('select distinct $_kCacheNameColumn from $_kTilesTable');
+    if (result.isNotEmpty) {
+      List<String> output = [];
+      result.forEach((e) => output.add(e.values.toList()[0]));
+      return output;
+    }
+    return [];
   }
 
   /// Get current maxCachedTilesAmount

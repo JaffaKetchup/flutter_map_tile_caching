@@ -1,5 +1,31 @@
 # Changelog
 
+## [3.0.0] - 2021/07/04
+
+* Last quick fixes
+* Publish to pub.dev
+* Use AlarmManager for background tasks to resolve issues
+
+## [3.0.0-dev.2] - 2021/07/01
+
+* Move to more appropriate date system for changelog
+* Rewritten documentation
+* Improved examples
+* Improved easy shape chooser
+
+## [3.0.0-dev.1] - 30/06/2021
+
+* Huge refactoring to make methods easier to use and more flexible
+* Addition of circle region
+* Refactoring of square region
+* Removal of tuple from main methods
+* Addition of ability to exclude pure sea tiles
+* Addition of multiple caching tables
+* Performance improvements
+* Add donation method
+* Add GitHub actions
+* Added easy shape chooser
+
 ## [2.0.2] - 04/06/2021
 
 * Publish to pub.dev
