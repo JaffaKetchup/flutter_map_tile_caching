@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.0.0] - 2021/07/04
+
+* Last quick fixes
+* Publish to pub.dev
+* Use AlarmManager for background tasks to resolve issues
+
+## [3.0.0-dev.2] - 2021/07/01
+
+* Move to more appropriate date system for changelog
+* Rewritten documentation
+* Improved examples
+* Improved easy shape chooser
+
 ## [3.0.0-dev.1] - 30/06/2021
 
 * Huge refactoring to make methods easier to use and more flexible
@@ -11,9 +24,7 @@
 * Performance improvements
 * Add donation method
 * Add GitHub actions
-* STILL NEED TO rewrite documentation
-* STILL NEED TO improve circle generation to handle large distances
-* STILL NEED TO finalise API for `ShapeChooser()`
+* Added easy shape chooser
 
 ## [2.0.2] - 04/06/2021
 

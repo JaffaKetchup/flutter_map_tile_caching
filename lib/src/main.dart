@@ -237,10 +237,11 @@ class StorageCachingTileProvider extends TileProvider {
           BackgroundFetch.finish(taskId);
         },
       );
-      BackgroundFetch.scheduleTask(
+      await BackgroundFetch.scheduleTask(
         TaskConfig(
           taskId: 'backgroundTileDownload',
-          delay: 0,
+          delay: 1,
+          forceAlarmManager: true,
         ),
       );
     } else

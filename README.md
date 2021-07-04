@@ -43,7 +43,11 @@ Please note that this library has not been tested on iOS devices, so issues may 
 
 ## Example
 
-To view the example, copy the `main.dart` file inside the `example` directory, and run it inside your own new project. You'll need to add this package (see below) and `flutter_map` to that project's dependencies.
+To view the example project, just clone the .zip file in the example folder and unzip it to a local directory. You should be able to run it instantly on Android - iOS will require extra setup. Beware, this solution may be older than the latest example.
+
+For the latest example, but no other code or build settings, just clone the main.dart file in the example folder to a local project, and import this library and `flutter_map` in the pubspec.yaml file.
+
+Alternatively, if you just want to see how it works in real life, you can run the example app on an Android device by installing the APK file found in the 'example' directory.
 
 ## Functionality
 
@@ -67,11 +71,13 @@ Read more about the caching behaviour below.
 #### `downloadRegion()` and it's background counterpart
 
 Use this to download large areas of a map before the user visits somewhere (for example before a hike in the wilderness).
+A region can currently be a rectangular region or a circular region. More types are planned for the future.
 Read more about the caching behaviour below.
 
 #### Easy Shape Chooser
 
 Use this as a 'layer' on your map to allow the user an easy way to select an area for downloading. Use the same 'instance' throughout your script to avoid duplicate conflicts.
+A region can currently be a rectangular region or a circular region. More types are planned for the future.
 This will be worked on in the future to bring better functionality.
 
 ### Migrate to v3 from v2
@@ -108,11 +114,13 @@ The background download functionality is buggy and does not function as expected
 
 To have full background functionality including not being throttled by the system and being guaranteed to run even if the app is 'minimized', request the ignore battery optimizations permission by calling `requestIgnoreBatteryOptimizations()` before starting a background task. This will display a system interruption prompt to the user to allow or deny the permission. The background task will still run if the permission is denied, but only if the user is in the app - elsewhere, downloading is not guaranteed to be running.
 
-## Limitations & Testing
+## Limitations, Accuracy & Testing
 
 This package does not support the web platform (due to the usage of `dart:io` and the `sqflite` package).
 
-This package has only been tested on Android devices (one Android 6 (only partially), one Android 8, one Android 11 emulator).
+The circle region functions get less accurate the larger the radius of the circle. To prevent interruptive errors, the values of the calculation have been clamped to a valid minimum and maximum, but this causes side effects. To prevent these side effects, only use circles smaller than the average size of a European country, and be cautious when using circles around extremes (the equator, the longitudes of 180 or -180, and the latiudes of -90 or 90). If selecting a large region or working around the aformentioned extremes, use rectangular regions instead. A fix for this may appear in the future
+
+This package has only been tested on Android devices (one real Android 8, one Android 8 emulator, and one Android 11 emulator).
 
 ## Supporting Me
 

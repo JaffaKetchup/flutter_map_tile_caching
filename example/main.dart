@@ -26,7 +26,7 @@ class AutoCachedTilesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text('Map Downloading & Painting Demo')),
+        appBar: AppBar(title: Text('Map Downloading & Caching Demo')),
         body: _AutoCachedTilesPageContent());
   }
 }
