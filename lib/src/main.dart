@@ -18,34 +18,50 @@ import 'databaseManager.dart';
 
 /// A `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database
 ///
-/// A class containing methods to download regions of a map to a local caching database
+/// Also contains methods to download regions of a map to a local caching database using an instance
 ///
-/// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a caching table to use that cache
+/// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a caching table to use that cache instead of the default. Pass `preloadSurroundings` as true to automatically load surrounding tiles to avoid the appearance of grey tiles.
 ///
 /// See online documentation for more information about the caching/downloading behaviour of this library.
 class StorageCachingTileProvider extends TileProvider {
+  /// The maximum number of downloadable tiles
   static final kMaxPreloadTileAreaCount = 20000;
+
+  /// The duration until a tile expires and needs to be fetched again. Defaults to 31 days.
   final Duration cachedValidDuration;
+
+  /// The name of the caching table to use for this instance. Defaults to the default caching table, `mainCache`.
   final String cacheName;
+
+  /// Whether to automatically load surrounding tiles to avoid the appearance of grey tiles. Defaults to `false`.
+  final bool preloadSurroundings;
 
   /// Create a `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database
   ///
-  /// Create a class containing methods to download regions of a map to a local caching database
+  /// Also contains methods to download regions of a map to a local caching database using an instance
   ///
-  /// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a caching table to use that cache
+  /// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a caching table to use that cache instead of the default. Pass `preloadSurroundings` as true to automatically load surrounding tiles to avoid the appearance of grey tiles.
   ///
   /// See online documentation for more information about the caching/downloading behaviour of this library.
   StorageCachingTileProvider({
     this.cachedValidDuration = const Duration(days: 31),
     this.cacheName = 'mainCache',
+    this.preloadSurroundings = false,
   });
 
-  /// Get a browsed tile as an image and save it's bytes to cache for later
+  /// Get a browsed tile as an image, paint it on the map and save it's bytes to cache for later
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
-    final tileUrl = getTileUrl(coords, options);
+    if (preloadSurroundings) {
+      for (double x = coords.x - 6; x < coords.x + 6; x++) {
+        for (double y = coords.y - 6; y < coords.y + 6; y++) {
+          //! Paint tiles here !//
+          throw UnimplementedError();
+        }
+      }
+    }
     return _CachedTileImageProvider(
-      tileUrl,
+      getTileUrl(coords, options),
       Coords<num>(coords.x, coords.y)..z = coords.z,
       cacheName: cacheName,
     );
