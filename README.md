@@ -1,5 +1,8 @@
 # flutter_map_tile_caching
 
+> ### v4 Release Branch
+> Use with caution, or (preferably) switch to the main branch. Unstable docs and code ahead!
+
 A plugin for the [`flutter_map`](https://pub.dev/packages/flutter_map) library to provide an easy way to cache tiles and download map regions for offline use.
 
 [![Pub](https://img.shields.io/pub/v/flutter_map_tile_caching.svg)](https://pub.dev/packages/flutter_map_tile_caching) [![likes](https://badges.bar/flutter_map_tile_caching/likes)](https://pub.dev/packages/flutter_map_tile_caching/score) [![pub points](https://badges.bar/flutter_map_tile_caching/pub%20points)](https://pub.dev/packages/flutter_map_tile_caching/score)
