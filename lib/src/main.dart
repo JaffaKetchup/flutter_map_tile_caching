@@ -1,54 +1,194 @@
 import 'dart:async';
-import 'dart:ui';
+import 'dart:io';
 import 'dart:io' as io;
 
 import 'package:background_fetch/background_fetch.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map_tile_caching/src/storageManager.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:meta/meta.dart';
+import 'package:network_to_file_image/network_to_file_image.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:tuple/tuple.dart';
 
 import 'regions/downloadableRegion.dart';
-import 'databaseManager.dart';
+
+/// Multiple behaviors dictating how caching should be carried out, if at all
+enum CacheBehavior {
+  /// Only get tiles from the cache
+  ///
+  /// No tile will be cached. If the tile is not available, an error will be raised.
+  cacheOnly,
+
+  /// Try to get tiles from the cache before looking online
+  ///
+  /// A tile may be cached. If the cached tile is not available, and the Internet/tile is unreachable, an error will be raised.
+  ///
+  /// This is the default behaviour.
+  cacheFirst,
+
+  /// Only get tiles from the Internet
+  ///
+  /// No tile will be cached. If the Internet/tile is unreachable, an error will be raised.
+  onlineOnly,
+}
+
+/// An error that:
+/// 'The tile could not be found in the cache, and the Internet was either unallowed or unreachable.'
+class CachedNotAvailable implements Exception {
+  /// A message instead of the default message
+  final String message;
+
+  /// Creates an error that:
+  /// 'The tile could not be found in the cache, and the Internet was either unallowed or unreachable.'
+  @internal
+  CachedNotAvailable([
+    this.message =
+        'The tile could not be found in the cache, and the Internet was either unallowed or unreachable.',
+  ]);
+}
 
 /// A `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database
 ///
-/// A class containing methods to download regions of a map to a local caching database
+/// Also contains methods to download regions of a map to a local caching database using an instance
 ///
-/// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a caching table to use that cache
+/// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a cache store to use it instead of the default.
 ///
 /// See online documentation for more information about the caching/downloading behaviour of this library.
 class StorageCachingTileProvider extends TileProvider {
+  /// The maximum number of downloadable tiles
   static final kMaxPreloadTileAreaCount = 20000;
+
+  /// The duration until a tile expires and needs to be fetched again. Defaults to 31 days.
   final Duration cachedValidDuration;
-  final String cacheName;
+
+  /// The name of the cache store to use for this instance. Defaults to the default cache, 'mainCache'.
+  final String storeName;
+
+  /// Whether to automatically load surrounding tiles to avoid the appearance of grey tiles. Defaults to `false`.
+  //final bool preloadSurroundings;
+
+  /// The directory to place cache stores into. Use `await StorageCachingTileProvider.normalDirectory` wherever possible. Required.
+  final Directory parentDirectory;
+
+  /// The behavior method to get the tile. Defaults to `cacheFirst`.
+  final CacheBehavior behavior;
 
   /// Create a `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database
   ///
-  /// Create a class containing methods to download regions of a map to a local caching database
+  /// Also contains methods to download regions of a map to a local caching database using an instance
   ///
-  /// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a caching table to use that cache
+  /// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a cache store to use it instead of the default.
   ///
   /// See online documentation for more information about the caching/downloading behaviour of this library.
   StorageCachingTileProvider({
     this.cachedValidDuration = const Duration(days: 31),
-    this.cacheName = 'mainCache',
+    this.storeName = 'mainCache',
+    //this.preloadSurroundings = false,
+    this.behavior = CacheBehavior.cacheFirst,
+    required this.parentDirectory,
   });
 
-  /// Get a browsed tile as an image and save it's bytes to cache for later
+  //! GETTER FUNCTIONS !//
+
+  /// Get the application's documents directory
+  ///
+  /// Caching in here will show caches under the App Storage - instead of under App Cache - in Settings, and therefore the OS or other apps cannot clear the cache without telling the user.
+  static Future<Directory> get normalDirectory async {
+    return await getApplicationDocumentsDirectory();
+  }
+
+  /// Get the temporary storage directory
+  ///
+  /// Caching in here will show caches under the App Cache - instead of App Storage - in Settings. Therefore the OS can clear cached tiles at any time without telling the user.
+  ///
+  /// For this reason, it is not recommended to use this store. Use `normalDirectory` by default instead.
+  static Future<Directory> get unstableDirectory async {
+    return await getTemporaryDirectory();
+  }
+
+  Future<void> _getAndSaveTile(
+    Coords<num> coord,
+    TileLayerOptions options,
+    http.Client client,
+    Function(String, dynamic) errorHandler,
+  ) async {
+    final Coords<double> coordDouble =
+        Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
+    final String url = getTileUrl(coordDouble, options);
+
+    await TileStorageManager(parentDirectory, storeName).newTile(
+      url: url,
+      client: client,
+      errorHandler: (e) => errorHandler(url, e),
+    );
+  }
+
+  /// Get a browsed tile as an image, paint it on the map and save it's bytes to cache for later
   @override
-  ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
-    final tileUrl = getTileUrl(coords, options);
+  /*ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
+    if (preloadSurroundings) {
+      for (double x = coords.x - 6; x < coords.x + 6; x++) {
+        for (double y = coords.y - 6; y < coords.y + 6; y++) {
+          //? Paint tiles here //
+          throw UnimplementedError();
+        }
+      }
+    }
     return _CachedTileImageProvider(
-      tileUrl,
+      getTileUrl(coords, options),
       Coords<num>(coords.x, coords.y)..z = coords.z,
       cacheName: cacheName,
     );
+  }*/
+  ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
+    final File fileReal = File(
+      parentDirectory.path +
+          '/$storeName/tiles/' +
+          getTileUrl(coords, options)
+              .replaceAll('https://', '')
+              .replaceAll('http://', '')
+              .replaceAll("/", ""),
+    );
+
+    NetworkToFileImage ntfi(bool url, bool file) {
+      try {
+        return NetworkToFileImage(
+          url: url ? getTileUrl(coords, options) : null,
+          file: file ? fileReal : null,
+        );
+      } catch (e) {
+        throw CachedNotAvailable();
+      }
+    }
+
+    if (behavior == CacheBehavior.onlineOnly) {
+      return ntfi(true, false);
+    } else if (behavior == CacheBehavior.cacheOnly) {
+      if (!Directory(parentDirectory.path + '/$storeName/tiles/').existsSync())
+        throw CachedNotAvailable();
+      return ntfi(false, true);
+    } else {
+      Directory(parentDirectory.path + '/$storeName/tiles/')
+          .createSync(recursive: true);
+
+      if (fileReal.existsSync() &&
+          fileReal
+              .lastModifiedSync()
+              .add(cachedValidDuration)
+              .isBefore(DateTime.now()))
+        TileStorageManager(parentDirectory, storeName).deleteTile(
+          fileName: getTileUrl(coords, options)
+              .replaceAll('https://', '')
+              .replaceAll('http://', '')
+              .replaceAll("/", ""),
+        );
+      return ntfi(true, true);
+    }
   }
 
   //! DOWNLOAD (FOREGROUND) FUNCTIONS !//
@@ -417,200 +557,5 @@ class StorageCachingTileProvider extends TileProvider {
     }
 
     client.close();
-  }
-
-  //! MISCELLANEOUS FUNCTIONS !//
-
-  Future<void> _getAndSaveTile(
-    Coords<num> coord,
-    TileLayerOptions options,
-    http.Client client,
-    Function(String, dynamic) errorHandler,
-  ) async {
-    String url = "";
-    try {
-      final coordDouble = Coords(coord.x.toDouble(), coord.y.toDouble())
-        ..z = coord.z.toDouble();
-      url = getTileUrl(coordDouble, options);
-      final bytes = (await client.get(Uri.parse(url))).bodyBytes;
-      await TileStorageCachingManager.saveTile(bytes, coord);
-    } catch (e) {
-      errorHandler(url, e);
-    }
-  }
-
-  //! DEPRECATED FUNCTIONS !//
-
-  /// Caching tile area by provided [bounds], zoom edges and [options].
-  /// The maximum number of tiles to load is [kMaxPreloadTileAreaCount].
-  /// To check tiles number before calling this method, use
-  /// [approximateTileAmount].
-  /// Return [Tuple3] with number of downloaded tiles as [Tuple3.item1],
-  /// number of errored tiles as [Tuple3.item2], and number of total tiles that need to be downloaded as [Tuple3.item3]
-  ///
-  /// Deprecated. Migrate to [downloadRegion()]
-  @Deprecated(
-      'This function will be removed in the next release. Migrate to the Regions API as soon as possible (see docs).')
-  Stream<Tuple3<int, int, int>> loadTiles(
-      LatLngBounds bounds, int minZoom, int maxZoom, TileLayerOptions options,
-      {Function(dynamic)? errorHandler}) async* {
-    final tilesRange = approximateTileRange(
-        bounds: bounds,
-        minZoom: minZoom,
-        maxZoom: maxZoom,
-        tileSize: CustomPoint(options.tileSize, options.tileSize));
-    assert(tilesRange.length <= kMaxPreloadTileAreaCount,
-        '${tilesRange.length} exceeds maximum number of pre-cacheable tiles');
-    var errorsCount = 0;
-    for (var i = 0; i < tilesRange.length; i++) {
-      try {
-        final cord = tilesRange[i];
-        final cordDouble = Coords(cord.x.toDouble(), cord.y.toDouble());
-        cordDouble.z = cord.z.toDouble();
-        final url = getTileUrl(cordDouble, options);
-        final bytes = (await http.get(Uri.parse(url))).bodyBytes;
-        await TileStorageCachingManager.saveTile(bytes, cord);
-      } catch (e) {
-        errorsCount++;
-        if (errorHandler != null) errorHandler(e);
-      }
-      yield Tuple3(i + 1, errorsCount, tilesRange.length);
-    }
-  }
-
-  /// Get approximate tile amount from bounds and zoom edges
-  ///
-  /// Deprecated. Migrate to [checkRegion()]
-  @Deprecated(
-      'This function will be removed in the next release. Migrate to the Regions API as soon as possible (see docs).')
-  static int approximateTileAmount({
-    required LatLngBounds bounds,
-    required int minZoom,
-    required int maxZoom,
-    Crs crs = const Epsg3857(),
-    tileSize = const CustomPoint(256, 256),
-  }) {
-    assert(minZoom <= maxZoom, 'minZoom > maxZoom');
-    var amount = 0;
-    for (var zoomLevel in List<int>.generate(
-        maxZoom - minZoom + 1, (index) => index + minZoom)) {
-      final nwPoint = crs
-          .latLngToPoint(bounds.northWest, zoomLevel.toDouble())
-          .unscaleBy(tileSize)
-          .floor();
-      final sePoint = crs
-              .latLngToPoint(bounds.southEast, zoomLevel.toDouble())
-              .unscaleBy(tileSize)
-              .ceil() -
-          CustomPoint(1, 1);
-      final a = sePoint.x - nwPoint.x + 1;
-      final b = sePoint.y - nwPoint.y + 1;
-      amount += a * b as int;
-    }
-    return amount;
-  }
-
-  /// Get tileRange from bounds and zoom edges.
-  ///
-  /// Deprecated.
-  @Deprecated(
-      'This function will be removed in the next release, and merged to another function. Migrate to the Regions API as soon as possible (see docs).')
-  static List<Coords> approximateTileRange(
-      {required LatLngBounds bounds,
-      required int minZoom,
-      required int maxZoom,
-      Crs crs = const Epsg3857(),
-      tileSize = const CustomPoint(256, 256)}) {
-    assert(minZoom <= maxZoom, 'minZoom > maxZoom');
-    final cords = <Coords>[];
-    for (var zoomLevel in List<int>.generate(
-        maxZoom - minZoom + 1, (index) => index + minZoom)) {
-      final nwPoint = crs
-          .latLngToPoint(bounds.northWest, zoomLevel.toDouble())
-          .unscaleBy(tileSize)
-          .floor();
-      final sePoint = crs
-              .latLngToPoint(bounds.southEast, zoomLevel.toDouble())
-              .unscaleBy(tileSize)
-              .ceil() -
-          CustomPoint(1, 1);
-      for (var x = nwPoint.x; x <= sePoint.x; x++) {
-        for (var y = nwPoint.y; y <= sePoint.y; y++) {
-          cords.add(Coords(x, y)..z = zoomLevel);
-        }
-      }
-    }
-    return cords;
-  }
-}
-
-/// An `ImageProvider` to deal with the communication between `TileProvider` and caching manager
-class _CachedTileImageProvider extends ImageProvider<Coords<num>> {
-  /// The function to use if the network request fails
-  final Function(dynamic)? networkErrorHandler;
-
-  /// The URL used to get the image from the network
-  final String url;
-
-  /// The coordinates of the tile to get from the network
-  final Coords<num> coords;
-
-  /// How long the image is valid for before it needs to be requested again
-  ///
-  /// Defaults to 31 days.
-  final Duration cacheValidDuration;
-
-  /// The name of the caching table to write the image bytes to for future use
-  ///
-  /// Defaults to the default caching table.
-  final String cacheName;
-
-  /// Creates an `ImageProvider` to deal with the communication between `TileProvider` and caching manager
-  _CachedTileImageProvider(
-    this.url,
-    this.coords, {
-    this.cacheValidDuration = const Duration(days: 31),
-    this.networkErrorHandler,
-    this.cacheName = 'mainCache',
-  });
-
-  @override
-  ImageStreamCompleter load(Coords<num> key, decode) =>
-      MultiFrameImageStreamCompleter(
-          codec: _loadAsync(cacheName: cacheName),
-          scale: 1,
-          informationCollector: () sync* {
-            yield DiagnosticsProperty<ImageProvider>('Image provider', this);
-            yield DiagnosticsProperty<Coords>('Image key', key);
-          });
-
-  @override
-  Future<Coords<num>> obtainKey(ImageConfiguration configuration) =>
-      SynchronousFuture(coords);
-
-  Future<Codec> _loadAsync({String cacheName = 'mainCache'}) async {
-    final localBytes = await TileStorageCachingManager.getTile(
-      coords,
-      cacheName: cacheName,
-    );
-    var bytes = localBytes?.item1;
-    if ((DateTime.now().millisecondsSinceEpoch -
-            (localBytes?.item2.millisecondsSinceEpoch ?? 0)) >
-        cacheValidDuration.inMilliseconds) {
-      try {
-        bytes = (await http.get(Uri.parse(url))).bodyBytes;
-        await TileStorageCachingManager.saveTile(
-          bytes,
-          coords,
-          cacheName: cacheName,
-        );
-      } catch (e) {
-        if (networkErrorHandler != null) networkErrorHandler!(e);
-      }
-    }
-    if (bytes == null) {
-      return Future<Codec>.error('Failed to load tile for coords: $coords');
-    }
-    return await PaintingBinding.instance!.instantiateImageCodec(bytes);
   }
 }
