@@ -21,7 +21,7 @@ import 'regions/downloadableRegion.dart';
 enum CacheBehavior {
   /// Only get tiles from the cache
   ///
-  /// No tile will be cached. If the tile is not available, an error will be raised.
+  /// No tile will be cached. If the cached tile is not available, an error will be raised.
   cacheOnly,
 
   /// Try to get tiles from the cache before looking online
@@ -30,6 +30,11 @@ enum CacheBehavior {
   ///
   /// This is the default behaviour.
   cacheFirst,
+
+  /// Update cache from the Internet
+  ///
+  /// A tile may be cached. If the Internet is unreachable, an error will be raised.
+  cacheRenew,
 
   /// Only get tiles from the Internet
   ///
@@ -60,17 +65,17 @@ class CachedNotAvailable implements Exception {
 ///
 /// See online documentation for more information about the caching/downloading behaviour of this library.
 class StorageCachingTileProvider extends TileProvider {
-  /// The maximum number of downloadable tiles
-  static final kMaxPreloadTileAreaCount = 20000;
+  /// The maximum number of downloadable tiles per store. Defaults to 20000 (`kMaxTileDownloadCount`).
+  final int maxTileDownloadCount;
+
+  /// The default maximum number of downloadable tiles per store. Defaults to 20000.
+  static final int kMaxTileDownloadCount = 20000;
 
   /// The duration until a tile expires and needs to be fetched again. Defaults to 31 days.
   final Duration cachedValidDuration;
 
   /// The name of the cache store to use for this instance. Defaults to the default cache, 'mainCache'.
   final String storeName;
-
-  /// Whether to automatically load surrounding tiles to avoid the appearance of grey tiles. Defaults to `false`.
-  //final bool preloadSurroundings;
 
   /// The directory to place cache stores into. Use `await StorageCachingTileProvider.normalDirectory` wherever possible. Required.
   final Directory parentDirectory;
@@ -86,9 +91,9 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// See online documentation for more information about the caching/downloading behaviour of this library.
   StorageCachingTileProvider({
+    this.maxTileDownloadCount = 20000,
     this.cachedValidDuration = const Duration(days: 31),
     this.storeName = 'mainCache',
-    //this.preloadSurroundings = false,
     this.behavior = CacheBehavior.cacheFirst,
     required this.parentDirectory,
   });
@@ -130,21 +135,6 @@ class StorageCachingTileProvider extends TileProvider {
 
   /// Get a browsed tile as an image, paint it on the map and save it's bytes to cache for later
   @override
-  /*ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
-    if (preloadSurroundings) {
-      for (double x = coords.x - 6; x < coords.x + 6; x++) {
-        for (double y = coords.y - 6; y < coords.y + 6; y++) {
-          //? Paint tiles here //
-          throw UnimplementedError();
-        }
-      }
-    }
-    return _CachedTileImageProvider(
-      getTileUrl(coords, options),
-      Coords<num>(coords.x, coords.y)..z = coords.z,
-      cacheName: cacheName,
-    );
-  }*/
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     final File fileReal = File(
       parentDirectory.path +
@@ -176,11 +166,12 @@ class StorageCachingTileProvider extends TileProvider {
       Directory(parentDirectory.path + '/$storeName/tiles/')
           .createSync(recursive: true);
 
-      if (fileReal.existsSync() &&
-          fileReal
-              .lastModifiedSync()
-              .add(cachedValidDuration)
-              .isBefore(DateTime.now()))
+      if (behavior == CacheBehavior.cacheRenew ||
+          (fileReal.existsSync() &&
+              fileReal
+                  .lastModifiedSync()
+                  .add(cachedValidDuration)
+                  .isBefore(DateTime.now())))
         TileStorageManager(parentDirectory, storeName).deleteTile(
           fileName: getTileUrl(coords, options)
               .replaceAll('https://', '')
@@ -206,6 +197,8 @@ class StorageCachingTileProvider extends TileProvider {
         region.maxZoom,
         region.options,
         region.errorHandler,
+        region.crs,
+        region.tileSize,
       );
     } else if (region.type == RegionType.rectangle) {
       yield* _downloadRectangle(
@@ -214,6 +207,8 @@ class StorageCachingTileProvider extends TileProvider {
         region.maxZoom,
         region.options,
         region.errorHandler,
+        region.crs,
+        region.tileSize,
       );
     } else if (region.type == RegionType.line) {
       throw UnimplementedError();
@@ -469,7 +464,7 @@ class StorageCachingTileProvider extends TileProvider {
       crs: crs,
       tileSize: tileSize,
     );
-    assert(tiles.length <= kMaxPreloadTileAreaCount,
+    assert(tiles.length <= maxTileDownloadCount,
         '${tiles.length} exceeds maximum number of pre-cacheable tiles');
 
     final List<String> erroredUrls = [];
@@ -537,7 +532,7 @@ class StorageCachingTileProvider extends TileProvider {
       crs: crs,
       tileSize: tileSize,
     );
-    assert(tiles.length <= kMaxPreloadTileAreaCount,
+    assert(tiles.length <= maxTileDownloadCount,
         '${tiles.length} exceeds maximum number of pre-cacheable tiles');
 
     final List<String> erroredUrls = [];

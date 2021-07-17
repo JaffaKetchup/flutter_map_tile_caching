@@ -7,6 +7,7 @@ export 'src/regions/rectangle.dart';
 
 export 'src/shapeChooser.dart';
 export 'src/exts.dart';
+export 'src/preloadSurroundings.dart';
 
 export 'src/main.dart';
 export 'src/storageManager.dart';
