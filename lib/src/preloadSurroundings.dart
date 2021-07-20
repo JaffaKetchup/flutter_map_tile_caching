@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:meta/meta.dart';
 
 /// Wrapper widget for `FlutterMap()` to extend the map beyond the normal viewport to preload a certain number of tiles in each direction to avoid grey tiles
+///
+/// CAUTION: Experimental. May not work as intended. Avoid all usage.
+@experimental
 class PreloadSurroundings extends StatelessWidget {
   /// The `FlutterMap()`
   final FlutterMap map;
@@ -26,7 +30,7 @@ class PreloadSurroundings extends StatelessWidget {
   const PreloadSurroundings({
     Key? key,
     required this.map,
-    this.tilesAmount = 10,
+    this.tilesAmount = 2,
     this.tileSize = const CustomPoint(256, 256),
     this.width,
     this.height,
@@ -34,7 +38,7 @@ class PreloadSurroundings extends StatelessWidget {
           key: key,
         );
 
-  @override
+  /*@override
   Widget build(BuildContext context) {
     final num _formula =
         ((tileSize.x * tilesAmount) / MediaQuery.of(context).devicePixelRatio);
@@ -54,6 +58,31 @@ class PreloadSurroundings extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }*/
+
+  @override
+  Widget build(BuildContext context) {
+    final double _formula = tilesAmount *
+        (tileSize.x.toDouble() / MediaQuery.of(context).devicePixelRatio);
+    final double _wth = width ?? MediaQuery.of(context).size.width;
+    final double _hgt = height ?? MediaQuery.of(context).size.height;
+    print(_formula);
+    return SizedBox(
+      width: _wth,
+      height: _hgt,
+      child: Stack(
+        children: [
+          Positioned(
+            child: map,
+            left: -_formula,
+            top: -_formula,
+            right: _formula,
+            bottom: _formula,
+          ),
+        ],
+        clipBehavior: Clip.none,
+      ),
     );
   }
 }

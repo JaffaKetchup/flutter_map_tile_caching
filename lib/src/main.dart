@@ -41,21 +41,6 @@ enum CacheBehavior {
   onlineOnly,
 }
 
-/// An error that:
-/// 'The tile could not be found in the cache, and the Internet was either unallowed or unreachable.'
-class CachedNotAvailable implements Exception {
-  /// A message instead of the default message
-  final String message;
-
-  /// Creates an error that:
-  /// 'The tile could not be found in the cache, and the Internet was either unallowed or unreachable.'
-  @internal
-  CachedNotAvailable([
-    this.message =
-        'The tile could not be found in the cache, and the Internet was either unallowed or unreachable.',
-  ]);
-}
-
 /// A `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database
 ///
 /// Also contains methods to download regions of a map to a local caching database using an instance
@@ -74,14 +59,25 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Only applies to 'browse caching', ie. downloading regions will bypass this limit. Please note that this can be computationally expensive as it potentially involves sorting through this many files to find the oldest file.
   ///
+  /// Also see `strictMaxLengthEnforcement`.
+  ///
   /// Defaults to 20000, set to 0 to disable.
   final int maxStoreLength;
+
+  /// Whether to better enforce the `maxStoreLength`
+  ///
+  /// If multiple tile requests are made in quick succession, such as if the user moves the map quickly, the `maxStoreLength` may be broken. The limit acts as a almost like a 'suggestion', where tiles shouldn't be stored over, but may still be. Usually, an map restart (destroying and rebuilding) will help the number of tiles to go back down, but not always, and not always enough.
+  ///
+  /// Therefore, enabling this policy will create a loop every time a tile request is made to keep deleting the oldest tiles until the number of them is below the max. Unfortunately, this is not 100% accurate either, but it helps keep the tiles down. If the user faces performance issues, turn this off.
+  ///
+  /// Defaults to `true`.
+  final bool betterMaxLengthEnforcement;
 
   /// The duration until a tile expires and needs to be fetched again when browsing.
   ///
   /// Only has an effect when the `CacheBehavior` is set to `cacheFirst`.
   ///
-  /// Defaults to 31 days, set to 0 to disable.
+  /// Defaults to 31 days, set to a negative duration to disable.
   final Duration cachedValidDuration;
 
   /// The name of the cache store to use for this instance. Defaults to the default store, 'mainCache'.
@@ -106,6 +102,7 @@ class StorageCachingTileProvider extends TileProvider {
   /// See online documentation for more information about the caching/downloading behaviour of this library.
   StorageCachingTileProvider({
     this.maxStoreLength = 20000,
+    this.betterMaxLengthEnforcement = true,
     this.cachedValidDuration = const Duration(days: 31),
     this.storeName = 'mainCache',
     this.behavior = CacheBehavior.cacheFirst,
@@ -125,8 +122,6 @@ class StorageCachingTileProvider extends TileProvider {
     final String url = getTileUrl(coordDouble, options);
 
     try {
-      Directory(p.joinAll([parentDirectory.path, storeName]))
-          .createSync(recursive: true);
       File(
         p.joinAll([
           parentDirectory.path,
@@ -157,39 +152,38 @@ class StorageCachingTileProvider extends TileProvider {
     ]));
 
     NetworkToFileImage ntfi(bool url, bool file) {
-      try {
-        List<FileSystemEntity>? fileList;
-        if (maxStoreLength != 0 &&
-            file &&
-            url &&
-            Directory(p.joinAll([parentDirectory.path, storeName]))
-                .existsSync())
-          fileList = Directory(p.joinAll([parentDirectory.path, storeName]))
-              .listSync();
+      final Directory storeDir =
+          Directory(p.joinAll([parentDirectory.path, storeName]));
 
-        if (fileList != null &&
-            fileList.isNotEmpty &&
-            fileList.length + 1 > maxStoreLength) {
-          /*FileSystemEntity? currentOldestFile;
-          DateTime currentOldestTime = DateTime(9999);
-          fileList.forEach((element) {
-            DateTime mod = element.statSync().modified;
-            if (mod.isBefore(currentOldestTime)) {
-              currentOldestFile = element;
-              currentOldestTime = mod;
-            }
-          });
-          currentOldestFile!.deleteSync();*/
+      bool sortAndDeleteLast() {
+        final List<FileSystemEntity> fileList = storeDir.listSync();
+
+        if (fileList.length + 1 > maxStoreLength) {
           fileList.sort(
               (a, b) => b.statSync().modified.compareTo(a.statSync().modified));
-          fileList[0].deleteSync();
+          fileList.last.deleteSync();
         }
+
+        return fileList.length - 2 > maxStoreLength;
+      }
+
+      if (maxStoreLength != 0 && file && url && storeDir.existsSync()) {
+        if (betterMaxLengthEnforcement) {
+          bool reloop = true;
+          while (reloop) {
+            reloop = sortAndDeleteLast();
+          }
+        } else
+          sortAndDeleteLast();
+      }
+
+      try {
         return NetworkToFileImage(
           url: url ? getTileUrl(coords, options) : null,
           file: file ? fileReal : null,
         );
       } catch (e) {
-        throw CachedNotAvailable();
+        throw FileSystemException(e.toString());
       }
     }
 
@@ -202,11 +196,11 @@ class StorageCachingTileProvider extends TileProvider {
       return ntfi(false, true);
     else {
       if (behavior == CacheBehavior.cacheRenew ||
-          (fileReal.existsSync() &&
-              fileReal
-                  .lastModifiedSync()
-                  .add(cachedValidDuration)
-                  .isBefore(DateTime.now())))
+          (!cachedValidDuration.isNegative &&
+              fileReal.existsSync() &&
+              DateTime.now().millisecondsSinceEpoch -
+                      fileReal.lastModifiedSync().millisecondsSinceEpoch >
+                  cachedValidDuration.inMilliseconds))
         File(
           p.joinAll([
             parentDirectory.path,
@@ -499,6 +493,8 @@ class StorageCachingTileProvider extends TileProvider {
 
     final List<String> erroredUrls = [];
     final http.Client client = http.Client();
+    Directory(p.joinAll([parentDirectory.path, storeName]))
+        .createSync(recursive: true);
 
     for (var i = 0; i < tiles.length; i++) {
       await _getAndSaveTile(tiles[i], options, client, (url, e) {
@@ -565,6 +561,8 @@ class StorageCachingTileProvider extends TileProvider {
 
     final List<String> erroredUrls = [];
     final http.Client client = http.Client();
+    Directory(p.joinAll([parentDirectory.path, storeName]))
+        .createSync(recursive: true);
 
     for (var i = 0; i < tiles.length; i++) {
       await _getAndSaveTile(tiles[i], options, client, (url, e) {

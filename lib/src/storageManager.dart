@@ -39,13 +39,13 @@ class MapCachingManager {
 
   /// Retrieve a list of all names of existing cache stores
   ///
-  /// Returns null if the cache does not exist.
+  /// Returns `null` if the cache does not exist.
   List<String>? get allStoresNames {
     if (!Directory(parentDirectory.path).existsSync()) return null;
     List<String> returnable = [];
     for (FileSystemEntity dir in Directory(parentDirectory.path)
         .listSync(followLinks: false, recursive: false)) {
-      returnable.add(dir.path.split('/')[dir.path.split('/').length - 2]);
+      returnable.add(dir.path.split('/')[dir.path.split('/').length - 1]);
     }
     return returnable;
   }
@@ -54,9 +54,8 @@ class MapCachingManager {
   ///
   /// Use `.bytesToMegabytes` on the output to get the real number of megabytes
   ///
-  /// Returns null if the store does not exist.
+  /// Returns `null` if the store does not exist.
   int? get storeSize {
-    print(_joinedBasePath);
     if (!Directory(_joinedBasePath).existsSync()) return null;
     return Directory(_joinedBasePath).statSync().size;
   }
@@ -65,15 +64,23 @@ class MapCachingManager {
   ///
   /// Use `.bytesToMegabytes` on the output to get the real number of megabytes.
   ///
-  /// Returns null if the cache does not exist.
+  /// Returns `null` if the cache does not exist.
   int? get allStoresSize {
     if (!Directory(parentDirectory.path).existsSync()) return null;
-    return Directory(parentDirectory.path).statSync().size;
+    int returnable = 0;
+    if (allStoresNames != null)
+      allStoresNames!.forEach((storeName) {
+        returnable +=
+            MapCachingManager(parentDirectory, storeName).storeSize ?? 0;
+      });
+    else
+      return 0;
+    return returnable;
   }
 
   /// Retrieve the number of stored tiles in a cache store
   ///
-  /// Returns null if the store does not exist.
+  /// Returns `null` if the store does not exist.
   int? get storeLength {
     if (!Directory(_joinedBasePath).existsSync()) return null;
     return Directory(_joinedBasePath).listSync().length;
@@ -81,7 +88,7 @@ class MapCachingManager {
 
   /// Retrieve the (approximate) number of stored tiles in all cache stores
   ///
-  /// Returns null if the cache does not exist.
+  /// Returns `null` if the cache does not exist.
   int? get allStoresLength {
     if (!Directory(parentDirectory.path).existsSync()) return null;
     return (Directory(parentDirectory.path).listSync(recursive: true).length) -
