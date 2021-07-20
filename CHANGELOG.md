@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.1] - 2021/07/20
+
+* Fix bug #17 (on GitHub)
+* Removed an invalid example
+* Updated README
+
 ## [3.0.0] - 2021/07/04
 
 * Last quick fixes

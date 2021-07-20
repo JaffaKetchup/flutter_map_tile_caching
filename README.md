@@ -43,11 +43,9 @@ Please note that this library has not been tested on iOS devices, so issues may 
 
 ## Example
 
-To view the example project, just clone the .zip file in the example folder and unzip it to a local directory. You should be able to run it instantly on Android - iOS will require extra setup. Beware, this solution may be older than the latest example.
+To view the example project, create a new project and copy/replace the existing 'main.dart' file with the 'main.dart' file from this project's example folder. Then add this library to the 'pubspec.yaml' file. Finally, follow the platform-specific installation instructions above to get your app to build successfully.
 
-For the latest example, but no other code or build settings, just clone the main.dart file in the example folder to a local project, and import this library and `flutter_map` in the pubspec.yaml file.
-
-Alternatively, if you just want to see how it works in real life, you can run the example app on an Android device by installing the APK file found in the 'example' directory.
+Alternatively, if you just want to see how it works quickly, you can run the example app on an Android device by installing the APK file found in the 'example' directory. Note, however, that this file may be a few versions old.
 
 ## Functionality
 
@@ -83,8 +81,7 @@ This will be worked on in the future to bring better functionality.
 ### Migrate to v3 from v2
 
 Unfortunately, because so much has changed, the best way to migrate is to rewrite the appropriate areas of your project with the new features.
-I've tried to make v3 super easy to understand and use, even with all the new functionality, so I hope you don't find this too hard.
-I cannot foresee another update as big as this any time in the future, so hopefully future major releases shouldn't need 'migrating' as such. I'm always planning functionality however!
+I've tried to make v3 super easy to understand and use, even with all the new functionality, so I hope you don't find this too hard. Unfortunatley, the next major release may also require a large migration, as this library 'fully matures'.
 
 ## Offline/Caching Behaviour
 
