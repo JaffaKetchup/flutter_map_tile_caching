@@ -433,7 +433,11 @@ class StorageCachingTileProvider extends TileProvider {
         ..z = coord.z.toDouble();
       url = getTileUrl(coordDouble, options);
       final bytes = (await client.get(Uri.parse(url))).bodyBytes;
-      await TileStorageCachingManager.saveTile(bytes, coord);
+      await TileStorageCachingManager.saveTile(
+        bytes,
+        coord,
+        cacheName: cacheName,
+      );
     } catch (e) {
       errorHandler(url, e);
     }
