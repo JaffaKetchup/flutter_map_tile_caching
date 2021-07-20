@@ -1,10 +1,27 @@
 # Changelog
 
+## [4.0.0-dev.1] - 2021/07/20
+
+* Migrate to filesystem API
+* Add basic preload surroundings widgets
+* Fix bugs
+* Improve documentation
+* Allow manual control over `forceAlarmManager`, off by default
+* Remove very old APIs
+* Deprecate old APIs
+
+## [3.0.1] - 2021/07/20
+
+* Fix bug #17 (on GitHub)
+* Removed an invalid example
+* Updated README
+
 ## [3.0.0] - 2021/07/04
 
 * Last quick fixes
 * Publish to pub.dev
 * Use AlarmManager for background tasks to resolve issues
+* Deprecate old APIs
 
 ## [3.0.0-dev.2] - 2021/07/01
 

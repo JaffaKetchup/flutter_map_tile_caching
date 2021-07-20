@@ -50,7 +50,7 @@ abstract class BaseRegion {
 ///
 /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
 ///
-/// Should avoid manual construction (hidden class). Use a supported region shape and the `.toDownloadable()` extension on it.
+/// Should avoid manual construction. Use a supported region shape and the `.toDownloadable()` extension on it.
 ///
 /// Is returned from `.toDownloadable()`.
 class DownloadableRegion {
@@ -82,9 +82,10 @@ class DownloadableRegion {
   ///
   /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   ///
-  /// Should avoid manual construction (hidden class). Use a supported region shape and the `.toDownloadable()` extension on it.
+  /// Should avoid manual construction. Use a supported region shape and the `.toDownloadable()` extension on it.
   ///
   /// Is returned from `.toDownloadable()`.
+  @internal
   DownloadableRegion(
     this.points,
     this.minZoom,
@@ -99,9 +100,9 @@ class DownloadableRegion {
 
 /// An object representing the progress of a download
 ///
-/// Should avoid manual construction, use `DownloadProgress.placeholder()`.
+/// Should avoid manual construction, use `DownloadProgress.placeholder`.
 ///
-/// Is yielded from `StorageCachingTileProvider().downloadRegion()`, or returned from `DownloadProgress.placeholder()`.
+/// Is yielded from `StorageCachingTileProvider().downloadRegion()`, or returned from `DownloadProgress.placeholder`.
 class DownloadProgress {
   /// Number of attempted tile downloads (includes failures)
   final int completedTiles;
@@ -117,9 +118,9 @@ class DownloadProgress {
 
   /// An object representing the progress of a download
   ///
-  /// Should avoid manual construction, use `DownloadProgress.placeholder()`.
+  /// Should avoid manual construction, use `DownloadProgress.placeholder`.
   ///
-  /// Is yielded from `StorageCachingTileProvider().downloadRegion()`, or returned from `DownloadProgress.placeholder()`.
+  /// Is yielded from `StorageCachingTileProvider().downloadRegion()`, or returned from `DownloadProgress.placeholder`.
   @internal
   DownloadProgress(
     this.completedTiles,
@@ -129,7 +130,7 @@ class DownloadProgress {
   );
 
   /// Create a placeholder (all values set to 0) `DownloadProgress`, useful for `initalData` in a `StreamBuilder()`
-  static DownloadProgress placeholder() {
+  static DownloadProgress get placeholder {
     return DownloadProgress(0, 0, [], 0);
   }
 }

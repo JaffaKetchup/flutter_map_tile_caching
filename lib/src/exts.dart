@@ -19,7 +19,7 @@ extension latlngExts on LatLng {
   }
 }
 
-extension degRad on num {
+extension nums on num {
   /// Convert degrees to radians
   T degToRad<T>() {
     return (this * math.pi / 180) as T;
@@ -28,5 +28,12 @@ extension degRad on num {
   /// Convert radians to degrees
   T radToDeg<T>() {
     return (this * 180 / math.pi) as T;
+  }
+
+  /// Convert a number of bytes to a number of megabytes (real, uses 1024 basis)
+  ///
+  /// Useful after getting a cache store size
+  double get bytesToMegabytes {
+    return this / 1049000;
   }
 }

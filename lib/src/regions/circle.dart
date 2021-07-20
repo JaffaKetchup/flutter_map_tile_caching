@@ -77,7 +77,11 @@ class CircleRegion extends BaseRegion {
 }
 
 List<LatLng> _circleToOutline(
-    double lat, double lon, double d, int circleDegrees) {
+  double lat,
+  double lon,
+  double d,
+  int circleDegrees,
+) {
   final List<LatLng> output = [];
   for (int x = 0; x <= circleDegrees; x++) {
     double brng = x * math.pi / 180;
