@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.0-dev.2] - 2021/07/20
+
+* Bug fixes
+* Re-introduction of tile count limiter
+* Improve documentation
+
 ## [4.0.0-dev.1] - 2021/07/20
 
 * Migrate to filesystem API
@@ -9,6 +15,7 @@
 * Allow manual control over `forceAlarmManager`, off by default
 * Remove very old APIs
 * Deprecate old APIs
+* Removal of tile count limiter
 
 ## [3.0.1] - 2021/07/20
 
