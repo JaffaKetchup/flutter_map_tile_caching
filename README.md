@@ -111,13 +111,17 @@ The background download functionality is buggy and does not function as expected
 
 To have full background functionality including not being throttled by the system and being guaranteed to run even if the app is 'minimized', request the ignore battery optimizations permission by calling `requestIgnoreBatteryOptimizations()` before starting a background task. This will display a system interruption prompt to the user to allow or deny the permission. The background task will still run if the permission is denied, but only if the user is in the app - elsewhere, downloading is not guaranteed to be running.
 
-## Limitations, Accuracy & Testing
+## Limitations, Known Bugs & Testing
 
-This package does not support the web platform (due to the usage of `dart:io` and the `sqflite` package).
+- This package does not support the web platform (due to the usage of `dart:io` and the `sqflite` package). A fix for this may appear in the future.
 
-The circle region functions get less accurate the larger the radius of the circle. To prevent interruptive errors, the values of the calculation have been clamped to a valid minimum and maximum, but this causes side effects. To prevent these side effects, only use circles smaller than the average size of a European country, and be cautious when using circles around extremes (the equator, the longitudes of 180 or -180, and the latiudes of -90 or 90). If selecting a large region or working around the aformentioned extremes, use rectangular regions instead. A fix for this may appear in the future
+- Support may be buggy for custom tile sizes (other than 256x256) or custom CRSs (other than `Epsg3857()`), but attempts have been made at making this library compatible with those using inbuilt functionality from `flutter_map`. Further testing for compatibility will continue in the v4.0.0 release.
 
-This package has only been tested on Android devices (one real Android 8, one Android 8 emulator, and one Android 11 emulator).
+- Using `TileStorageCachingManager.changeMaxTileAmount()` will unfortunately not change the assertions in the tile provider/downloader. Until v4.0.0, the maximum number of downloadable tiles at once is 20000. This will be fixed by v4.0.0, as this release will include other refactorings.
+
+- The circle region functions get less accurate the larger the radius of the circle. To prevent interruptive errors, the values of the calculation have been clamped to a valid minimum and maximum, but this causes side effects. To prevent these side effects, only use circles smaller than the average size of a European country, and be cautious when using circles around extremes (the equator, the longitudes of 180 or -180, and the latiudes of -90 or 90). If selecting a large region or working around the aformentioned extremes, use rectangular regions instead. A fix for this may appear in the future.
+
+This package has only been tested on Android devices (one real Android 8, one Android 8 emulator, and one Android 11 emulator). However, due to the large amounts of functionality, each with many different variations, it is nearly impossible to find many bugs. Therefore, if you find a bug, please do file an Issue on GitHub, and I will do my very best to get it fixed quickly.
 
 ## Supporting Me
 

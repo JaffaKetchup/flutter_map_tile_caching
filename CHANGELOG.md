@@ -1,5 +1,10 @@
 # Changelog
 
+## [3.0.2] - 2021/07/25
+
+* Fix bug #20 (on GitHub)
+* Updated README
+
 ## [3.0.1] - 2021/07/20
 
 * Fix bug #17 (on GitHub)

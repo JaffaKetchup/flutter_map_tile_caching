@@ -48,6 +48,7 @@ class StorageCachingTileProvider extends TileProvider {
       tileUrl,
       Coords<num>(coords.x, coords.y)..z = coords.z,
       cacheName: cacheName,
+      cacheValidDuration: cachedValidDuration,
     );
   }
 
@@ -66,6 +67,8 @@ class StorageCachingTileProvider extends TileProvider {
         region.maxZoom,
         region.options,
         region.errorHandler,
+        region.crs,
+        region.tileSize,
       );
     } else if (region.type == RegionType.rectangle) {
       yield* _downloadRectangle(
@@ -74,6 +77,8 @@ class StorageCachingTileProvider extends TileProvider {
         region.maxZoom,
         region.options,
         region.errorHandler,
+        region.crs,
+        region.tileSize,
       );
     } else if (region.type == RegionType.line) {
       throw UnimplementedError();
