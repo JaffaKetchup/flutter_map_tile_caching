@@ -23,7 +23,8 @@ class CircleRegion extends BaseRegion {
     int maxZoom,
     TileLayerOptions options, {
     Function(dynamic)? errorHandler,
-    int circleDegrees = 360,
+    @Deprecated('\'circleDegrees\' has been deprecated, and will be removed in the next release. There is no newer alternative for bug safety. You should remove this parameter from your code and let it take the default (and future fixed value) 360.')
+        int circleDegrees = 360,
     Crs crs = const Epsg3857(),
     CustomPoint<num> tileSize = const CustomPoint(256, 256),
   }) {
@@ -66,12 +67,15 @@ class CircleRegion extends BaseRegion {
   }
 
   @override
-  List<LatLng> toList([int circleDegrees = 360]) {
+  List<LatLng> toList([
+    @Deprecated('\'circleDegrees\' has been deprecated, and will be removed in the next release. There is no newer alternative for bug safety. You should remove this parameter from your code and let it take the default (and future fixed value) 360.')
+        int deprecated = 360,
+  ]) {
     return _circleToOutline(
       this.center.latitudeInRad,
       this.center.longitudeInRad,
       this.radius / 1.852 / 3437.670013352,
-      circleDegrees,
+      deprecated,
     );
   }
 }

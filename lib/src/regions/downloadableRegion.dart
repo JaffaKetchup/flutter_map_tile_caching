@@ -5,13 +5,16 @@ import 'package:meta/meta.dart';
 
 /// Describes what shape, and therefore rules, a `DownloadableRegion` conforms to
 enum RegionType {
-  /// A region containing 4 points representing each corner
+  /// A region containing 2 points representing the top-left and bottom-right corners of a rectangle
   rectangle,
 
-  /// A region containing all the points along it's outline (one every degree)
+  /// A region containing 4 points representing the corners of a rectangle
+  diagonalRectangle,
+
+  /// A region containing all the points along it's outline (one every degree) representing a circle
   circle,
 
-  /// A region containing all the points along it's loci (one per side for every node)
+  /// A region with the border as the loci of a line at it's center representing multiple diagonal rectangles
   line,
 
   /// A region containing any number of points representing it's outline (one per vertice)
@@ -78,6 +81,9 @@ class DownloadableRegion {
   /// The size of each tile. Defaults to 256 by 256.
   final CustomPoint<num> tileSize;
 
+  /// Only in use for complex shapes (`line` and `customPolygon`). Dictates where the `List` should be split back into a 2D `List`.
+  final int? splitIndex;
+
   /// A downloadable region to be passed to the `StorageCachingTileProvider().downloadRegion()` function
   ///
   /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
@@ -95,7 +101,13 @@ class DownloadableRegion {
     this.errorHandler,
     this.crs = const Epsg3857(),
     this.tileSize = const CustomPoint(256, 256),
-  });
+    this.splitIndex,
+  }) : assert(
+          type == RegionType.line || type == RegionType.customPolygon
+              ? splitIndex != null
+              : true,
+          'If using a complex shape (`line` and `customPolygon`), `splitIndex` must be defined',
+        );
 }
 
 /// An object representing the progress of a download

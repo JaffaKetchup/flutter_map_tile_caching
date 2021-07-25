@@ -2,7 +2,9 @@
 // You should never need to include anything other than this file from this library in your project
 
 export 'src/regions/circle.dart';
+export 'src/regions/diagonalRectangle.dart';
 export 'src/regions/downloadableRegion.dart';
+export 'src/regions/line.dart';
 export 'src/regions/rectangle.dart';
 
 export 'src/shapeChooser.dart';

@@ -296,11 +296,10 @@ class StorageCachingTileProvider extends TileProvider {
             await Permission.ignoreBatteryOptimizations.request();
         if (statusAfter.isGranted) return true;
         return false;
-      } else if (status.isGranted) {
+      } else if (status.isGranted)
         return true;
-      } else {
+      else
         return false;
-      }
     } else
       throw UnsupportedError(
           'The background download feature is only available on Android due to limitations with other operating systems.');
