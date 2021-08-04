@@ -6,11 +6,13 @@ import 'package:meta/meta.dart';
 import 'downloadableRegion.dart';
 
 /// A region containing 4 points representing the corners of a rectangle
+@experimental
 class DiagonalRectangleRegion extends BaseRegion {
   /// The points of the rectangle in the order top-left > top-right > bottom-right > bottom-left
   final List<LatLng> points;
 
   /// Creates a region containing 4 points representing the corners of a rectangle
+  @experimental
   DiagonalRectangleRegion(this.points);
 
   @override

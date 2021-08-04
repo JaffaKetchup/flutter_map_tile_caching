@@ -81,7 +81,8 @@ class DownloadableRegion {
   /// The size of each tile. Defaults to 256 by 256.
   final CustomPoint<num> tileSize;
 
-  /// Only in use for complex shapes (`line` and `customPolygon`). Dictates where the `List` should be split back into a 2D `List`.
+  /// Only in use for complex shapes (`line` and `customPolygon`). Dictates where the 'points' `List` should be split back into a 2D `List`.
+  @experimental
   final int? splitIndex;
 
   /// A downloadable region to be passed to the `StorageCachingTileProvider().downloadRegion()` function

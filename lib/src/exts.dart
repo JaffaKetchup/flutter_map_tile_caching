@@ -2,20 +2,25 @@ import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 
 extension latlngExts on LatLng {
-  /// Calculate distance to another LatLng in km
+  /// Prefer usage of operator `>>` or `latlong2`'s `Distance()` methods
   ///
-  /// Uses average Earth radius, so not very accurate.
-  double distanceTo(LatLng point) {
-    final double dLat = (point.latitude - this.latitude).degToRad<double>();
-    final double dLon = (point.longitude - this.longitude).degToRad<double>();
+  /// Calculate distance to another LatLng in km using average Earth radius
+  double distanceTo(LatLng b) {
+    final double p = 0.017453292519943295;
+    final double formula = 0.5 -
+        math.cos((b.latitude - this.latitude) * p) / 2 +
+        math.cos(this.latitude * p) *
+            math.cos(b.latitude * p) *
+            (1 - math.cos((b.longitude - this.longitude) * p)) /
+            2;
+    return 12742 * math.asin(math.sqrt(formula)) * 1000;
+  }
 
-    final double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.sin(dLon / 2) *
-            math.sin(dLon / 2) *
-            math.cos(this.latitudeInRad) *
-            math.cos(point.latitudeInRad);
-    final double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    return 6371 * c;
+  /// Calculate distance to another LatLng in km using average Earth radius
+  ///
+  /// Not to be confused with a bitwise operator, which does not exist for this object.
+  double operator >>(LatLng point) {
+    return this.distanceTo(point);
   }
 }
 

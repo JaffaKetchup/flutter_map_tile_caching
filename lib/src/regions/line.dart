@@ -6,7 +6,6 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'downloadableRegion.dart';
-import 'diagonalRectangle.dart';
 
 /// A region with the border as the loci of a line at it's center
 class LineRegion extends BaseRegion {
@@ -99,62 +98,9 @@ class LineRegion extends BaseRegion {
     Function(dynamic)? errorHandler,
     Crs crs = const Epsg3857(),
     CustomPoint<num> tileSize = const CustomPoint(256, 256),
-    double resolution = 10,
-    void Function(List<List<LatLng>>, int)? tmp,
   }) {
-    final Distance dist = Distance();
-    final int res = (resolution * math.pi / 4).round();
-
-    final List<List<LatLng>> rects = toRealList(1);
-    final List<List<LatLng>> resRects = rects.map((rect) {
-      if (rect.length == 1) return rect;
-      final double bearing1 = dist.bearing(rect[0], rect[1]);
-      final double distance1 = dist.distance(rect[0], rect[1]);
-
-      final double bearing2 = dist.bearing(rect[1], rect[2]);
-      final double distance2 = dist.distance(rect[1], rect[2]);
-
-      final double bearing3 = dist.bearing(rect[2], rect[3]);
-      final double distance3 = dist.distance(rect[2], rect[3]);
-
-      final double bearing4 = dist.bearing(rect[3], rect[0]);
-      final double distance4 = dist.distance(rect[3], rect[0]);
-
-      final List<LatLng> returnable = [];
-
-      double i = 0;
-      while (i < distance1 / res) {
-        returnable.add(dist.offset(rect[0], res, bearing1));
-        i = i + res;
-      }
-
-      i = 0;
-      while (i < distance2 / res) {
-        returnable.add(dist.offset(rect[1], res, bearing2));
-        i = i + res;
-      }
-
-      i = 0;
-      while (i < distance3 / res) {
-        returnable.add(dist.offset(rect[2], res, bearing3));
-        i = i + res;
-      }
-
-      i = 0;
-      while (i < distance4 / res) {
-        returnable.add(dist.offset(rect[3], res, bearing4));
-        i = i + res;
-      }
-
-      return returnable;
-    }).toList();
-
-    final List<LatLng> flattened = resRects.expand((x) => x).toList();
-
-    tmp!(resRects, rects.length ~/ flattened.length);
-
     return DownloadableRegion(
-      flattened,
+      toRealList(1).expand((x) => x).toList(),
       minZoom,
       maxZoom,
       options,
@@ -162,7 +108,7 @@ class LineRegion extends BaseRegion {
       errorHandler: errorHandler,
       crs: crs,
       tileSize: tileSize,
-      splitIndex: rects.length ~/ flattened.length,
+      splitIndex: 4,
     );
   }
 

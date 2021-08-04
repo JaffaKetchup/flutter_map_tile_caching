@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:io' as io;
+import 'dart:math' as math;
 
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/material.dart';
@@ -9,12 +9,12 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'package:meta/meta.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path/path.dart' as p show joinAll;
 
 import 'regions/downloadableRegion.dart';
+import 'exts.dart';
 
 /// Multiple behaviors dictating how caching should be carried out, if at all
 enum CacheBehavior {
@@ -245,7 +245,15 @@ class StorageCachingTileProvider extends TileProvider {
         region.tileSize,
       );
     } else if (region.type == RegionType.line) {
-      throw UnimplementedError();
+      yield* _downloadLine(
+        region.points,
+        region.minZoom,
+        region.maxZoom,
+        region.options,
+        region.errorHandler,
+        region.crs,
+        region.tileSize,
+      );
     } else if (region.type == RegionType.customPolygon) {
       throw UnimplementedError();
     }
@@ -268,7 +276,8 @@ class StorageCachingTileProvider extends TileProvider {
         region.maxZoom,
       ).length;
     } else if (region.type == RegionType.line) {
-      throw UnimplementedError();
+      throw UnsupportedError(
+          'As of v4.0.0-dev.3, this combination is not yet supported. It will be supported by v4.0.0.');
     } else if (region.type == RegionType.customPolygon) {
       throw UnimplementedError();
     }
@@ -288,7 +297,7 @@ class StorageCachingTileProvider extends TileProvider {
   /// Will return (`Future`) `true` if permission was granted, `false` if the permission was denied.
   static Future<bool> requestIgnoreBatteryOptimizations(
       BuildContext context) async {
-    if (io.Platform.isAndroid) {
+    if (Platform.isAndroid) {
       final PermissionStatus status =
           await Permission.ignoreBatteryOptimizations.status;
       if (status.isDenied || status.isLimited) {
@@ -326,7 +335,7 @@ class StorageCachingTileProvider extends TileProvider {
     bool Function(DownloadProgress)? callback,
     bool useAltMethod = false,
   }) async {
-    if (io.Platform.isAndroid) {
+    if (Platform.isAndroid) {
       FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
       flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
       const AndroidInitializationSettings initializationSettingsAndroid =
@@ -418,6 +427,170 @@ class StorageCachingTileProvider extends TileProvider {
     } else
       throw UnsupportedError(
           'The background download feature is only available on Android due to limitations with other operating systems.');
+  }
+
+  //! LINE FUNCTIONS !//
+
+  static List<Coords<num>> _lineTiles(
+    List<List<List<dynamic>>> rectsOverall,
+    int minZoom,
+    int maxZoom, {
+    Crs crs = const Epsg3857(),
+    CustomPoint<num> tileSize = const CustomPoint(256, 256),
+  }) {
+    final List<Coords<num>> coords = [];
+
+    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
+      final List<List<LatLng>> rects =
+          rectsOverall[zoomLvl] as List<List<LatLng>>;
+      rects.forEach((rect) {
+        rect.forEach((point) {
+          rectsOverall[zoomLvl][rects.indexOf(rect)][rect.indexOf(point)] = crs
+              .latLngToPoint(point, zoomLvl.toDouble())
+              .unscaleBy(tileSize)
+              .floor();
+        });
+      });
+    }
+
+    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
+      final List<List<CustomPoint<num>>> rects =
+          rectsOverall[zoomLvl] as List<List<CustomPoint<num>>>;
+      rects.forEach((rect) {
+        rect.forEach((node) {
+          coords.add(
+            Coords(node.x.toDouble(), node.y.toDouble())
+              ..z = zoomLvl.toDouble(),
+          );
+          print(node);
+        });
+      });
+    }
+
+    return coords;
+    /*final Map<int, Map<int, List<int>>> outlineTileNums = {};
+
+    final List<Coords<num>> coords = [];
+
+    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
+      outlineTileNums[zoomLvl] = {};
+
+      for (LatLng node in lineOutline) {
+        final CustomPoint<num> tile = crs
+            .latLngToPoint(node, zoomLvl.toDouble())
+            .unscaleBy(tileSize)
+            .floor();
+
+        if (outlineTileNums[zoomLvl]![tile.x.toInt()] == null) {
+          outlineTileNums[zoomLvl]![tile.x.toInt()] = [
+            999999999999999999,
+            -999999999999999999
+          ];
+        }
+
+        outlineTileNums[zoomLvl]![tile.x.toInt()] = [
+          tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0])
+              ? tile.y.toInt()
+              : (outlineTileNums[zoomLvl]![tile.x.toInt()]![0]),
+          tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1])
+              ? tile.y.toInt()
+              : (outlineTileNums[zoomLvl]![tile.x.toInt()]![1]),
+        ];
+      }
+
+      for (int x in outlineTileNums[zoomLvl]!.keys) {
+        for (int y = outlineTileNums[zoomLvl]![x]![0];
+            y <= outlineTileNums[zoomLvl]![x]![1];
+            y++) {
+          coords.add(
+            Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble(),
+          );
+        }
+      }
+    }
+
+    return coords;*/
+  }
+
+  Stream<DownloadProgress> _downloadLine(
+    List<LatLng> basicRectOutlines,
+    int minZoom,
+    int maxZoom,
+    TileLayerOptions options, [
+    Function(dynamic)? errorHandler,
+    Crs crs = const Epsg3857(),
+    CustomPoint<num> tileSize = const CustomPoint(256, 256),
+  ]) async* {
+    /*double calcDist(LatLng a, LatLng b) {
+      final double p = 0.017453292519943295;
+      final double formula = 0.5 -
+          math.cos((b.latitude - a.latitude) * p) / 2 +
+          math.cos(a.latitude * p) *
+              math.cos(b.latitude * p) *
+              (1 - math.cos((b.longitude - a.longitude) * p)) /
+              2;
+      return 12742 * math.asin(math.sqrt(formula)) * 1000;
+    }*/
+
+    final List<List<LatLng>> rects = [];
+    for (int pos = 0; pos < basicRectOutlines.length; pos + 4) {
+      rects.insert(pos, [
+        basicRectOutlines[pos],
+        basicRectOutlines[pos + 1],
+        basicRectOutlines[pos + 2],
+        basicRectOutlines[pos + 3],
+      ]);
+    }
+    print(rects);
+
+    final List<List<List<LatLng>>> realRectsPerZoom =
+        List.generate(rects.length, (index) => [[]]);
+
+    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
+      rects.forEach((rect) {
+        for (int ii = 0; ii < rect.length; ii++) {
+          final LatLng a = rect[ii];
+          final LatLng b = rect[(ii + 1) > rect.length - 1 ? 0 : (ii + 1)];
+          final double resolution = (40075.016686 * 1000 / 256) *
+              math.cos((a.latitude + b.latitude) / 2) /
+              (2 ^ zoomLvl);
+          for (double dist = 0; dist <= a >> b; dist += resolution) {
+            realRectsPerZoom[zoomLvl][rects.indexOf(rect)]
+                .add(Distance().offset(a, dist, Distance().bearing(a, b)));
+          }
+        }
+      });
+    }
+
+    print(realRectsPerZoom);
+
+    final List<Coords<num>> tiles = _lineTiles(
+      realRectsPerZoom,
+      minZoom,
+      maxZoom,
+      crs: crs,
+      tileSize: tileSize,
+    );
+
+    final List<String> erroredUrls = [];
+    final http.Client client = http.Client();
+    Directory(p.joinAll([parentDirectory.path, storeName]))
+        .createSync(recursive: true);
+
+    for (var i = 0; i < tiles.length; i++) {
+      await _getAndSaveTile(tiles[i], options, client, (url, e) {
+        erroredUrls.add(url);
+        if (errorHandler != null) errorHandler(e);
+      });
+      yield DownloadProgress(
+        i + 1,
+        tiles.length,
+        erroredUrls,
+        ((i + 1) / tiles.length) * 100,
+      );
+    }
+
+    client.close();
   }
 
   //! CIRCLE FUNCTIONS !//

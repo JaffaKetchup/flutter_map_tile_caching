@@ -37,6 +37,16 @@ class MapCachingManager {
       Directory(parentDirectory.path).deleteSync(recursive: true);
   }
 
+  /// Rename the current cache store to a new name
+  ///
+  /// Returns the new `MapCachingManager` after a successful renaming operation or `null` if the cache does not exist.
+  MapCachingManager? renameStore(String newName) {
+    if (!Directory(parentDirectory.path).existsSync()) return null;
+    Directory(_joinedBasePath)
+        .renameSync(p.joinAll([parentDirectory.path, newName]));
+    return MapCachingManager(parentDirectory, newName);
+  }
+
   /// Retrieve a list of all names of existing cache stores
   ///
   /// Returns `null` if the cache does not exist.

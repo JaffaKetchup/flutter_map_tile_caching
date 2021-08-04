@@ -4,7 +4,7 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
-import 'regions/downloadableRegion.dart';
+import '../regions/downloadableRegion.dart';
 
 /// The value returned from `ShapeChooser`
 class ShapeChooserResult {
@@ -109,12 +109,12 @@ class ShapeChooser {
           true,
           CircleRegion(
             _selectedPoints[0],
-            _selectedPoints[0].distanceTo(_selectedPoints[1]),
+            _selectedPoints[0] >> _selectedPoints[1],
           ).toDrawable(fillColor, borderColor,
               borderStrokeWidth: borderStrokeWidth, isDotted: isDotted),
           CircleRegion(
             _selectedPoints[0],
-            _selectedPoints[0].distanceTo(_selectedPoints[1]),
+            _selectedPoints[0] >> _selectedPoints[1],
           ),
         );
       } else if (choosingShape == RegionType.line) {
