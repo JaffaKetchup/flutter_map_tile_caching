@@ -23,7 +23,7 @@ class MapCachingManager {
   ///
   /// Used internally for downloading regions, another library is depended on for 'browse caching'.
   MapCachingManager(this.parentDirectory, [this.storeName = 'mainCache'])
-      : _joinedBasePath = p.joinAll([parentDirectory.path, storeName]);
+      : _joinedBasePath = p.joinAll([parentDirectory.absolute.path, storeName]);
 
   /// Delete a cache store
   void deleteStore() {
@@ -33,17 +33,17 @@ class MapCachingManager {
 
   /// Delete all cache stores
   void deleteAllStores() {
-    if (Directory(parentDirectory.path).existsSync())
-      Directory(parentDirectory.path).deleteSync(recursive: true);
+    if (Directory(parentDirectory.absolute.path).existsSync())
+      Directory(parentDirectory.absolute.path).deleteSync(recursive: true);
   }
 
   /// Rename the current cache store to a new name
   ///
   /// Returns the new `MapCachingManager` after a successful renaming operation or `null` if the cache does not exist.
   MapCachingManager? renameStore(String newName) {
-    if (!Directory(parentDirectory.path).existsSync()) return null;
+    if (!Directory(parentDirectory.absolute.path).existsSync()) return null;
     Directory(_joinedBasePath)
-        .renameSync(p.joinAll([parentDirectory.path, newName]));
+        .renameSync(p.joinAll([parentDirectory.absolute.path, newName]));
     return MapCachingManager(parentDirectory, newName);
   }
 
@@ -51,11 +51,12 @@ class MapCachingManager {
   ///
   /// Returns `null` if the cache does not exist.
   List<String>? get allStoresNames {
-    if (!Directory(parentDirectory.path).existsSync()) return null;
+    if (!Directory(parentDirectory.absolute.path).existsSync()) return null;
     List<String> returnable = [];
-    for (FileSystemEntity dir in Directory(parentDirectory.path)
+    for (FileSystemEntity dir in Directory(parentDirectory.absolute.path)
         .listSync(followLinks: false, recursive: false)) {
-      returnable.add(dir.path.split('/')[dir.path.split('/').length - 1]);
+      returnable.add(dir.absolute.path
+          .split('/')[dir.absolute.path.split('/').length - 1]);
     }
     return returnable;
   }
@@ -76,7 +77,7 @@ class MapCachingManager {
   ///
   /// Returns `null` if the cache does not exist.
   int? get allStoresSize {
-    if (!Directory(parentDirectory.path).existsSync()) return null;
+    if (!Directory(parentDirectory.absolute.path).existsSync()) return null;
     int returnable = 0;
     if (allStoresNames != null)
       allStoresNames!.forEach((storeName) {
@@ -100,8 +101,10 @@ class MapCachingManager {
   ///
   /// Returns `null` if the cache does not exist.
   int? get allStoresLength {
-    if (!Directory(parentDirectory.path).existsSync()) return null;
-    return (Directory(parentDirectory.path).listSync(recursive: true).length) -
+    if (!Directory(parentDirectory.absolute.path).existsSync()) return null;
+    return (Directory(parentDirectory.absolute.path)
+            .listSync(recursive: true)
+            .length) -
         ((allStoresNames?.length ?? 0) * 2);
   }
 
@@ -109,8 +112,10 @@ class MapCachingManager {
   ///
   /// Caching in here will show caches under the App Storage - instead of under App Cache - in Settings, and therefore the OS or other apps cannot clear the cache without telling the user.
   static Future<Directory> get normalDirectory async {
-    return Directory(p.joinAll(
-        [(await getApplicationDocumentsDirectory()).path, 'mapCache']));
+    return Directory(p.joinAll([
+      (await getApplicationDocumentsDirectory()).absolute.path,
+      'mapCache'
+    ]));
   }
 
   /// Get the temporary storage directory
@@ -120,13 +125,13 @@ class MapCachingManager {
   /// For this reason, it is not recommended to use this store. Use `normalDirectory` by default instead.
   static Future<Directory> get temporaryDirectory async {
     return Directory(
-        p.joinAll([(await getTemporaryDirectory()).path, 'mapCache']));
+        p.joinAll([(await getTemporaryDirectory()).absolute.path, 'mapCache']));
   }
 
   /// Returns the current working store's path, store's size, and all stores size, as a human-friendly 3-line string
   @override
   String toString() {
-    final String path = p.joinAll([parentDirectory.path, storeName]);
+    final String path = p.joinAll([parentDirectory.absolute.path, storeName]);
     return '$path\nStore size: ${(storeSize ?? 0).bytesToMegabytes}MB\nAll stores size: ${(allStoresSize ?? 0).bytesToMegabytes}MB';
   }
 }

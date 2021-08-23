@@ -74,8 +74,6 @@ class ShapeChooser {
         return ShapeChooserResult();
       } else if (choosingShape == RegionType.line) {
         throw UnimplementedError();
-      } else if (choosingShape == RegionType.customPolygon) {
-        throw UnimplementedError();
       }
     }
     if (_step == 1) {
@@ -118,8 +116,6 @@ class ShapeChooser {
           ),
         );
       } else if (choosingShape == RegionType.line) {
-        throw UnimplementedError();
-      } else if (choosingShape == RegionType.customPolygon) {
         throw UnimplementedError();
       }
     }

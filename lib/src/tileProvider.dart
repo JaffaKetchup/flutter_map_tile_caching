@@ -5,11 +5,13 @@ import 'dart:math' as math;
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
+import 'package:palette_generator/palette_generator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path/path.dart' as p show joinAll;
 
@@ -116,23 +118,54 @@ class StorageCachingTileProvider extends TileProvider {
     TileLayerOptions options,
     http.Client client,
     Function(String, dynamic) errorHandler,
+    bool preventRedownload,
+    Color? seaColor,
+    int compressionQuality,
   ) async {
     final Coords<double> coordDouble =
         Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
     final String url = getTileUrl(coordDouble, options);
+    final String path = p.joinAll([
+      parentDirectory.absolute.path,
+      storeName,
+      url
+          .replaceAll('https://', '')
+          .replaceAll('http://', '')
+          .replaceAll("/", "")
+          .replaceAll(".", ""),
+    ]);
 
     try {
-      File(
-        p.joinAll([
-          parentDirectory.path,
-          storeName,
-          url
-              .replaceAll('https://', '')
-              .replaceAll('http://', '')
-              .replaceAll("/", "")
-              .replaceAll(".", "")
-        ]),
-      ).writeAsBytesSync((await client.get(Uri.parse(url))).bodyBytes);
+      if (preventRedownload && File(path).existsSync()) return;
+
+      File(path).writeAsBytesSync(
+        (await client.get(Uri.parse(url))).bodyBytes,
+        flush: true,
+      );
+
+      if (seaColor != null) {
+        final List<Color> colors = (await PaletteGenerator.fromImageProvider(
+                getImage(coordDouble, options),
+                filters: []))
+            .colors
+            .toList();
+        if (colors.length == 1 && colors[0] == seaColor) {
+          File(path).deleteSync();
+          return;
+        }
+      }
+
+      if (compressionQuality != -1)
+        await FlutterImageCompress.compressAndGetFile(
+          path,
+          path,
+          quality: compressionQuality,
+          autoCorrectionAngle: false,
+          format:
+              url.endsWith('.png') ? CompressFormat.png : CompressFormat.jpeg,
+          minHeight: options.tileSize.round(),
+          minWidth: options.tileSize.round(),
+        );
     } catch (e) {
       errorHandler(url, e);
     }
@@ -142,7 +175,7 @@ class StorageCachingTileProvider extends TileProvider {
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     final File fileReal = File(p.joinAll([
-      parentDirectory.path,
+      parentDirectory.absolute.path,
       storeName,
       getTileUrl(coords, options)
           .replaceAll('https://', '')
@@ -153,7 +186,7 @@ class StorageCachingTileProvider extends TileProvider {
 
     NetworkToFileImage ntfi(bool url, bool file) {
       final Directory storeDir =
-          Directory(p.joinAll([parentDirectory.path, storeName]));
+          Directory(p.joinAll([parentDirectory.absolute.path, storeName]));
 
       bool sortAndDeleteLast() {
         final List<FileSystemEntity> fileList = storeDir.listSync();
@@ -187,7 +220,7 @@ class StorageCachingTileProvider extends TileProvider {
       }
     }
 
-    Directory(p.joinAll([parentDirectory.path, storeName]))
+    Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
         .createSync(recursive: true);
 
     if (behavior == CacheBehavior.onlineOnly)
@@ -203,7 +236,7 @@ class StorageCachingTileProvider extends TileProvider {
                   cachedValidDuration.inMilliseconds))
         File(
           p.joinAll([
-            parentDirectory.path,
+            parentDirectory.absolute.path,
             storeName,
             getTileUrl(coords, options)
                 .replaceAll('https://', '')
@@ -230,9 +263,11 @@ class StorageCachingTileProvider extends TileProvider {
         region.minZoom,
         region.maxZoom,
         region.options,
-        region.errorHandler,
-        region.crs,
-        region.tileSize,
+        preventRedownload: region.preventRedownload,
+        seaColor: region.seaColor,
+        compressionQuality: region.compressionQuality,
+        crs: region.crs,
+        errorHandler: region.errorHandler,
       );
     } else if (region.type == RegionType.rectangle) {
       yield* _downloadRectangle(
@@ -240,26 +275,33 @@ class StorageCachingTileProvider extends TileProvider {
         region.minZoom,
         region.maxZoom,
         region.options,
-        region.errorHandler,
-        region.crs,
-        region.tileSize,
+        preventRedownload: region.preventRedownload,
+        seaColor: region.seaColor,
+        compressionQuality: region.compressionQuality,
+        crs: region.crs,
+        errorHandler: region.errorHandler,
       );
     } else if (region.type == RegionType.line) {
+      print(
+        '\nCAUTION\nThis functionality is highly experimental and should not be used unless otherwise necessary. This functionality is likely to fail.\n',
+      );
       yield* _downloadLine(
         region.points,
         region.minZoom,
         region.maxZoom,
         region.options,
-        region.errorHandler,
-        region.crs,
-        region.tileSize,
+        preventRedownload: region.preventRedownload,
+        seaColor: region.seaColor,
+        compressionQuality: region.compressionQuality,
+        crs: region.crs,
+        errorHandler: region.errorHandler,
       );
-    } else if (region.type == RegionType.customPolygon) {
-      throw UnimplementedError();
     }
   }
 
   /// Check how many downloadable tiles are within a specified `DownloadableRegion`
+  ///
+  /// Unfortunatley, this does not take into account sea tile removal, as this requires the tile to be fully downloaded, which this function does not do.
   ///
   /// Returns an `int` which is the number of tiles.
   static int checkRegion(DownloadableRegion region) {
@@ -277,9 +319,8 @@ class StorageCachingTileProvider extends TileProvider {
       ).length;
     } else if (region.type == RegionType.line) {
       throw UnsupportedError(
-          'As of v4.0.0-dev.3, this combination is not yet supported. It will be supported by v4.0.0.');
-    } else if (region.type == RegionType.customPolygon) {
-      throw UnimplementedError();
+        'This functionality is not yet supported, as the main part is experimental and this part has not been completed yet',
+      );
     }
     throw UnimplementedError();
   }
@@ -429,7 +470,8 @@ class StorageCachingTileProvider extends TileProvider {
           'The background download feature is only available on Android due to limitations with other operating systems.');
   }
 
-  //! LINE FUNCTIONS !//
+  //!   LINE FUNCTIONS    !//
+  //! HIGHLY EXPERIMENTAL !//
 
   static List<Coords<num>> _lineTiles(
     List<List<List<dynamic>>> rectsOverall,
@@ -516,11 +558,13 @@ class StorageCachingTileProvider extends TileProvider {
     List<LatLng> basicRectOutlines,
     int minZoom,
     int maxZoom,
-    TileLayerOptions options, [
-    Function(dynamic)? errorHandler,
+    TileLayerOptions options, {
+    bool preventRedownload = false,
+    Color? seaColor,
+    int compressionQuality = -1,
     Crs crs = const Epsg3857(),
-    CustomPoint<num> tileSize = const CustomPoint(256, 256),
-  ]) async* {
+    Function(dynamic)? errorHandler,
+  }) async* {
     /*double calcDist(LatLng a, LatLng b) {
       final double p = 0.017453292519943295;
       final double formula = 0.5 -
@@ -569,19 +613,27 @@ class StorageCachingTileProvider extends TileProvider {
       minZoom,
       maxZoom,
       crs: crs,
-      tileSize: tileSize,
+      tileSize: CustomPoint(options.tileSize, options.tileSize),
     );
 
     final List<String> erroredUrls = [];
     final http.Client client = http.Client();
-    Directory(p.joinAll([parentDirectory.path, storeName]))
+    Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
         .createSync(recursive: true);
 
     for (var i = 0; i < tiles.length; i++) {
-      await _getAndSaveTile(tiles[i], options, client, (url, e) {
-        erroredUrls.add(url);
-        if (errorHandler != null) errorHandler(e);
-      });
+      await _getAndSaveTile(
+        tiles[i],
+        options,
+        client,
+        (url, e) {
+          erroredUrls.add(url);
+          if (errorHandler != null) errorHandler(e);
+        },
+        preventRedownload,
+        seaColor,
+        compressionQuality,
+      );
       yield DownloadProgress(
         i + 1,
         tiles.length,
@@ -650,29 +702,39 @@ class StorageCachingTileProvider extends TileProvider {
     List<LatLng> circleOutline,
     int minZoom,
     int maxZoom,
-    TileLayerOptions options, [
-    Function(dynamic)? errorHandler,
+    TileLayerOptions options, {
+    bool preventRedownload = false,
+    Color? seaColor,
+    int compressionQuality = -1,
     Crs crs = const Epsg3857(),
-    CustomPoint<num> tileSize = const CustomPoint(256, 256),
-  ]) async* {
+    Function(dynamic)? errorHandler,
+  }) async* {
     final List<Coords<num>> tiles = _circleTiles(
       circleOutline,
       minZoom,
       maxZoom,
       crs: crs,
-      tileSize: tileSize,
+      tileSize: CustomPoint(options.tileSize, options.tileSize),
     );
 
     final List<String> erroredUrls = [];
     final http.Client client = http.Client();
-    Directory(p.joinAll([parentDirectory.path, storeName]))
+    Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
         .createSync(recursive: true);
 
     for (var i = 0; i < tiles.length; i++) {
-      await _getAndSaveTile(tiles[i], options, client, (url, e) {
-        erroredUrls.add(url);
-        if (errorHandler != null) errorHandler(e);
-      });
+      await _getAndSaveTile(
+        tiles[i],
+        options,
+        client,
+        (url, e) {
+          erroredUrls.add(url);
+          if (errorHandler != null) errorHandler(e);
+        },
+        preventRedownload,
+        seaColor,
+        compressionQuality,
+      );
       yield DownloadProgress(
         i + 1,
         tiles.length,
@@ -718,29 +780,39 @@ class StorageCachingTileProvider extends TileProvider {
     LatLngBounds bounds,
     int minZoom,
     int maxZoom,
-    TileLayerOptions options, [
-    Function(dynamic)? errorHandler,
+    TileLayerOptions options, {
+    bool preventRedownload = false,
+    Color? seaColor,
+    int compressionQuality = -1,
     Crs crs = const Epsg3857(),
-    CustomPoint<num> tileSize = const CustomPoint(256, 256),
-  ]) async* {
+    Function(dynamic)? errorHandler,
+  }) async* {
     final List<Coords<num>> tiles = _rectangleTiles(
       bounds,
       minZoom,
       maxZoom,
       crs: crs,
-      tileSize: tileSize,
+      tileSize: CustomPoint(options.tileSize, options.tileSize),
     );
 
     final List<String> erroredUrls = [];
     final http.Client client = http.Client();
-    Directory(p.joinAll([parentDirectory.path, storeName]))
+    Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
         .createSync(recursive: true);
 
     for (var i = 0; i < tiles.length; i++) {
-      await _getAndSaveTile(tiles[i], options, client, (url, e) {
-        erroredUrls.add(url);
-        if (errorHandler != null) errorHandler(e);
-      });
+      await _getAndSaveTile(
+        tiles[i],
+        options,
+        client,
+        (url, e) {
+          erroredUrls.add(url);
+          if (errorHandler != null) errorHandler(e);
+        },
+        preventRedownload,
+        seaColor,
+        compressionQuality,
+      );
       yield DownloadProgress(
         i + 1,
         tiles.length,

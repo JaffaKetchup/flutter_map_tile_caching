@@ -3,14 +3,13 @@
 
 // Regions
 export 'src/regions/circle.dart';
-export 'src/regions/diagonalRectangle.dart';
 export 'src/regions/downloadableRegion.dart';
 export 'src/regions/line.dart';
 export 'src/regions/rectangle.dart';
 
 // Main
 export 'src/tileProvider.dart';
-export 'src/tileLayer.dart';
+//export 'src/tileLayer.dart'; EXPERIMENTAL
 
 // Backend and Extras
 export 'src/storageManager.dart';
@@ -18,7 +17,8 @@ export 'src/exts.dart';
 
 // Widgets
 export 'src/widgets/shapeChooser.dart';
-export 'src/widgets/cacheScreen.dart';
+//export 'src/widgets/cacheScreen.dart'; EXPERIMENTAL
+//export 'src/widgets/sourceSwitcher.dart'; EXPERIMENTAL
 
 // Deprecated
 export 'src/deprecated/oldCachingManager.dart';

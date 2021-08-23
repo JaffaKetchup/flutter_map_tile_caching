@@ -17,11 +17,12 @@ class RectangleRegion extends BaseRegion {
     int minZoom,
     int maxZoom,
     TileLayerOptions options, {
-    Function(dynamic)? errorHandler,
+    bool preventRedownload = false,
+    Color? seaColor,
+    int compressionQuality = -1,
     Crs crs = const Epsg3857(),
-    CustomPoint<num> tileSize = const CustomPoint(256, 256),
+    Function(dynamic)? errorHandler,
   }) {
-    assert(minZoom <= maxZoom, 'minZoom is more than maxZoom');
     return DownloadableRegion(
       [this.bounds.northWest, this.bounds.southEast],
       minZoom,
@@ -30,7 +31,6 @@ class RectangleRegion extends BaseRegion {
       RegionType.rectangle,
       errorHandler: errorHandler,
       crs: crs,
-      tileSize: tileSize,
     );
   }
 

@@ -1,9 +1,11 @@
+// DOWNLOADING LINE FUNCTIONALITY IS HIGHLY EXPERIMENTAL & SHOULD NOT BE USED IN PRODUCTION
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:meta/meta.dart';
 
 import 'downloadableRegion.dart';
 
@@ -90,11 +92,18 @@ class LineRegion extends BaseRegion {
     }).toList();
   }
 
+  /// Downloading lines is highly experimental and has a high chance of failing and causing errors
+  ///
+  /// You should not use this functionality unless absolutley necessary. Note that this functonality is liable to change at any time in the future without a breaking change version bump.
   @override
+  @experimental
   DownloadableRegion toDownloadable(
     int minZoom,
     int maxZoom,
     TileLayerOptions options, {
+    bool preventRedownload = false,
+    Color? seaColor,
+    int compressionQuality = -1,
     Function(dynamic)? errorHandler,
     Crs crs = const Epsg3857(),
     CustomPoint<num> tileSize = const CustomPoint(256, 256),
@@ -107,8 +116,7 @@ class LineRegion extends BaseRegion {
       RegionType.line,
       errorHandler: errorHandler,
       crs: crs,
-      tileSize: tileSize,
-      splitIndex: 4,
+      //splitIndex: 4,
     );
   }
 

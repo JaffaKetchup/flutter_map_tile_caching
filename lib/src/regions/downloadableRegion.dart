@@ -8,16 +8,16 @@ enum RegionType {
   /// A region containing 2 points representing the top-left and bottom-right corners of a rectangle
   rectangle,
 
-  /// A region containing 4 points representing the corners of a rectangle
-  diagonalRectangle,
-
   /// A region containing all the points along it's outline (one every degree) representing a circle
   circle,
 
   /// A region with the border as the loci of a line at it's center representing multiple diagonal rectangles
   line,
 
-  /// A region containing any number of points representing it's outline (one per vertice)
+  /// Depreciated due to lack of associated functionality. Remove all references throughout your code.
+  @Deprecated(
+    'This value has been deprecated, because there was no associated functionality. Remove all references throughout your code.',
+  )
   customPolygon,
 }
 
@@ -30,6 +30,10 @@ abstract class BaseRegion {
     int minZoom,
     int maxZoom,
     TileLayerOptions options, {
+    bool preventRedownload = false,
+    Color? seaColor,
+    int compressionQuality = -1,
+    Crs crs = const Epsg3857(),
     Function(dynamic)? errorHandler,
   });
 
@@ -51,8 +55,6 @@ abstract class BaseRegion {
 
 /// A downloadable region to be passed to the `StorageCachingTileProvider().downloadRegion()` function
 ///
-/// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
-///
 /// Should avoid manual construction. Use a supported region shape and the `.toDownloadable()` extension on it.
 ///
 /// Is returned from `.toDownloadable()`.
@@ -72,22 +74,38 @@ class DownloadableRegion {
   /// The options used to fetch tiles
   final TileLayerOptions options;
 
-  /// A function that takes any type of error as an argument to be called in the event a tile fetch fails
-  final Function(dynamic)? errorHandler;
+  /// Whether to skip downloading tiles that already exist. Defaults to `false`, so that existing tiles will be updated.
+  final bool preventRedownload;
+
+  /// Color of the sea in tiles from your source to remove sea tiles with
+  ///
+  /// Note that enabling sea tile removal severely lengthens download time, but decreases storage used. Tiles still have to be fully downloaded before they can be checked.
+  ///
+  /// Set to `null` to keep sea tiles, which is the default.
+  final Color? seaColor;
+
+  /// The compression level percentage from 1 (bad quality) to 99 (good quality) to compress tiles with
+  ///
+  /// Note that enabling compression severely lengthens download time, but decreases storage used.
+  ///
+  /// Set to -1 to disable compression, which is the default.
+  final int compressionQuality;
 
   /// The map projection to use to calculate tiles. Defaults to `Espg3857()`.
   final Crs crs;
 
-  /// The size of each tile. Defaults to 256 by 256.
-  final CustomPoint<num> tileSize;
+  /// A function that takes any type of error as an argument to be called in the event a tile fetch fails
+  final Function(dynamic)? errorHandler;
 
-  /// Only in use for complex shapes (`line` and `customPolygon`). Dictates where the 'points' `List` should be split back into a 2D `List`.
-  @experimental
-  final int? splitIndex;
+  /// Deprecated. Will be removed in next release. Migrate to the equivalent in the `TileLayerOptions`.
+  ///
+  /// The size of each tile. Defaults to 256 by 256.
+  @Deprecated(
+    'This paramter has been deprectated and will be removed in next release. Migrate to the equivalent in the `TileLayerOptions`.',
+  )
+  final CustomPoint<num> tileSize = CustomPoint(256, 256);
 
   /// A downloadable region to be passed to the `StorageCachingTileProvider().downloadRegion()` function
-  ///
-  /// Accuracy depends on the `RegionType`. All types except sqaure are calculated as if on a flat plane, so use should be avoided at the poles and the radius/allowance/distance should be no more than 10km. There is potential for more accurate calculations in the future.
   ///
   /// Should avoid manual construction. Use a supported region shape and the `.toDownloadable()` extension on it.
   ///
@@ -99,15 +117,19 @@ class DownloadableRegion {
     this.maxZoom,
     this.options,
     this.type, {
-    this.errorHandler,
+    this.preventRedownload = false,
+    this.seaColor,
+    this.compressionQuality = -1,
     this.crs = const Epsg3857(),
-    this.tileSize = const CustomPoint(256, 256),
-    this.splitIndex,
-  }) : assert(
-          type == RegionType.line || type == RegionType.customPolygon
-              ? splitIndex != null
-              : true,
-          'If using a complex shape (`line` and `customPolygon`), `splitIndex` must be defined',
+    this.errorHandler,
+  })  : assert(
+          compressionQuality == -1 ||
+              (compressionQuality >= 1 && compressionQuality <= 99),
+          '`compressionQuality` must be -1 to signify that compression is disabled, or between 1 and 99 inclusive, representing the compression level percentage where 1 is bad quality and 99 is good quality',
+        ),
+        assert(
+          minZoom <= maxZoom,
+          '`minZoom` should be less than `maxZoom`',
         );
 }
 

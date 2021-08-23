@@ -22,13 +22,14 @@ class CircleRegion extends BaseRegion {
     int minZoom,
     int maxZoom,
     TileLayerOptions options, {
+    bool preventRedownload = false,
+    Color? seaColor,
+    int compressionQuality = -1,
+    Crs crs = const Epsg3857(),
     Function(dynamic)? errorHandler,
     @Deprecated('\'circleDegrees\' has been deprecated, and will be removed in the next release. There is no newer alternative for bug safety. You should remove this parameter from your code and let it take the default (and future fixed value) 360.')
         int circleDegrees = 360,
-    Crs crs = const Epsg3857(),
-    CustomPoint<num> tileSize = const CustomPoint(256, 256),
   }) {
-    assert(minZoom <= maxZoom, 'minZoom is more than maxZoom');
     return DownloadableRegion(
       _circleToOutline(
         this.center.latitudeInRad,
@@ -42,7 +43,6 @@ class CircleRegion extends BaseRegion {
       RegionType.circle,
       errorHandler: errorHandler,
       crs: crs,
-      tileSize: tileSize,
     );
   }
 
