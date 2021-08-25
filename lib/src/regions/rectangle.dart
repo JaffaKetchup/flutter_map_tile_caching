@@ -29,8 +29,11 @@ class RectangleRegion extends BaseRegion {
       maxZoom,
       options,
       RegionType.rectangle,
-      errorHandler: errorHandler,
+      preventRedownload: preventRedownload,
+      seaColor: seaColor,
+      compressionQuality: compressionQuality,
       crs: crs,
+      errorHandler: errorHandler,
     );
   }
 

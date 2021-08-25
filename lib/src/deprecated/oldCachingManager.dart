@@ -99,7 +99,7 @@ class TileStorageCachingManager {
   )
   static Future<int> get cacheDbSize async {
     return MapCachingManager(await MapCachingManager.normalDirectory)
-            .allStoresSize ??
+            .allStoresSizes ??
         0;
   }
 
@@ -109,7 +109,7 @@ class TileStorageCachingManager {
   )
   static Future<int> get cachedTilesAmount async {
     return MapCachingManager(await MapCachingManager.normalDirectory)
-            .allStoresLength ??
+            .allStoresLengths ??
         0;
   }
 

@@ -1,19 +1,20 @@
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p show joinAll;
+import 'package:path/path.dart' as p show joinAll, split;
+
 import 'exts.dart';
 
 /// Handles caching for tiles
 ///
-/// Used internally for downloading regions, another library is depended on for 'browse caching'.
+/// Used internally for downloading regions, another library is depended on for 'browse caching'. Note that this does not create the store folder, call `.createStore()` afterwards if necessary.
 class MapCachingManager {
   /// The directory to place cache stores into
   ///
   /// Use the same directory used in `StorageCachingTileProvider` (`await MapCachingManager.normalDirectory` recommended). Required.
   final Directory parentDirectory;
 
-  /// The name of a store. Defaults to 'mainCache'.
+  /// The name of a store. Defaults to 'mainStore'.
   final String storeName;
 
   /// The correctly joined `parentDirectory` and `storeName` at time of initialization.
@@ -21,9 +22,14 @@ class MapCachingManager {
 
   /// Create an instance to handle caching for tiles
   ///
-  /// Used internally for downloading regions, another library is depended on for 'browse caching'.
-  MapCachingManager(this.parentDirectory, [this.storeName = 'mainCache'])
+  /// Used internally for downloading regions, another library is depended on for 'browse caching'. Note that this does not create the store folder, call `.createStore()` afterwards if necessary.
+  MapCachingManager(this.parentDirectory, [this.storeName = 'mainStore'])
       : _joinedBasePath = p.joinAll([parentDirectory.absolute.path, storeName]);
+
+  /// Explicitly create the store if necessary
+  ///
+  /// This is not needed unless you intend to download regions before 'browse caching'.
+  void createStore() => Directory(_joinedBasePath).createSync(recursive: true);
 
   /// Delete a cache store
   void deleteStore() {
@@ -53,11 +59,9 @@ class MapCachingManager {
   List<String>? get allStoresNames {
     if (!Directory(parentDirectory.absolute.path).existsSync()) return null;
     List<String> returnable = [];
-    for (FileSystemEntity dir in Directory(parentDirectory.absolute.path)
-        .listSync(followLinks: false, recursive: false)) {
-      returnable.add(dir.absolute.path
-          .split('/')[dir.absolute.path.split('/').length - 1]);
-    }
+    Directory(parentDirectory.absolute.path)
+        .listSync(followLinks: false, recursive: false)
+        .forEach((dir) => returnable.add(p.split(dir.absolute.path).last));
     return returnable;
   }
 
@@ -76,16 +80,11 @@ class MapCachingManager {
   /// Use `.bytesToMegabytes` on the output to get the real number of megabytes.
   ///
   /// Returns `null` if the cache does not exist.
-  int? get allStoresSize {
+  int? get allStoresSizes {
     if (!Directory(parentDirectory.absolute.path).existsSync()) return null;
     int returnable = 0;
-    if (allStoresNames != null)
-      allStoresNames!.forEach((storeName) {
-        returnable +=
-            MapCachingManager(parentDirectory, storeName).storeSize ?? 0;
-      });
-    else
-      return 0;
+    allStoresNames!.forEach((storeName) => returnable +=
+        MapCachingManager(parentDirectory, storeName).storeSize ?? 0);
     return returnable;
   }
 
@@ -97,15 +96,18 @@ class MapCachingManager {
     return Directory(_joinedBasePath).listSync().length;
   }
 
-  /// Retrieve the (approximate) number of stored tiles in all cache stores
+  /// Retrieve the number of stored tiles in all cache stores
   ///
   /// Returns `null` if the cache does not exist.
-  int? get allStoresLength {
+  int? get allStoresLengths {
     if (!Directory(parentDirectory.absolute.path).existsSync()) return null;
-    return (Directory(parentDirectory.absolute.path)
-            .listSync(recursive: true)
-            .length) -
-        ((allStoresNames?.length ?? 0) * 2);
+    int totalLength = 0;
+    allStoresNames!.forEach((name) {
+      totalLength += Directory(p.joinAll([parentDirectory.absolute.path, name]))
+          .listSync(recursive: true)
+          .length;
+    });
+    return totalLength;
   }
 
   /// Get the application's documents directory
@@ -132,6 +134,6 @@ class MapCachingManager {
   @override
   String toString() {
     final String path = p.joinAll([parentDirectory.absolute.path, storeName]);
-    return '$path\nStore size: ${(storeSize ?? 0).bytesToMegabytes}MB\nAll stores size: ${(allStoresSize ?? 0).bytesToMegabytes}MB';
+    return '$path\nStore size: ${(storeSize ?? 0).bytesToMegabytes}MB\nAll stores size: ${(allStoresSizes ?? 0).bytesToMegabytes}MB';
   }
 }

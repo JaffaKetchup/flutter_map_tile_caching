@@ -41,8 +41,11 @@ class CircleRegion extends BaseRegion {
       maxZoom,
       options,
       RegionType.circle,
-      errorHandler: errorHandler,
+      preventRedownload: preventRedownload,
+      seaColor: seaColor,
+      compressionQuality: compressionQuality,
       crs: crs,
+      errorHandler: errorHandler,
     );
   }
 

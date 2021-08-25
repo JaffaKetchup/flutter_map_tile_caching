@@ -1,5 +1,10 @@
 # Changelog
 
+## [3.0.2] - 2021/07/25
+
+* Fix bug #20 (on GitHub)
+* Updated README
+
 ## [4.0.0-dev.2] - 2021/07/20
 
 * Bug fixes
@@ -16,11 +21,6 @@
 * Remove very old APIs
 * Deprecate old APIs
 * Removal of tile count limiter
-
-## [3.0.2] - 2021/07/25
-
-* Fix bug #20 (on GitHub)
-* Updated README
 
 ## [3.0.1] - 2021/07/20
 

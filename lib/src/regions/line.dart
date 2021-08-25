@@ -114,8 +114,11 @@ class LineRegion extends BaseRegion {
       maxZoom,
       options,
       RegionType.line,
-      errorHandler: errorHandler,
+      preventRedownload: preventRedownload,
+      seaColor: seaColor,
+      compressionQuality: compressionQuality,
       crs: crs,
+      errorHandler: errorHandler,
       //splitIndex: 4,
     );
   }

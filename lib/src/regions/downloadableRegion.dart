@@ -94,7 +94,9 @@ class DownloadableRegion {
   /// The map projection to use to calculate tiles. Defaults to `Espg3857()`.
   final Crs crs;
 
-  /// A function that takes any type of error as an argument to be called in the event a tile fetch fails
+  /// A function that takes any type of error as an argument to be called in the event a tile fetch fails or a tile already exists and `preventRedownload` is `true`
+  ///
+  /// If the handler is called for the second reason above, the argument will be a String equalling "exists"; otherwise it will be a String with the URL of the failed tile.
   final Function(dynamic)? errorHandler;
 
   /// Deprecated. Will be removed in next release. Migrate to the equivalent in the `TileLayerOptions`.

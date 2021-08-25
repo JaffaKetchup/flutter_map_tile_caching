@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/material.dart';
@@ -82,7 +83,7 @@ class StorageCachingTileProvider extends TileProvider {
   /// Defaults to 31 days, set to a negative duration to disable.
   final Duration cachedValidDuration;
 
-  /// The name of the cache store to use for this instance. Defaults to the default store, 'mainCache'.
+  /// The name of the cache store to use for this instance. Defaults to the default store, 'mainStore'.
   final String storeName;
 
   /// The directory to place cache stores into.
@@ -106,7 +107,7 @@ class StorageCachingTileProvider extends TileProvider {
     this.maxStoreLength = 20000,
     this.betterMaxLengthEnforcement = true,
     this.cachedValidDuration = const Duration(days: 31),
-    this.storeName = 'mainCache',
+    this.storeName = 'mainStore',
     this.behavior = CacheBehavior.cacheFirst,
     required this.parentDirectory,
   });
@@ -131,12 +132,15 @@ class StorageCachingTileProvider extends TileProvider {
       url
           .replaceAll('https://', '')
           .replaceAll('http://', '')
-          .replaceAll("/", "")
-          .replaceAll(".", ""),
+          .replaceAll("/", ""),
+      //.replaceAll(".", ""),
     ]);
 
     try {
-      if (preventRedownload && File(path).existsSync()) return;
+      if (preventRedownload && File(path).existsSync()) {
+        errorHandler('exists', 'exists');
+        return;
+      }
 
       File(path).writeAsBytesSync(
         (await client.get(Uri.parse(url))).bodyBytes,
@@ -155,9 +159,9 @@ class StorageCachingTileProvider extends TileProvider {
         }
       }
 
-      if (compressionQuality != -1)
-        await FlutterImageCompress.compressAndGetFile(
-          path,
+      if (compressionQuality != -1) {
+        final Uint8List? compressed =
+            await FlutterImageCompress.compressWithFile(
           path,
           quality: compressionQuality,
           autoCorrectionAngle: false,
@@ -166,7 +170,16 @@ class StorageCachingTileProvider extends TileProvider {
           minHeight: options.tileSize.round(),
           minWidth: options.tileSize.round(),
         );
+        print('test');
+        print('Compressed: ' + compressed.toString());
+
+        File(path).writeAsBytesSync(
+          compressed ?? [0],
+        );
+        //File(path + 'compressed.png').renameSync(path);
+      }
     } catch (e) {
+      print(e);
       errorHandler(url, e);
     }
   }
@@ -180,8 +193,8 @@ class StorageCachingTileProvider extends TileProvider {
       getTileUrl(coords, options)
           .replaceAll('https://', '')
           .replaceAll('http://', '')
-          .replaceAll("/", "")
-          .replaceAll(".", "")
+          .replaceAll("/", ""),
+      //.replaceAll(".", "")
     ]));
 
     NetworkToFileImage ntfi(bool url, bool file) {
@@ -241,8 +254,8 @@ class StorageCachingTileProvider extends TileProvider {
             getTileUrl(coords, options)
                 .replaceAll('https://', '')
                 .replaceAll('http://', '')
-                .replaceAll("/", "")
-                .replaceAll(".", "")
+                .replaceAll("/", ""),
+            //.replaceAll(".", "")
           ]),
         ).deleteSync();
       return ntfi(true, true);
