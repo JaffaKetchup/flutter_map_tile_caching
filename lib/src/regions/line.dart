@@ -102,7 +102,7 @@ class LineRegion extends BaseRegion {
     int maxZoom,
     TileLayerOptions options, {
     bool preventRedownload = false,
-    Color? seaColor,
+    bool seaTileRemoval = false,
     int compressionQuality = -1,
     Function(dynamic)? errorHandler,
     Crs crs = const Epsg3857(),
@@ -115,7 +115,7 @@ class LineRegion extends BaseRegion {
       options,
       RegionType.line,
       preventRedownload: preventRedownload,
-      seaColor: seaColor,
+      seaTileRemoval: seaTileRemoval,
       compressionQuality: compressionQuality,
       crs: crs,
       errorHandler: errorHandler,

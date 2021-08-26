@@ -23,7 +23,7 @@ class CircleRegion extends BaseRegion {
     int maxZoom,
     TileLayerOptions options, {
     bool preventRedownload = false,
-    Color? seaColor,
+    bool seaTileRemoval = false,
     int compressionQuality = -1,
     Crs crs = const Epsg3857(),
     Function(dynamic)? errorHandler,
@@ -42,7 +42,7 @@ class CircleRegion extends BaseRegion {
       options,
       RegionType.circle,
       preventRedownload: preventRedownload,
-      seaColor: seaColor,
+      seaTileRemoval: seaTileRemoval,
       compressionQuality: compressionQuality,
       crs: crs,
       errorHandler: errorHandler,

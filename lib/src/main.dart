@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
+
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
@@ -12,7 +14,6 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
-import 'package:palette_generator/palette_generator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path/path.dart' as p show joinAll;
 
@@ -112,77 +113,7 @@ class StorageCachingTileProvider extends TileProvider {
     required this.parentDirectory,
   });
 
-  //! GETTER FUNCTIONS !//
-
-  Future<void> _getAndSaveTile(
-    Coords<num> coord,
-    TileLayerOptions options,
-    http.Client client,
-    Function(String, dynamic) errorHandler,
-    bool preventRedownload,
-    Color? seaColor,
-    int compressionQuality,
-  ) async {
-    final Coords<double> coordDouble =
-        Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
-    final String url = getTileUrl(coordDouble, options);
-    final String path = p.joinAll([
-      parentDirectory.absolute.path,
-      storeName,
-      url
-          .replaceAll('https://', '')
-          .replaceAll('http://', '')
-          .replaceAll("/", ""),
-      //.replaceAll(".", ""),
-    ]);
-
-    try {
-      if (preventRedownload && File(path).existsSync()) {
-        errorHandler('exists', 'exists');
-        return;
-      }
-
-      File(path).writeAsBytesSync(
-        (await client.get(Uri.parse(url))).bodyBytes,
-        flush: true,
-      );
-
-      if (seaColor != null) {
-        final List<Color> colors = (await PaletteGenerator.fromImageProvider(
-                getImage(coordDouble, options),
-                filters: []))
-            .colors
-            .toList();
-        if (colors.length == 1 && colors[0] == seaColor) {
-          File(path).deleteSync();
-          return;
-        }
-      }
-
-      if (compressionQuality != -1) {
-        final Uint8List? compressed =
-            await FlutterImageCompress.compressWithFile(
-          path,
-          quality: compressionQuality,
-          autoCorrectionAngle: false,
-          format:
-              url.endsWith('.png') ? CompressFormat.png : CompressFormat.jpeg,
-          minHeight: options.tileSize.round(),
-          minWidth: options.tileSize.round(),
-        );
-        print('test');
-        print('Compressed: ' + compressed.toString());
-
-        File(path).writeAsBytesSync(
-          compressed ?? [0],
-        );
-        //File(path + 'compressed.png').renameSync(path);
-      }
-    } catch (e) {
-      print(e);
-      errorHandler(url, e);
-    }
-  }
+  //! TILE PROVIDER !//
 
   /// Get a browsed tile as an image, paint it on the map and save it's bytes to cache for later
   @override
@@ -262,7 +193,7 @@ class StorageCachingTileProvider extends TileProvider {
     }
   }
 
-  //! DOWNLOAD (FOREGROUND) FUNCTIONS !//
+  //! MAIN DOWNLOAD FUNCTIONS !//
 
   /// Download a specified `DownloadableRegion` in the foreground
   ///
@@ -271,28 +202,38 @@ class StorageCachingTileProvider extends TileProvider {
   /// Streams a `DownloadProgress` object containing the number of completed tiles, total number of tiles to download, a list of errored URLs and the percentage completion.
   Stream<DownloadProgress> downloadRegion(DownloadableRegion region) async* {
     if (region.type == RegionType.circle) {
-      yield* _downloadCircle(
+      final List<Coords<num>> tiles = _circleTiles(
         region.points,
         region.minZoom,
         region.maxZoom,
-        region.options,
-        preventRedownload: region.preventRedownload,
-        seaColor: region.seaColor,
-        compressionQuality: region.compressionQuality,
         crs: region.crs,
-        errorHandler: region.errorHandler,
+        tileSize: CustomPoint(region.options.tileSize, region.options.tileSize),
+      );
+
+      yield* _downloadLoop(
+        tiles,
+        region.options,
+        region.preventRedownload,
+        region.seaTileRemoval,
+        region.compressionQuality,
+        region.errorHandler,
       );
     } else if (region.type == RegionType.rectangle) {
-      yield* _downloadRectangle(
+      final List<Coords<num>> tiles = _rectangleTiles(
         LatLngBounds.fromPoints(region.points),
         region.minZoom,
         region.maxZoom,
-        region.options,
-        preventRedownload: region.preventRedownload,
-        seaColor: region.seaColor,
-        compressionQuality: region.compressionQuality,
         crs: region.crs,
-        errorHandler: region.errorHandler,
+        tileSize: CustomPoint(region.options.tileSize, region.options.tileSize),
+      );
+
+      yield* _downloadLoop(
+        tiles,
+        region.options,
+        region.preventRedownload,
+        region.seaTileRemoval,
+        region.compressionQuality,
+        region.errorHandler,
       );
     } else if (region.type == RegionType.line) {
       print(
@@ -304,7 +245,7 @@ class StorageCachingTileProvider extends TileProvider {
         region.maxZoom,
         region.options,
         preventRedownload: region.preventRedownload,
-        seaColor: region.seaColor,
+        seaTileRemoval: region.seaTileRemoval,
         compressionQuality: region.compressionQuality,
         crs: region.crs,
         errorHandler: region.errorHandler,
@@ -312,9 +253,9 @@ class StorageCachingTileProvider extends TileProvider {
     }
   }
 
-  /// Check how many downloadable tiles are within a specified `DownloadableRegion`
+  /// Check approximately how many downloadable tiles are within a specified `DownloadableRegion`
   ///
-  /// Unfortunatley, this does not take into account sea tile removal, as this requires the tile to be fully downloaded, which this function does not do.
+  /// This does not take into account sea tile removal or redownload prevention, as these are handled in the download portion of the code.
   ///
   /// Returns an `int` which is the number of tiles.
   static int checkRegion(DownloadableRegion region) {
@@ -323,12 +264,16 @@ class StorageCachingTileProvider extends TileProvider {
         region.points,
         region.minZoom,
         region.maxZoom,
+        crs: region.crs,
+        tileSize: CustomPoint(region.options.tileSize, region.options.tileSize),
       ).length;
     } else if (region.type == RegionType.rectangle) {
       return _rectangleTiles(
         LatLngBounds.fromPoints(region.points),
         region.minZoom,
         region.maxZoom,
+        crs: region.crs,
+        tileSize: CustomPoint(region.options.tileSize, region.options.tileSize),
       ).length;
     } else if (region.type == RegionType.line) {
       throw UnsupportedError(
@@ -338,7 +283,7 @@ class StorageCachingTileProvider extends TileProvider {
     throw UnimplementedError();
   }
 
-  //! DOWNLOAD (BACKGROUND) FUNCTIONS !//
+  //! BACKROUND DOWNLOAD FUNCTIONS !//
 
   /// Request to be excluded from battery optimizations (allows background task to run when app minimized)
   ///
@@ -370,11 +315,11 @@ class StorageCachingTileProvider extends TileProvider {
 
   /// Download a specified `DownloadableRegion` in the background, and show a notification progress bar (by default)
   ///
-  /// Only available on Android devices, due to limitations with other operating systems. This may be slower and/or less stable than conducting the download in the foreground.
+  /// Only available on Android devices, due to limitations with other operating systems. Downloading in the the background is likely to be slower and/or less stable than downloading in the foreground.
   ///
   /// To check the number of tiles that need to be downloaded before using this function, use `checkRegion()`.
   ///
-  /// You may want to call `requestIgnoreBatteryOptimizations()` before hand, depending on how/where/why this background download will be used. See documentation on that method for more information.
+  /// You may want to call `requestIgnoreBatteryOptimizations()` beforehand, depending on how/where/why this background download will be used. See documentation on that method for more information.
   ///
   /// Optionally specify `showNotification` as `false` to disable the built-in notification system.
   ///
@@ -416,8 +361,8 @@ class StorageCachingTileProvider extends TileProvider {
                 priority: Priority.low,
                 showWhen: false,
                 showProgress: true,
-                maxProgress: event.totalTiles,
-                progress: event.completedTiles,
+                maxProgress: event.approxMaxTiles,
+                progress: event.attemptedTiles,
                 visibility: NotificationVisibility.public,
                 playSound: false,
                 onlyAlertOnce: true,
@@ -429,35 +374,33 @@ class StorageCachingTileProvider extends TileProvider {
                 await flutterLocalNotificationsPlugin!.show(
                   0,
                   'Map Downloading...',
-                  '${event.completedTiles}/${event.totalTiles} (${event.percentageProgress.toStringAsFixed(1)}%)',
+                  '${event.attemptedTiles}/${event.approxMaxTiles} (${event.approxPercentageComplete.round().toString}%)',
                   platformChannelSpecifics,
                 );
               }
 
-              if (callback != null) {
-                if (callback(event)) {
-                  sub!.cancel();
-                  if (showNotification) {
-                    flutterLocalNotificationsPlugin!.cancel(0);
-                    await flutterLocalNotificationsPlugin.show(
-                      0,
-                      'Map Download Cancelled',
-                      '${event.totalTiles - event.completedTiles} tiles remained',
-                      platformChannelSpecifics,
-                    );
-                  }
-                  BackgroundFetch.finish(taskId);
+              if (callback != null && callback(event)) {
+                sub!.cancel();
+                if (showNotification) {
+                  flutterLocalNotificationsPlugin!.cancel(0);
+                  await flutterLocalNotificationsPlugin.show(
+                    0,
+                    'Map Download Cancelled',
+                    '${event.approxRemainingTiles} tiles remained',
+                    platformChannelSpecifics,
+                  );
                 }
+                BackgroundFetch.finish(taskId);
               }
 
-              if (event.percentageProgress == 100) {
+              if (event.approxPercentageComplete == 100) {
                 sub!.cancel();
                 if (showNotification) {
                   flutterLocalNotificationsPlugin!.cancel(0);
                   await flutterLocalNotificationsPlugin.show(
                     0,
                     'Map Downloaded',
-                    '${event.erroredTiles.length} failed tiles',
+                    '${event.failedTiles.length} failed tiles',
                     platformChannelSpecifics,
                   );
                 }
@@ -481,6 +424,197 @@ class StorageCachingTileProvider extends TileProvider {
     } else
       throw UnsupportedError(
           'The background download feature is only available on Android due to limitations with other operating systems.');
+  }
+
+  //! STANDARD FUNCTIONS !//
+
+  Stream<DownloadProgress> _downloadLoop(
+      List<Coords<num>> tiles,
+      TileLayerOptions options,
+      bool preventRedownload,
+      bool seaTileRemoval,
+      int compressionQuality,
+      Function(dynamic)? errorHandler) async* {
+    final http.Client client = http.Client();
+    Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
+        .createSync(recursive: true);
+
+    Uint8List? seaTileBytes;
+    if (seaTileRemoval)
+      seaTileBytes = (await client
+              .get(Uri.parse('https://tile.openstreetmap.org/19/0/0.png')))
+          .bodyBytes;
+
+    int successfulTiles = 0;
+    List<String> failedTiles = [];
+    int seaTiles = 0;
+    int existingTiles = 0;
+
+    for (var i = 0; i < tiles.length; i++) {
+      final List<dynamic> returned = await _getAndSaveTile(
+        tiles[i],
+        options,
+        client,
+        errorHandler,
+        preventRedownload,
+        seaTileBytes,
+        compressionQuality,
+      );
+
+      successfulTiles += returned[0] as int;
+      if (returned[1] != '') failedTiles.add(returned[1]);
+      seaTiles += returned[2] as int;
+      existingTiles += returned[3] as int;
+
+      yield DownloadProgress(
+        approxMaxTiles: tiles.length,
+        successfulTiles: successfulTiles,
+        failedTiles: failedTiles,
+        seaTiles: seaTiles,
+        existingTiles: existingTiles,
+      );
+    }
+
+    client.close();
+  }
+
+  Future<List<dynamic>> _getAndSaveTile(
+    Coords<num> coord,
+    TileLayerOptions options,
+    http.Client client,
+    Function(dynamic)? errorHandler,
+    bool preventRedownload,
+    Uint8List? seaTileBytes,
+    int compressionQuality,
+  ) async {
+    final Coords<double> coordDouble =
+        Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
+    final String url = getTileUrl(coordDouble, options);
+    final String path = p.joinAll([
+      parentDirectory.absolute.path,
+      storeName,
+      url
+          .replaceAll('https://', '')
+          .replaceAll('http://', '')
+          .replaceAll("/", ""),
+      //.replaceAll(".", ""),
+    ]);
+
+    try {
+      if (preventRedownload && File(path).existsSync()) return [1, '', 0, 1];
+
+      File(path).writeAsBytesSync(
+        (await client.get(Uri.parse(url))).bodyBytes,
+        flush: true,
+      );
+
+      if (seaTileBytes != null &&
+          ListEquality().equals(File(path).readAsBytesSync(), seaTileBytes)) {
+        File(path).deleteSync();
+        return [1, '', 1, 0];
+      }
+
+      if (compressionQuality != -1) {
+        final Uint8List? compressed =
+            await FlutterImageCompress.compressWithFile(
+          path,
+          quality: compressionQuality,
+          autoCorrectionAngle: false,
+          format:
+              url.endsWith('.png') ? CompressFormat.png : CompressFormat.jpeg,
+          minHeight: options.tileSize.round(),
+          minWidth: options.tileSize.round(),
+        );
+
+        File(path).writeAsBytesSync(compressed ?? [0]);
+      }
+    } catch (e) {
+      if (errorHandler != null) errorHandler(e);
+      return [0, url, 0, 0];
+    }
+
+    return [1, '', 0, 0];
+  }
+
+  //! TILE LOOPS !//
+
+  static List<Coords<num>> _circleTiles(
+    List<LatLng> circleOutline,
+    int minZoom,
+    int maxZoom, {
+    Crs crs = const Epsg3857(),
+    CustomPoint<num> tileSize = const CustomPoint(256, 256),
+  }) {
+    final Map<int, Map<int, List<int>>> outlineTileNums = {};
+
+    final List<Coords<num>> coords = [];
+
+    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
+      outlineTileNums[zoomLvl] = {};
+
+      for (LatLng node in circleOutline) {
+        final CustomPoint<num> tile = crs
+            .latLngToPoint(node, zoomLvl.toDouble())
+            .unscaleBy(tileSize)
+            .floor();
+
+        if (outlineTileNums[zoomLvl]![tile.x.toInt()] == null) {
+          outlineTileNums[zoomLvl]![tile.x.toInt()] = [
+            999999999999999999,
+            -999999999999999999
+          ];
+        }
+
+        outlineTileNums[zoomLvl]![tile.x.toInt()] = [
+          tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0])
+              ? tile.y.toInt()
+              : (outlineTileNums[zoomLvl]![tile.x.toInt()]![0]),
+          tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1])
+              ? tile.y.toInt()
+              : (outlineTileNums[zoomLvl]![tile.x.toInt()]![1]),
+        ];
+      }
+
+      for (int x in outlineTileNums[zoomLvl]!.keys) {
+        for (int y = outlineTileNums[zoomLvl]![x]![0];
+            y <= outlineTileNums[zoomLvl]![x]![1];
+            y++) {
+          coords.add(
+            Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble(),
+          );
+        }
+      }
+    }
+
+    return coords;
+  }
+
+  static List<Coords> _rectangleTiles(
+    LatLngBounds bounds,
+    int minZoom,
+    int maxZoom, {
+    Crs crs = const Epsg3857(),
+    CustomPoint<num> tileSize = const CustomPoint(256, 256),
+  }) {
+    final coords = <Coords>[];
+    for (var zoomLevel in List<int>.generate(
+        maxZoom - minZoom + 1, (index) => index + minZoom)) {
+      final nwPoint = crs
+          .latLngToPoint(bounds.northWest, zoomLevel.toDouble())
+          .unscaleBy(tileSize)
+          .floor();
+      final sePoint = crs
+              .latLngToPoint(bounds.southEast, zoomLevel.toDouble())
+              .unscaleBy(tileSize)
+              .ceil() -
+          CustomPoint(1, 1);
+      for (var x = nwPoint.x; x <= sePoint.x; x++) {
+        for (var y = nwPoint.y; y <= sePoint.y; y++) {
+          coords.add(Coords(x, y)..z = zoomLevel);
+        }
+      }
+    }
+    return coords;
   }
 
   //!   LINE FUNCTIONS    !//
@@ -573,7 +707,7 @@ class StorageCachingTileProvider extends TileProvider {
     int maxZoom,
     TileLayerOptions options, {
     bool preventRedownload = false,
-    Color? seaColor,
+    bool seaTileRemoval = false,
     int compressionQuality = -1,
     Crs crs = const Epsg3857(),
     Function(dynamic)? errorHandler,
@@ -629,211 +763,13 @@ class StorageCachingTileProvider extends TileProvider {
       tileSize: CustomPoint(options.tileSize, options.tileSize),
     );
 
-    final List<String> erroredUrls = [];
-    final http.Client client = http.Client();
-    Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
-        .createSync(recursive: true);
-
-    for (var i = 0; i < tiles.length; i++) {
-      await _getAndSaveTile(
-        tiles[i],
-        options,
-        client,
-        (url, e) {
-          erroredUrls.add(url);
-          if (errorHandler != null) errorHandler(e);
-        },
-        preventRedownload,
-        seaColor,
-        compressionQuality,
-      );
-      yield DownloadProgress(
-        i + 1,
-        tiles.length,
-        erroredUrls,
-        ((i + 1) / tiles.length) * 100,
-      );
-    }
-
-    client.close();
-  }
-
-  //! CIRCLE FUNCTIONS !//
-
-  static List<Coords<num>> _circleTiles(
-    List<LatLng> circleOutline,
-    int minZoom,
-    int maxZoom, {
-    Crs crs = const Epsg3857(),
-    CustomPoint<num> tileSize = const CustomPoint(256, 256),
-  }) {
-    final Map<int, Map<int, List<int>>> outlineTileNums = {};
-
-    final List<Coords<num>> coords = [];
-
-    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-      outlineTileNums[zoomLvl] = {};
-
-      for (LatLng node in circleOutline) {
-        final CustomPoint<num> tile = crs
-            .latLngToPoint(node, zoomLvl.toDouble())
-            .unscaleBy(tileSize)
-            .floor();
-
-        if (outlineTileNums[zoomLvl]![tile.x.toInt()] == null) {
-          outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-            999999999999999999,
-            -999999999999999999
-          ];
-        }
-
-        outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-          tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0])
-              ? tile.y.toInt()
-              : (outlineTileNums[zoomLvl]![tile.x.toInt()]![0]),
-          tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1])
-              ? tile.y.toInt()
-              : (outlineTileNums[zoomLvl]![tile.x.toInt()]![1]),
-        ];
-      }
-
-      for (int x in outlineTileNums[zoomLvl]!.keys) {
-        for (int y = outlineTileNums[zoomLvl]![x]![0];
-            y <= outlineTileNums[zoomLvl]![x]![1];
-            y++) {
-          coords.add(
-            Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble(),
-          );
-        }
-      }
-    }
-
-    return coords;
-  }
-
-  Stream<DownloadProgress> _downloadCircle(
-    List<LatLng> circleOutline,
-    int minZoom,
-    int maxZoom,
-    TileLayerOptions options, {
-    bool preventRedownload = false,
-    Color? seaColor,
-    int compressionQuality = -1,
-    Crs crs = const Epsg3857(),
-    Function(dynamic)? errorHandler,
-  }) async* {
-    final List<Coords<num>> tiles = _circleTiles(
-      circleOutline,
-      minZoom,
-      maxZoom,
-      crs: crs,
-      tileSize: CustomPoint(options.tileSize, options.tileSize),
+    yield* _downloadLoop(
+      tiles,
+      options,
+      preventRedownload,
+      seaTileRemoval,
+      compressionQuality,
+      errorHandler,
     );
-
-    final List<String> erroredUrls = [];
-    final http.Client client = http.Client();
-    Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
-        .createSync(recursive: true);
-
-    for (var i = 0; i < tiles.length; i++) {
-      await _getAndSaveTile(
-        tiles[i],
-        options,
-        client,
-        (url, e) {
-          erroredUrls.add(url);
-          if (errorHandler != null) errorHandler(e);
-        },
-        preventRedownload,
-        seaColor,
-        compressionQuality,
-      );
-      yield DownloadProgress(
-        i + 1,
-        tiles.length,
-        erroredUrls,
-        ((i + 1) / tiles.length) * 100,
-      );
-    }
-
-    client.close();
-  }
-
-  //! RECTANGLE FUNCTIONS !//
-
-  static List<Coords> _rectangleTiles(
-    LatLngBounds bounds,
-    int minZoom,
-    int maxZoom, {
-    Crs crs = const Epsg3857(),
-    tileSize = const CustomPoint(256, 256),
-  }) {
-    final coords = <Coords>[];
-    for (var zoomLevel in List<int>.generate(
-        maxZoom - minZoom + 1, (index) => index + minZoom)) {
-      final nwPoint = crs
-          .latLngToPoint(bounds.northWest, zoomLevel.toDouble())
-          .unscaleBy(tileSize)
-          .floor();
-      final sePoint = crs
-              .latLngToPoint(bounds.southEast, zoomLevel.toDouble())
-              .unscaleBy(tileSize)
-              .ceil() -
-          CustomPoint(1, 1);
-      for (var x = nwPoint.x; x <= sePoint.x; x++) {
-        for (var y = nwPoint.y; y <= sePoint.y; y++) {
-          coords.add(Coords(x, y)..z = zoomLevel);
-        }
-      }
-    }
-    return coords;
-  }
-
-  Stream<DownloadProgress> _downloadRectangle(
-    LatLngBounds bounds,
-    int minZoom,
-    int maxZoom,
-    TileLayerOptions options, {
-    bool preventRedownload = false,
-    Color? seaColor,
-    int compressionQuality = -1,
-    Crs crs = const Epsg3857(),
-    Function(dynamic)? errorHandler,
-  }) async* {
-    final List<Coords<num>> tiles = _rectangleTiles(
-      bounds,
-      minZoom,
-      maxZoom,
-      crs: crs,
-      tileSize: CustomPoint(options.tileSize, options.tileSize),
-    );
-
-    final List<String> erroredUrls = [];
-    final http.Client client = http.Client();
-    Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
-        .createSync(recursive: true);
-
-    for (var i = 0; i < tiles.length; i++) {
-      await _getAndSaveTile(
-        tiles[i],
-        options,
-        client,
-        (url, e) {
-          erroredUrls.add(url);
-          if (errorHandler != null) errorHandler(e);
-        },
-        preventRedownload,
-        seaColor,
-        compressionQuality,
-      );
-      yield DownloadProgress(
-        i + 1,
-        tiles.length,
-        erroredUrls,
-        ((i + 1) / tiles.length) * 100,
-      );
-    }
-
-    client.close();
   }
 }

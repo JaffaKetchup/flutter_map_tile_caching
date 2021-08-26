@@ -8,7 +8,7 @@ export 'src/regions/line.dart';
 export 'src/regions/rectangle.dart';
 
 // Main
-export 'src/tileProvider.dart';
+export 'src/main.dart';
 //export 'src/tileLayer.dart'; EXPERIMENTAL
 
 // Backend and Extras
