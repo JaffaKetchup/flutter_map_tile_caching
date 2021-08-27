@@ -41,7 +41,15 @@ void main() {
     await for (DownloadProgress progress in downloadA) {
       progA = progress;
       print(
-          ' A > ' + progress.approxPercentageComplete.toStringAsFixed(2) + '%');
+        ' > ' +
+            progress.avgDurationTile.toString() +
+            ' - ' +
+            progress.duration.toString() +
+            ' - ' +
+            progress.estTotalDuration.toString() +
+            ' - ' +
+            progress.estRemainingDuration.toString(),
+      );
     }
 
     expect(progA!.successfulTiles, 78);
@@ -108,14 +116,22 @@ void main() {
     await for (DownloadProgress progress in downloadC) {
       progC = progress;
       print(
-          ' C > ' + progress.approxPercentageComplete.toStringAsFixed(2) + '%');
+        ' > ' +
+            progress.avgDurationTile.toString() +
+            ' - ' +
+            progress.duration.toString() +
+            ' - ' +
+            progress.estTotalDuration.toString() +
+            ' - ' +
+            progress.estRemainingDuration.toString(),
+      );
     }
 
     expect(progC!.successfulTiles, 78);
     expect(progC.failedTiles, []);
     expect(progC.attemptedTiles, progC.successfulTiles);
-    expect(progC.existingTiles, progC.successfulTiles);
-    expect(progC.existingTilesDiscount, 100);
+    expect(progC.existingTiles, 0);
+    expect(progC.existingTilesDiscount, 0);
     expect(progC.seaTiles, 0);
     expect(progC.seaTilesDiscount, 0);
     expect(mainManager.storeLength, progC.successfulTiles);
@@ -148,8 +164,7 @@ void main() {
       );
 
       await for (DownloadProgress progress in download) {
-        print(
-            ' > ' + progress.approxPercentageComplete.toStringAsFixed(2) + '%');
+        print(' > ' + progress.percentageProgress.toStringAsFixed(2) + '%');
         expect(progress.failedTiles.length, 0);
       }
 
@@ -159,7 +174,7 @@ void main() {
     onPlatform: {'windows': Skip('Does not work on Windows')},
   );
 
-  test('seaColor', () async {
+  test('seaTileRemoval', () async {
     final Directory parentDirectory = await reset(true);
     final MapCachingManager mainManager =
         MapCachingManager(parentDirectory, 'seaTileRemoval');
@@ -187,23 +202,29 @@ void main() {
     DownloadProgress? prog;
     await for (DownloadProgress progress in download) {
       print(
-        ' O > ' +
-            progress.attemptedTiles.toString() +
+        ' > ' +
+            progress.avgDurationTile.toString() +
             ' - ' +
-            progress.approxPercentageComplete.toStringAsFixed(2) +
-            '%',
-      );
-      print(
-        ' S > ' +
-            progress.seaTiles.toString() +
+            progress.duration.toString() +
             ' - ' +
+            progress.estTotalDuration.toString() +
+            ' - ' +
+            progress.estRemainingDuration.toString() +
+            ' | ' +
             progress.seaTilesDiscount.toStringAsFixed(2) +
             '%',
       );
       prog = progress;
     }
 
-    //expect(prog!.completedTiles - prog.erroredTiles.length, 0);
-    //expect(mainManager.storeLength, 78);
-  }, timeout: Timeout(Duration(minutes: 2)));
+    expect(prog!.successfulTiles, 552);
+    expect(prog.failedTiles, []);
+    expect(prog.attemptedTiles, prog.successfulTiles);
+    expect(prog.existingTiles, 0);
+    expect(prog.existingTilesDiscount, 0);
+    expect(prog.seaTiles, 291);
+    expect(prog.seaTilesDiscount.toStringAsFixed(2), '52.72');
+    expect(mainManager.storeLength, 261);
+    expect(prog.successfulTiles - prog.seaTiles, mainManager.storeLength);
+  }, timeout: Timeout(Duration(minutes: 1)));
 }

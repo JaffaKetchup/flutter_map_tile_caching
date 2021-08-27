@@ -361,7 +361,7 @@ class StorageCachingTileProvider extends TileProvider {
                 priority: Priority.low,
                 showWhen: false,
                 showProgress: true,
-                maxProgress: event.approxMaxTiles,
+                maxProgress: event.maxTiles,
                 progress: event.attemptedTiles,
                 visibility: NotificationVisibility.public,
                 playSound: false,
@@ -374,7 +374,7 @@ class StorageCachingTileProvider extends TileProvider {
                 await flutterLocalNotificationsPlugin!.show(
                   0,
                   'Map Downloading...',
-                  '${event.attemptedTiles}/${event.approxMaxTiles} (${event.approxPercentageComplete.round().toString}%)',
+                  '${event.attemptedTiles}/${event.maxTiles} (${event.percentageProgress.round().toString}%)',
                   platformChannelSpecifics,
                 );
               }
@@ -386,14 +386,14 @@ class StorageCachingTileProvider extends TileProvider {
                   await flutterLocalNotificationsPlugin.show(
                     0,
                     'Map Download Cancelled',
-                    '${event.approxRemainingTiles} tiles remained',
+                    '${event.remainingTiles} tiles remained',
                     platformChannelSpecifics,
                   );
                 }
                 BackgroundFetch.finish(taskId);
               }
 
-              if (event.approxPercentageComplete == 100) {
+              if (event.percentageProgress == 100) {
                 sub!.cancel();
                 if (showNotification) {
                   flutterLocalNotificationsPlugin!.cancel(0);
@@ -449,6 +449,7 @@ class StorageCachingTileProvider extends TileProvider {
     List<String> failedTiles = [];
     int seaTiles = 0;
     int existingTiles = 0;
+    final DateTime startTime = DateTime.now();
 
     for (var i = 0; i < tiles.length; i++) {
       final List<dynamic> returned = await _getAndSaveTile(
@@ -467,11 +468,12 @@ class StorageCachingTileProvider extends TileProvider {
       existingTiles += returned[3] as int;
 
       yield DownloadProgress(
-        approxMaxTiles: tiles.length,
+        maxTiles: tiles.length,
         successfulTiles: successfulTiles,
         failedTiles: failedTiles,
         seaTiles: seaTiles,
         existingTiles: existingTiles,
+        duration: DateTime.now().difference(startTime),
       );
     }
 

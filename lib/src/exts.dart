@@ -1,7 +1,7 @@
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 
-extension latlngExts on LatLng {
+extension LatLngExts on LatLng {
   /// Prefer usage of operator `>>` or `latlong2`'s `Distance()` methods
   ///
   /// Calculate distance to another LatLng in km using average Earth radius
@@ -24,21 +24,17 @@ extension latlngExts on LatLng {
   }
 }
 
-extension nums on num {
+extension IntExts on int {
+  /*
   /// Convert degrees to radians
-  T degToRad<T>() {
-    return (this * math.pi / 180) as T;
-  }
+  double get degToRad => this * math.pi / 180;
 
   /// Convert radians to degrees
-  T radToDeg<T>() {
-    return (this * 180 / math.pi) as T;
-  }
+  double get radToDeg => this * 180 / math.pi;
+  */
 
   /// Convert a number of bytes to a number of megabytes (real, uses 1024 basis)
   ///
   /// Useful after getting a cache store size
-  double get bytesToMegabytes {
-    return this / 1049000;
-  }
+  double get bytesToMegabytes => this / 1049000;
 }

@@ -1,13 +1,12 @@
 import 'dart:io';
 
+import 'package:meta/meta.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p show joinAll, split;
 
-import 'exts.dart';
-
 /// Handles caching for tiles
 ///
-/// Used internally for downloading regions, another library is depended on for 'browse caching'. Note that this does not create the store folder, call `.createStore()` afterwards if necessary.
+/// Used internally for downloading regions, another library is depended on for 'browse caching'.
 class MapCachingManager {
   /// The directory to place cache stores into
   ///
@@ -22,13 +21,12 @@ class MapCachingManager {
 
   /// Create an instance to handle caching for tiles
   ///
-  /// Used internally for downloading regions, another library is depended on for 'browse caching'. Note that this does not create the store folder, call `.createStore()` afterwards if necessary.
+  /// Used internally for downloading regions, another library is depended on for 'browse caching'.
   MapCachingManager(this.parentDirectory, [this.storeName = 'mainStore'])
       : _joinedBasePath = p.joinAll([parentDirectory.absolute.path, storeName]);
 
-  /// Explicitly create the store if necessary
-  ///
-  /// This is not needed unless you intend to download regions before 'browse caching'.
+  /// Explicitly create the store - only use if necessary
+  @visibleForTesting
   void createStore() => Directory(_joinedBasePath).createSync(recursive: true);
 
   /// Delete a cache store
@@ -128,12 +126,5 @@ class MapCachingManager {
   static Future<Directory> get temporaryDirectory async {
     return Directory(
         p.joinAll([(await getTemporaryDirectory()).absolute.path, 'mapCache']));
-  }
-
-  /// Returns the current working store's path, store's size, and all stores size, as a human-friendly 3-line string
-  @override
-  String toString() {
-    final String path = p.joinAll([parentDirectory.absolute.path, storeName]);
-    return '$path\nStore size: ${(storeSize ?? 0).bytesToMegabytes}MB\nAll stores size: ${(allStoresSizes ?? 0).bytesToMegabytes}MB';
   }
 }

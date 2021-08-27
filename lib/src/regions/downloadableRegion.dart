@@ -145,11 +145,6 @@ class DownloadableRegion {
 ///
 /// Is yielded from `StorageCachingTileProvider().downloadRegion()`, or returned from `DownloadProgress.placeholder`.
 class DownloadProgress {
-  /// Number of attempted tile downloads, including failures
-  ///
-  /// Is equal to `successfulTiles + failedTiles.length`.
-  int get attemptedTiles => successfulTiles + failedTiles.length;
-
   /// Number of successful tile downloads
   final int successfulTiles;
 
@@ -157,16 +152,7 @@ class DownloadProgress {
   final List<String> failedTiles;
 
   /// Approximate total number of tiles to be downloaded
-  ///
-  /// This does not take into account sea tile removal or redownload prevention, as these are handled in the download portion of the code.
-  final int approxMaxTiles;
-
-  /// Approximate number of tiles remaining to be downloaded
-  ///
-  /// Note that download may complete before this is equal to 0.
-  ///
-  /// Is equal to `approxMaxTiles - attemptedTiles`.
-  int get approxRemainingTiles => approxMaxTiles - attemptedTiles;
+  final int maxTiles;
 
   /// Number of tiles removed because they were entirely sea (these also make up part of `successfulTiles`)
   ///
@@ -178,33 +164,61 @@ class DownloadProgress {
   /// Only applicable if redownload prevention is enabled, otherwise this value is always 0.
   final int existingTiles;
 
+  /// Duration since start of download process
+  final Duration duration;
+
+  /// Number of attempted tile downloads, including failures
+  ///
+  /// Is equal to `successfulTiles + failedTiles.length`.
+  int get attemptedTiles => successfulTiles + failedTiles.length;
+
+  /// Approximate number of tiles remaining to be downloaded
+  ///
+  /// Is equal to `approxMaxTiles - attemptedTiles`.
+  int get remainingTiles => maxTiles - attemptedTiles;
+
   /// Percentage of tiles saved by using sea tile removal (ie. discount)
   ///
-  /// Only applicable if sea tile removal is enabled, otherwise this value is always 100.
+  /// Only applicable if sea tile removal is enabled, otherwise this value is always 0.
   ///
-  /// Is equal to `(((successfulTiles - existingTiles) - seaTiles) / successfulTiles) * 100`.
-  double get seaTilesDiscount =>
-      100 -
-      ((((successfulTiles - existingTiles) - seaTiles) / successfulTiles) *
-          100);
+  /// Is equal to `100 - ((((successfulTiles - existingTiles) - seaTiles) / successfulTiles) * 100)`.
+  double get seaTilesDiscount => seaTiles == 0
+      ? 0
+      : 100 -
+          ((((successfulTiles - existingTiles) - seaTiles) / successfulTiles) *
+              100);
 
   /// Percentage of tiles saved by using redownload prevention (ie. discount)
   ///
-  /// Only applicable if redownload prevention is enabled, otherwise this value is always 100.
+  /// Only applicable if redownload prevention is enabled, otherwise this value is always 0.
   ///
-  /// Is equal to `(((successfulTiles - seaTiles) - existingTiles) / successfulTiles) * 100`.
-  double get existingTilesDiscount =>
-      100 -
-      ((((successfulTiles - seaTiles) - existingTiles) / successfulTiles) *
-          100);
+  /// Is equal to `100 -  ((((successfulTiles - seaTiles) - existingTiles) / successfulTiles) * 100)`.
+  double get existingTilesDiscount => existingTiles == 0
+      ? 0
+      : 100 -
+          ((((successfulTiles - seaTiles) - existingTiles) / successfulTiles) *
+              100);
 
   /// Approximate percentage of process complete
   ///
-  /// Note that download may complete before this is equal to 100%.
+  /// Is equal to `(attemptedTiles / approxMaxTiles) * 100`.
+  double get percentageProgress => (attemptedTiles / maxTiles) * 100;
+
+  /// Average duration (rounded) each tile has taken to either be removed (sea tile removal and redownload prevention) successfully download or fail
   ///
-  /// Is equal to `(attemptedTiles / approxMaxTiles) * 100`
-  double get approxPercentageComplete =>
-      (attemptedTiles / approxMaxTiles) * 100;
+  /// Is equal to `Duration(milliseconds: (duration.inMilliseconds / attemptedTiles).round())`.
+  Duration get avgDurationTile => Duration(
+      milliseconds: (duration.inMilliseconds / attemptedTiles).round());
+
+  /// Estimated duration for the whole download process based on `avgDurationTile`
+  ///
+  /// Is equal to `avgDurationTile * maxTiles`.
+  Duration get estTotalDuration => avgDurationTile * maxTiles;
+
+  /// Estimated remaining duration until the end of the download process, based on `estTotalDuration`
+  ///
+  /// Is equal to `estTotalDuration - duration`
+  Duration get estRemainingDuration => estTotalDuration - duration;
 
   /// Deprecated due to internal refactoring. Migrate to `attemptedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
   @Deprecated(
@@ -216,15 +230,10 @@ class DownloadProgress {
       'Deprecated due to internal refactoring. Migrate to `failedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
   List<String> get erroredTiles => failedTiles;
 
-  /// Deprecated due to internal refactoring. Migrate to `approxMaxTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
+  /// Deprecated due to internal refactoring. Migrate to `maxTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
   @Deprecated(
-      'Deprecated due to internal refactoring. Migrate to `approxMaxTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
-  int get totalTiles => approxMaxTiles;
-
-  /// Deprecated due to internal refactoring. Migrate to `approxPercentageComplete` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
-  @Deprecated(
-      'Deprecated due to internal refactoring. Migrate to `approxPercentageComplete` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
-  double get percentageProgress => approxPercentageComplete;
+      'Deprecated due to internal refactoring. Migrate to `maxTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
+  int get totalTiles => maxTiles;
 
   /// An object representing the progress of a download
   ///
@@ -235,17 +244,19 @@ class DownloadProgress {
   DownloadProgress({
     required this.successfulTiles,
     required this.failedTiles,
-    required this.approxMaxTiles,
+    required this.maxTiles,
     required this.seaTiles,
     required this.existingTiles,
+    required this.duration,
   });
 
   /// Create a placeholder (all values set to 0) `DownloadProgress`, useful for `initalData` in a `StreamBuilder()`
   static DownloadProgress get placeholder => DownloadProgress(
         successfulTiles: 0,
         failedTiles: [],
-        approxMaxTiles: 0,
+        maxTiles: 0,
         seaTiles: 0,
         existingTiles: 0,
+        duration: Duration(seconds: 0),
       );
 }
