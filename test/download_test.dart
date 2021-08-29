@@ -9,7 +9,9 @@ void main() {
   Future<Directory> reset([bool dontReset = false]) async {
     final cacheDir = await MapCachingManager.normalDirectory;
     if (!dontReset && cacheDir.existsSync())
-      cacheDir.deleteSync(recursive: true);
+      try {
+        cacheDir.deleteSync(recursive: true);
+      } catch (e) {}
     return cacheDir;
   }
 

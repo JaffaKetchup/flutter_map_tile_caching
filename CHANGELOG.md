@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.0.0-dev.3] - 2021/08/29
+
+* Created automated tests
+* Reworked `DownloadProgress()`, adding many more statistics
+* Add way to rename existing store
+* Large refactoring and reduction of code duplication
+* Performance improvements
+* Marked some experimental functionality as experimental, ready for release
+* Added redownload prevention option
+* Added sea tile removal
+* Added compression option (needs manual testing)
+
 ## [3.0.2] - 2021/07/25
 
 * Fix bug #20 (on GitHub)
