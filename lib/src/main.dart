@@ -45,9 +45,7 @@ enum CacheBehavior {
   onlineOnly,
 }
 
-/// A `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database
-///
-/// Also contains methods to download regions of a map to a local caching database using an instance
+/// A `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
 ///
 /// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a cache store to use it instead of the default.
 ///
@@ -59,7 +57,7 @@ class StorageCachingTileProvider extends TileProvider {
   )
   static final kMaxPreloadTileAreaCount = 20000;
 
-  /// The maximum number of tiles allowed in a cache store ('browsing', see below) before the oldest tile gets deleted.
+  /// The maximum number of tiles allowed in a cache store ('browsing', see below) before the oldest tile gets deleted
   ///
   /// Only applies to 'browse caching', ie. downloading regions will bypass this limit. Please note that this can be computationally expensive as it potentially involves sorting through this many files to find the oldest file.
   ///
@@ -77,29 +75,31 @@ class StorageCachingTileProvider extends TileProvider {
   /// Defaults to `true`.
   final bool betterMaxLengthEnforcement;
 
-  /// The duration until a tile expires and needs to be fetched again when browsing.
+  /// The duration until a tile expires and needs to be fetched again when browsing
   ///
   /// Only has an effect when the `CacheBehavior` is set to `cacheFirst`.
   ///
   /// Defaults to 31 days, set to a negative duration to disable.
   final Duration cachedValidDuration;
 
-  /// The name of the cache store to use for this instance. Defaults to the default store, 'mainStore'.
+  /// The name of the cache store to use for this instance
+  ///
+  /// Defaults to the default store, 'mainStore'.
   final String storeName;
 
-  /// The directory to place cache stores into.
+  /// The directory to place cache stores into
   ///
   /// Use `await MapStorageManager.normalDirectory` wherever possible, or `await MapStorageManager.temporaryDirectory` is required (see documentation). If creating a path manually, be sure it's the correct format, use the `path` library if needed.
   ///
   /// Required.
-  final Directory parentDirectory;
+  final CacheDirectory parentDirectory;
 
-  /// The behavior method to get the tile. Defaults to `cacheFirst`.
+  /// The behavior method to get the tile
+  ///
+  /// Defaults to `cacheFirst`.
   final CacheBehavior behavior;
 
-  /// Create a `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database
-  ///
-  /// Also contains methods to download regions of a map to a local caching database using an instance
+  /// Create a `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
   ///
   /// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a cache store to use it instead of the default.
   ///

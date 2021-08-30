@@ -4,19 +4,23 @@ import 'package:meta/meta.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p show joinAll, split;
 
+import 'exts.dart';
+
 /// Handles caching for tiles
 ///
 /// Used internally for downloading regions, another library is depended on for 'browse caching'.
 class MapCachingManager {
   /// The directory to place cache stores into
   ///
-  /// Use the same directory used in `StorageCachingTileProvider` (`await MapCachingManager.normalDirectory` recommended). Required.
-  final Directory parentDirectory;
+  /// Use `await MapStorageManager.normalDirectory` wherever possible, or `await MapStorageManager.temporaryDirectory` is required (see documentation). If creating a path manually, be sure it's the correct format, use the `path` library if needed.
+  ///
+  /// Required.
+  final CacheDirectory parentDirectory;
 
-  /// The name of a store. Defaults to 'mainStore'.
+  /// The name of a cache store. Defaults to 'mainStore'.
   final String storeName;
 
-  /// The correctly joined `parentDirectory` and `storeName` at time of initialization.
+  /// The correctly joined `parentDirectory` and `storeName` at time of initialization
   final String _joinedBasePath;
 
   /// Create an instance to handle caching for tiles
@@ -24,6 +28,15 @@ class MapCachingManager {
   /// Used internally for downloading regions, another library is depended on for 'browse caching'.
   MapCachingManager(this.parentDirectory, [this.storeName = 'mainStore'])
       : _joinedBasePath = p.joinAll([parentDirectory.absolute.path, storeName]);
+
+  /// Check if the cache store exists
+  ///
+  /// Returns `true` if it does, `false` if only the `parentDirectory` exists, `null` if neither exist.
+  bool? get exists => Directory(_joinedBasePath).existsSync()
+      ? true
+      : Directory(parentDirectory.absolute.path).existsSync()
+          ? false
+          : null;
 
   /// Explicitly create the store - only use if necessary
   @visibleForTesting
@@ -111,7 +124,7 @@ class MapCachingManager {
   /// Get the application's documents directory
   ///
   /// Caching in here will show caches under the App Storage - instead of under App Cache - in Settings, and therefore the OS or other apps cannot clear the cache without telling the user.
-  static Future<Directory> get normalDirectory async {
+  static Future<CacheDirectory> get normalDirectory async {
     return Directory(p.joinAll([
       (await getApplicationDocumentsDirectory()).absolute.path,
       'mapCache'
@@ -123,7 +136,7 @@ class MapCachingManager {
   /// Caching in here will show caches under the App Cache - instead of App Storage - in Settings. Therefore the OS can clear cached tiles at any time without telling the user.
   ///
   /// For this reason, it is not recommended to use this store. Use `normalDirectory` by default instead.
-  static Future<Directory> get temporaryDirectory async {
+  static Future<CacheDirectory> get temporaryDirectory async {
     return Directory(
         p.joinAll([(await getTemporaryDirectory()).absolute.path, 'mapCache']));
   }

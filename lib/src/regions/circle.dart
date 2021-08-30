@@ -109,7 +109,7 @@ List<LatLng> _circleToOutline(
   return output;
 }
 
-extension circleConvert on LatLng {
+extension CircleRegionExts on LatLng {
   /// Converts a `LatLng` to a `CircleRegion` given a radius in km
   CircleRegion toCircleRegion(double radius) {
     return CircleRegion(this, radius);

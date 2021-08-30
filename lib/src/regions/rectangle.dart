@@ -75,7 +75,7 @@ class RectangleRegion extends BaseRegion {
   }
 }
 
-extension rectangleConvert on LatLngBounds {
+extension RectangleRegionExts on LatLngBounds {
   /// Converts a `LatLngBounds` to a `RectangleRegion`
   RectangleRegion toRectangleRegion() {
     return RectangleRegion(this);

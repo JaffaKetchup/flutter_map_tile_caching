@@ -22,6 +22,3 @@ export 'src/widgets/shapeChooser.dart';
 
 // Deprecated
 export 'src/deprecated/oldCachingManager.dart';
-
-// Other Libraries
-export 'package:network_to_file_image/network_to_file_image.dart';

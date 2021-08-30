@@ -8,7 +8,7 @@
 * Large refactoring and reduction of code duplication
 * Performance improvements
 * Marked some experimental functionality as experimental, ready for release
-* Added redownload prevention option
+* Added re-download prevention option
 * Added sea tile removal
 * Added compression option (needs manual testing)
 

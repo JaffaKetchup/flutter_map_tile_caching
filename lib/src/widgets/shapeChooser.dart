@@ -131,7 +131,7 @@ class ShapeChooser {
   }
 }
 
-extension shapeChooserResultExts on ShapeChooserResult? {
+extension ShapeChooserResultExts on ShapeChooserResult? {
   /// Convert the `ShapeChooserResult`, which is normally nullable, to a `PolygonLayerOptions` (never null) to be drawn immediately
   PolygonLayerOptions toDrawable() {
     return this?.selectedAreaPolygon ?? PolygonLayerOptions();

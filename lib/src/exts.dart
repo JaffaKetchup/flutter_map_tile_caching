@@ -1,5 +1,12 @@
+import 'dart:io';
+
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
+
+/// The parent directory of all cache stores, to be used for `parentDirectory` arguments
+///
+/// Is an alias of `Directory`.
+typedef CacheDirectory = Directory;
 
 extension LatLngExts on LatLng {
   /// Prefer usage of operator `>>` or `latlong2`'s `Distance()` methods
@@ -25,14 +32,6 @@ extension LatLngExts on LatLng {
 }
 
 extension IntExts on int {
-  /*
-  /// Convert degrees to radians
-  double get degToRad => this * math.pi / 180;
-
-  /// Convert radians to degrees
-  double get radToDeg => this * 180 / math.pi;
-  */
-
   /// Convert a number of bytes to a number of megabytes (real, uses 1024 basis)
   ///
   /// Useful after getting a cache store size
