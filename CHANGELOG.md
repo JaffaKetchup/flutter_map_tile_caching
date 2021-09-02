@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.0.0-dev.4] - 2021/09/02
+
+* Created recovery system
+* Added new examples
+* Improved automated tests
+* Deprecated shape chooser
+* Deprecated some extension methods
+* Working on example app
+* Add more customization to background download notifications
+* Some testing and bug fixes still required
+* Update to documentation README still required
+
 ## [4.0.0-dev.3] - 2021/08/29
 
 * Created automated tests

@@ -1,10 +1,14 @@
 import 'dart:io';
 
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p show joinAll, split;
 
-import 'exts.dart';
+import 'misc.dart';
+import 'regions/recoveredRegion.dart';
 
 /// Handles caching for tiles
 ///
@@ -119,6 +123,100 @@ class MapCachingManager {
           .length;
     });
     return totalLength;
+  }
+
+  @internal
+  bool startRecovery(
+    RegionType type,
+    BaseRegion inputRegion,
+    int minZoom,
+    int maxZoom,
+    bool seaTileRemoval,
+    int compressionQuality,
+  ) {
+    if (!Directory(_joinedBasePath).existsSync()) return false;
+    final File file = File(p.joinAll(
+      [_joinedBasePath, 'downloadOngoing.txt'],
+    ));
+    file.createSync(recursive: true);
+    if (type == RegionType.rectangle) {
+      final RectangleRegion region = inputRegion as RectangleRegion;
+      file.writeAsStringSync(
+        region.bounds.northWest.latitude.toString() +
+            ',' +
+            region.bounds.northWest.longitude.toString() +
+            '\n' +
+            region.bounds.southEast.latitude.toString() +
+            ',' +
+            region.bounds.southEast.longitude.toString() +
+            '\n${minZoom.toString()}\n${maxZoom.toString()}\n$seaTileRemoval\n${compressionQuality.toString()}\nrectangle',
+        flush: true,
+      );
+    } else if (type == RegionType.circle) {
+      final CircleRegion region = inputRegion as CircleRegion;
+      file.writeAsStringSync(
+        region.center.latitude.toString() +
+            ',' +
+            region.center.longitude.toString() +
+            '\n' +
+            region.radius.toString() +
+            '\n${minZoom.toString()}\n${maxZoom.toString()}\n$seaTileRemoval\n${compressionQuality.toString()}\ncircle',
+        flush: true,
+      );
+    }
+
+    return file.existsSync();
+  }
+
+  @internal
+  void endRecovery() {
+    if (!Directory(_joinedBasePath).existsSync()) return;
+    try {
+      File(p.joinAll(
+        [_joinedBasePath, 'downloadOngoing.txt'],
+      )).deleteSync();
+    } catch (e) {}
+  }
+
+  @internal
+  RecoveredRegion? recoverDownload() {
+    final File file = File(p.joinAll(
+      [_joinedBasePath, 'downloadOngoing.txt'],
+    ));
+
+    if (!file.existsSync()) return null;
+
+    final List<String> recovery = file.readAsLinesSync();
+
+    final double Function(String, [double Function(String)?]) dp = double.parse;
+    final int Function(String, {int Function(String)? onError, int? radix}) ip =
+        int.parse;
+
+    if (recovery[6] == 'rectangle')
+      return RecoveredRegion(
+        RegionType.rectangle,
+        LatLngBounds(
+          LatLng(dp(recovery[0].split(',')[0]), dp(recovery[0].split(',')[1])),
+          LatLng(dp(recovery[1].split(',')[0]), dp(recovery[1].split(',')[1])),
+        ),
+        null,
+        null,
+        ip(recovery[2]),
+        ip(recovery[3]),
+        recovery[4] == 'true',
+        ip(recovery[5]),
+      );
+    else if (recovery[6] == 'circle')
+      return RecoveredRegion(
+        RegionType.circle,
+        null,
+        LatLng(dp(recovery[0].split(',')[0]), dp(recovery[0].split(',')[1])),
+        dp(recovery[1]),
+        ip(recovery[2]),
+        ip(recovery[3]),
+        recovery[4] == 'true',
+        ip(recovery[5]),
+      );
   }
 
   /// Get the application's documents directory

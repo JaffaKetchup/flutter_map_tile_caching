@@ -114,6 +114,7 @@ class LineRegion extends BaseRegion {
       maxZoom,
       options,
       RegionType.line,
+      this,
       preventRedownload: preventRedownload,
       seaTileRemoval: seaTileRemoval,
       compressionQuality: compressionQuality,

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:meta/meta.dart';
 
 import 'downloadableRegion.dart';
 
@@ -41,6 +42,7 @@ class CircleRegion extends BaseRegion {
       maxZoom,
       options,
       RegionType.circle,
+      this,
       preventRedownload: preventRedownload,
       seaTileRemoval: seaTileRemoval,
       compressionQuality: compressionQuality,

@@ -59,6 +59,12 @@ abstract class BaseRegion {
 ///
 /// Is returned from `.toDownloadable()`.
 class DownloadableRegion {
+  /// The shape that this region conforms to
+  final RegionType type;
+
+  /// The original `BaseRegion`, used internally for recovery purposes
+  final BaseRegion originalRegion;
+
   /// All the verticies on the outline of a polygon
   final List<LatLng> points;
 
@@ -67,9 +73,6 @@ class DownloadableRegion {
 
   /// The maximum zoom level to fetch tiles for
   final int maxZoom;
-
-  /// The shape that this region conforms to
-  final RegionType type;
 
   /// The options used to fetch tiles
   final TileLayerOptions options;
@@ -111,18 +114,14 @@ class DownloadableRegion {
   )
   final CustomPoint<num> tileSize = CustomPoint(256, 256);
 
-  /// A downloadable region to be passed to the `StorageCachingTileProvider().downloadRegion()` function
-  ///
-  /// Should avoid manual construction. Use a supported region shape and the `.toDownloadable()` extension on it.
-  ///
-  /// Is returned from `.toDownloadable()`.
   @internal
   DownloadableRegion(
     this.points,
     this.minZoom,
     this.maxZoom,
     this.options,
-    this.type, {
+    this.type,
+    this.originalRegion, {
     this.preventRedownload = false,
     this.seaTileRemoval = false,
     this.compressionQuality = -1,
@@ -135,7 +134,7 @@ class DownloadableRegion {
         ),
         assert(
           minZoom <= maxZoom,
-          '`minZoom` should be less than `maxZoom`',
+          '`minZoom` should be less than or equal to `maxZoom`',
         );
 }
 
@@ -235,11 +234,6 @@ class DownloadProgress {
       'Deprecated due to internal refactoring. Migrate to `maxTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
   int get totalTiles => maxTiles;
 
-  /// An object representing the progress of a download
-  ///
-  /// Should avoid manual construction, use `DownloadProgress.placeholder`.
-  ///
-  /// Is yielded from `StorageCachingTileProvider().downloadRegion()`, or returned from `DownloadProgress.placeholder`.
   @internal
   DownloadProgress({
     required this.successfulTiles,

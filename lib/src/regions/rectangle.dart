@@ -29,6 +29,7 @@ class RectangleRegion extends BaseRegion {
       maxZoom,
       options,
       RegionType.rectangle,
+      this,
       preventRedownload: preventRedownload,
       seaTileRemoval: seaTileRemoval,
       compressionQuality: compressionQuality,
@@ -75,8 +76,13 @@ class RectangleRegion extends BaseRegion {
   }
 }
 
+/// Deprecated due to other available methods. Migrate to construction using the real constructor (`RectangleRegion()`).
+@Deprecated(
+    'Due to other available methods. Migrate to construction using the real constructor (`RectangleRegion()`).')
 extension RectangleRegionExts on LatLngBounds {
-  /// Converts a `LatLngBounds` to a `RectangleRegion`
+  /// Deprecated due to other available methods. Migrate to construction using the real constructor (`RectangleRegion()`).
+  @Deprecated(
+      'Due to other available methods. Migrate to construction using the real constructor (`RectangleRegion()`).')
   RectangleRegion toRectangleRegion() {
     return RectangleRegion(this);
   }

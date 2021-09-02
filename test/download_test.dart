@@ -37,6 +37,7 @@ void main() {
           subdomains: ['a', 'b', 'c'],
         ),
       ),
+      disableRecovery: true,
     );
 
     DownloadProgress? progA;
@@ -81,6 +82,7 @@ void main() {
         ),
         preventRedownload: true,
       ),
+      disableRecovery: true,
     );
 
     DownloadProgress? progB;
@@ -112,6 +114,7 @@ void main() {
           subdomains: ['a', 'b', 'c'],
         ),
       ),
+      disableRecovery: true,
     );
 
     DownloadProgress? progC;
@@ -199,6 +202,7 @@ void main() {
         ),
         seaTileRemoval: true,
       ),
+      disableRecovery: true,
     );
 
     DownloadProgress? prog;
