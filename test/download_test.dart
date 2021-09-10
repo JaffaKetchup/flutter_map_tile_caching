@@ -7,7 +7,7 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 void main() {
   Future<Directory> reset([bool dontReset = false]) async {
-    final cacheDir = await MapCachingManager.normalDirectory;
+    final cacheDir = await MapCachingManager.normalCache;
     if (!dontReset && cacheDir.existsSync())
       try {
         cacheDir.deleteSync(recursive: true);

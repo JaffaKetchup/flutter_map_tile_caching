@@ -1,4 +1,6 @@
 //! TODO: Add 'flutter_map', 'flutter_map_tile_caching', 'sliding_up_panel', 'connectivity_plus' to pubspec.yaml
+//! TODO: Change `templateURL` to a valid one, see README for details
+//! TODO: Follow main installation instructions
 
 import 'dart:io';
 import 'dart:ui';
@@ -86,6 +88,7 @@ class _MapScreenState extends State<MapScreen> {
     CacheDirectory parentDirectory,
   ) {
     if (renaming)
+      // ignore: unused_result
       MapCachingManager(parentDirectory, storeName!).renameStore(_storeName);
 
     setState(() {
@@ -258,7 +261,7 @@ class _MapScreenState extends State<MapScreen> {
         title: Text('flutter_map_tile_caching Demo'),
       ),
       body: FutureBuilder<CacheDirectory>(
-        future: MapCachingManager.normalDirectory,
+        future: MapCachingManager.normalCache,
         builder: (context, dir) {
           if (dir.data == null)
             return Center(

@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 
 import 'circle.dart';
 import 'downloadableRegion.dart';
-import 'line.dart';
+//import 'line.dart';
 import 'rectangle.dart';
 
 /// A mixture between `BaseRegion` and `DownloadableRegion` containing all the salvaged data from a recovered download

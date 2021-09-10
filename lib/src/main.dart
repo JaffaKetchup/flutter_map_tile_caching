@@ -1,27 +1,26 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math' as math;
 import 'dart:typed_data';
-import 'dart:isolate';
-
-import 'package:collection/collection.dart';
 
 import 'package:background_fetch/background_fetch.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:path/path.dart' as p show joinAll;
+import 'package:permission_handler/permission_handler.dart';
 
-import 'regions/downloadableRegion.dart';
 import 'misc.dart';
+import 'regions/downloadableRegion.dart';
+import 'regions/recoveredRegion.dart';
+import 'storageManager.dart';
 
 /// Multiple behaviors dictating how caching should be carried out, if at all
 enum CacheBehavior {
@@ -427,17 +426,20 @@ class StorageCachingTileProvider extends TileProvider {
                   AndroidNotificationDetails(
                 'MapDownloading',
                 notificationChannelName,
-                notificationChannelDescription,
-                importance: Importance.low,
-                priority: Priority.low,
-                showWhen: false,
+                channelDescription: notificationChannelDescription,
                 showProgress: true,
                 maxProgress: event.maxTiles,
                 progress: event.attemptedTiles,
                 visibility: NotificationVisibility.public,
-                playSound: false,
-                onlyAlertOnce: true,
                 subText: subText,
+                importance: Importance.low,
+                priority: Priority.low,
+                showWhen: false,
+                playSound: false,
+                enableLights: false,
+                enableVibration: false,
+                onlyAlertOnce: true,
+                autoCancel: false,
               );
               NotificationDetails platformChannelSpecifics =
                   NotificationDetails(android: androidPlatformChannelSpecifics);

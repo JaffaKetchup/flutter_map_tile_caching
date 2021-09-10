@@ -37,7 +37,7 @@ extension LatLngExts on LatLng {
 
 /// Conversions to perform on an integer number of bytes to get more human-friendly figures. Useful after getting a cache's or cache store's size from `MapCachingManager`, for example.
 ///
-/// All calculations use binary calculations (1024) instead of decimal calculations (1000), and is therefore more accurate.
+/// All calculations use binary calculations (1024) instead of decimal calculations (1000), and are therefore more accurate.
 extension ByteExts on int {
   /// Convert bytes to kilobytes
   double get bytesToKilobytes => this / 1024;

@@ -60,7 +60,7 @@ class MapCachingManager {
 
   /// Rename the current cache store to a new name
   ///
-  /// Returns the new `MapCachingManager` after a successful renaming operation or `null` if the cache does not exist.
+  /// The old `MapCachingManager` will still retain it's link to the old store, so always use the new returned value instead: returns a new `MapCachingManager` after a successful renaming operation or `null` if the cache does not exist.
   MapCachingManager? renameStore(String newName) {
     if (!Directory(parentDirectory.absolute.path).existsSync()) return null;
     Directory(_joinedBasePath)
@@ -135,10 +135,9 @@ class MapCachingManager {
     int compressionQuality,
   ) {
     if (!Directory(_joinedBasePath).existsSync()) return false;
-    final File file = File(p.joinAll(
-      [_joinedBasePath, 'downloadOngoing.txt'],
-    ));
+    final File file = File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt']));
     file.createSync(recursive: true);
+
     if (type == RegionType.rectangle) {
       final RectangleRegion region = inputRegion as RectangleRegion;
       file.writeAsStringSync(
@@ -172,18 +171,13 @@ class MapCachingManager {
   void endRecovery() {
     if (!Directory(_joinedBasePath).existsSync()) return;
     try {
-      File(p.joinAll(
-        [_joinedBasePath, 'downloadOngoing.txt'],
-      )).deleteSync();
+      File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt'])).deleteSync();
     } catch (e) {}
   }
 
   @internal
   RecoveredRegion? recoverDownload() {
-    final File file = File(p.joinAll(
-      [_joinedBasePath, 'downloadOngoing.txt'],
-    ));
-
+    final File file = File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt']));
     if (!file.existsSync()) return null;
 
     final List<String> recovery = file.readAsLinesSync();
@@ -222,20 +216,19 @@ class MapCachingManager {
   /// Get the application's documents directory
   ///
   /// Caching in here will show caches under the App Storage - instead of under App Cache - in Settings, and therefore the OS or other apps cannot clear the cache without telling the user.
-  static Future<CacheDirectory> get normalDirectory async {
-    return Directory(p.joinAll([
-      (await getApplicationDocumentsDirectory()).absolute.path,
-      'mapCache'
-    ]));
-  }
+  static Future<CacheDirectory> get normalCache async => Directory(
+        p.joinAll([
+          (await getApplicationDocumentsDirectory()).absolute.path,
+          'mapCache'
+        ]),
+      );
 
   /// Get the temporary storage directory
   ///
   /// Caching in here will show caches under the App Cache - instead of App Storage - in Settings. Therefore the OS can clear cached tiles at any time without telling the user.
   ///
   /// For this reason, it is not recommended to use this store. Use `normalDirectory` by default instead.
-  static Future<CacheDirectory> get temporaryDirectory async {
-    return Directory(
-        p.joinAll([(await getTemporaryDirectory()).absolute.path, 'mapCache']));
-  }
+  static Future<CacheDirectory> get temporaryCache async => Directory(
+        p.joinAll([(await getTemporaryDirectory()).absolute.path, 'mapCache']),
+      );
 }

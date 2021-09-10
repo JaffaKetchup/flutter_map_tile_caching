@@ -57,8 +57,7 @@ class TileStorageCachingManager {
     'This method has been deprecated, and will be removed in the next release. Migrate to `MapCachingManager().deleteAllStores()`.',
   )
   static Future<void> cleanAllCache() async {
-    MapCachingManager(await MapCachingManager.normalDirectory)
-        .deleteAllStores();
+    MapCachingManager(await MapCachingManager.normalCache).deleteAllStores();
   }
 
   /// Deprecated. Will be removed in the next release. Migrate to `MapCachingManager().deleteStore()`.
@@ -66,7 +65,7 @@ class TileStorageCachingManager {
     'This method has been deprecated, and will be removed in the next release. Migrate to `MapCachingManager().deleteStore()`.',
   )
   static Future<int> cleanCacheName([String cacheName = 'mainCache']) async {
-    MapCachingManager(await MapCachingManager.normalDirectory, cacheName)
+    MapCachingManager(await MapCachingManager.normalCache, cacheName)
         .deleteStore();
     return -1;
   }
@@ -98,7 +97,7 @@ class TileStorageCachingManager {
     'This getter has been deprecated, and will be removed in the next release. Migrate to `MapCachingManager().allStoresSize`.',
   )
   static Future<int> get cacheDbSize async {
-    return MapCachingManager(await MapCachingManager.normalDirectory)
+    return MapCachingManager(await MapCachingManager.normalCache)
             .allStoresSizes ??
         0;
   }
@@ -108,7 +107,7 @@ class TileStorageCachingManager {
     'This getter has been deprecated, and will be removed in the next release. Migrate to `MapCachingManager().allStoresLength`.',
   )
   static Future<int> get cachedTilesAmount async {
-    return MapCachingManager(await MapCachingManager.normalDirectory)
+    return MapCachingManager(await MapCachingManager.normalCache)
             .allStoresLengths ??
         0;
   }
@@ -118,7 +117,7 @@ class TileStorageCachingManager {
     'This method has been deprecated, and will be removed in the next release. Migrate to `MapCachingManager().storeLength`.',
   )
   static Future<int> cachedTilesAmountName(String cacheName) async {
-    return MapCachingManager(await MapCachingManager.normalDirectory, cacheName)
+    return MapCachingManager(await MapCachingManager.normalCache, cacheName)
             .storeLength ??
         0;
   }
@@ -128,7 +127,7 @@ class TileStorageCachingManager {
     'This getter has been deprecated, and will be removed in the next release. Migrate to `MapCachingManager().allStoresNames`.',
   )
   static Future<List<String>> get allCacheNames async {
-    return MapCachingManager(await MapCachingManager.normalDirectory)
+    return MapCachingManager(await MapCachingManager.normalCache)
             .allStoresNames ??
         [];
   }

@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:meta/meta.dart';
 
 import 'downloadableRegion.dart';
 
@@ -28,16 +27,9 @@ class CircleRegion extends BaseRegion {
     int compressionQuality = -1,
     Crs crs = const Epsg3857(),
     Function(dynamic)? errorHandler,
-    @Deprecated('\'circleDegrees\' has been deprecated, and will be removed in the next release. There is no newer alternative for bug safety. You should remove this parameter from your code and let it take the default (and future fixed value) 360.')
-        int circleDegrees = 360,
   }) {
     return DownloadableRegion(
-      _circleToOutline(
-        this.center.latitudeInRad,
-        this.center.longitudeInRad,
-        this.radius / 1.852 / 3437.670013352,
-        circleDegrees,
-      ),
+      toList(),
       minZoom,
       maxZoom,
       options,
@@ -72,43 +64,35 @@ class CircleRegion extends BaseRegion {
   }
 
   @override
-  List<LatLng> toList([
-    @Deprecated('\'circleDegrees\' has been deprecated, and will be removed in the next release. There is no newer alternative for bug safety. You should remove this parameter from your code and let it take the default (and future fixed value) 360.')
-        int deprecated = 360,
-  ]) {
-    return _circleToOutline(
-      this.center.latitudeInRad,
-      this.center.longitudeInRad,
-      this.radius / 1.852 / 3437.670013352,
-      deprecated,
-    );
+  List<LatLng> toList() {
+    final double rad = radius / 1.852 / 3437.670013352;
+    final double lat = center.latitudeInRad;
+    final double lon = center.longitudeInRad;
+    final List<LatLng> output = [];
+
+    for (int x = 0; x <= 360; x++) {
+      final double brng = x * math.pi / 180;
+      final double latRadians = math.asin(
+        math.sin(lat) * math.cos(rad) +
+            math.cos(lat) * math.sin(rad) * math.cos(brng),
+      );
+      final double lngRadians = lon +
+          math.atan2(
+            math.sin(brng) * math.sin(rad) * math.cos(lat),
+            math.cos(rad) - math.sin(lat) * math.sin(latRadians),
+          );
+
+      output.add(
+        LatLng(
+          latRadians * 180 / math.pi,
+          (lngRadians * 180 / math.pi)
+              .clamp(-180, 180), // Clamped to fix errors with flutter_map
+        ),
+      );
+    }
+
+    return output;
   }
-}
-
-List<LatLng> _circleToOutline(
-  double lat,
-  double lon,
-  double d,
-  int circleDegrees,
-) {
-  final List<LatLng> output = [];
-  for (int x = 0; x <= circleDegrees; x++) {
-    double brng = x * math.pi / 180;
-    final double latRadians = math.asin(math.sin(lat) * math.cos(d) +
-        math.cos(lat) * math.sin(d) * math.cos(brng));
-    final double lngRadians = lon +
-        math.atan2(math.sin(brng) * math.sin(d) * math.cos(lat),
-            math.cos(d) - math.sin(lat) * math.sin(latRadians));
-
-    output.add(
-      LatLng(
-        latRadians * 180 / math.pi,
-        (lngRadians * 180 / math.pi).clamp(-180, 180),
-      ),
-    );
-  }
-
-  return output;
 }
 
 extension CircleRegionExts on LatLng {

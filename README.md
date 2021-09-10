@@ -1,10 +1,6 @@
 # flutter_map_tile_caching
 
-> ### v4 Release Branch
->
-> Use with caution, or (preferably) switch to the main branch. Unstable docs and code ahead!
-
-A plugin for the [`flutter_map`](https://pub.dev/packages/flutter_map) library to provide an easy way to cache tiles and download map regions for offline use.
+A plugin for the [`flutter_map`](https://pub.dev/packages/flutter_map) providing advanced caching functionality, with ability to download map regions for offline use. Also includes useful prebuilt widgets.
 
 [![Pub](https://img.shields.io/pub/v/flutter_map_tile_caching.svg)](https://pub.dev/packages/flutter_map_tile_caching) [![likes](https://badges.bar/flutter_map_tile_caching/likes)](https://pub.dev/packages/flutter_map_tile_caching/score) [![pub points](https://badges.bar/flutter_map_tile_caching/pub%20points)](https://pub.dev/packages/flutter_map_tile_caching/score)
 [![GitHub stars](https://img.shields.io/github/stars/JaffaKetchup/flutter_map_tile_caching.svg?style=social&label=Stars)](https://GitHub.com/JaffaKetchup/flutter_map_tile_caching/stargazers/) [![GitHub issues](https://img.shields.io/github/issues/JaffaKetchup/flutter_map_tile_caching.svg?style=social&label=Issues)](https://GitHub.com/JaffaKetchup/flutter_map_tile_caching/issues/) [![GitHub PRs](https://img.shields.io/github/issues-pr/JaffaKetchup/flutter_map_tile_caching.svg?style=social&label=Pull%20Requests)](https://GitHub.com/JaffaKetchup/flutter_map_tile_caching/pulls/)
@@ -33,6 +29,8 @@ After installing the package, import it into the necessary files in your project
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 ```
 
+Before using any functionality, in particular the bulk downloading functionality, make sure you comply with the appropriate rules and ToS for your server. Some servers ban bulk downloading.
+
 ### Android
 
 A few more steps are required on Android due to the background download functionality, unfortunately even if you do not intend to use the functionality. This is due to the way the dependency used to perform background downloading works.
@@ -47,97 +45,85 @@ Please note that this library has not been tested on iOS devices, so issues may 
 
 ## Example
 
-To view the example project, create a new project and copy/replace the existing 'main.dart' file with the 'main.dart' file from this project's example folder. Then add this library to the 'pubspec.yaml' file. Finally, follow the platform-specific installation instructions above to get your app to build successfully.
+To run the example project, create a new project and copy/replace the existing 'main.dart' file with the 'main.dart' file from this project's example folder. Remember to complete the TODOs at the top of the file. Finally, follow the platform-specific installation instructions above to get your app to build successfully.
 
-Alternatively, if you just want to see how it works quickly, you can run the example app on an Android device by installing the APK file found in the 'example' directory. Note, however, that this file may be a few versions old.
+Alternatively, if you just want to see how it works quickly, you can run the example app on an Android device by installing the APK file found in the 'example' directory. Doing this, you must comply to the [Open Street Map Tile Server rules](https://operations.osmfoundation.org/policies/tiles), specifically the section about [Bulk Downloads](https://operations.osmfoundation.org/policies/tiles/#:~:text=above%20technical%20requirements.-,Bulk%20Downloading,-Bulk%20downloading%20is). In short, don't bulk download over 250 tiles at zoom level 13 or more.
 
 ## Functionality
 
-This library provides 3 main functionalities and 4 main APIs:
+This package provides every thing you should need to implement advanced caching in your Flutter application, including caching tiles as your users browse the map & downloading regions of a map for later offline use. You can reuse UI components from the example, or create your own!
 
-- Automatic Tile Caching (`TileProvider` API & Caches API)
-- Region Downloading (`TileProvider` API, Regions API, Downloading API & Caches API)
-  - Easy Shape Chooser (Regions API)
+This terminology appears throughout documentation:
 
-These all work together to give you all you need to implement fully offline maps in your Flutter app.
+- A 'cache' contains multiple 'stores'. There's usually only one cache per device, but there can be many stores.
+- A 'region' is an area of a map.
+- 'Browse caching' is the caching performed when a user pans over a tile in the map view and it becomes visible. This is automatic.
+- 'Bulk downloading' is the caching performed when a user initiates a download by specifying a region to download at once. This action is banned by some servers, make sure you comply with the appropriate rules and ToS for your server.
 
 ## [API Details](https://pub.dev/documentation/flutter_map_tile_caching/latest/flutter_map_tile_caching/flutter_map_tile_caching-library.html)
 
-You can see every class, method, extension and enumerable in the [Dart auto generated docs (dartdoc)](https://pub.dev/documentation/flutter_map_tile_caching/latest/flutter_map_tile_caching/flutter_map_tile_caching-library.html). This contains everything available and a description on how to use them. You can also check the example for how all of these things fit together. However, for simplicity for new users to this project, the main/most useful/most common parts are below, and these can be looked up in the docs using the search functionality:
+Because of the many parts to this package and the small number of maintainers (only me), there is no full documentation for everything in this README or in any wiki.
 
-#### `StorageCachingTileProvider()`
+Documentation has been written into the source code: you can see every class, method, extension and enumerable in the [auto generated docs (dartdoc)](https://pub.dev/documentation/flutter_map_tile_caching/latest/flutter_map_tile_caching/flutter_map_tile_caching-library.html). This lists all of the publicly available API methods and how to use them. Information visible here is also visible whilst writing code, so you should rarely need to leave the comfort of your editor.
 
-Use this as the tile provider for your `FlutterMap()` to automatically cache tiles as your users pan (aka. browse) over them. Use the same 'instance' throughout your script to avoid duplicate conflicts.
-Read more about the caching behaviour below.
+However, for beginners some information is provided below, enough to get you to understand the gist of it, and you can find how to actually code it in the example.
 
-#### `downloadRegion()` and it's background counterpart
+### `StorageCachingTileProvider()`
 
-Use this to download large areas of a map before the user visits somewhere (for example before a hike in the wilderness).
-A region can currently be a rectangular region or a circular region. More types are planned for the future.
-Read more about the caching behaviour below.
+The tile provider and the 'frontend' of the operation.
 
-#### Easy Shape Chooser
+Integrates with `flutter_map` by registering as a tile provider that also caches tiles as users browse over them. Contains all of the functions needed to start and stop bulk downloads.
 
-Use this as a 'layer' on your map to allow the user an easy way to select an area for downloading. Use the same 'instance' throughout your script to avoid duplicate conflicts.
-A region can currently be a rectangular region or a circular region. More types are planned for the future.
-This will be worked on in the future to bring better functionality.
+### `MapCachingManager()`
 
-### Migrate to v3 from v2
+The 'backend' of the operation.
+
+Handles the filesystem interactions, allowing you to easily find all the possible information you could ever want about a cache or store.
+
+### The Regions
+
+These objects define a region (I'm sure that surprised you!).
+
+Currently, rectangular and circular regions are available, with limited support for line-based regions (which is expected to improve in the future).
+
+As well as being used for starting a bulk download, they also contain functionality to paint the shape onto the map. Paired with tap receivers on the map widget, this means it's easy for a user to choose a region to download.
+
+## Background Bulk Downloading
+
+Instead of downloading in the foreground, there is an option on Android to start a download in the background.
+
+Both foreground and background downloading are handled in separate Isolates to ensure your app performs correctly, however background downloading has some advantages, including:
+
+- Being more reliable for large downloads
+- Posting push notifications to keep the user updated outside of the app
+- Guarantee* that the download will keep running outside of the app and when locked
+
+Frontend downloading might also work outside of the app and when locked, but it's better practise to use a dedicated, registered background process.
+
+The background download functionality has been disabled on platforms other than Android, because of the tight restrictions of other OSs, in particular Apple/iOS.
+
+To have full background functionality including not being throttled by the system and being guaranteed to run even if the app is 'minimized', request the ignore battery optimizations permission by calling `requestIgnoreBatteryOptimizations()` before starting a background task. This will display a system interruption prompt to the user to allow or deny the permission. The background task will still run if the permission is denied, but the process is at the mercy of the system.
+
+## Migrate to v4 from v3
 
 Unfortunately, because so much has changed, the best way to migrate is to rewrite the appropriate areas of your project with the new features.
-I've tried to make v3 super easy to understand and use, even with all the new functionality, so I hope you don't find this too hard. Unfortunately, the next major release may also require a large migration, as this library 'fully matures'.
-
-## Offline/Caching Behaviour
-
-Because this is an offline first package, it may act a little differently to how you expect. Both areas that interact with caching are detailed below:
-
-### Whilst Browsing
-
-'Browsing' in this library means panning, zooming and rotating through the map.
-
-When a new tile is browsed, and the user is online, the tile will be fetched from the server and cached with a record of when it's expiry date is (dictated by the `cachedValidDuration` on the tile provider).
-If this tile is browsed again, and the user is online, the tile will still be taken from cache, even if the user is online, unless the tile has expired, in which case it will be re-fetched and cached again. This is known as 'cache-first' caching.
-If this tile is browsed again, but the user is not online, the tile will be taken from cache, even if the tile has expired. The network request will still be made, however, and it will fail silently.
-If the user is not online, and the tile has not been cached yet, the request will fail with an error to the console, but the app will carry on working as normal.
-
-### When Downloading Regions
-
-Whilst using the `downloadRegion()` function (or it's background counterpart (see below)), every tile in the region will always be cached, even if the tile has been cached before but it hasn't expired.
-Every tile downloaded will then act like it has been browsed (see above).
-
-## Background Region Downloading
-
-Instead of downloading in the foreground (on the main thread), there is an option on Android to start a download in the background.
-
-This has several major advantages including better core app performance, ability to continue whilst the user is interacting with other app components, and (potential) ability to continue even whilst the user is in other apps or the device is locked.
-
-The background download functionality is buggy and does not function as expected all the time on platforms other than Android, so that functionality has been disabled on all platforms except Android. This might change in the future, but there is no guarantee.
-
-To have full background functionality including not being throttled by the system and being guaranteed to run even if the app is 'minimized', request the ignore battery optimizations permission by calling `requestIgnoreBatteryOptimizations()` before starting a background task. This will display a system interruption prompt to the user to allow or deny the permission. The background task will still run if the permission is denied, but only if the user is in the app - elsewhere, downloading is not guaranteed to be running.
+I've tried to make v4 even easier to understand and use, even with all the new functionality, so I hope you don't find this too time consuming.
 
 ## Limitations, Known Bugs & Testing
 
-- This package does not support the web platform (due to the usage of `dart:io` and the `sqflite` package). A fix for this may appear in the future.
-
-- Support may be buggy for custom tile sizes (other than 256x256) or custom CRSs (other than `Epsg3857()`), but attempts have been made at making this library compatible with those using inbuilt functionality from `flutter_map`. Further testing for compatibility will continue in the v4.0.0 release.
-
-- Using `TileStorageCachingManager.changeMaxTileAmount()` will unfortunately not change the assertions in the tile provider/downloader. Until v4.0.0, the maximum number of downloadable tiles at once is 20000. This will be fixed by v4.0.0, as this release will include other refactorings.
-
-- The circle region functions get less accurate the larger the radius of the circle. To prevent interruptive errors, the values of the calculation have been clamped to a valid minimum and maximum, but this causes side effects. To prevent these side effects, only use circles smaller than the average size of a European country, and be cautious when using circles around extremes (the equator, the longitudes of 180 or -180, and the latitudes of -90 or 90). If selecting a large region or working around the aforementioned extremes, use rectangular regions instead. A fix for this may appear in the future.
-
-This package has only been tested on Android devices (one real Android 8, one Android 8 emulator, and one Android 11 emulator). However, due to the large amounts of functionality, each with many different variations, it is nearly impossible to find many bugs. Therefore, if you find a bug, please do file an Issue on GitHub, and I will do my very best to get it fixed quickly.
+- This package does not support the web platform. A fix for this is unlikely to appear because the web platform is ill-suited for caching anyway.
+- The region functions get less accurate the larger the region. In particular the circle region can be quite bad at large sizes: to prevent interruptive errors, the values of the calculation have been clamped to a valid minimum and maximum, but this causes side effects. To prevent unwanted results, try to use small regions, no larger than the size of Europe.
+- Apps may become unstable if large numbers of tiles have been downloaded. Try to keep the amount of downloaded tiles below 50,000.
+- This package has only been physically tested on one Android device, with automated tests being run regularly. However, due to the large amounts of functionality, each with many different variations, it is nearly impossible to find many bugs. Therefore, if you find a bug, please do file an Issue on GitHub, and I will do my very best to get it fixed quickly.
 
 ## Supporting Me
 
-A donation through my Ko-Fi page would be infinitely appreciated:
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/N4N151INN)
-
+A donation through my Ko-Fi page would be infinitely appreciated (Ko-fi doesn't take a fee, so all donated money goes to me):  
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/N4N151INN)  
 but, if you can't or won't, a star on GitHub and a like on pub.dev would also go a long way!
 
-Every donation gives me fuel to continue my open-source projects and lets me know that I'm doing a good job.
+Every donation/star/like gives me mental fuel to continue my open-source projects and lets me know that I'm doing a good job.
 
 ## Credits
 
 The basis of this library was originally coded by [bugDim88](https://github.com/bugDim88), and improved upon by multiple people. You can see the original pull request here: [pull request #564 on fleaflet/flutter_map](https://github.com/fleaflet/flutter_map/pull/564).
-
-Since v2 here, other contributors have also been involved, who can be seen in GitHub. The only old part remaining that that coder coded is the database manager script (with all the SQL in it), but the aforementioned main coder still inspired the rest of this project and is therefore the 'founder'. Thanks to you, bugDim88!
