@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math' as math;
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:background_fetch/background_fetch.dart';
@@ -541,6 +542,66 @@ class StorageCachingTileProvider extends TileProvider {
     )) input['port'].send(progress);
   }
 
+  static Future<List> _downloadBulkFiles({
+    required tiles,
+    required int startIndex,
+    required int count,
+    required parentDirectory,
+    required storeName,
+    required provider,
+    required options,
+    required client,
+    required errorHandler,
+    required preventRedownload,
+    required seaTileBytes,
+    required compressionQuality,
+  }) {
+    int completedTiles = 0;
+    Completer<List> completer = Completer();
+
+    int successfulTiles = 0;
+    List<String> failedTiles = [];
+    int seaTiles = 0;
+    int existingTiles = 0;
+
+    for (var i = startIndex;
+        i < min(startIndex + count, tiles.length);
+        i += 1) {
+      _getAndSaveTile(
+        parentDirectory,
+        storeName,
+        provider,
+        tiles[i],
+        options,
+        client,
+        errorHandler,
+        preventRedownload,
+        seaTileBytes,
+        compressionQuality,
+      ).then((value) {
+        try {
+          successfulTiles += value[0] as int;
+          failedTiles.addAll(value[1]);
+          seaTiles += value[2] as int;
+          existingTiles += value[3] as int;
+        } catch (e) {}
+
+        completedTiles += 1;
+
+        if (completedTiles == min<int>(count, tiles.length - startIndex)) {
+          completer.complete([
+            successfulTiles,
+            failedTiles,
+            seaTiles,
+            existingTiles,
+          ]);
+        }
+      });
+    }
+
+    return completer.future;
+  }
+
   static Stream<DownloadProgress> _downloadLoop(
       CacheDirectory parentDirectory,
       String storeName,
@@ -567,24 +628,31 @@ class StorageCachingTileProvider extends TileProvider {
     List<String> failedTiles = [];
     int seaTiles = 0;
     int existingTiles = 0;
+    int completedTiles = 0;
     final DateTime startTime = DateTime.now();
 
-    for (var i = 0; i < tiles.length; i++) {
-      final List<dynamic> returned = await _getAndSaveTile(
-        parentDirectory,
-        storeName,
-        provider,
-        tiles[i],
-        options,
-        client,
-        errorHandler,
-        preventRedownload,
-        seaTileBytes,
-        compressionQuality,
+    while (completedTiles < tiles.length) {
+      final List<dynamic> returned = await _downloadBulkFiles(
+        tiles: tiles,
+        startIndex: completedTiles,
+        count: tiles.length ~/ 4,
+        parentDirectory: parentDirectory,
+        storeName: storeName,
+        provider: provider,
+        options: options,
+        client: client,
+        errorHandler: errorHandler,
+        preventRedownload: preventRedownload,
+        seaTileBytes: seaTileBytes,
+        compressionQuality: compressionQuality,
       );
 
+      int incrementAmount =
+          min<int>(tiles.length ~/ 4, tiles.length - completedTiles);
+
+      completedTiles += incrementAmount;
       successfulTiles += returned[0] as int;
-      if (returned[1] != '') failedTiles.add(returned[1]);
+      if (returned[1] != '') failedTiles.addAll(returned[1]);
       seaTiles += returned[2] as int;
       existingTiles += returned[3] as int;
 
