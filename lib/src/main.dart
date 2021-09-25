@@ -581,7 +581,7 @@ class StorageCachingTileProvider extends TileProvider {
       ).then((value) {
         try {
           successfulTiles += value[0] as int;
-          failedTiles.addAll(value[1]);
+          failedTiles.add(value[1]);
           seaTiles += value[2] as int;
           existingTiles += value[3] as int;
         } catch (e) {}
