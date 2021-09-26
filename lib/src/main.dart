@@ -560,7 +560,7 @@ class StorageCachingTileProvider extends TileProvider {
     Completer<List> completer = Completer();
 
     int successfulTiles = 0;
-    List<String?> failedTiles = [];
+    List<String> failedTiles = [];
     int seaTiles = 0;
     int existingTiles = 0;
 
