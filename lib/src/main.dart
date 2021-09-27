@@ -17,6 +17,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
 import 'package:path/path.dart' as p show joinAll;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:queue/queue.dart';
 
 import 'misc.dart';
 import 'regions/downloadableRegion.dart';
@@ -68,6 +69,8 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Defaults to 20000, set to 0 to disable.
   final int maxStoreLength;
+
+  static var maxParallel = 20;
 
   /// Whether to better enforce the `maxStoreLength`
   ///
@@ -542,10 +545,8 @@ class StorageCachingTileProvider extends TileProvider {
     )) input['port'].send(progress);
   }
 
-  static Future<List> _downloadBulkFiles({
+  static Stream<List> _downloadBulkFiles({
     required tiles,
-    required int startIndex,
-    required int count,
     required parentDirectory,
     required storeName,
     required provider,
@@ -556,50 +557,45 @@ class StorageCachingTileProvider extends TileProvider {
     required seaTileBytes,
     required compressionQuality,
   }) {
-    int completedTiles = 0;
-    Completer<List> completer = Completer();
-
     int successfulTiles = 0;
     List<String> failedTiles = [];
     int seaTiles = 0;
     int existingTiles = 0;
 
-    for (var i = startIndex;
-        i < min(startIndex + count, tiles.length);
-        i += 1) {
-      _getAndSaveTile(
-        parentDirectory,
-        storeName,
-        provider,
-        tiles[i],
-        options,
-        client,
-        errorHandler,
-        preventRedownload,
-        seaTileBytes,
-        compressionQuality,
-      ).then((value) {
+    final StreamController<List> streamController = StreamController();
+    final queue = Queue(parallel: maxParallel);
+
+    tiles.forEach((e) {
+      queue
+          .add(() => _getAndSaveTile(
+                parentDirectory,
+                storeName,
+                provider,
+                e,
+                options,
+                client,
+                errorHandler,
+                preventRedownload,
+                seaTileBytes,
+                compressionQuality,
+              ))
+          .then((value) {
         try {
           successfulTiles += value[0] as int;
           if (value[1].isNotEmpty) failedTiles.add(value[1]);
           seaTiles += value[2] as int;
           existingTiles += value[3] as int;
         } catch (e) {}
-
-        completedTiles += 1;
-
-        if (completedTiles == min<int>(count, tiles.length - startIndex)) {
-          completer.complete([
-            successfulTiles,
-            failedTiles,
-            seaTiles,
-            existingTiles,
-          ]);
-        }
+        streamController.add([
+          value[0],
+          value[1],
+          value[2],
+          value[3],
+        ]);
       });
-    }
+    });
 
-    return completer.future;
+    return streamController.stream;
   }
 
   static Stream<DownloadProgress> _downloadLoop(
@@ -628,33 +624,26 @@ class StorageCachingTileProvider extends TileProvider {
     List<String> failedTiles = [];
     int seaTiles = 0;
     int existingTiles = 0;
-    int completedTiles = 0;
     final DateTime startTime = DateTime.now();
 
-    while (completedTiles < tiles.length) {
-      final List<dynamic> returned = await _downloadBulkFiles(
-        tiles: tiles,
-        startIndex: completedTiles,
-        count: tiles.length ~/ 4,
-        parentDirectory: parentDirectory,
-        storeName: storeName,
-        provider: provider,
-        options: options,
-        client: client,
-        errorHandler: errorHandler,
-        preventRedownload: preventRedownload,
-        seaTileBytes: seaTileBytes,
-        compressionQuality: compressionQuality,
-      );
+    final Stream<List<dynamic>> returned = _downloadBulkFiles(
+      tiles: tiles,
+      parentDirectory: parentDirectory,
+      storeName: storeName,
+      provider: provider,
+      options: options,
+      client: client,
+      errorHandler: errorHandler,
+      preventRedownload: preventRedownload,
+      seaTileBytes: seaTileBytes,
+      compressionQuality: compressionQuality,
+    );
 
-      int incrementAmount =
-          min<int>(tiles.length ~/ 4, tiles.length - completedTiles);
-
-      completedTiles += incrementAmount;
-      successfulTiles += returned[0] as int;
-      if (returned[1] != '') failedTiles.addAll(returned[1]);
-      seaTiles += returned[2] as int;
-      existingTiles += returned[3] as int;
+    await for (final event in returned) {
+      successfulTiles += event[0] as int;
+      if (event[1] != '') failedTiles.add(event[1]);
+      seaTiles += event[2] as int;
+      existingTiles += event[3] as int;
 
       yield DownloadProgress(
         maxTiles: tiles.length,
