@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.0.0-dev.5] - 2021/09/27
+
+* Added multithreading to download loop (thanks to GitHub contributor [Abdelrahman-Sherif](https://github.com/Abdelrahman-Sherif))
+* Add line tile loop (not complete, some bugs)
+* Added precise recovery mode (requires testing)
+* Changed tests to only use one thread
+* Edited README
+* Taken some features out of experimental
+* Removed broken `compressionQuality`
+* Removed encoded polyline conversion functionality
+* ... and more
+
 ## [4.0.0-dev.4] - 2021/09/02
 
 * Created recovery system
