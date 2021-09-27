@@ -70,9 +70,6 @@ class StorageCachingTileProvider extends TileProvider {
   /// Defaults to 20000, set to 0 to disable.
   final int maxStoreLength;
 
-  /// The number of download threads allowed to run simultaneously.
-  static var maxParallelThreads = 20;
-
   /// Whether to better enforce the `maxStoreLength`
   ///
   /// If multiple tile requests are made in quick succession, such as if the user moves the map quickly, the `maxStoreLength` may be broken. The limit acts as a almost like a 'suggestion', where tiles shouldn't be stored over, but may still be. Usually, an map restart (destroying and rebuilding) will help the number of tiles to go back down, but not always, and not always enough.
@@ -535,18 +532,82 @@ class StorageCachingTileProvider extends TileProvider {
     final DownloadableRegion region = input['region'];
 
     await for (DownloadProgress progress in _downloadLoop(
-      input['parentDirectory'],
-      input['storeName'],
-      input['tiles'],
-      region.options,
-      region.preventRedownload,
-      region.seaTileRemoval,
-      region.compressionQuality,
-      region.errorHandler,
+      parentDirectory: input['parentDirectory'],
+      storeName: input['storeName'],
+      tiles: input['tiles'],
+      options: region.options,
+      parallelThreads: region.parallelThreads,
+      preventRedownload: region.preventRedownload,
+      seaTileRemoval: region.seaTileRemoval,
+      compressionQuality: region.compressionQuality,
+      errorHandler: region.errorHandler,
     )) input['port'].send(progress);
   }
 
-  static Stream<List> _downloadBulkFiles({
+  static Stream<DownloadProgress> _downloadLoop({
+    required CacheDirectory parentDirectory,
+    required String storeName,
+    required List<Coords<num>> tiles,
+    required TileLayerOptions options,
+    required int parallelThreads,
+    required bool preventRedownload,
+    required bool seaTileRemoval,
+    required int compressionQuality,
+    Function(dynamic)? errorHandler,
+  }) async* {
+    final http.Client client = http.Client();
+    Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
+        .createSync(recursive: true);
+
+    Uint8List? seaTileBytes;
+    if (seaTileRemoval)
+      seaTileBytes = (await client
+              .get(Uri.parse('https://tile.openstreetmap.org/19/0/0.png')))
+          .bodyBytes;
+
+    final StorageCachingTileProvider provider = StorageCachingTileProvider(
+        parentDirectory: parentDirectory, storeName: storeName);
+
+    int successfulTiles = 0;
+    List<String> failedTiles = [];
+    int seaTiles = 0;
+    int existingTiles = 0;
+    final DateTime startTime = DateTime.now();
+
+    final Stream<List<dynamic>> downloadStream = _bulkDownloader(
+      tiles: tiles,
+      parentDirectory: parentDirectory,
+      storeName: storeName,
+      provider: provider,
+      options: options,
+      client: client,
+      parallelThreads: parallelThreads,
+      errorHandler: errorHandler,
+      preventRedownload: preventRedownload,
+      seaTileBytes: seaTileBytes,
+      compressionQuality: compressionQuality,
+    );
+
+    await for (final event in downloadStream) {
+      successfulTiles += event[0] as int;
+      if (event[1] != '') failedTiles.add(event[1]);
+      seaTiles += event[2] as int;
+      existingTiles += event[3] as int;
+
+      yield DownloadProgress(
+        maxTiles: tiles.length,
+        successfulTiles: successfulTiles,
+        failedTiles: failedTiles,
+        seaTiles: seaTiles,
+        existingTiles: existingTiles,
+        duration: DateTime.now().difference(startTime),
+      );
+    }
+
+    client.close();
+  }
+
+  static Stream<List> _bulkDownloader({
     required tiles,
     required parentDirectory,
     required storeName,
@@ -554,12 +615,14 @@ class StorageCachingTileProvider extends TileProvider {
     required options,
     required client,
     required errorHandler,
+    required parallelThreads,
     required preventRedownload,
     required seaTileBytes,
     required compressionQuality,
   }) {
+    // ignore: close_sinks
     final StreamController<List> streamController = StreamController();
-    final queue = Queue(parallel: maxParallelThreads);
+    final queue = Queue(parallel: parallelThreads);
 
     tiles.forEach((e) {
       queue
@@ -586,66 +649,6 @@ class StorageCachingTileProvider extends TileProvider {
     });
 
     return streamController.stream;
-  }
-
-  static Stream<DownloadProgress> _downloadLoop(
-      CacheDirectory parentDirectory,
-      String storeName,
-      List<Coords<num>> tiles,
-      TileLayerOptions options,
-      bool preventRedownload,
-      bool seaTileRemoval,
-      int compressionQuality,
-      Function(dynamic)? errorHandler) async* {
-    final http.Client client = http.Client();
-    Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
-        .createSync(recursive: true);
-
-    Uint8List? seaTileBytes;
-    if (seaTileRemoval)
-      seaTileBytes = (await client
-              .get(Uri.parse('https://tile.openstreetmap.org/19/0/0.png')))
-          .bodyBytes;
-
-    final StorageCachingTileProvider provider = StorageCachingTileProvider(
-        parentDirectory: parentDirectory, storeName: storeName);
-
-    int successfulTiles = 0;
-    List<String> failedTiles = [];
-    int seaTiles = 0;
-    int existingTiles = 0;
-    final DateTime startTime = DateTime.now();
-
-    final Stream<List<dynamic>> returned = _downloadBulkFiles(
-      tiles: tiles,
-      parentDirectory: parentDirectory,
-      storeName: storeName,
-      provider: provider,
-      options: options,
-      client: client,
-      errorHandler: errorHandler,
-      preventRedownload: preventRedownload,
-      seaTileBytes: seaTileBytes,
-      compressionQuality: compressionQuality,
-    );
-
-    await for (final event in returned) {
-      successfulTiles += event[0] as int;
-      if (event[1] != '') failedTiles.add(event[1]);
-      seaTiles += event[2] as int;
-      existingTiles += event[3] as int;
-
-      yield DownloadProgress(
-        maxTiles: tiles.length,
-        successfulTiles: successfulTiles,
-        failedTiles: failedTiles,
-        seaTiles: seaTiles,
-        existingTiles: existingTiles,
-        duration: DateTime.now().difference(startTime),
-      );
-    }
-
-    client.close();
   }
 
   static Future<List<dynamic>> _getAndSaveTile(

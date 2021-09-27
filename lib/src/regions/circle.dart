@@ -22,6 +22,7 @@ class CircleRegion extends BaseRegion {
     int minZoom,
     int maxZoom,
     TileLayerOptions options, {
+    int parallelThreads = 10,
     bool preventRedownload = false,
     bool seaTileRemoval = false,
     int compressionQuality = -1,
@@ -35,6 +36,7 @@ class CircleRegion extends BaseRegion {
       options,
       RegionType.circle,
       this,
+      parallelThreads: parallelThreads,
       preventRedownload: preventRedownload,
       seaTileRemoval: seaTileRemoval,
       compressionQuality: compressionQuality,

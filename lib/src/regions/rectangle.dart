@@ -17,6 +17,7 @@ class RectangleRegion extends BaseRegion {
     int minZoom,
     int maxZoom,
     TileLayerOptions options, {
+    int parallelThreads = 10,
     bool preventRedownload = false,
     bool seaTileRemoval = false,
     int compressionQuality = -1,
@@ -30,6 +31,7 @@ class RectangleRegion extends BaseRegion {
       options,
       RegionType.rectangle,
       this,
+      parallelThreads: parallelThreads,
       preventRedownload: preventRedownload,
       seaTileRemoval: seaTileRemoval,
       compressionQuality: compressionQuality,
