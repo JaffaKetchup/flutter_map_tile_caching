@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math' as math;
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:background_fetch/background_fetch.dart';
@@ -16,6 +17,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
 import 'package:path/path.dart' as p show joinAll;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:queue/queue.dart';
 
 import 'misc.dart';
 import 'regions/downloadableRegion.dart';
@@ -530,26 +532,29 @@ class StorageCachingTileProvider extends TileProvider {
     final DownloadableRegion region = input['region'];
 
     await for (DownloadProgress progress in _downloadLoop(
-      input['parentDirectory'],
-      input['storeName'],
-      input['tiles'],
-      region.options,
-      region.preventRedownload,
-      region.seaTileRemoval,
-      region.compressionQuality,
-      region.errorHandler,
+      parentDirectory: input['parentDirectory'],
+      storeName: input['storeName'],
+      tiles: input['tiles'],
+      options: region.options,
+      parallelThreads: region.parallelThreads,
+      preventRedownload: region.preventRedownload,
+      seaTileRemoval: region.seaTileRemoval,
+      compressionQuality: region.compressionQuality,
+      errorHandler: region.errorHandler,
     )) input['port'].send(progress);
   }
 
-  static Stream<DownloadProgress> _downloadLoop(
-      CacheDirectory parentDirectory,
-      String storeName,
-      List<Coords<num>> tiles,
-      TileLayerOptions options,
-      bool preventRedownload,
-      bool seaTileRemoval,
-      int compressionQuality,
-      Function(dynamic)? errorHandler) async* {
+  static Stream<DownloadProgress> _downloadLoop({
+    required CacheDirectory parentDirectory,
+    required String storeName,
+    required List<Coords<num>> tiles,
+    required TileLayerOptions options,
+    required int parallelThreads,
+    required bool preventRedownload,
+    required bool seaTileRemoval,
+    required int compressionQuality,
+    Function(dynamic)? errorHandler,
+  }) async* {
     final http.Client client = http.Client();
     Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
         .createSync(recursive: true);
@@ -569,24 +574,25 @@ class StorageCachingTileProvider extends TileProvider {
     int existingTiles = 0;
     final DateTime startTime = DateTime.now();
 
-    for (var i = 0; i < tiles.length; i++) {
-      final List<dynamic> returned = await _getAndSaveTile(
-        parentDirectory,
-        storeName,
-        provider,
-        tiles[i],
-        options,
-        client,
-        errorHandler,
-        preventRedownload,
-        seaTileBytes,
-        compressionQuality,
-      );
+    final Stream<List<dynamic>> downloadStream = _bulkDownloader(
+      tiles: tiles,
+      parentDirectory: parentDirectory,
+      storeName: storeName,
+      provider: provider,
+      options: options,
+      client: client,
+      parallelThreads: parallelThreads,
+      errorHandler: errorHandler,
+      preventRedownload: preventRedownload,
+      seaTileBytes: seaTileBytes,
+      compressionQuality: compressionQuality,
+    );
 
-      successfulTiles += returned[0] as int;
-      if (returned[1] != '') failedTiles.add(returned[1]);
-      seaTiles += returned[2] as int;
-      existingTiles += returned[3] as int;
+    await for (final event in downloadStream) {
+      successfulTiles += event[0] as int;
+      if (event[1] != '') failedTiles.add(event[1]);
+      seaTiles += event[2] as int;
+      existingTiles += event[3] as int;
 
       yield DownloadProgress(
         maxTiles: tiles.length,
@@ -599,6 +605,50 @@ class StorageCachingTileProvider extends TileProvider {
     }
 
     client.close();
+  }
+
+  static Stream<List> _bulkDownloader({
+    required tiles,
+    required parentDirectory,
+    required storeName,
+    required provider,
+    required options,
+    required client,
+    required errorHandler,
+    required parallelThreads,
+    required preventRedownload,
+    required seaTileBytes,
+    required compressionQuality,
+  }) {
+    // ignore: close_sinks
+    final StreamController<List> streamController = StreamController();
+    final queue = Queue(parallel: parallelThreads);
+
+    tiles.forEach((e) {
+      queue
+          .add(() => _getAndSaveTile(
+                parentDirectory,
+                storeName,
+                provider,
+                e,
+                options,
+                client,
+                errorHandler,
+                preventRedownload,
+                seaTileBytes,
+                compressionQuality,
+              ))
+          .then((value) {
+        streamController.add([
+          value[0],
+          value[1],
+          value[2],
+          value[3],
+        ]);
+      });
+    });
+
+    return streamController.stream;
   }
 
   static Future<List<dynamic>> _getAndSaveTile(

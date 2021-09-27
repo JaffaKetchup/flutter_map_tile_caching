@@ -77,6 +77,13 @@ class DownloadableRegion {
   /// The options used to fetch tiles
   final TileLayerOptions options;
 
+  /// The number of download threads allowed to run simultaneously
+  ///
+  /// This will significatly increase speed, at the expense of faster battery drain. Note that some servers may forbid multithreading, in which case this should be set to 1.
+  ///
+  /// Set to 1 to disable multithreading (download will still be run in seperate isolate). Defaults to 10.
+  final int parallelThreads;
+
   /// Whether to skip downloading tiles that already exist
   ///
   /// Defaults to `false`, so that existing tiles will be updated.
@@ -122,6 +129,7 @@ class DownloadableRegion {
     this.options,
     this.type,
     this.originalRegion, {
+    this.parallelThreads = 10,
     this.preventRedownload = false,
     this.seaTileRemoval = false,
     this.compressionQuality = -1,
@@ -135,6 +143,10 @@ class DownloadableRegion {
         assert(
           minZoom <= maxZoom,
           '`minZoom` should be less than or equal to `maxZoom`',
+        ),
+        assert(
+          parallelThreads >= 1,
+          '`parallelThreads` should be more than or equal to 1. Set to 1 to disable multithreading',
         );
 }
 
