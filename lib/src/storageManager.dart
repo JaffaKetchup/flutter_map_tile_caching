@@ -131,10 +131,9 @@ class MapCachingManager {
     BaseRegion inputRegion,
     int minZoom,
     int maxZoom,
+    bool preventRedownload,
     bool seaTileRemoval,
-    int compressionQuality,
   ) {
-    if (!Directory(_joinedBasePath).existsSync()) return false;
     final File file = File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt']));
     file.createSync(recursive: true);
 
@@ -148,7 +147,7 @@ class MapCachingManager {
             region.bounds.southEast.latitude.toString() +
             ',' +
             region.bounds.southEast.longitude.toString() +
-            '\n${minZoom.toString()}\n${maxZoom.toString()}\n$seaTileRemoval\n${compressionQuality.toString()}\nrectangle',
+            '\n${minZoom.toString()}\n${maxZoom.toString()}\n$preventRedownload\n$seaTileRemoval\nrectangle',
         flush: true,
       );
     } else if (type == RegionType.circle) {
@@ -159,7 +158,19 @@ class MapCachingManager {
             region.center.longitude.toString() +
             '\n' +
             region.radius.toString() +
-            '\n${minZoom.toString()}\n${maxZoom.toString()}\n$seaTileRemoval\n${compressionQuality.toString()}\ncircle',
+            '\n${minZoom.toString()}\n${maxZoom.toString()}\n$preventRedownload\n$seaTileRemoval\ncircle',
+        flush: true,
+      );
+    } else if (type == RegionType.line) {
+      final LineRegion region = inputRegion as LineRegion;
+      file.writeAsStringSync(
+        region.line
+                .map((pos) =>
+                    pos.latitude.toString() + ',' + pos.longitude.toString())
+                .join('-') +
+            '\n' +
+            region.radius.toString() +
+            '\n${minZoom.toString()}\n${maxZoom.toString()}\n$preventRedownload\n$seaTileRemoval\nline',
         flush: true,
       );
     }
@@ -168,11 +179,29 @@ class MapCachingManager {
   }
 
   @internal
+  void incrementPreciseRecovery() {
+    if (!Directory(_joinedBasePath).existsSync()) return;
+    final File file = File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt']));
+    file.createSync(recursive: true);
+
+    final String existing = file.readAsStringSync();
+    if (existing == '') {
+      file.writeAsStringSync('0', flush: true);
+      return;
+    }
+
+    file.writeAsString((int.parse(existing) + 1).toString(), flush: true);
+  }
+
+  @internal
   void endRecovery() {
     if (!Directory(_joinedBasePath).existsSync()) return;
-    try {
-      File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt'])).deleteSync();
-    } catch (e) {}
+
+    File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt'])).createSync();
+    File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt'])).deleteSync();
+
+    File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt'])).createSync();
+    File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt'])).deleteSync();
   }
 
   @internal
@@ -195,21 +224,60 @@ class MapCachingManager {
         ),
         null,
         null,
+        null,
         ip(recovery[2]),
         ip(recovery[3]),
         recovery[4] == 'true',
-        ip(recovery[5]),
+        recovery[5] == 'true',
+        File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt'])).existsSync()
+            ? int.parse(
+                File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt']))
+                    .readAsStringSync())
+            : null,
       );
     else if (recovery[6] == 'circle')
       return RecoveredRegion(
         RegionType.circle,
         null,
         LatLng(dp(recovery[0].split(',')[0]), dp(recovery[0].split(',')[1])),
+        null,
         dp(recovery[1]),
         ip(recovery[2]),
         ip(recovery[3]),
         recovery[4] == 'true',
-        ip(recovery[5]),
+        recovery[5] == 'true',
+        File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt'])).existsSync()
+            ? int.parse(
+                File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt']))
+                    .readAsStringSync())
+            : null,
+      );
+    else
+      return RecoveredRegion(
+        RegionType.line,
+        null,
+        null,
+        recovery[0]
+            .split('-')
+            .map(
+              (zip) => LatLng(
+                double.parse(zip.split(',')[0]),
+                double.parse(
+                  zip.split(',')[1],
+                ),
+              ),
+            )
+            .toList(),
+        dp(recovery[1]),
+        ip(recovery[2]),
+        ip(recovery[3]),
+        recovery[4] == 'true',
+        recovery[5] == 'true',
+        File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt'])).existsSync()
+            ? int.parse(
+                File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt']))
+                    .readAsStringSync())
+            : null,
       );
   }
 

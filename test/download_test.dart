@@ -36,6 +36,7 @@ void main() {
           urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
           subdomains: ['a', 'b', 'c'],
         ),
+        parallelThreads: 1,
       ),
       disableRecovery: true,
     );
@@ -81,6 +82,7 @@ void main() {
           subdomains: ['a', 'b', 'c'],
         ),
         preventRedownload: true,
+        parallelThreads: 1,
       ),
       disableRecovery: true,
     );
@@ -113,6 +115,7 @@ void main() {
           urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
           subdomains: ['a', 'b', 'c'],
         ),
+        parallelThreads: 1,
       ),
       disableRecovery: true,
     );
@@ -141,43 +144,6 @@ void main() {
     expect(progC.seaTilesDiscount, 0);
     expect(mainManager.storeLength, progC.successfulTiles);
   }, timeout: Timeout(Duration(minutes: 1)));
-  test(
-    'compressionQuality',
-    () async {
-      final Directory parentDirectory = await reset(true);
-      final MapCachingManager mainManager =
-          MapCachingManager(parentDirectory, 'compressionQuality');
-
-      final Stream<DownloadProgress> download = StorageCachingTileProvider(
-        parentDirectory: parentDirectory,
-        storeName: 'compressionQuality',
-      ).downloadRegion(
-        RectangleRegion(
-          LatLngBounds(
-            LatLng(51.50263458922777, -0.6815800359919895),
-            LatLng(51.48672619988095, -0.6508706762001888),
-          ),
-        ).toDownloadable(
-          1,
-          16,
-          TileLayerOptions(
-            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            subdomains: ['a', 'b', 'c'],
-          ),
-          compressionQuality: 50,
-        ),
-      );
-
-      await for (DownloadProgress progress in download) {
-        print(' > ' + progress.percentageProgress.toStringAsFixed(2) + '%');
-        expect(progress.failedTiles.length, 0);
-      }
-
-      expect(mainManager.storeLength, 78);
-    },
-    timeout: Timeout(Duration(minutes: 1)),
-    onPlatform: {'windows': Skip('Does not work on Windows')},
-  );
 
   test('seaTileRemoval', () async {
     final Directory parentDirectory = await reset(true);
@@ -201,6 +167,7 @@ void main() {
           subdomains: ['a', 'b', 'c'],
         ),
         seaTileRemoval: true,
+        parallelThreads: 1,
       ),
       disableRecovery: true,
     );

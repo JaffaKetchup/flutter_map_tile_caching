@@ -5,11 +5,14 @@ import 'package:meta/meta.dart';
 import 'circle.dart';
 import 'downloadableRegion.dart';
 //import 'line.dart';
+import 'line.dart';
 import 'rectangle.dart';
 
 /// A mixture between `BaseRegion` and `DownloadableRegion` containing all the salvaged data from a recovered download
 ///
-/// `bounds` may be `null` if `type` is `RegionType.circle`. `center` and `radius` may be `null` if `type` is `RegionType.rectangle`. `preventRedownload` will always be `true`, as this is the functionality required to resume the failed download.
+/// How does recovery work? At the start of a download, a file is created including information about the download. At the end of a download or when a download is correctly cancelled, this file is deleted. However, if there is no ongoing download (controlled by an internal variable) and the recovery file exists, the download has obviously been stopped incorrectly, meaning it can be recovered using the information within the recovery file. If specific recovery was enabled, this download can be resumed from the last known tile number (stored alongside the recovery file), otherwise the download must start from the beginning.
+///
+/// The availability of `bounds`, `line`, `center` & `radius` depend on the `type` of the recovered region.
 ///
 /// Should avoid manual construction. Use `.toDownloadable()` to restore a `DownloadableRegion`.
 class RecoveredRegion {
@@ -18,6 +21,9 @@ class RecoveredRegion {
 
   /// The bounds for a rectangular region
   final LatLngBounds? bounds;
+
+  /// The line making a line-based region
+  final List<LatLng>? line;
 
   /// The center of a circular region
   final LatLng? center;
@@ -32,7 +38,7 @@ class RecoveredRegion {
   final int maxZoom;
 
   /// Whether to skip downloading tiles that already exist
-  final bool preventRedownload = true;
+  final bool preventRedownload;
 
   /// Whether to remove tiles that are entirely sea
   ///
@@ -43,22 +49,22 @@ class RecoveredRegion {
   /// This is a storage saving feature, not a time saving or data saving feature: tiles still have to be fully downloaded before they can be checked.
   final bool seaTileRemoval;
 
-  /// The compression level percentage from 1 (bad quality) to 99 (good quality) to compress tiles with
-  ///
-  /// This is a storage saving feature, not a time saving or data saving feature: tiles still have to be fully downloaded before they can be compressed. Note that this will severely lengthen download time.
-  final int compressionQuality;
+  /// If precise recovery was enabled, this contains the last known tile number
+  final int? preciseRecovery;
 
   @internal
   RecoveredRegion(
     this.type,
     this.bounds,
     this.center,
+    this.line,
     this.radius,
     this.minZoom,
     this.maxZoom,
-    this.seaTileRemoval,
-    this.compressionQuality,
-  );
+    this.preventRedownload,
+    this.seaTileRemoval, [
+    this.preciseRecovery,
+  ]);
 
   DownloadableRegion toDownloadable(
     TileLayerOptions options, {
@@ -75,9 +81,9 @@ class RecoveredRegion {
         RectangleRegion(bounds!),
         preventRedownload: preventRedownload,
         seaTileRemoval: seaTileRemoval,
-        compressionQuality: compressionQuality,
         crs: crs,
         errorHandler: errorHandler,
+        resumeTile: preciseRecovery,
       );
     else if (type == RegionType.circle)
       return DownloadableRegion(
@@ -89,13 +95,23 @@ class RecoveredRegion {
         CircleRegion(center!, radius!),
         preventRedownload: preventRedownload,
         seaTileRemoval: seaTileRemoval,
-        compressionQuality: compressionQuality,
         crs: crs,
         errorHandler: errorHandler,
+        resumeTile: preciseRecovery,
       );
     else
-      throw UnimplementedError(
-        'This functionality is not yet supported, as the main part is experimental and this part has not been completed yet',
+      return DownloadableRegion(
+        LineRegion(line!, radius!).toList(),
+        minZoom,
+        maxZoom,
+        options,
+        type,
+        CircleRegion(center!, radius!),
+        preventRedownload: preventRedownload,
+        seaTileRemoval: seaTileRemoval,
+        crs: crs,
+        errorHandler: errorHandler,
+        resumeTile: preciseRecovery,
       );
   }
 }

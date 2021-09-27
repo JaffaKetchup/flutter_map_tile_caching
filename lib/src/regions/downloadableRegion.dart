@@ -13,12 +13,6 @@ enum RegionType {
 
   /// A region with the border as the loci of a line at it's center representing multiple diagonal rectangles
   line,
-
-  /// Depreciated due to lack of associated functionality. Remove all references throughout your code.
-  @Deprecated(
-    'This value has been deprecated, because there was no associated functionality. Remove all references throughout your code.',
-  )
-  customPolygon,
 }
 
 /// A region that can be downloaded, drawn on a map, or converted to a list of points, that forms a particular shape
@@ -32,7 +26,6 @@ abstract class BaseRegion {
     TileLayerOptions options, {
     bool preventRedownload = false,
     bool seaTileRemoval,
-    int compressionQuality = -1,
     Crs crs = const Epsg3857(),
     Function(dynamic)? errorHandler,
   });
@@ -48,6 +41,8 @@ abstract class BaseRegion {
   });
 
   /// Create a list of all the `LatLng`s along the outline of this region
+  ///
+  /// Not supported on line regions: use `toOutlines()` instead.
   ///
   /// Returns a `List<LatLng>` which can be used anywhere.
   List<LatLng> toList();
@@ -100,18 +95,15 @@ class DownloadableRegion {
   /// Set to `false` to keep sea tiles, which is the default.
   final bool seaTileRemoval;
 
-  /// The compression level percentage from 1 (bad quality) to 99 (good quality) to compress tiles with
-  ///
-  /// This is a storage saving feature, not a time saving or data saving feature: tiles still have to be fully downloaded before they can be compressed. Note that this will severely lengthen download time.
-  ///
-  /// Set to -1 to disable compression, which is the default.
-  final int compressionQuality;
-
   /// The map projection to use to calculate tiles. Defaults to `Espg3857()`.
   final Crs crs;
 
   /// A function that takes any type of error as an argument to be called in the event a tile fetch fails
   final Function(dynamic)? errorHandler;
+
+  /// Used internally for specific recovery
+  @internal
+  final int? resumeTile;
 
   /// Deprecated. Will be removed in next release. Migrate to the equivalent in the `TileLayerOptions`.
   ///
@@ -132,15 +124,10 @@ class DownloadableRegion {
     this.parallelThreads = 10,
     this.preventRedownload = false,
     this.seaTileRemoval = false,
-    this.compressionQuality = -1,
     this.crs = const Epsg3857(),
     this.errorHandler,
-  })  : assert(
-          compressionQuality == -1 ||
-              (compressionQuality >= 1 && compressionQuality <= 99),
-          '`compressionQuality` must be -1 to signify that compression is disabled, or between 1 and 99 inclusive, representing the compression level percentage where 1 is bad quality and 99 is good quality',
-        ),
-        assert(
+    this.resumeTile,
+  }) : assert(
           minZoom <= maxZoom,
           '`minZoom` should be less than or equal to `maxZoom`',
         ),

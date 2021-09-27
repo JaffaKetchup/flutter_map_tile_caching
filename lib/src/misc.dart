@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 
+import 'package:meta/meta.dart';
+
 /// The parent directory of all cache stores, to be used for `parentDirectory` arguments
 ///
 /// Is an alias of `Directory`.
@@ -47,4 +49,25 @@ extension ByteExts on int {
 
   /// Convert bytes to gigabytes
   double get bytesToGigabytes => this / pow(1024, 3);
+}
+
+@internal
+extension ListExtensionsE<E> on List<E> {
+  List<List<E>> chunked(int size) {
+    List<List<E>> chunks = [];
+
+    for (var i = 0; i < length; i += size)
+      chunks.add(this.sublist(i, (i + size < length) ? i + size : length));
+
+    return chunks;
+  }
+
+  num get minNum => (this as List<num>).reduce(math.min);
+  num get maxNum => (this as List<num>).reduce(math.max);
+}
+
+@internal
+extension ListExtensionsDouble on List<double> {
+  double get minNum => this.reduce(math.min);
+  double get maxNum => this.reduce(math.max);
 }

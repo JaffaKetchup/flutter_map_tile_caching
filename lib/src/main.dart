@@ -1,24 +1,21 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:math' as math;
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:background_fetch/background_fetch.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
-import 'package:latlong2/latlong.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
 import 'package:path/path.dart' as p show joinAll;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:queue/queue.dart';
 
+import 'tileLoops.dart';
 import 'misc.dart';
 import 'regions/downloadableRegion.dart';
 import 'regions/recoveredRegion.dart';
@@ -207,12 +204,13 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// To check the number of tiles that need to be downloaded before using this function, use `checkRegion()`.
   ///
-  /// Unless otherwise specified, also starts a recovery session.
+  /// Unless otherwise specified, also starts a recovery session. Enabling 'specific recovery' will slow download, but will allow a download to start again at the correct tile instead of having to start from the beginning. Leaving `specificRecovery` as `false` will mean a recovered download will have to restart.
   ///
   /// Streams a `DownloadProgress` object containing the number of completed tiles, total number of tiles to download, a list of errored URLs and the percentage completion.
   Stream<DownloadProgress> downloadRegion(
     DownloadableRegion region, {
     bool disableRecovery = false,
+    bool specificRecovery = false,
   }) async* {
     if (!disableRecovery) {
       if (!MapCachingManager(parentDirectory, storeName).startRecovery(
@@ -220,8 +218,8 @@ class StorageCachingTileProvider extends TileProvider {
         region.originalRegion,
         region.minZoom,
         region.maxZoom,
+        region.preventRedownload,
         region.seaTileRemoval,
-        region.compressionQuality,
       ))
         throw StateError(
             'Failed to create recovery session. Restart app and retry. If issue persists, disable recovery to continue.');
@@ -231,7 +229,7 @@ class StorageCachingTileProvider extends TileProvider {
       yield* _spawnDownloadIsolate(
         region,
         await compute(
-          _circleTiles,
+          circleTiles,
           {
             'circleOutline': region.points,
             'minZoom': region.minZoom,
@@ -246,7 +244,7 @@ class StorageCachingTileProvider extends TileProvider {
       yield* _spawnDownloadIsolate(
         region,
         await compute(
-          _rectangleTiles,
+          rectangleTiles,
           {
             'bounds': LatLngBounds.fromPoints(region.points),
             'minZoom': region.minZoom,
@@ -259,31 +257,33 @@ class StorageCachingTileProvider extends TileProvider {
       );
     } else if (region.type == RegionType.line) {
       print(
-        '\nCAUTION\nThis functionality is highly experimental and should not be used unless otherwise necessary. This functionality is likely to fail.\n',
-      );
-      yield* _downloadLine(
-        region.points,
-        region.minZoom,
-        region.maxZoom,
-        region.options,
-        preventRedownload: region.preventRedownload,
-        seaTileRemoval: region.seaTileRemoval,
-        compressionQuality: region.compressionQuality,
-        crs: region.crs,
-        errorHandler: region.errorHandler,
+          'NOT SUPPORTED\nProceed with caution, this functionality is highly experimental');
+      yield* _spawnDownloadIsolate(
+        region,
+        await compute(
+          lineTiles,
+          {
+            'lineOutline': region.points.chunked(4),
+            'minZoom': region.minZoom,
+            'maxZoom': region.maxZoom,
+            'crs': region.crs,
+            'tileSize':
+                CustomPoint(region.options.tileSize, region.options.tileSize),
+          },
+        ),
       );
     }
   }
 
   /// Check approximately how many downloadable tiles are within a specified `DownloadableRegion`
   ///
-  /// This does not take into account sea tile removal or redownload prevention, as these are handled in the download portion of the code.
+  /// This does not take into account sea tile removal or redownload prevention, as these are handled in the download portion of the code. Specific recovery is also ignored.
   ///
   /// Returns an `int` which is the number of tiles.
   static Future<int> checkRegion(DownloadableRegion region) async {
     if (region.type == RegionType.circle)
       return (await compute(
-        _circleTiles,
+        circleTiles,
         {
           'circleOutline': region.points,
           'minZoom': region.minZoom,
@@ -296,7 +296,7 @@ class StorageCachingTileProvider extends TileProvider {
           .length;
     else if (region.type == RegionType.rectangle)
       return (await compute(
-        _rectangleTiles,
+        rectangleTiles,
         {
           'bounds': LatLngBounds.fromPoints(region.points),
           'minZoom': region.minZoom,
@@ -307,10 +307,22 @@ class StorageCachingTileProvider extends TileProvider {
         },
       ))
           .length;
-    else
-      throw UnimplementedError(
-        'This functionality is not yet supported, as the main part is experimental and this part has not been completed yet',
-      );
+    else {
+      print(
+          'NOT SUPPORTED\nProceed with caution, this functionality is highly experimental');
+      return (await compute(
+        lineTiles,
+        {
+          'lineOutline': region.points.chunked(4),
+          'minZoom': region.minZoom,
+          'maxZoom': region.maxZoom,
+          'crs': region.crs,
+          'tileSize':
+              CustomPoint(region.options.tileSize, region.options.tileSize),
+        },
+      ))
+          .length;
+    }
   }
 
   /// Cancels the ongoing foreground download and recovery session (within the current object)
@@ -329,7 +341,7 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Optionally make `deleteRecovery` `false` if you would like the download to still be recoverable after this method has been called.
   ///
-  /// How does recovery work? At the start of a download, a file is created including information about the download. At the end of a download or when a download is correctly cancelled, this file is deleted. However, if there is no ongoing download (controlled by an internal variable) and the recovery file exists, the download has obviously been stopped incorrectly, meaning it can be recovered using the information within the recovery file.
+  /// How does recovery work? At the start of a download, a file is created including information about the download. At the end of a download or when a download is correctly cancelled, this file is deleted. However, if there is no ongoing download (controlled by an internal variable) and the recovery file exists, the download has obviously been stopped incorrectly, meaning it can be recovered using the information within the recovery file. If specific recovery was enabled, this download can be resumed from the last known tile number (stored alongside the recovery file), otherwise the download must start from the beginning.
   RecoveredRegion? recoverDownload({bool deleteRecovery = true}) {
     if (_downloadOngoing) return null;
 
@@ -385,7 +397,7 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Optionally specify a `callback` that gets fired every time another tile is downloaded/failed, takes one `DownloadProgress` argument, and returns a boolean. Download can be cancelled by returning `true` from `callback` function or by fully closing the app.
   ///
-  /// Always starts a recovery session.
+  /// Always starts a specific recovery session.
   ///
   /// If the download doesn't seem to start on a testing device, try changing `useAltMethod` to `true`. This will switch to an older Android API, so should only be used if it is the most stable on a device. You may be able to programatically detect if the download hasn't started by using the callback, therefore allowing you to call this method again with `useAltMethod`, but this isn't guranteed.
   ///
@@ -423,7 +435,8 @@ class StorageCachingTileProvider extends TileProvider {
           if (taskId == 'backgroundTileDownload') {
             // ignore: cancel_subscriptions
             StreamSubscription<DownloadProgress>? sub;
-            sub = downloadRegion(region).listen((event) async {
+            sub = downloadRegion(region, specificRecovery: true)
+                .listen((event) async {
               AndroidNotificationDetails androidPlatformChannelSpecifics =
                   AndroidNotificationDetails(
                 'MapDownloading',
@@ -520,7 +533,9 @@ class StorageCachingTileProvider extends TileProvider {
       'region': region,
       'parentDirectory': parentDirectory,
       'storeName': storeName,
-      'tiles': tiles,
+      'tiles': region.resumeTile == null
+          ? tiles
+          : tiles.getRange(region.resumeTile! - 5, tiles.length).toList(),
     });
     await for (DownloadProgress evt in _receivePort) {
       yield evt;
@@ -539,7 +554,6 @@ class StorageCachingTileProvider extends TileProvider {
       parallelThreads: region.parallelThreads,
       preventRedownload: region.preventRedownload,
       seaTileRemoval: region.seaTileRemoval,
-      compressionQuality: region.compressionQuality,
       errorHandler: region.errorHandler,
     )) input['port'].send(progress);
   }
@@ -552,7 +566,6 @@ class StorageCachingTileProvider extends TileProvider {
     required int parallelThreads,
     required bool preventRedownload,
     required bool seaTileRemoval,
-    required int compressionQuality,
     Function(dynamic)? errorHandler,
   }) async* {
     final http.Client client = http.Client();
@@ -585,7 +598,6 @@ class StorageCachingTileProvider extends TileProvider {
       errorHandler: errorHandler,
       preventRedownload: preventRedownload,
       seaTileBytes: seaTileBytes,
-      compressionQuality: compressionQuality,
     );
 
     await for (final event in downloadStream) {
@@ -608,17 +620,16 @@ class StorageCachingTileProvider extends TileProvider {
   }
 
   static Stream<List> _bulkDownloader({
-    required tiles,
-    required parentDirectory,
-    required storeName,
-    required provider,
-    required options,
-    required client,
-    required errorHandler,
-    required parallelThreads,
-    required preventRedownload,
-    required seaTileBytes,
-    required compressionQuality,
+    required List<Coords<num>> tiles,
+    required Directory parentDirectory,
+    required String storeName,
+    required StorageCachingTileProvider provider,
+    required TileLayerOptions options,
+    required http.Client client,
+    required Function(dynamic)? errorHandler,
+    required int parallelThreads,
+    required bool preventRedownload,
+    Uint8List? seaTileBytes,
   }) {
     // ignore: close_sinks
     final StreamController<List> streamController = StreamController();
@@ -626,26 +637,31 @@ class StorageCachingTileProvider extends TileProvider {
 
     tiles.forEach((e) {
       queue
-          .add(() => _getAndSaveTile(
-                parentDirectory,
-                storeName,
-                provider,
-                e,
-                options,
-                client,
-                errorHandler,
-                preventRedownload,
-                seaTileBytes,
-                compressionQuality,
-              ))
-          .then((value) {
-        streamController.add([
-          value[0],
-          value[1],
-          value[2],
-          value[3],
-        ]);
-      });
+          .add(
+        () => _getAndSaveTile(
+          parentDirectory,
+          storeName,
+          provider,
+          e,
+          options,
+          client,
+          errorHandler,
+          preventRedownload,
+          seaTileBytes,
+        ),
+      )
+          .then(
+        (value) {
+          streamController.add(
+            [
+              value[0],
+              value[1],
+              value[2],
+              value[3],
+            ],
+          );
+        },
+      );
     });
 
     return streamController.stream;
@@ -661,7 +677,6 @@ class StorageCachingTileProvider extends TileProvider {
     Function(dynamic)? errorHandler,
     bool preventRedownload,
     Uint8List? seaTileBytes,
-    int compressionQuality,
   ) async {
     final Coords<double> coordDouble =
         Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
@@ -689,21 +704,6 @@ class StorageCachingTileProvider extends TileProvider {
         File(path).deleteSync();
         return [1, '', 1, 0];
       }
-
-      if (compressionQuality != -1) {
-        final Uint8List? compressed =
-            await FlutterImageCompress.compressWithFile(
-          path,
-          quality: compressionQuality,
-          autoCorrectionAngle: false,
-          format:
-              url.endsWith('.png') ? CompressFormat.png : CompressFormat.jpeg,
-          minHeight: options.tileSize.round(),
-          minWidth: options.tileSize.round(),
-        );
-
-        File(path).writeAsBytesSync(compressed ?? [0]);
-      }
     } catch (e) {
       if (errorHandler != null) errorHandler(e);
       return [0, url, 0, 0];
@@ -711,241 +711,4 @@ class StorageCachingTileProvider extends TileProvider {
 
     return [1, '', 0, 0];
   }
-
-  //!   LINE FUNCTIONS    !//
-  //! HIGHLY EXPERIMENTAL !//
-
-  static List<Coords<num>> _lineTiles(
-    List<List<List<dynamic>>> rectsOverall,
-    int minZoom,
-    int maxZoom, {
-    Crs crs = const Epsg3857(),
-    CustomPoint<num> tileSize = const CustomPoint(256, 256),
-  }) {
-    final List<Coords<num>> coords = [];
-
-    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-      final List<List<LatLng>> rects =
-          rectsOverall[zoomLvl] as List<List<LatLng>>;
-      rects.forEach((rect) {
-        rect.forEach((point) {
-          rectsOverall[zoomLvl][rects.indexOf(rect)][rect.indexOf(point)] = crs
-              .latLngToPoint(point, zoomLvl.toDouble())
-              .unscaleBy(tileSize)
-              .floor();
-        });
-      });
-    }
-
-    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-      final List<List<CustomPoint<num>>> rects =
-          rectsOverall[zoomLvl] as List<List<CustomPoint<num>>>;
-      rects.forEach((rect) {
-        rect.forEach((node) {
-          coords.add(
-            Coords(node.x.toDouble(), node.y.toDouble())
-              ..z = zoomLvl.toDouble(),
-          );
-          print(node);
-        });
-      });
-    }
-
-    return coords;
-    /*final Map<int, Map<int, List<int>>> outlineTileNums = {};
-
-    final List<Coords<num>> coords = [];
-
-    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-      outlineTileNums[zoomLvl] = {};
-
-      for (LatLng node in lineOutline) {
-        final CustomPoint<num> tile = crs
-            .latLngToPoint(node, zoomLvl.toDouble())
-            .unscaleBy(tileSize)
-            .floor();
-
-        if (outlineTileNums[zoomLvl]![tile.x.toInt()] == null) {
-          outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-            999999999999999999,
-            -999999999999999999
-          ];
-        }
-
-        outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-          tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0])
-              ? tile.y.toInt()
-              : (outlineTileNums[zoomLvl]![tile.x.toInt()]![0]),
-          tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1])
-              ? tile.y.toInt()
-              : (outlineTileNums[zoomLvl]![tile.x.toInt()]![1]),
-        ];
-      }
-
-      for (int x in outlineTileNums[zoomLvl]!.keys) {
-        for (int y = outlineTileNums[zoomLvl]![x]![0];
-            y <= outlineTileNums[zoomLvl]![x]![1];
-            y++) {
-          coords.add(
-            Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble(),
-          );
-        }
-      }
-    }
-
-    return coords;*/
-  }
-
-  Stream<DownloadProgress> _downloadLine(
-    List<LatLng> basicRectOutlines,
-    int minZoom,
-    int maxZoom,
-    TileLayerOptions options, {
-    bool preventRedownload = false,
-    bool seaTileRemoval = false,
-    int compressionQuality = -1,
-    Crs crs = const Epsg3857(),
-    Function(dynamic)? errorHandler,
-  }) async* {
-    /*double calcDist(LatLng a, LatLng b) {
-      final double p = 0.017453292519943295;
-      final double formula = 0.5 -
-          math.cos((b.latitude - a.latitude) * p) / 2 +
-          math.cos(a.latitude * p) *
-              math.cos(b.latitude * p) *
-              (1 - math.cos((b.longitude - a.longitude) * p)) /
-              2;
-      return 12742 * math.asin(math.sqrt(formula)) * 1000;
-    }*/
-
-    final List<List<LatLng>> rects = [];
-    for (int pos = 0; pos < basicRectOutlines.length; pos + 4) {
-      rects.insert(pos, [
-        basicRectOutlines[pos],
-        basicRectOutlines[pos + 1],
-        basicRectOutlines[pos + 2],
-        basicRectOutlines[pos + 3],
-      ]);
-    }
-    print(rects);
-
-    final List<List<List<LatLng>>> realRectsPerZoom =
-        List.generate(rects.length, (index) => [[]]);
-
-    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-      rects.forEach((rect) {
-        for (int ii = 0; ii < rect.length; ii++) {
-          final LatLng a = rect[ii];
-          final LatLng b = rect[(ii + 1) > rect.length - 1 ? 0 : (ii + 1)];
-          final double resolution = (40075.016686 * 1000 / 256) *
-              math.cos((a.latitude + b.latitude) / 2) /
-              (2 ^ zoomLvl);
-          for (double dist = 0; dist <= a >> b; dist += resolution) {
-            realRectsPerZoom[zoomLvl][rects.indexOf(rect)]
-                .add(Distance().offset(a, dist, Distance().bearing(a, b)));
-          }
-        }
-      });
-    }
-
-    print(realRectsPerZoom);
-
-    final List<Coords<num>> tiles = _lineTiles(
-      realRectsPerZoom,
-      minZoom,
-      maxZoom,
-      crs: crs,
-      tileSize: CustomPoint(options.tileSize, options.tileSize),
-    );
-
-    /*yield* _downloadLoop(
-      tiles,
-      options,
-      preventRedownload,
-      seaTileRemoval,
-      compressionQuality,
-      errorHandler,
-    );*/
-  }
-}
-
-//! TILE LOOPS !//
-
-List<Coords> _rectangleTiles(Map<String, dynamic> input) {
-  final LatLngBounds bounds = input['bounds'];
-  final int minZoom = input['minZoom'];
-  final int maxZoom = input['maxZoom'];
-  final Crs crs = input['crs'];
-  final CustomPoint<num> tileSize = input['tileSize'];
-
-  final coords = <Coords>[];
-  for (var zoomLevel in List<int>.generate(
-      maxZoom - minZoom + 1, (index) => index + minZoom)) {
-    final nwPoint = crs
-        .latLngToPoint(bounds.northWest, zoomLevel.toDouble())
-        .unscaleBy(tileSize)
-        .floor();
-    final sePoint = crs
-            .latLngToPoint(bounds.southEast, zoomLevel.toDouble())
-            .unscaleBy(tileSize)
-            .ceil() -
-        CustomPoint(1, 1);
-    for (var x = nwPoint.x; x <= sePoint.x; x++) {
-      for (var y = nwPoint.y; y <= sePoint.y; y++) {
-        coords.add(Coords(x, y)..z = zoomLevel);
-      }
-    }
-  }
-  return coords;
-}
-
-List<Coords<num>> _circleTiles(Map<String, dynamic> input) {
-  final List<LatLng> circleOutline = input['circleOutline'];
-  final int minZoom = input['minZoom'];
-  final int maxZoom = input['maxZoom'];
-  final Crs crs = input['crs'];
-  final CustomPoint<num> tileSize = input['tileSize'];
-
-  final Map<int, Map<int, List<int>>> outlineTileNums = {};
-
-  final List<Coords<num>> coords = [];
-
-  for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-    outlineTileNums[zoomLvl] = {};
-
-    for (LatLng node in circleOutline) {
-      final CustomPoint<num> tile = crs
-          .latLngToPoint(node, zoomLvl.toDouble())
-          .unscaleBy(tileSize)
-          .floor();
-
-      if (outlineTileNums[zoomLvl]![tile.x.toInt()] == null) {
-        outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-          999999999999999999,
-          -999999999999999999
-        ];
-      }
-
-      outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-        tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0])
-            ? tile.y.toInt()
-            : (outlineTileNums[zoomLvl]![tile.x.toInt()]![0]),
-        tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1])
-            ? tile.y.toInt()
-            : (outlineTileNums[zoomLvl]![tile.x.toInt()]![1]),
-      ];
-    }
-
-    for (int x in outlineTileNums[zoomLvl]!.keys) {
-      for (int y = outlineTileNums[zoomLvl]![x]![0];
-          y <= outlineTileNums[zoomLvl]![x]![1];
-          y++) {
-        coords.add(
-          Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble(),
-        );
-      }
-    }
-  }
-
-  return coords;
 }

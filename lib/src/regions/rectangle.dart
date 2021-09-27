@@ -20,7 +20,6 @@ class RectangleRegion extends BaseRegion {
     int parallelThreads = 10,
     bool preventRedownload = false,
     bool seaTileRemoval = false,
-    int compressionQuality = -1,
     Crs crs = const Epsg3857(),
     Function(dynamic)? errorHandler,
   }) {
@@ -34,7 +33,6 @@ class RectangleRegion extends BaseRegion {
       parallelThreads: parallelThreads,
       preventRedownload: preventRedownload,
       seaTileRemoval: seaTileRemoval,
-      compressionQuality: compressionQuality,
       crs: crs,
       errorHandler: errorHandler,
     );

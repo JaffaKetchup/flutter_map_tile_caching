@@ -7,7 +7,7 @@ export 'src/main.dart';
 
 // Backend and Misc
 export 'src/storageManager.dart';
-export 'src/misc.dart';
+export 'src/misc.dart' hide ListExtensionsE, ListExtensionsDouble;
 
 // Regions
 export 'src/regions/downloadableRegion.dart';
