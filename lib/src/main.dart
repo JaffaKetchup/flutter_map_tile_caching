@@ -70,7 +70,8 @@ class StorageCachingTileProvider extends TileProvider {
   /// Defaults to 20000, set to 0 to disable.
   final int maxStoreLength;
 
-  static var maxParallel = 20;
+  /// The number of download threads allowed to run simultaneously.
+  static var maxParallelThreads = 20;
 
   /// Whether to better enforce the `maxStoreLength`
   ///
@@ -557,13 +558,8 @@ class StorageCachingTileProvider extends TileProvider {
     required seaTileBytes,
     required compressionQuality,
   }) {
-    int successfulTiles = 0;
-    List<String> failedTiles = [];
-    int seaTiles = 0;
-    int existingTiles = 0;
-
     final StreamController<List> streamController = StreamController();
-    final queue = Queue(parallel: maxParallel);
+    final queue = Queue(parallel: maxParallelThreads);
 
     tiles.forEach((e) {
       queue
@@ -580,12 +576,6 @@ class StorageCachingTileProvider extends TileProvider {
                 compressionQuality,
               ))
           .then((value) {
-        try {
-          successfulTiles += value[0] as int;
-          if (value[1].isNotEmpty) failedTiles.add(value[1]);
-          seaTiles += value[2] as int;
-          existingTiles += value[3] as int;
-        } catch (e) {}
         streamController.add([
           value[0],
           value[1],
