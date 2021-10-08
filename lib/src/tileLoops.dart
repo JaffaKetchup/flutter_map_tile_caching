@@ -3,57 +3,6 @@ import 'package:latlong2/latlong.dart';
 
 import 'misc.dart';
 
-List<Coords<num>> circleTiles(Map<String, dynamic> input) {
-  final List<LatLng> circleOutline = input['circleOutline'];
-  final int minZoom = input['minZoom'];
-  final int maxZoom = input['maxZoom'];
-  final Crs crs = input['crs'];
-  final CustomPoint<num> tileSize = input['tileSize'];
-
-  final Map<int, Map<int, List<int>>> outlineTileNums = {};
-
-  final List<Coords<num>> coords = [];
-
-  for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-    outlineTileNums[zoomLvl] = {};
-
-    for (LatLng node in circleOutline) {
-      final CustomPoint<num> tile = crs
-          .latLngToPoint(node, zoomLvl.toDouble())
-          .unscaleBy(tileSize)
-          .floor();
-
-      if (outlineTileNums[zoomLvl]![tile.x.toInt()] == null) {
-        outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-          999999999999999999,
-          -999999999999999999
-        ];
-      }
-
-      outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-        tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0])
-            ? tile.y.toInt()
-            : (outlineTileNums[zoomLvl]![tile.x.toInt()]![0]),
-        tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1])
-            ? tile.y.toInt()
-            : (outlineTileNums[zoomLvl]![tile.x.toInt()]![1]),
-      ];
-    }
-
-    for (int x in outlineTileNums[zoomLvl]!.keys) {
-      for (int y = outlineTileNums[zoomLvl]![x]![0];
-          y <= outlineTileNums[zoomLvl]![x]![1];
-          y++) {
-        coords.add(
-          Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble(),
-        );
-      }
-    }
-  }
-
-  return coords;
-}
-
 List<Coords<num>> rectangleTiles(Map<String, dynamic> input) {
   final LatLngBounds bounds = input['bounds'];
   final int minZoom = input['minZoom'];
@@ -78,6 +27,56 @@ List<Coords<num>> rectangleTiles(Map<String, dynamic> input) {
       }
     }
   }
+  return coords;
+}
+
+List<Coords<num>> circleTiles(Map<String, dynamic> input) {
+  final List<LatLng> circleOutline = input['circleOutline'];
+  final int minZoom = input['minZoom'];
+  final int maxZoom = input['maxZoom'];
+  final Crs crs = input['crs'];
+  final CustomPoint<num> tileSize = input['tileSize'];
+
+  final Map<int, Map<int, List<int>>> outlineTileNums = {};
+
+  final List<Coords<num>> coords = [];
+
+  for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
+    outlineTileNums[zoomLvl] = {};
+
+    for (LatLng node in circleOutline) {
+      final CustomPoint<num> tile = crs
+          .latLngToPoint(node, zoomLvl.toDouble())
+          .unscaleBy(tileSize)
+          .floor();
+
+      if (outlineTileNums[zoomLvl]![tile.x.toInt()] == null)
+        outlineTileNums[zoomLvl]![tile.x.toInt()] = [
+          999999999999999999,
+          -999999999999999999
+        ];
+
+      outlineTileNums[zoomLvl]![tile.x.toInt()] = [
+        tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0])
+            ? tile.y.toInt()
+            : (outlineTileNums[zoomLvl]![tile.x.toInt()]![0]),
+        tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1])
+            ? tile.y.toInt()
+            : (outlineTileNums[zoomLvl]![tile.x.toInt()]![1]),
+      ];
+    }
+
+    for (int x in outlineTileNums[zoomLvl]!.keys) {
+      for (int y = outlineTileNums[zoomLvl]![x]![0];
+          y <= outlineTileNums[zoomLvl]![x]![1];
+          y++) {
+        coords.add(
+          Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble(),
+        );
+      }
+    }
+  }
+
   return coords;
 }
 
@@ -121,31 +120,6 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
     return true;
   }
 
-  /*bool overlap(
-    CustomPoint a,
-    CustomPoint b,
-    CustomPoint c,
-    CustomPoint d,
-    CustomPoint m,
-  ) {
-    CustomPoint vect2d(CustomPoint p1, CustomPoint p2) =>
-        CustomPoint(p2.x - p1.x, -1 * (p2.y - p1.y));
-
-    final CustomPoint ab = vect2d(a, b);
-    final double c1 = -1 * (ab.y * a.x + ab.x * a.y).toDouble();
-    final double d1 = (ab.y * m.x + ab.x * m.y) + c1;
-    final CustomPoint ad = vect2d(a, d);
-    final double c2 = -1 * (ad.y * a.x + ad.x * a.y).toDouble();
-    final double d2 = (ad.y * m.x + ad.x * m.y) + c2;
-    final CustomPoint bc = vect2d(b, c);
-    final double c3 = -1 * (bc.y * b.x + bc.x * b.y).toDouble();
-    final double d3 = (bc.y * m.x + bc.x * m.y) + c3;
-    final CustomPoint cd = vect2d(c, d);
-    final double c4 = -1 * (cd.y * c.x + cd.x * c.y).toDouble();
-    final double d4 = (cd.y * m.x + cd.x * m.y) + c4;
-    return 0 >= d1 && 0 >= d4 && 0 <= d2 && 0 >= d3;
-  }*/
-
   final List<List<LatLng>> rects = input['lineOutline'];
   final int minZoom = input['minZoom'];
   final int maxZoom = input['maxZoom'];
@@ -178,51 +152,51 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
 
       // Use constructed lists to get the straight rectangle corners
       final LatLng srTopLeft = LatLng(rrAllLat.maxNum, rrAllLon.minNum);
-      final LatLng srTopRight = LatLng(rrAllLat.maxNum, rrAllLon.maxNum);
-      final LatLng srBottomLeft = LatLng(rrAllLat.minNum, rrAllLon.minNum);
+      //final LatLng srTopRight = LatLng(rrAllLat.maxNum, rrAllLon.maxNum);
+      //final LatLng srBottomLeft = LatLng(rrAllLat.minNum, rrAllLon.minNum);
       final LatLng srBottomRight = LatLng(rrAllLat.minNum, rrAllLon.maxNum);
 
       // Get tile number for each rotated rectangle corner
-      final rrNorthEast = crs
-          .latLngToPoint(rrTopRight, zoomLvl.toDouble())
-          .unscaleBy(tileSize)
-          .ceil();
       final rrNorthWest = crs
-              .latLngToPoint(rrTopLeft, zoomLvl.toDouble())
+          .latLngToPoint(rrTopLeft, zoomLvl.toDouble())
+          .unscaleBy(tileSize)
+          .floor();
+      final rrNorthEast = crs
+              .latLngToPoint(rrTopRight, zoomLvl.toDouble())
               .unscaleBy(tileSize)
               .ceil() -
-          CustomPoint(0, 1);
+          CustomPoint(1, 0);
       final rrSouthWest = crs
               .latLngToPoint(rrBottomLeft, zoomLvl.toDouble())
               .unscaleBy(tileSize)
-              .floor() -
-          CustomPoint(1, 1);
+              .ceil() -
+          CustomPoint(0, 1);
       final rrSouthEast = crs
               .latLngToPoint(rrBottomRight, zoomLvl.toDouble())
               .unscaleBy(tileSize)
               .ceil() -
-          CustomPoint(1, 0);
+          CustomPoint(1, 1);
 
       // Get tile number for each straight rectangle corner
-      final srNorthEast = crs
-          .latLngToPoint(srTopRight, zoomLvl.toDouble())
-          .unscaleBy(tileSize)
-          .ceil();
       final srNorthWest = crs
-              .latLngToPoint(srTopLeft, zoomLvl.toDouble())
+          .latLngToPoint(srTopLeft, zoomLvl.toDouble())
+          .unscaleBy(tileSize)
+          .floor();
+      /*final srNorthEast = crs
+              .latLngToPoint(srTopRight, zoomLvl.toDouble())
               .unscaleBy(tileSize)
               .ceil() -
-          CustomPoint(0, 1);
+          CustomPoint(1, 0);
       final srSouthWest = crs
               .latLngToPoint(srBottomLeft, zoomLvl.toDouble())
               .unscaleBy(tileSize)
-              .floor() -
-          CustomPoint(1, 1);
+              .ceil() -
+          CustomPoint(0, 1);*/
       final srSouthEast = crs
               .latLngToPoint(srBottomRight, zoomLvl.toDouble())
               .unscaleBy(tileSize)
               .ceil() -
-          CustomPoint(1, 0);
+          CustomPoint(1, 1);
 
       for (num x = srNorthWest.x; x <= srSouthEast.x; x++) {
         for (num y = srNorthWest.y; y <= srSouthEast.y; y++) {
@@ -239,25 +213,9 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
               CustomPoint(x + 1, y + 1),
               CustomPoint(x, y + 1),
             ),
-          )) {
-            print('coords: ' + (Coords(x, y)..z = zoomLvl).toString());
-            coords.add(Coords(x, y)..z = zoomLvl);
-          }
+          )) coords.add(Coords(x, y)..z = zoomLvl);
         }
       }
-
-      /*for (num y = nwRR.y; y >= seRR.y; y--) {
-        for (num x = nwRR.x; x >= seRR.x; x--) {
-          if (overlap(nwRR, neRR, seRR, swRR, CustomPoint(x, y)) ||
-              overlap(nwRR, neRR, seRR, swRR, CustomPoint(x, y + 1)) ||
-              overlap(nwRR, neRR, seRR, swRR, CustomPoint(x + 1, y + 1)) ||
-              overlap(nwRR, neRR, seRR, swRR, CustomPoint(x + 1, y))) {
-            print('coords: ' + (Coords(x, y)..z = zoomLvl).toString());
-            coords.add(Coords(x, y)..z = zoomLvl);
-          } else
-            break;
-        }
-      }*/
     }
   }
 

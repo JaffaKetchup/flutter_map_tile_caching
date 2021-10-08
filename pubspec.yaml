@@ -1,6 +1,6 @@
 name: flutter_map_tile_caching
 description: Plugin for 'flutter_map' providing advanced caching functionality, with ability to download map regions for offline use. Also includes useful prebuilt widgets.
-version: 4.0.0-dev.5
+version: 4.0.0-dev.5+1
 repository: https://github.com/JaffaKetchup/flutter_map_tile_caching
 issue_tracker: https://github.com/JaffaKetchup/flutter_map_tile_caching/issues
 
@@ -21,8 +21,10 @@ dependencies:
   network_to_file_image: ^3.0.1
   path: ^1.8.0
   path_provider: ^2.0.3
-  permission_handler: ^8.1.6
+  permission_handler: ^8.2.2
   queue: ^3.1.0
+  bezier: ^1.2.0
+  vector_math: ^2.1.0
 
 dev_dependencies:
   test: ^1.17.11

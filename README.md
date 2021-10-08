@@ -33,13 +33,21 @@ Before using any functionality, in particular the bulk downloading functionality
 ### Android
 
 A few more steps are required on Android due to the background download functionality, unfortunately even if you do not intend to use the functionality. This is due to the way the dependency used to perform background downloading works.
-For these steps please go here: [background_fetch Installation Instructions For Android](https://github.com/transistorsoft/flutter_background_fetch/blob/master/help/INSTALL-ANDROID.md).
+
+For these steps please go to these sites:
+
+- [`background_fetch` Installation Instructions For Android](https://github.com/transistorsoft/flutter_background_fetch/blob/master/help/INSTALL-ANDROID.md)
+- [`permission_handler` Installation Instructions](https://pub.dev/packages/permission_handler#setup)
 
 ### iOS
 
 A few more steps are required on iOS due to the background download functionality, even though this functionality is unfortunately currently blocked on iOS. This is due to the way the dependency used to perform background downloading works.
-For these steps please go here: [background_fetch Installation Instructions For iOS](https://github.com/transistorsoft/flutter_background_fetch/blob/master/help/INSTALL-IOS.md).
+For these steps please go to these sites:
+
+- [`background_fetch` Installation Instructions For iOS](https://github.com/transistorsoft/flutter_background_fetch/blob/master/help/INSTALL-IOS.md)  
 You should not need to follow the instructions for `BackgroundFetch.scheduleTask`, but do so if you receive build errors - the custom task identifiers asked for in the last step is exactly 'backgroundTileDownload'.
+- [`permission_handler` Installation Instructions](https://pub.dev/packages/permission_handler#setup)
+
 Please note that this library has not been tested on iOS devices, so issues may arise. Please leave an issue if they do, and I'll try my best to debug and solve them.
 
 ## Example

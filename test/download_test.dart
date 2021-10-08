@@ -19,11 +19,12 @@ void main() {
     final Directory parentDirectory = await reset();
     final MapCachingManager mainManager =
         MapCachingManager(parentDirectory, 'preventRedownload');
-
-    final Stream<DownloadProgress> downloadA = StorageCachingTileProvider(
+    final StorageCachingTileProvider provider = StorageCachingTileProvider(
       parentDirectory: parentDirectory,
       storeName: 'preventRedownload',
-    ).downloadRegion(
+    );
+
+    final Stream<DownloadProgress> downloadA = provider.downloadRegion(
       RectangleRegion(
         LatLngBounds(
           LatLng(51.50263458922777, -0.6815800359919895),
@@ -36,9 +37,9 @@ void main() {
           urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
           subdomains: ['a', 'b', 'c'],
         ),
-        parallelThreads: 1,
+        parallelThreads: 2,
       ),
-      disableRecovery: true,
+      provider,
     );
 
     DownloadProgress? progA;
@@ -65,10 +66,7 @@ void main() {
     expect(progA.seaTilesDiscount, 0);
     expect(mainManager.storeLength, progA.successfulTiles);
 
-    final Stream<DownloadProgress> downloadB = StorageCachingTileProvider(
-      parentDirectory: parentDirectory,
-      storeName: 'preventRedownload',
-    ).downloadRegion(
+    final Stream<DownloadProgress> downloadB = provider.downloadRegion(
       RectangleRegion(
         LatLngBounds(
           LatLng(51.50263458922777, -0.6815800359919895),
@@ -82,9 +80,9 @@ void main() {
           subdomains: ['a', 'b', 'c'],
         ),
         preventRedownload: true,
-        parallelThreads: 1,
+        parallelThreads: 2,
       ),
-      disableRecovery: true,
+      provider,
     );
 
     DownloadProgress? progB;
@@ -99,10 +97,7 @@ void main() {
     expect(progB.seaTilesDiscount, 0);
     expect(mainManager.storeLength, progB.successfulTiles);
 
-    final Stream<DownloadProgress> downloadC = StorageCachingTileProvider(
-      parentDirectory: parentDirectory,
-      storeName: 'preventRedownload',
-    ).downloadRegion(
+    final Stream<DownloadProgress> downloadC = provider.downloadRegion(
       RectangleRegion(
         LatLngBounds(
           LatLng(51.50263458922777, -0.6815800359919895),
@@ -115,9 +110,9 @@ void main() {
           urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
           subdomains: ['a', 'b', 'c'],
         ),
-        parallelThreads: 1,
+        parallelThreads: 2,
       ),
-      disableRecovery: true,
+      provider,
     );
 
     DownloadProgress? progC;
@@ -149,11 +144,12 @@ void main() {
     final Directory parentDirectory = await reset(true);
     final MapCachingManager mainManager =
         MapCachingManager(parentDirectory, 'seaTileRemoval');
-
-    final Stream<DownloadProgress> download = StorageCachingTileProvider(
+    final StorageCachingTileProvider provider = StorageCachingTileProvider(
       parentDirectory: parentDirectory,
       storeName: 'seaTileRemoval',
-    ).downloadRegion(
+    );
+
+    final Stream<DownloadProgress> download = provider.downloadRegion(
       RectangleRegion(
         LatLngBounds(
           LatLng(52.734269449384044, 1.6816567389157684),
@@ -167,9 +163,9 @@ void main() {
           subdomains: ['a', 'b', 'c'],
         ),
         seaTileRemoval: true,
-        parallelThreads: 1,
+        parallelThreads: 2,
       ),
-      disableRecovery: true,
+      provider,
     );
 
     DownloadProgress? prog;

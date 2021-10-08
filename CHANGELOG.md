@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.0.0-dev.5+1] - 2021/10/08
+
+* Deprecated circle extensions to match new 'standard'
+* Pleased Flutter formatter
+* Updated example
+* Fixed serious `Isolate` bugs that prevented downloads by removing the isolate system
+* Added 'prettyPaint'ing to `LineRegion`
+* Some performance improvements and internal refactoring
+* Added more Installation instructions
+* *BUG* `LineRegion` does not report an estimated amount of tiles in the example
+* Updated tests
+
 ## [4.0.0-dev.5] - 2021/09/27
 
 * Added multithreading to download loop (thanks to GitHub contributor [Abdelrahman-Sherif](https://github.com/Abdelrahman-Sherif))
@@ -96,7 +108,7 @@
 * Publish to pub.dev
 * Null safety finalised
 
-## [2.0.1] - XX/XX/2021
+## [2.0.1] - 04/06/2021
 
 * Attempt to publish (failed)
 

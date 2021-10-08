@@ -127,7 +127,7 @@ class DownloadableRegion {
     this.crs = const Epsg3857(),
     this.errorHandler,
     this.resumeTile,
-  }) : assert(
+  })  : assert(
           minZoom <= maxZoom,
           '`minZoom` should be less than or equal to `maxZoom`',
         ),

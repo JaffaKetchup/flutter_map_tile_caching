@@ -1,7 +1,13 @@
 //! TODO: Add 'flutter_map', 'flutter_map_tile_caching', 'sliding_up_panel', 'connectivity_plus' to pubspec.yaml
 //! TODO: Change `templateURL` to a valid one, see README for details
-//! TODO: Follow main installation instructions
+//! TODO: Follow main installation instructions (/ see below)
 
+// TESTED WITH FOLLOWING BUILD SDK VERSIONS:
+// compileSdkVersion   = 31
+// targetSdkVersion    = 29
+// minSdkVersion       = 23
+
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
@@ -53,6 +59,7 @@ class _MapScreenState extends State<MapScreen> {
   bool forceUseCellular = false;
 
   bool lockRotation = true;
+  StreamController<Null> resetController = StreamController.broadcast();
 
   String? storeName;
   bool renaming = false;
@@ -62,10 +69,12 @@ class _MapScreenState extends State<MapScreen> {
   List<LatLng> prevTappedLocations = [];
   List<LatLng> tappedLocations = [];
 
+  double lineWidthSelected = 1;
+  bool lineReady = false;
+
   bool lockPreventRedownload = false;
   bool enablePreventRedownload = false;
   bool enableSeaTileRemoval = true;
-  bool enableTileCompression = false;
   int prevMinZoom = -1;
   int prevMaxZoom = -1;
   int prevEstTiles = -1;
@@ -88,13 +97,13 @@ class _MapScreenState extends State<MapScreen> {
     CacheDirectory parentDirectory,
   ) {
     if (renaming)
-      // ignore: unused_result
       MapCachingManager(parentDirectory, storeName!).renameStore(_storeName);
 
     setState(() {
       storeName = _storeName.trim();
       renameStoreInputController = TextEditingController(text: storeName!);
       renaming = false;
+      resetController.add(null);
     });
 
     final RecoveredRegion? recovered = StorageCachingTileProvider(
@@ -130,7 +139,6 @@ class _MapScreenState extends State<MapScreen> {
                 maxZoomInputController.text = recovered.maxZoom.toString();
                 enablePreventRedownload = recovered.preventRedownload;
                 enableSeaTileRemoval = recovered.seaTileRemoval;
-                enableTileCompression = recovered.compressionQuality != -1;
                 lockPreventRedownload = true;
                 downloadInProgress = false;
               });
@@ -157,6 +165,7 @@ class _MapScreenState extends State<MapScreen> {
       try {
         downloadProvider!.downloadRegionBackground(
           region,
+          downloadProvider!,
           callback: (DownloadProgress progress) {
             setState(() {
               percentageComplete = progress.percentageProgress;
@@ -200,6 +209,7 @@ class _MapScreenState extends State<MapScreen> {
       try {
         downloadStream = downloadProvider!.downloadRegion(
           region,
+          downloadProvider!,
           disableRecovery: noRecovery,
         );
       } catch (e) {
@@ -276,6 +286,9 @@ class _MapScreenState extends State<MapScreen> {
                     parentDirectory: dir.data!,
                     storeName: storeName!,
                   ),
+            maxNativeZoom: 18,
+            maxZoom: 22,
+            reset: resetController.stream,
           );
           return SlidingUpPanel(
             controller: panelController,
@@ -604,7 +617,12 @@ class _MapScreenState extends State<MapScreen> {
                                           SizedBox(
                                             width: double.infinity,
                                             child: OutlinedButton(
-                                              onPressed: null,
+                                              onPressed: () {
+                                                setState(() {
+                                                  selectingDownloadRegion =
+                                                      RegionType.line;
+                                                });
+                                              },
                                               child: Text(
                                                   'Download Line-Based Region'),
                                             ),
@@ -615,7 +633,10 @@ class _MapScreenState extends State<MapScreen> {
                                     Visibility(
                                       visible:
                                           selectingDownloadRegion != null &&
-                                              tappedLocations.length != 2,
+                                              (tappedLocations.length < 2 ||
+                                                  (selectingDownloadRegion ==
+                                                          RegionType.line &&
+                                                      !lineReady)),
                                       child: Column(
                                         children: [
                                           SizedBox(
@@ -644,19 +665,65 @@ class _MapScreenState extends State<MapScreen> {
                                                   selectingDownloadRegion ==
                                                           RegionType.rectangle
                                                       ? 'To select a rectangular area to download, tap on the top-left and bottom-right of the area in that order. Alternatively, cancel the selection above.'
-                                                      : 'To select a circular area to download, tap on the center of the circle, then on the edge of the circle. Alternatively, cancel the selection above.',
+                                                      : selectingDownloadRegion ==
+                                                              RegionType.circle
+                                                          ? 'To select a circular area to download, tap on the center of the circle, then on the edge of the circle. Alternatively, cancel the selection above.'
+                                                          : 'To select a line-based area to download, tap on each corner of the line in turn. Then choose a width using the slider below, and tap \'Done\'. Alternatively, cancel the selection above.',
                                                   textAlign: TextAlign.center,
                                                 ),
                                               ),
                                             ],
-                                          )
+                                          ),
+                                          Visibility(
+                                            visible: selectingDownloadRegion ==
+                                                RegionType.line,
+                                            child: Column(
+                                              children: [
+                                                Slider(
+                                                  value: lineWidthSelected,
+                                                  onChanged: (double newVal) {
+                                                    setState(() =>
+                                                        lineWidthSelected =
+                                                            newVal);
+                                                    print(
+                                                        /*LineRegion(
+                                                        line: tappedLocations,
+                                                        radius:
+                                                            lineWidthSelected,
+                                                      ).toOutlines(1),*/
+                                                        '');
+                                                  },
+                                                  min: 1,
+                                                  max: 2000,
+                                                  label: lineWidthSelected
+                                                          .toStringAsFixed(0) +
+                                                      'm',
+                                                  divisions: 200,
+                                                ),
+                                                SizedBox(
+                                                  width: double.infinity,
+                                                  child: OutlinedButton(
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        lineReady = true;
+                                                      });
+                                                    },
+                                                    child: Text('Done'),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
                                     Visibility(
                                       visible:
                                           selectingDownloadRegion != null &&
-                                              tappedLocations.length == 2,
+                                              tappedLocations.length >= 2 &&
+                                              (selectingDownloadRegion !=
+                                                      RegionType.line ||
+                                                  lineReady),
                                       child: Column(
                                         children: [
                                           Row(
@@ -666,45 +733,60 @@ class _MapScreenState extends State<MapScreen> {
                                               Column(
                                                 children: [
                                                   FutureBuilder<int>(
-                                                    future: minZoom != prevMinZoom ||
-                                                            maxZoom !=
-                                                                prevMaxZoom ||
-                                                            !ListEquality().equals(
-                                                                tappedLocations,
-                                                                prevTappedLocations)
-                                                        ? (tappedLocations
-                                                                    .length ==
-                                                                2
-                                                            ? StorageCachingTileProvider
-                                                                .checkRegion(
-                                                                selectingDownloadRegion ==
-                                                                        RegionType
-                                                                            .rectangle
-                                                                    ? RectangleRegion(
-                                                                        LatLngBounds(
-                                                                            tappedLocations[0],
-                                                                            tappedLocations[1]),
-                                                                      ).toDownloadable(
-                                                                        minZoom,
-                                                                        maxZoom,
-                                                                        tileLayerOptions,
-                                                                      )
-                                                                    : CircleRegion(
-                                                                        tappedLocations[
-                                                                            0],
-                                                                        Distance().distance(tappedLocations[0],
-                                                                                tappedLocations[1]) /
-                                                                            1000,
-                                                                      ).toDownloadable(
-                                                                        minZoom,
-                                                                        maxZoom,
-                                                                        tileLayerOptions,
-                                                                      ),
-                                                              )
-                                                            : Future.sync(
-                                                                () => 0))
-                                                        : Future.sync(
-                                                            () => prevEstTiles),
+                                                    future: selectingDownloadRegion !=
+                                                                null &&
+                                                            tappedLocations
+                                                                    .length >=
+                                                                2 &&
+                                                            (selectingDownloadRegion !=
+                                                                    RegionType
+                                                                        .line ||
+                                                                lineReady)
+                                                        ? minZoom !=
+                                                                    prevMinZoom ||
+                                                                maxZoom !=
+                                                                    prevMaxZoom ||
+                                                                !ListEquality().equals(
+                                                                    tappedLocations,
+                                                                    prevTappedLocations)
+                                                            ? (tappedLocations
+                                                                        .length ==
+                                                                    2
+                                                                ? StorageCachingTileProvider
+                                                                    .checkRegion(
+                                                                    selectingDownloadRegion ==
+                                                                            RegionType.rectangle
+                                                                        ? RectangleRegion(
+                                                                            LatLngBounds(tappedLocations[0],
+                                                                                tappedLocations[1]),
+                                                                          ).toDownloadable(
+                                                                            minZoom,
+                                                                            maxZoom,
+                                                                            tileLayerOptions,
+                                                                          )
+                                                                        : selectingDownloadRegion == RegionType.circle
+                                                                            ? CircleRegion(
+                                                                                tappedLocations[0],
+                                                                                Distance().distance(tappedLocations[0], tappedLocations[1]) / 1000,
+                                                                              ).toDownloadable(
+                                                                                minZoom,
+                                                                                maxZoom,
+                                                                                tileLayerOptions,
+                                                                              )
+                                                                            : LineRegion(
+                                                                                tappedLocations,
+                                                                                lineWidthSelected,
+                                                                              ).toDownloadable(
+                                                                                minZoom,
+                                                                                maxZoom,
+                                                                                tileLayerOptions,
+                                                                              ),
+                                                                  )
+                                                                : Future.sync(
+                                                                    () => 0))
+                                                            : Future.sync(() =>
+                                                                prevEstTiles)
+                                                        : Future.sync(() => 0),
                                                     builder:
                                                         (context, tilesLength) {
                                                       if (!tilesLength
@@ -801,24 +883,6 @@ class _MapScreenState extends State<MapScreen> {
                                                       Text('Sea Tile Removal')
                                                     ],
                                                   ),
-                                                  Row(
-                                                    children: [
-                                                      SizedBox(
-                                                        height: 20,
-                                                        child: Switch(
-                                                          value:
-                                                              enableTileCompression,
-                                                          onChanged: (bool
-                                                                  newVal) =>
-                                                              setState(() =>
-                                                                  enableTileCompression =
-                                                                      newVal),
-                                                        ),
-                                                      ),
-                                                      SizedBox(width: 19),
-                                                      Text('Tile Compression')
-                                                    ],
-                                                  ),
                                                 ],
                                               ),
                                             ],
@@ -894,6 +958,7 @@ class _MapScreenState extends State<MapScreen> {
                                                   selectingDownloadRegion =
                                                       null;
                                                   tappedLocations = [];
+                                                  lineReady = false;
                                                 });
                                               },
                                               child: Text('Cancel'),
@@ -989,10 +1054,6 @@ class _MapScreenState extends State<MapScreen> {
                                                                         enablePreventRedownload,
                                                                     seaTileRemoval:
                                                                         enableSeaTileRemoval,
-                                                                    compressionQuality:
-                                                                        enableTileCompression
-                                                                            ? 50
-                                                                            : -1,
                                                                   )
                                                                 : CircleRegion(
                                                                     tappedLocations[
@@ -1009,10 +1070,6 @@ class _MapScreenState extends State<MapScreen> {
                                                                         enablePreventRedownload,
                                                                     seaTileRemoval:
                                                                         enableSeaTileRemoval,
-                                                                    compressionQuality:
-                                                                        enableTileCompression
-                                                                            ? 50
-                                                                            : -1,
                                                                   ),
                                                           );
                                                         },
@@ -1379,27 +1436,29 @@ class _MapScreenState extends State<MapScreen> {
                 FlutterMap(
                   mapController: mapController,
                   options: MapOptions(
-                      center: LatLng(51.50497044472158, -0.6690676698303173),
-                      zoom: 13.0,
-                      interactiveFlags: lockRotation
-                          ? InteractiveFlag.all & ~InteractiveFlag.rotate
-                          : InteractiveFlag.all,
-                      onTap: (LatLng location) {
-                        if (selectingDownloadRegion != null) {
-                          setState(() {
-                            tappedLocations.add(location);
-                          });
-                          if (tappedLocations.length == 1) return;
-                          panelController.open();
-                        }
-                      }),
+                    center: LatLng(51.50497044472158, -0.6690676698303173),
+                    zoom: 13.0,
+                    interactiveFlags: lockRotation
+                        ? InteractiveFlag.all & ~InteractiveFlag.rotate
+                        : InteractiveFlag.all,
+                    onTap: (_, LatLng location) {
+                      if (selectingDownloadRegion != null) {
+                        setState(() {
+                          tappedLocations.add(location);
+                        });
+                        if (tappedLocations.length == 1 ||
+                            selectingDownloadRegion == RegionType.line) return;
+                        panelController.open();
+                      }
+                    },
+                  ),
                   children: <Widget>[
                     TileLayerWidget(
                       options: tileLayerOptions,
                     ),
                     PolygonLayerWidget(
                       options: selectingDownloadRegion == null ||
-                              tappedLocations.length != 2
+                              tappedLocations.length < 2
                           ? PolygonLayerOptions()
                           : selectingDownloadRegion == RegionType.rectangle
                               ? RectangleRegion(
@@ -1409,15 +1468,57 @@ class _MapScreenState extends State<MapScreen> {
                                   Colors.green.withAlpha(128),
                                   Colors.green,
                                 )
-                              : CircleRegion(
-                                  tappedLocations[0],
-                                  Distance().distance(tappedLocations[0],
-                                          tappedLocations[1]) /
-                                      1000,
-                                ).toDrawable(
-                                  Colors.green.withAlpha(128),
-                                  Colors.green,
-                                ),
+                              : selectingDownloadRegion == RegionType.circle
+                                  ? CircleRegion(
+                                      tappedLocations[0],
+                                      Distance().distance(tappedLocations[0],
+                                              tappedLocations[1]) /
+                                          1000,
+                                    ).toDrawable(
+                                      Colors.green.withAlpha(128),
+                                      Colors.green,
+                                    )
+                                  : LineRegion(
+                                      tappedLocations,
+                                      lineWidthSelected,
+                                    ).toDrawable(
+                                      Colors.green.withAlpha(128),
+                                      Colors.green,
+                                    ),
+                    ),
+                    PolygonLayerWidget(
+                      options: PolygonLayerOptions(
+                        polygons: [
+                          Polygon(
+                            points: [
+                              LatLng(51.504216, -0.654483),
+                              LatLng(51.53129, -0.675455),
+                              LatLng(51.528221, -0.685657),
+                              LatLng(51.501147, -0.664679),
+                            ],
+                            color: Colors.red.withAlpha(128),
+                          ),
+                          Polygon(
+                            points: [
+                              LatLng(51.53129, -0.654483), //Top-right
+                              LatLng(51.53129, -0.685657), //Top-left
+                              LatLng(51.501147, -0.685657), //Bottom-left
+                              LatLng(51.501147, -0.654483), //Bottom-right
+                            ],
+                            color: Colors.blue.withAlpha(128),
+                          ),
+                        ],
+                      ),
+                    ),
+                    MarkerLayerWidget(
+                      options: MarkerLayerOptions(
+                        markers: [
+                          Marker(
+                            point: LatLng(51.518257, -0.655672),
+                            builder: (_) => Icon(Icons.ac_unit),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -1466,7 +1567,10 @@ class _MapScreenState extends State<MapScreen> {
                             AnimatedPositioned(
                               duration: animationDurationSlow,
                               curve: animationCurve,
-                              right: tappedLocations.length != 2 ? -48 : 0,
+                              right: tappedLocations.length != 2 ||
+                                      selectingDownloadRegion == RegionType.line
+                                  ? -48
+                                  : 0,
                               top: mapController.rotation == 0 ? 48 : 96,
                               child: IgnorePointer(
                                 ignoring: tappedLocations.length != 2,
@@ -1592,7 +1696,6 @@ class NumericalRangeFormatter extends TextInputFormatter {
 
 LatLng _moveByBottomPadding(
     LatLng coordinates, double zoomLevel, double bottomOffset) {
-  // the following code is copied from unreachable flutter map internas
   final crs = const Epsg3857();
   final oldCenterPt = crs.latLngToPoint(coordinates, zoomLevel);
   final offset = CustomPoint(0, bottomOffset);

@@ -8,7 +8,7 @@
             "name": "Run Tests",
             "request": "launch",
             "type": "dart",
-            "program": "test",
-        },
+            "program": "test"
+        }
     ]
 }

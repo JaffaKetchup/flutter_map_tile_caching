@@ -95,8 +95,13 @@ class CircleRegion extends BaseRegion {
   }
 }
 
+/// Deprecated due to other available methods. Migrate to construction using the real constructor (`CircleRegion()`).
+@Deprecated(
+    'Due to other available methods. Migrate to construction using the real constructor (`CircleRegion()`).')
 extension CircleRegionExts on LatLng {
-  /// Converts a `LatLng` to a `CircleRegion` given a radius in km
+  /// Deprecated due to other available methods. Migrate to construction using the real constructor (`CircleRegion()`).
+  @Deprecated(
+      'Due to other available methods. Migrate to construction using the real constructor (`CircleRegion()`).')
   CircleRegion toCircleRegion(double radius) {
     return CircleRegion(this, radius);
   }

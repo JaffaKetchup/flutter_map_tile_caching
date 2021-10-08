@@ -1,6 +1,7 @@
+// TODO: Implement precise recovery
+
 import 'dart:async';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:background_fetch/background_fetch.dart';
@@ -100,9 +101,11 @@ class StorageCachingTileProvider extends TileProvider {
   /// Defaults to `cacheFirst`.
   final CacheBehavior behavior;
 
-  late Isolate _isolate;
-  late ReceivePort _receivePort;
-  bool _downloadOngoing = false;
+  //late Isolate _isolate;
+  //late ReceivePort _receivePort;
+  bool _downloadOngoing = false; // Used internally for recovery
+  Queue? _queue; // Used to download tiles in bulk
+  StreamController<List>? _streamController; // Used to control bulk downloading
 
   /// Create a `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
   ///
@@ -129,8 +132,8 @@ class StorageCachingTileProvider extends TileProvider {
       getTileUrl(coords, options)
           .replaceAll('https://', '')
           .replaceAll('http://', '')
-          .replaceAll("/", ""),
-      //.replaceAll(".", "")
+          .replaceAll("/", "")
+          .replaceAll(".", "")
     ]));
 
     NetworkToFileImage ntfi(bool url, bool file) {
@@ -190,8 +193,8 @@ class StorageCachingTileProvider extends TileProvider {
             getTileUrl(coords, options)
                 .replaceAll('https://', '')
                 .replaceAll('http://', '')
-                .replaceAll("/", ""),
-            //.replaceAll(".", "")
+                .replaceAll("/", "")
+                .replaceAll(".", "")
           ]),
         ).deleteSync();
       return ntfi(true, true);
@@ -208,7 +211,8 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Streams a `DownloadProgress` object containing the number of completed tiles, total number of tiles to download, a list of errored URLs and the percentage completion.
   Stream<DownloadProgress> downloadRegion(
-    DownloadableRegion region, {
+    DownloadableRegion region,
+    StorageCachingTileProvider provider, {
     bool disableRecovery = false,
     bool specificRecovery = false,
   }) async* {
@@ -225,54 +229,30 @@ class StorageCachingTileProvider extends TileProvider {
             'Failed to create recovery session. Restart app and retry. If issue persists, disable recovery to continue.');
       _downloadOngoing = true;
     }
-    if (region.type == RegionType.circle) {
-      yield* _spawnDownloadIsolate(
-        region,
-        await compute(
-          circleTiles,
-          {
-            'circleOutline': region.points,
-            'minZoom': region.minZoom,
-            'maxZoom': region.maxZoom,
-            'crs': region.crs,
-            'tileSize':
-                CustomPoint(region.options.tileSize, region.options.tileSize),
-          },
-        ),
-      );
-    } else if (region.type == RegionType.rectangle) {
-      yield* _spawnDownloadIsolate(
-        region,
-        await compute(
-          rectangleTiles,
-          {
-            'bounds': LatLngBounds.fromPoints(region.points),
-            'minZoom': region.minZoom,
-            'maxZoom': region.maxZoom,
-            'crs': region.crs,
-            'tileSize':
-                CustomPoint(region.options.tileSize, region.options.tileSize),
-          },
-        ),
-      );
-    } else if (region.type == RegionType.line) {
-      print(
-          'NOT SUPPORTED\nProceed with caution, this functionality is highly experimental');
-      yield* _spawnDownloadIsolate(
-        region,
-        await compute(
-          lineTiles,
-          {
-            'lineOutline': region.points.chunked(4),
-            'minZoom': region.minZoom,
-            'maxZoom': region.maxZoom,
-            'crs': region.crs,
-            'tileSize':
-                CustomPoint(region.options.tileSize, region.options.tileSize),
-          },
-        ),
-      );
-    }
+    _queue = Queue(parallel: region.parallelThreads);
+    _streamController = StreamController();
+
+    yield* _startDownload(
+      region: region,
+      provider: provider,
+      tiles: await compute(
+        region.type == RegionType.rectangle
+            ? rectangleTiles
+            : region.type == RegionType.circle
+                ? circleTiles
+                : lineTiles,
+        {
+          'bounds': LatLngBounds.fromPoints(region.points),
+          'circleOutline': region.points,
+          'lineOutline': region.points.chunked(4),
+          'minZoom': region.minZoom,
+          'maxZoom': region.maxZoom,
+          'crs': region.crs,
+          'tileSize':
+              CustomPoint(region.options.tileSize, region.options.tileSize),
+        },
+      ),
+    );
   }
 
   /// Check approximately how many downloadable tiles are within a specified `DownloadableRegion`
@@ -280,39 +260,16 @@ class StorageCachingTileProvider extends TileProvider {
   /// This does not take into account sea tile removal or redownload prevention, as these are handled in the download portion of the code. Specific recovery is also ignored.
   ///
   /// Returns an `int` which is the number of tiles.
-  static Future<int> checkRegion(DownloadableRegion region) async {
-    if (region.type == RegionType.circle)
-      return (await compute(
-        circleTiles,
-        {
-          'circleOutline': region.points,
-          'minZoom': region.minZoom,
-          'maxZoom': region.maxZoom,
-          'crs': region.crs,
-          'tileSize':
-              CustomPoint(region.options.tileSize, region.options.tileSize),
-        },
-      ))
-          .length;
-    else if (region.type == RegionType.rectangle)
-      return (await compute(
-        rectangleTiles,
+  static Future<int> checkRegion(DownloadableRegion region) async =>
+      (await compute(
+        region.type == RegionType.rectangle
+            ? rectangleTiles
+            : region.type == RegionType.circle
+                ? circleTiles
+                : lineTiles,
         {
           'bounds': LatLngBounds.fromPoints(region.points),
-          'minZoom': region.minZoom,
-          'maxZoom': region.maxZoom,
-          'crs': region.crs,
-          'tileSize':
-              CustomPoint(region.options.tileSize, region.options.tileSize),
-        },
-      ))
-          .length;
-    else {
-      print(
-          'NOT SUPPORTED\nProceed with caution, this functionality is highly experimental');
-      return (await compute(
-        lineTiles,
-        {
+          'circleOutline': region.points,
           'lineOutline': region.points.chunked(4),
           'minZoom': region.minZoom,
           'maxZoom': region.maxZoom,
@@ -322,15 +279,13 @@ class StorageCachingTileProvider extends TileProvider {
         },
       ))
           .length;
-    }
-  }
 
   /// Cancels the ongoing foreground download and recovery session (within the current object)
   ///
   /// Will throw errors if there is no ongoing download. Do not use to cancel background downloads, return `true` from the background download callback to cancel a background download.
   void cancelDownload() {
-    _isolate.kill();
-    _receivePort.close();
+    _queue?.dispose();
+    _streamController?.close();
     MapCachingManager(parentDirectory, storeName).endRecovery();
     _downloadOngoing = false;
   }
@@ -352,6 +307,7 @@ class StorageCachingTileProvider extends TileProvider {
 
     if (deleteRecovery)
       MapCachingManager(parentDirectory, storeName).endRecovery();
+
     return recovered;
   }
 
@@ -403,7 +359,8 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Returns nothing.
   void downloadRegionBackground(
-    DownloadableRegion region, {
+    DownloadableRegion region,
+    StorageCachingTileProvider provider, {
     bool showNotification = true,
     bool Function(DownloadProgress)? callback,
     bool useAltMethod = false,
@@ -435,7 +392,7 @@ class StorageCachingTileProvider extends TileProvider {
           if (taskId == 'backgroundTileDownload') {
             // ignore: cancel_subscriptions
             StreamSubscription<DownloadProgress>? sub;
-            sub = downloadRegion(region, specificRecovery: true)
+            sub = downloadRegion(region, provider, specificRecovery: true)
                 .listen((event) async {
               AndroidNotificationDetails androidPlatformChannelSpecifics =
                   AndroidNotificationDetails(
@@ -505,9 +462,7 @@ class StorageCachingTileProvider extends TileProvider {
           } else
             BackgroundFetch.finish(taskId);
         },
-        (String taskId) async {
-          BackgroundFetch.finish(taskId);
-        },
+        (String taskId) async => BackgroundFetch.finish(taskId),
       );
       await BackgroundFetch.scheduleTask(
         TaskConfig(
@@ -523,63 +478,20 @@ class StorageCachingTileProvider extends TileProvider {
 
   //! STANDARD FUNCTIONS !//
 
-  Stream<DownloadProgress> _spawnDownloadIsolate(
-    DownloadableRegion region,
-    List<Coords<num>> tiles,
-  ) async* {
-    _receivePort = ReceivePort();
-    _isolate = await Isolate.spawn(_downloadIsolate, {
-      'port': _receivePort.sendPort,
-      'region': region,
-      'parentDirectory': parentDirectory,
-      'storeName': storeName,
-      'tiles': region.resumeTile == null
-          ? tiles
-          : tiles.getRange(region.resumeTile! - 5, tiles.length).toList(),
-    });
-    await for (DownloadProgress evt in _receivePort) {
-      yield evt;
-      if (evt.percentageProgress == 100) cancelDownload();
-    }
-  }
-
-  static _downloadIsolate(Map<String, dynamic> input) async {
-    final DownloadableRegion region = input['region'];
-
-    await for (DownloadProgress progress in _downloadLoop(
-      parentDirectory: input['parentDirectory'],
-      storeName: input['storeName'],
-      tiles: input['tiles'],
-      options: region.options,
-      parallelThreads: region.parallelThreads,
-      preventRedownload: region.preventRedownload,
-      seaTileRemoval: region.seaTileRemoval,
-      errorHandler: region.errorHandler,
-    )) input['port'].send(progress);
-  }
-
-  static Stream<DownloadProgress> _downloadLoop({
-    required CacheDirectory parentDirectory,
-    required String storeName,
+  Stream<DownloadProgress> _startDownload({
+    required DownloadableRegion region,
+    required StorageCachingTileProvider provider,
     required List<Coords<num>> tiles,
-    required TileLayerOptions options,
-    required int parallelThreads,
-    required bool preventRedownload,
-    required bool seaTileRemoval,
-    Function(dynamic)? errorHandler,
   }) async* {
     final http.Client client = http.Client();
     Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
         .createSync(recursive: true);
 
     Uint8List? seaTileBytes;
-    if (seaTileRemoval)
+    if (region.seaTileRemoval)
       seaTileBytes = (await client
               .get(Uri.parse('https://tile.openstreetmap.org/19/0/0.png')))
           .bodyBytes;
-
-    final StorageCachingTileProvider provider = StorageCachingTileProvider(
-        parentDirectory: parentDirectory, storeName: storeName);
 
     int successfulTiles = 0;
     List<String> failedTiles = [];
@@ -587,20 +499,31 @@ class StorageCachingTileProvider extends TileProvider {
     int existingTiles = 0;
     final DateTime startTime = DateTime.now();
 
+    assert(
+      !(_queue?.isCancelled ?? true),
+      'The download function has not been called properly and the `Queue` object does not exist yet or has been cancelled. Try again.',
+    );
+    assert(
+      !(_streamController?.isClosed ?? true),
+      'The download function has not been called properly and the `StreamController` object does not exist yet or has been cancelled. Try again.',
+    );
+
     final Stream<List<dynamic>> downloadStream = _bulkDownloader(
       tiles: tiles,
       parentDirectory: parentDirectory,
       storeName: storeName,
       provider: provider,
-      options: options,
+      options: region.options,
       client: client,
-      parallelThreads: parallelThreads,
-      errorHandler: errorHandler,
-      preventRedownload: preventRedownload,
+      parallelThreads: region.parallelThreads,
+      errorHandler: region.errorHandler,
+      preventRedownload: region.preventRedownload,
       seaTileBytes: seaTileBytes,
+      queue: _queue!,
+      streamController: _streamController!,
     );
 
-    await for (final event in downloadStream) {
+    await for (List<dynamic> event in downloadStream) {
       successfulTiles += event[0] as int;
       if (event[1] != '') failedTiles.add(event[1]);
       seaTiles += event[2] as int;
@@ -629,39 +552,39 @@ class StorageCachingTileProvider extends TileProvider {
     required Function(dynamic)? errorHandler,
     required int parallelThreads,
     required bool preventRedownload,
-    Uint8List? seaTileBytes,
+    required Uint8List? seaTileBytes,
+    required Queue queue,
+    required StreamController<List> streamController,
   }) {
-    // ignore: close_sinks
-    final StreamController<List> streamController = StreamController();
-    final queue = Queue(parallel: parallelThreads);
-
     tiles.forEach((e) {
-      queue
-          .add(
-        () => _getAndSaveTile(
-          parentDirectory,
-          storeName,
-          provider,
-          e,
-          options,
-          client,
-          errorHandler,
-          preventRedownload,
-          seaTileBytes,
-        ),
-      )
-          .then(
-        (value) {
-          streamController.add(
-            [
-              value[0],
-              value[1],
-              value[2],
-              value[3],
-            ],
-          );
-        },
-      );
+      if (!queue.isCancelled)
+        queue
+            .add(
+          () => _getAndSaveTile(
+            parentDirectory,
+            storeName,
+            provider,
+            e,
+            options,
+            client,
+            errorHandler,
+            preventRedownload,
+            seaTileBytes,
+          ),
+        )
+            .then(
+          (value) {
+            if (!streamController.isClosed)
+              streamController.add(
+                [
+                  value[0],
+                  value[1],
+                  value[2],
+                  value[3],
+                ],
+              );
+          },
+        );
     });
 
     return streamController.stream;
@@ -687,8 +610,8 @@ class StorageCachingTileProvider extends TileProvider {
       url
           .replaceAll('https://', '')
           .replaceAll('http://', '')
-          .replaceAll("/", ""),
-      //.replaceAll(".", ""),
+          .replaceAll("/", "")
+          .replaceAll(".", ""),
     ]);
 
     try {

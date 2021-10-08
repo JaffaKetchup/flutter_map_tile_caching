@@ -61,9 +61,6 @@ extension ListExtensionsE<E> on List<E> {
 
     return chunks;
   }
-
-  num get minNum => (this as List<num>).reduce(math.min);
-  num get maxNum => (this as List<num>).reduce(math.max);
 }
 
 @internal
