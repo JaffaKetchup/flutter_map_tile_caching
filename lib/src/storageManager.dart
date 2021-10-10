@@ -48,13 +48,12 @@ class MapCachingManager {
 
   /// Delete a cache store
   void deleteStore() {
-    if (Directory(_joinedBasePath).existsSync())
-      Directory(_joinedBasePath).deleteSync(recursive: true);
+    if (exists ?? false) Directory(_joinedBasePath).deleteSync(recursive: true);
   }
 
   /// Delete all cache stores
   void deleteAllStores() {
-    if (Directory(parentDirectory.absolute.path).existsSync())
+    if (exists != null)
       Directory(parentDirectory.absolute.path).deleteSync(recursive: true);
   }
 
@@ -62,7 +61,7 @@ class MapCachingManager {
   ///
   /// The old `MapCachingManager` will still retain it's link to the old store, so always use the new returned value instead: returns a new `MapCachingManager` after a successful renaming operation or `null` if the cache does not exist.
   MapCachingManager? renameStore(String newName) {
-    if (!Directory(parentDirectory.absolute.path).existsSync()) return null;
+    if (exists == null) return null;
     Directory(_joinedBasePath)
         .renameSync(p.joinAll([parentDirectory.absolute.path, newName]));
     return MapCachingManager(parentDirectory, newName);
@@ -72,7 +71,7 @@ class MapCachingManager {
   ///
   /// Returns `null` if the cache does not exist.
   List<String>? get allStoresNames {
-    if (!Directory(parentDirectory.absolute.path).existsSync()) return null;
+    if (exists == null) return null;
     List<String> returnable = [];
     Directory(parentDirectory.absolute.path)
         .listSync(followLinks: false, recursive: false)
@@ -86,7 +85,7 @@ class MapCachingManager {
   ///
   /// Returns `null` if the store does not exist.
   int? get storeSize {
-    if (!Directory(_joinedBasePath).existsSync()) return null;
+    if (!(exists ?? false)) return null;
     return Directory(_joinedBasePath).statSync().size;
   }
 
@@ -96,7 +95,7 @@ class MapCachingManager {
   ///
   /// Returns `null` if the cache does not exist.
   int? get allStoresSizes {
-    if (!Directory(parentDirectory.absolute.path).existsSync()) return null;
+    if (exists == null) return null;
     int returnable = 0;
     allStoresNames!.forEach((storeName) => returnable +=
         MapCachingManager(parentDirectory, storeName).storeSize ?? 0);
@@ -107,7 +106,7 @@ class MapCachingManager {
   ///
   /// Returns `null` if the store does not exist.
   int? get storeLength {
-    if (!Directory(_joinedBasePath).existsSync()) return null;
+    if (!(exists ?? false)) return null;
     return Directory(_joinedBasePath).listSync().length;
   }
 
@@ -115,7 +114,7 @@ class MapCachingManager {
   ///
   /// Returns `null` if the cache does not exist.
   int? get allStoresLengths {
-    if (!Directory(parentDirectory.absolute.path).existsSync()) return null;
+    if (exists == null) return null;
     int totalLength = 0;
     allStoresNames!.forEach((name) {
       totalLength += Directory(p.joinAll([parentDirectory.absolute.path, name]))
@@ -167,7 +166,7 @@ class MapCachingManager {
         region.line
                 .map((pos) =>
                     pos.latitude.toString() + ',' + pos.longitude.toString())
-                .join('-') +
+                .join('*') +
             '\n' +
             region.radius.toString() +
             '\n${minZoom.toString()}\n${maxZoom.toString()}\n$preventRedownload\n$seaTileRemoval\nline',
@@ -257,17 +256,15 @@ class MapCachingManager {
         RegionType.line,
         null,
         null,
-        recovery[0]
-            .split('-')
-            .map(
-              (zip) => LatLng(
-                double.parse(zip.split(',')[0]),
-                double.parse(
-                  zip.split(',')[1],
-                ),
-              ),
-            )
-            .toList(),
+        recovery[0].split('*').map(
+          (zip) {
+            print(recovery[0]);
+            return LatLng(
+              double.parse(zip.split(',')[0]),
+              double.parse(zip.split(',')[1]),
+            );
+          },
+        ).toList(),
         dp(recovery[1]),
         ip(recovery[2]),
         ip(recovery[3]),

@@ -1,6 +1,7 @@
-//! TODO: Add 'flutter_map', 'flutter_map_tile_caching', 'sliding_up_panel', 'connectivity_plus' to pubspec.yaml
-//! TODO: Change `templateURL` to a valid one, see README for details
+//! TODO: Add 'flutter_map', 'flutter_map_tile_caching' & 'sliding_up_panel' to pubspec.yaml
 //! TODO: Follow main installation instructions (/ see below)
+
+// It is not recommended to copy UI components directly from here, especially if performance matters. I'm spending more time on the actual library than the example: therefore it is likely to have bugs/weird behaviour/performance issues. These are usually not reflective of the library itself.
 
 // TESTED WITH FOLLOWING BUILD SDK VERSIONS:
 // compileSdkVersion   = 31
@@ -12,7 +13,6 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:collection/collection.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -69,7 +69,7 @@ class _MapScreenState extends State<MapScreen> {
   List<LatLng> prevTappedLocations = [];
   List<LatLng> tappedLocations = [];
 
-  double lineWidthSelected = 1;
+  double lineWidthSelected = 500;
   bool lineReady = false;
 
   bool lockPreventRedownload = false;
@@ -114,42 +114,45 @@ class _MapScreenState extends State<MapScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Found an incomplete download'),
-        action: SnackBarAction(
-            label: 'Recover It',
-            onPressed: () {
-              if (recovered.type == RegionType.rectangle) {
-                setState(() {
-                  tappedLocations = [
-                    recovered.bounds!.northWest,
-                    recovered.bounds!.southEast,
-                  ];
-                  selectingDownloadRegion = RegionType.rectangle;
-                });
-              } else {
-                setState(() {
-                  tappedLocations = [
-                    recovered.center!,
-                    Distance().offset(recovered.center!, recovered.radius!, 0),
-                  ];
-                  selectingDownloadRegion = RegionType.circle;
-                });
-              }
-              setState(() {
-                minZoomInputController.text = recovered.minZoom.toString();
-                maxZoomInputController.text = recovered.maxZoom.toString();
-                enablePreventRedownload = recovered.preventRedownload;
-                enableSeaTileRemoval = recovered.seaTileRemoval;
-                lockPreventRedownload = true;
-                downloadInProgress = false;
-              });
-            }),
+        action: recovered.type == RegionType.line
+            ? null
+            : SnackBarAction(
+                label: 'Recover It',
+                onPressed: () {
+                  if (recovered.type == RegionType.rectangle) {
+                    setState(() {
+                      tappedLocations = [
+                        recovered.bounds!.northWest,
+                        recovered.bounds!.southEast,
+                      ];
+                      selectingDownloadRegion = RegionType.rectangle;
+                    });
+                  } else {
+                    setState(() {
+                      tappedLocations = [
+                        recovered.center!,
+                        Distance()
+                            .offset(recovered.center!, recovered.radius!, 0),
+                      ];
+                      selectingDownloadRegion = RegionType.circle;
+                    });
+                  }
+                  setState(() {
+                    minZoomInputController.text = recovered.minZoom.toString();
+                    maxZoomInputController.text = recovered.maxZoom.toString();
+                    enablePreventRedownload = recovered.preventRedownload;
+                    enableSeaTileRemoval = recovered.seaTileRemoval;
+                    lockPreventRedownload = true;
+                    downloadInProgress = false;
+                  });
+                }),
         duration: Duration(seconds: 10),
       ),
     );
   }
 
   void startDownload(CacheDirectory parentDirectory, DownloadableRegion region,
-      {bool background = false, bool noRecovery = false}) {
+      {bool background = false, bool noRecovery = false}) async {
     setState(() {
       downloadInProgress = true;
       selectingDownloadRegion = null;
@@ -166,6 +169,54 @@ class _MapScreenState extends State<MapScreen> {
         downloadProvider!.downloadRegionBackground(
           region,
           downloadProvider!,
+          preDownloadChecksCallback: (c, b, s) async {
+            if ((b! > 15 || s == ChargingStatus.Charging) &&
+                (c == ConnectivityResult.wifi ||
+                    c == ConnectivityResult.ethernet)) return true;
+
+            if (c == ConnectivityResult.none) return false;
+
+            return await showDialog(
+              context: context,
+              builder: (BuildContext context) => AlertDialog(
+                title: Text('Careful!'),
+                content: SingleChildScrollView(
+                  child: Text(
+                    'One or more of the pre-download checks failed! It could be because either:\n - Your battery is below 15% and not charging\n - You are connected to the Internet through cellular/mobile data\n\nPlease check whether you want to continue.',
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text('Continue'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text('Cancel'),
+                  ),
+                ],
+              ),
+            );
+          },
+          preDownloadChecksFailedCallback: () {
+            setState(() {
+              downloadInProgress = false;
+              downloadJustFinished = false;
+              selectingDownloadRegion = null;
+              prevTappedLocations = [];
+              tappedLocations = [];
+              successfulTiles = '0';
+              failedTiles = '0';
+              durationElapsed = '0:00:00';
+              estRemainingDuration = '0:00:00';
+              percentageComplete = 0;
+              lockPreventRedownload = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to meet the pre-download checks')),
+            );
+            return;
+          },
           callback: (DownloadProgress progress) {
             setState(() {
               percentageComplete = progress.percentageProgress;
@@ -209,9 +260,56 @@ class _MapScreenState extends State<MapScreen> {
       try {
         downloadStream = downloadProvider!.downloadRegion(
           region,
-          downloadProvider!,
           disableRecovery: noRecovery,
-        );
+          preDownloadChecksCallback: (c, b, s) async {
+            if ((b! > 15 || s == ChargingStatus.Charging) &&
+                (c == ConnectivityResult.wifi ||
+                    c == ConnectivityResult.ethernet)) return true;
+
+            if (c == ConnectivityResult.none) return false;
+
+            return await showDialog(
+              context: context,
+              builder: (BuildContext context) => AlertDialog(
+                title: Text('Careful!'),
+                content: SingleChildScrollView(
+                  child: Text(
+                    'One or more of the pre-download checks failed! It could be because either:\n - Your battery is below 15% and not charging\n - You are connected to the Internet through cellular/mobile data\n\nPlease check whether you want to continue.',
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text('Continue'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text('Cancel'),
+                  ),
+                ],
+              ),
+            );
+          },
+        ).asBroadcastStream();
+        if (await downloadStream.isEmpty) {
+          setState(() {
+            downloadInProgress = false;
+            downloadJustFinished = false;
+            selectingDownloadRegion = null;
+            prevTappedLocations = [];
+            tappedLocations = [];
+            successfulTiles = '0';
+            failedTiles = '0';
+            durationElapsed = '0:00:00';
+            estRemainingDuration = '0:00:00';
+            percentageComplete = 0;
+            lockPreventRedownload = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to meet the pre-download checks')),
+          );
+          return;
+        }
       } catch (e) {
         if (e is StateError) {
           setState(() {
@@ -261,6 +359,27 @@ class _MapScreenState extends State<MapScreen> {
     newStoreInputController = TextEditingController();
     maxZoomInputController = TextEditingController()..text = '18';
     minZoomInputController = TextEditingController()..text = '1';
+
+    WidgetsBinding.instance!.addPostFrameCallback((_) async {
+      await showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: Text('Important Notice'),
+          content: SingleChildScrollView(
+            child: Text(
+              'By using this application, you agree to/view these rules/terms:\n\n - OpenStreetMaps\' Tile Server Usage Policy, available at https://operations.osmfoundation.org/policies/tiles/\n - This application must not be used except for testing the library and finding new features to use in your own app: ie. do not distribute\n - You agree to the licenses of all third-party dependencies; a list of dependencies is available at https://pub.dev/packages/flutter_map_tile_caching\n\n - This application may not be indicative of the performance of the library: always test performance using your own build\n - It is not recommended to directly copy UI elements from this application: I\'m spending more time on the actual library than the example: therefore it is likely to have bugs/weird behaviour/performance issues. These are usually not reflective of the library itself.',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
+    });
+
     super.initState();
   }
 
@@ -681,24 +800,16 @@ class _MapScreenState extends State<MapScreen> {
                                               children: [
                                                 Slider(
                                                   value: lineWidthSelected,
-                                                  onChanged: (double newVal) {
-                                                    setState(() =>
-                                                        lineWidthSelected =
-                                                            newVal);
-                                                    print(
-                                                        /*LineRegion(
-                                                        line: tappedLocations,
-                                                        radius:
-                                                            lineWidthSelected,
-                                                      ).toOutlines(1),*/
-                                                        '');
-                                                  },
-                                                  min: 1,
+                                                  onChanged: (double newVal) =>
+                                                      setState(() =>
+                                                          lineWidthSelected =
+                                                              newVal),
+                                                  min: 500,
                                                   max: 2000,
                                                   label: lineWidthSelected
                                                           .toStringAsFixed(0) +
                                                       'm',
-                                                  divisions: 200,
+                                                  divisions: 300,
                                                 ),
                                                 SizedBox(
                                                   width: double.infinity,
@@ -733,60 +844,62 @@ class _MapScreenState extends State<MapScreen> {
                                               Column(
                                                 children: [
                                                   FutureBuilder<int>(
-                                                    future: selectingDownloadRegion !=
-                                                                null &&
-                                                            tappedLocations
-                                                                    .length >=
-                                                                2 &&
-                                                            (selectingDownloadRegion !=
-                                                                    RegionType
-                                                                        .line ||
-                                                                lineReady)
-                                                        ? minZoom !=
-                                                                    prevMinZoom ||
-                                                                maxZoom !=
-                                                                    prevMaxZoom ||
-                                                                !ListEquality().equals(
-                                                                    tappedLocations,
-                                                                    prevTappedLocations)
-                                                            ? (tappedLocations
-                                                                        .length ==
-                                                                    2
-                                                                ? StorageCachingTileProvider
-                                                                    .checkRegion(
-                                                                    selectingDownloadRegion ==
-                                                                            RegionType.rectangle
-                                                                        ? RectangleRegion(
-                                                                            LatLngBounds(tappedLocations[0],
-                                                                                tappedLocations[1]),
-                                                                          ).toDownloadable(
-                                                                            minZoom,
-                                                                            maxZoom,
-                                                                            tileLayerOptions,
-                                                                          )
-                                                                        : selectingDownloadRegion == RegionType.circle
-                                                                            ? CircleRegion(
-                                                                                tappedLocations[0],
-                                                                                Distance().distance(tappedLocations[0], tappedLocations[1]) / 1000,
+                                                    future: minZoom > maxZoom
+                                                        ? Future.sync(() => -1)
+                                                        : selectingDownloadRegion !=
+                                                                    null &&
+                                                                tappedLocations.length >=
+                                                                    2 &&
+                                                                (selectingDownloadRegion !=
+                                                                        RegionType
+                                                                            .line ||
+                                                                    lineReady)
+                                                            ? minZoom !=
+                                                                        prevMinZoom ||
+                                                                    maxZoom !=
+                                                                        prevMaxZoom ||
+                                                                    !ListEquality().equals(
+                                                                        tappedLocations,
+                                                                        prevTappedLocations)
+                                                                ? (tappedLocations
+                                                                            .length ==
+                                                                        2
+                                                                    ? StorageCachingTileProvider
+                                                                        .checkRegion(
+                                                                        selectingDownloadRegion ==
+                                                                                RegionType.rectangle
+                                                                            ? RectangleRegion(
+                                                                                LatLngBounds(tappedLocations[0], tappedLocations[1]),
                                                                               ).toDownloadable(
                                                                                 minZoom,
                                                                                 maxZoom,
                                                                                 tileLayerOptions,
                                                                               )
-                                                                            : LineRegion(
-                                                                                tappedLocations,
-                                                                                lineWidthSelected,
-                                                                              ).toDownloadable(
-                                                                                minZoom,
-                                                                                maxZoom,
-                                                                                tileLayerOptions,
-                                                                              ),
-                                                                  )
-                                                                : Future.sync(
-                                                                    () => 0))
-                                                            : Future.sync(() =>
-                                                                prevEstTiles)
-                                                        : Future.sync(() => 0),
+                                                                            : selectingDownloadRegion == RegionType.circle
+                                                                                ? CircleRegion(
+                                                                                    tappedLocations[0],
+                                                                                    Distance().distance(tappedLocations[0], tappedLocations[1]) / 1000,
+                                                                                  ).toDownloadable(
+                                                                                    minZoom,
+                                                                                    maxZoom,
+                                                                                    tileLayerOptions,
+                                                                                  )
+                                                                                : LineRegion(
+                                                                                    tappedLocations,
+                                                                                    lineWidthSelected,
+                                                                                  ).toDownloadable(
+                                                                                    minZoom,
+                                                                                    maxZoom,
+                                                                                    tileLayerOptions,
+                                                                                  ),
+                                                                      )
+                                                                    : Future.sync(
+                                                                        () =>
+                                                                            0))
+                                                                : Future.sync(() =>
+                                                                    prevEstTiles)
+                                                            : Future.sync(
+                                                                () => 0),
                                                     builder:
                                                         (context, tilesLength) {
                                                       if (!tilesLength
@@ -966,96 +1079,38 @@ class _MapScreenState extends State<MapScreen> {
                                           ),
                                           SizedBox(
                                             width: double.infinity,
-                                            child: StreamBuilder<
-                                                ConnectivityResult>(
-                                              stream: forceUseCellular
-                                                  ? Stream.value(
-                                                      ConnectivityResult.wifi)
-                                                  : Connectivity()
-                                                      .onConnectivityChanged,
-                                              builder: (context, connectivity) {
-                                                if (!connectivity.hasData)
-                                                  return Center(
-                                                    child:
-                                                        CircularProgressIndicator(),
-                                                  );
-                                                if (connectivity.data ==
-                                                    ConnectivityResult.none) {
-                                                  return Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            top: 10),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceEvenly,
-                                                      children: [
-                                                        Icon(Icons.cloud_off),
-                                                        Text(
-                                                            'Go online to download map regions'),
-                                                      ],
-                                                    ),
-                                                  );
-                                                }
-                                                if (connectivity.data ==
-                                                    ConnectivityResult.mobile) {
-                                                  return Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            top: 10),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceEvenly,
-                                                      children: [
-                                                        Icon(Icons
-                                                            .signal_cellular_connected_no_internet_4_bar),
-                                                        Text(
-                                                          'Are you sure you want\nto use cellular data?',
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                        ),
-                                                        TextButton(
-                                                          child: Text(
-                                                              'Use Cellular Data'),
-                                                          onPressed: () {
-                                                            setState(() {
-                                                              forceUseCellular =
-                                                                  true;
-                                                            });
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                }
-                                                return Row(
-                                                  children: [
-                                                    Expanded(
-                                                      flex: 3,
-                                                      child: OutlinedButton(
-                                                        onPressed: () {
-                                                          startDownload(
-                                                            dir.data!,
-                                                            selectingDownloadRegion ==
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  flex: 3,
+                                                  child: OutlinedButton(
+                                                    onPressed: () {
+                                                      startDownload(
+                                                        dir.data!,
+                                                        selectingDownloadRegion ==
+                                                                RegionType
+                                                                    .rectangle
+                                                            ? RectangleRegion(
+                                                                LatLngBounds(
+                                                                    tappedLocations[
+                                                                        0],
+                                                                    tappedLocations[
+                                                                        1]),
+                                                              ).toDownloadable(
+                                                                minZoom,
+                                                                maxZoom,
+                                                                tileLayerOptions,
+                                                                preventRedownload:
+                                                                    enablePreventRedownload,
+                                                                seaTileRemoval:
+                                                                    enableSeaTileRemoval,
+                                                                parallelThreads:
+                                                                    2,
+                                                              )
+                                                            : selectingDownloadRegion ==
                                                                     RegionType
-                                                                        .rectangle
-                                                                ? RectangleRegion(
-                                                                    LatLngBounds(
-                                                                        tappedLocations[
-                                                                            0],
-                                                                        tappedLocations[
-                                                                            1]),
-                                                                  ).toDownloadable(
-                                                                    minZoom,
-                                                                    maxZoom,
-                                                                    tileLayerOptions,
-                                                                    preventRedownload:
-                                                                        enablePreventRedownload,
-                                                                    seaTileRemoval:
-                                                                        enableSeaTileRemoval,
-                                                                  )
-                                                                : CircleRegion(
+                                                                        .circle
+                                                                ? CircleRegion(
                                                                     tappedLocations[
                                                                         0],
                                                                     Distance().distance(
@@ -1070,54 +1125,94 @@ class _MapScreenState extends State<MapScreen> {
                                                                         enablePreventRedownload,
                                                                     seaTileRemoval:
                                                                         enableSeaTileRemoval,
+                                                                    parallelThreads:
+                                                                        2,
+                                                                  )
+                                                                : LineRegion(
+                                                                    tappedLocations,
+                                                                    lineWidthSelected,
+                                                                  ).toDownloadable(
+                                                                    minZoom,
+                                                                    maxZoom,
+                                                                    tileLayerOptions,
+                                                                    preventRedownload:
+                                                                        enablePreventRedownload,
+                                                                    seaTileRemoval:
+                                                                        enableSeaTileRemoval,
+                                                                    parallelThreads:
+                                                                        2,
                                                                   ),
-                                                          );
-                                                        },
-                                                        child: Text(
-                                                            'Start Download'),
-                                                      ),
-                                                    ),
-                                                    SizedBox(width: 5),
-                                                    Expanded(
-                                                      flex: 2,
-                                                      child: OutlinedButton(
-                                                        onPressed:
-                                                            Platform.isAndroid
-                                                                ? () {
-                                                                    StorageCachingTileProvider
-                                                                        .requestIgnoreBatteryOptimizations(
-                                                                            context);
-                                                                    startDownload(
-                                                                      dir.data!,
-                                                                      selectingDownloadRegion ==
-                                                                              RegionType.rectangle
-                                                                          ? RectangleRegion(
-                                                                              LatLngBounds(tappedLocations[0], tappedLocations[1]),
-                                                                            ).toDownloadable(
-                                                                              minZoom,
-                                                                              maxZoom,
-                                                                              tileLayerOptions,
-                                                                            )
-                                                                          : CircleRegion(
+                                                      );
+                                                    },
+                                                    child:
+                                                        Text('Start Download'),
+                                                  ),
+                                                ),
+                                                SizedBox(width: 5),
+                                                Expanded(
+                                                  flex: 2,
+                                                  child: OutlinedButton(
+                                                    onPressed:
+                                                        Platform.isAndroid
+                                                            ? () {
+                                                                StorageCachingTileProvider
+                                                                    .requestIgnoreBatteryOptimizations(
+                                                                        context);
+                                                                startDownload(
+                                                                  dir.data!,
+                                                                  selectingDownloadRegion ==
+                                                                          RegionType
+                                                                              .rectangle
+                                                                      ? RectangleRegion(
+                                                                          LatLngBounds(
+                                                                              tappedLocations[0],
+                                                                              tappedLocations[1]),
+                                                                        )
+                                                                          .toDownloadable(
+                                                                          minZoom,
+                                                                          maxZoom,
+                                                                          tileLayerOptions,
+                                                                          preventRedownload:
+                                                                              enablePreventRedownload,
+                                                                          seaTileRemoval:
+                                                                              enableSeaTileRemoval,
+                                                                          parallelThreads:
+                                                                              2,
+                                                                        )
+                                                                      : selectingDownloadRegion ==
+                                                                              RegionType.circle
+                                                                          ? CircleRegion(
                                                                               tappedLocations[0],
                                                                               Distance().distance(tappedLocations[0], tappedLocations[1]) / 1000,
                                                                             ).toDownloadable(
                                                                               minZoom,
                                                                               maxZoom,
                                                                               tileLayerOptions,
+                                                                              preventRedownload: enablePreventRedownload,
+                                                                              seaTileRemoval: enableSeaTileRemoval,
+                                                                              parallelThreads: 2,
+                                                                            )
+                                                                          : LineRegion(
+                                                                              tappedLocations,
+                                                                              lineWidthSelected,
+                                                                            ).toDownloadable(
+                                                                              minZoom,
+                                                                              maxZoom,
+                                                                              tileLayerOptions,
+                                                                              preventRedownload: enablePreventRedownload,
+                                                                              seaTileRemoval: enableSeaTileRemoval,
+                                                                              parallelThreads: 2,
                                                                             ),
-                                                                      background:
-                                                                          true,
-                                                                    );
-                                                                  }
-                                                                : null,
-                                                        child: Text(
-                                                            'In Background'),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                );
-                                              },
+                                                                  background:
+                                                                      true,
+                                                                );
+                                                              }
+                                                            : null,
+                                                    child:
+                                                        Text('In Background'),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ],
@@ -1458,7 +1553,8 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                     PolygonLayerWidget(
                       options: selectingDownloadRegion == null ||
-                              tappedLocations.length < 2
+                              tappedLocations.length < 2 &&
+                                  !(downloadInProgress || downloadJustFinished)
                           ? PolygonLayerOptions()
                           : selectingDownloadRegion == RegionType.rectangle
                               ? RectangleRegion(
@@ -1485,40 +1581,6 @@ class _MapScreenState extends State<MapScreen> {
                                       Colors.green.withAlpha(128),
                                       Colors.green,
                                     ),
-                    ),
-                    PolygonLayerWidget(
-                      options: PolygonLayerOptions(
-                        polygons: [
-                          Polygon(
-                            points: [
-                              LatLng(51.504216, -0.654483),
-                              LatLng(51.53129, -0.675455),
-                              LatLng(51.528221, -0.685657),
-                              LatLng(51.501147, -0.664679),
-                            ],
-                            color: Colors.red.withAlpha(128),
-                          ),
-                          Polygon(
-                            points: [
-                              LatLng(51.53129, -0.654483), //Top-right
-                              LatLng(51.53129, -0.685657), //Top-left
-                              LatLng(51.501147, -0.685657), //Bottom-left
-                              LatLng(51.501147, -0.654483), //Bottom-right
-                            ],
-                            color: Colors.blue.withAlpha(128),
-                          ),
-                        ],
-                      ),
-                    ),
-                    MarkerLayerWidget(
-                      options: MarkerLayerOptions(
-                        markers: [
-                          Marker(
-                            point: LatLng(51.518257, -0.655672),
-                            builder: (_) => Icon(Icons.ac_unit),
-                          ),
-                        ],
-                      ),
                     ),
                   ],
                 ),
@@ -1684,13 +1746,12 @@ class NumericalRangeFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    if (newValue.text == '') {
+    if (newValue.text == '')
       return newValue;
-    } else if (int.parse(newValue.text) < min) {
+    else if (int.parse(newValue.text) < min)
       return TextEditingValue().copyWith(text: min.toStringAsFixed(2));
-    } else {
+    else
       return int.parse(newValue.text) > max ? oldValue : newValue;
-    }
   }
 }
 

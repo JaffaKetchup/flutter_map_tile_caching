@@ -1,5 +1,14 @@
 # Changelog
 
+## [4.0.0-dev.6] - 2021/10/10
+
+* Added pre-download check functionality
+* Added ability to change caching behaviour
+* Rewritten tile provider part to be smaller and more efficient
+* Updated & fixed example
+* Project reorganisation
+* Updated tests
+
 ## [4.0.0-dev.5+1] - 2021/10/08
 
 * Deprecated circle extensions to match new 'standard'

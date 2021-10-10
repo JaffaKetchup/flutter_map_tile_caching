@@ -4,7 +4,6 @@ import 'package:meta/meta.dart';
 
 import 'circle.dart';
 import 'downloadableRegion.dart';
-//import 'line.dart';
 import 'line.dart';
 import 'rectangle.dart';
 

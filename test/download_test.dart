@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_tile_caching/src/bulkDownload/downloadProgress.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:test/test.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -39,7 +40,7 @@ void main() {
         ),
         parallelThreads: 2,
       ),
-      provider,
+      preDownloadChecksCallback: null,
     );
 
     DownloadProgress? progA;
@@ -82,7 +83,7 @@ void main() {
         preventRedownload: true,
         parallelThreads: 2,
       ),
-      provider,
+      preDownloadChecksCallback: null,
     );
 
     DownloadProgress? progB;
@@ -112,7 +113,7 @@ void main() {
         ),
         parallelThreads: 2,
       ),
-      provider,
+      preDownloadChecksCallback: null,
     );
 
     DownloadProgress? progC;
@@ -165,7 +166,7 @@ void main() {
         seaTileRemoval: true,
         parallelThreads: 2,
       ),
-      provider,
+      preDownloadChecksCallback: null,
     );
 
     DownloadProgress? prog;

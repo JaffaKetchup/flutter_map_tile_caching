@@ -11,30 +11,43 @@ import 'package:meta/meta.dart';
 /// Is an alias of `Directory`.
 typedef CacheDirectory = Directory;
 
-/// Deprecated due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.
-@Deprecated(
-    'Due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.')
-extension LatLngExts on LatLng {
-  /// Deprecated due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.
-  @Deprecated(
-      'Due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.')
-  double distanceTo(LatLng b) {
-    final double p = 0.017453292519943295;
-    final double formula = 0.5 -
-        math.cos((b.latitude - this.latitude) * p) / 2 +
-        math.cos(this.latitude * p) *
-            math.cos(b.latitude * p) *
-            (1 - math.cos((b.longitude - this.longitude) * p)) /
-            2;
-    return 12742 * math.asin(math.sqrt(formula)) * 1000;
-  }
+/// Thrown by `getImage()` when an image could not be loaded either from a HTTP source or from the filesystem
+class StorageCachingError implements Exception {
+  /// General message describing the error
+  String message;
 
-  /// Deprecated due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.
-  @Deprecated(
-      'Due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.')
-  double operator >>(LatLng point) {
-    return this.distanceTo(point);
-  }
+  /// Caching behavior in use at the time of error
+  CacheBehavior cacheBehavior;
+
+  /// An error object, if applicable
+  Object? extError;
+
+  /// Failed file path, if applicable
+  String? filePath;
+
+  /// Failed URL, if applicable
+  String? url;
+
+  @internal
+  StorageCachingError(
+    this.message,
+    this.cacheBehavior, {
+    this.extError,
+    this.filePath,
+    this.url,
+  });
+}
+
+/// Multiple behaviors dictating how caching should be carried out, if at all
+enum CacheBehavior {
+  /// Only get tiles from the local cache
+  cacheOnly,
+
+  /// Only get tiles from online
+  onlineOnly,
+
+  /// Get tiles from the local cache, going online to update the cache if `cachedValidDuration` has passed
+  cacheFirst,
 }
 
 /// Conversions to perform on an integer number of bytes to get more human-friendly figures. Useful after getting a cache's or cache store's size from `MapCachingManager`, for example.
@@ -67,4 +80,30 @@ extension ListExtensionsE<E> on List<E> {
 extension ListExtensionsDouble on List<double> {
   double get minNum => this.reduce(math.min);
   double get maxNum => this.reduce(math.max);
+}
+
+/// Deprecated due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.
+@Deprecated(
+    'Due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.')
+extension LatLngExts on LatLng {
+  /// Deprecated due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.
+  @Deprecated(
+      'Due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.')
+  double distanceTo(LatLng b) {
+    final double p = 0.017453292519943295;
+    final double formula = 0.5 -
+        math.cos((b.latitude - this.latitude) * p) / 2 +
+        math.cos(this.latitude * p) *
+            math.cos(b.latitude * p) *
+            (1 - math.cos((b.longitude - this.longitude) * p)) /
+            2;
+    return 12742 * math.asin(math.sqrt(formula)) * 1000;
+  }
+
+  /// Deprecated due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.
+  @Deprecated(
+      'Due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.')
+  double operator >>(LatLng point) {
+    return this.distanceTo(point);
+  }
 }
