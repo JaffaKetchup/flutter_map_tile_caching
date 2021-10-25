@@ -101,10 +101,6 @@ class DownloadableRegion {
   /// A function that takes any type of error as an argument to be called in the event a tile fetch fails
   final Function(dynamic)? errorHandler;
 
-  /// Used internally for specific recovery
-  @internal
-  final int? resumeTile;
-
   /// Deprecated. Will be removed in next release. Migrate to the equivalent in the `TileLayerOptions`.
   ///
   /// The size of each tile. Defaults to 256 by 256.
@@ -126,7 +122,6 @@ class DownloadableRegion {
     this.seaTileRemoval = false,
     this.crs = const Epsg3857(),
     this.errorHandler,
-    this.resumeTile,
   })  : assert(
           minZoom <= maxZoom,
           '`minZoom` should be less than or equal to `maxZoom`',

@@ -1,54 +1,63 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:battery_info/enums/charging_status.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
 
 /// The parent directory of all cache stores, to be used for `parentDirectory` arguments
-///
-/// Is an alias of `Directory`.
 typedef CacheDirectory = Directory;
 
-/// Thrown by `getImage()` when an image could not be loaded either from a HTTP source or from the filesystem
-class StorageCachingError implements Exception {
-  /// General message describing the error
-  String message;
-
-  /// Caching behavior in use at the time of error
-  CacheBehavior cacheBehavior;
-
-  /// An error object, if applicable
-  Object? extError;
-
-  /// Failed file path, if applicable
-  String? filePath;
-
-  /// Failed URL, if applicable
-  String? url;
-
-  @internal
-  StorageCachingError(
-    this.message,
-    this.cacheBehavior, {
-    this.extError,
-    this.filePath,
-    this.url,
-  });
-}
-
-/// Multiple behaviors dictating how caching should be carried out, if at all
-enum CacheBehavior {
-  /// Only get tiles from the local cache
-  cacheOnly,
-
-  /// Only get tiles from online
-  onlineOnly,
-
-  /// Get tiles from the local cache, going online to update the cache if `cachedValidDuration` has passed
-  cacheFirst,
-}
+/// Use in `preDownloadChecksCallback` in `StorageCachingTileProvider().downloadRegion()` and `StorageCachingTileProvider().downloadRegionBackground()` to ensure the download is OK to start by considering the device's status.
+///
+/// Setting the parameter to `null` will skip all tests and allow under any circumstances. However, returning `null` from the function will use the default rules: cancel the download if the user is on cellular data or disconnected from the network (not necessarily Internet), or under 15% charge and not connected to a power source.
+///
+/// Otherwise, the testing function must take a [ConnectivityResult] representing the status of the Internet connection, a nullable-integer representing the battery/charge level of the device if readable, and a nullable-[ChargingStatus] representing the charging status of the device if readable. The function must be asynchronus (to allow for asking the user through something like a dialog box) and return either `true` representing 'let the download continue', or `false` representing 'cancel the download'.
+///
+/// Useful examples/presets for `preDownloadChecksCallback`:
+///
+/// 1. Allow under any circumstances
+/// ```dart
+/// preDownloadChecksCallback: null
+/// ```
+///
+/// 2. Use default rules
+/// ```dart
+/// preDownloadChecksCallback: (_, __, ___) async => null
+/// ```
+///
+/// 3. Only consider battery
+/// ```dart
+/// preDownloadChecksCallback: (_, lvl, status) async => lvl! > 15 || status == ChargingStatus.Charging
+/// ```
+///
+/// 4. Only consider connectivity
+/// ```dart
+/// preDownloadChecksCallback: (c, _, __) async => c == ConnectivityResult.wifi || c == ConnectivityResult.ethernet
+/// ```
+///
+/// To check if the tests have failed:
+///
+/// - In the foreground downloader `StorageCachingTileProvider().downloadRegion()`:
+/// ```dart
+/// final Stream<DownloadProgress> downloadStream = provider.downloadRegion(...).asBroadcastStream();
+/// if (await downloadStream.isEmpty) "<checks have failed>"
+/// else "<checks have passed, listen to stream for progress events>"
+/// ```
+///
+/// - In the background downloader `StorageCachingTileProvider().downloadRegionBackground()`:
+/// ```dart
+/// // Will only fire if the checks have failed; the download will already be cancelled
+/// preDownloadChecksFailedCallback: () {}
+/// ```
+typedef PreDownloadChecksCallback = Future<bool?> Function(
+  ConnectivityResult,
+  int?,
+  ChargingStatus?,
+)?;
 
 /// Conversions to perform on an integer number of bytes to get more human-friendly figures. Useful after getting a cache's or cache store's size from `MapCachingManager`, for example.
 ///
@@ -82,11 +91,11 @@ extension ListExtensionsDouble on List<double> {
   double get maxNum => this.reduce(math.max);
 }
 
-/// Deprecated due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.
+/// Deprecated due to other better methods. Migrate to `latlong2\'s` [Distance] methods for a more accurate, customizable and efficient result.
 @Deprecated(
     'Due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.')
 extension LatLngExts on LatLng {
-  /// Deprecated due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.
+  /// Deprecated due to other better methods. Migrate to `latlong2\'s` [Distance] methods for a more accurate, customizable and efficient result.
   @Deprecated(
       'Due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.')
   double distanceTo(LatLng b) {
@@ -100,7 +109,7 @@ extension LatLngExts on LatLng {
     return 12742 * math.asin(math.sqrt(formula)) * 1000;
   }
 
-  /// Deprecated due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.
+  /// Deprecated due to other better methods. Migrate to `latlong2\'s` [Distance] methods for a more accurate, customizable and efficient result.
   @Deprecated(
       'Due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.')
   double operator >>(LatLng point) {

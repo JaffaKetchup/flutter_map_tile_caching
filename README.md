@@ -56,7 +56,7 @@ To run the example project, create a new project and copy/replace the existing '
 
 Alternatively, if you just want to see how it works quickly, you can run the example app on an Android device by installing the APK file found in the 'example' directory. Doing this, you must comply to the [Open Street Map Tile Server rules](https://operations.osmfoundation.org/policies/tiles), specifically the section about [Bulk Downloads](https://operations.osmfoundation.org/policies/tiles/#:~:text=above%20technical%20requirements.-,Bulk%20Downloading,-Bulk%20downloading%20is). In short, don't bulk download over 250 tiles at zoom level 13 or more.
 
-## Functionality
+## Functionality & Terminology
 
 This package provides every thing you should need to implement advanced caching in your Flutter application, including caching tiles as your users browse the map & downloading regions of a map for later offline use. You can reuse UI components from the example, or create your own!
 

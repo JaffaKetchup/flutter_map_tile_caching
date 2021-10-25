@@ -1,10 +1,10 @@
 import 'package:meta/meta.dart';
 
-/// An object representing the progress of a download
+/// Represents the progress of an ongoing or finished (if [percentageProgress] is 100%) bulk download
 ///
-/// Should avoid manual construction, use `DownloadProgress.placeholder`.
+/// Should avoid manual construction, use named constructor `DownloadProgress.empty()` to generate placeholders.
 ///
-/// Is yielded from `StorageCachingTileProvider().downloadRegion()`, or returned from `DownloadProgress.placeholder`.
+/// Is yielded from `StorageCachingTileProvider().downloadRegion()`, and returned in a callback from `StorageCachingTileProvider().downloadRegionBackground()`.
 class DownloadProgress {
   /// Number of successful tile downloads
   final int successfulTiles;
@@ -88,14 +88,15 @@ class DownloadProgress {
 
   /// Deprecated due to internal refactoring. Migrate to `failedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
   @Deprecated(
-      'Deprecated due to internal refactoring. Migrate to `failedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
+      'Due to internal refactoring. Migrate to `failedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
   List<String> get erroredTiles => failedTiles;
 
   /// Deprecated due to internal refactoring. Migrate to `maxTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
   @Deprecated(
-      'Deprecated due to internal refactoring. Migrate to `maxTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
+      'Due to internal refactoring. Migrate to `maxTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
   int get totalTiles => maxTiles;
 
+  /// Avoid construction using this method. Use [DownloadProgress.empty] to generate empty placeholders where necessary.
   @internal
   DownloadProgress({
     required this.successfulTiles,
@@ -106,13 +107,17 @@ class DownloadProgress {
     required this.duration,
   });
 
-  /// Create a placeholder (all values set to 0) `DownloadProgress`, useful for `initalData` in a `StreamBuilder()`
-  static DownloadProgress get placeholder => DownloadProgress(
-        successfulTiles: 0,
-        failedTiles: [],
-        maxTiles: 0,
-        seaTiles: 0,
-        existingTiles: 0,
-        duration: Duration(seconds: 0),
-      );
+  /// Create an empty placeholder (all values set to 0 or empty) [DownloadProgress], useful for `initalData` in a [StreamBuilder]
+  DownloadProgress.empty()
+      : successfulTiles = 0,
+        failedTiles = [],
+        maxTiles = 0,
+        seaTiles = 0,
+        existingTiles = 0,
+        duration = Duration(seconds: 0);
+
+  /// Deprecated due to internal refactoring. Migrate to the named constructor [DownloadProgress.empty]. Will be removed in next update.
+  @Deprecated(
+      'Due to internal refactoring. Migrate to the named constructor [DownloadProgress.empty]. Will be removed in next update.')
+  static DownloadProgress get placeholder => DownloadProgress.empty();
 }

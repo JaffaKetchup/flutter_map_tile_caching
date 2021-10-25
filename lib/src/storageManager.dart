@@ -16,7 +16,7 @@ import 'regions/recoveredRegion.dart';
 class MapCachingManager {
   /// The directory to place cache stores into
   ///
-  /// Use `await MapStorageManager.normalDirectory` wherever possible, or `await MapStorageManager.temporaryDirectory` is required (see documentation). If creating a path manually, be sure it's the correct format, use the `path` library if needed.
+  /// Use `await MapStorageManager.normalDirectory` wherever possible, or `await MapStorageManager.temporaryDirectory` alternatively (see documentation). If creating a path manually, be sure it's the correct format, use the `path` library if needed.
   ///
   /// Required.
   final CacheDirectory parentDirectory;
@@ -24,7 +24,7 @@ class MapCachingManager {
   /// The name of a cache store. Defaults to 'mainStore'.
   final String storeName;
 
-  /// The correctly joined `parentDirectory` and `storeName` at time of initialization
+  /// The joined `parentDirectory` and `storeName`
   final String _joinedBasePath;
 
   /// Create an instance to handle caching for tiles
@@ -35,15 +35,14 @@ class MapCachingManager {
 
   /// Check if the cache store exists
   ///
-  /// Returns `true` if it does, `false` if only the `parentDirectory` exists, `null` if neither exist.
+  /// Returns `true` if it does, `false` if only the [parentDirectory] exists, `null` if neither exist.
   bool? get exists => Directory(_joinedBasePath).existsSync()
       ? true
       : Directory(parentDirectory.absolute.path).existsSync()
           ? false
           : null;
 
-  /// Explicitly create the store - only use if necessary
-  @visibleForTesting
+  /// Explicitly create the store
   void createStore() => Directory(_joinedBasePath).createSync(recursive: true);
 
   /// Delete a cache store
@@ -59,7 +58,7 @@ class MapCachingManager {
 
   /// Rename the current cache store to a new name
   ///
-  /// The old `MapCachingManager` will still retain it's link to the old store, so always use the new returned value instead: returns a new `MapCachingManager` after a successful renaming operation or `null` if the cache does not exist.
+  /// The old [MapCachingManager] will still retain it's link to the old store, so always use the new returned value instead: returns a new [MapCachingManager] after a successful renaming operation or `null` if the cache does not exist.
   MapCachingManager? renameStore(String newName) {
     if (exists == null) return null;
     Directory(_joinedBasePath)
@@ -178,29 +177,11 @@ class MapCachingManager {
   }
 
   @internal
-  void incrementPreciseRecovery() {
-    if (!Directory(_joinedBasePath).existsSync()) return;
-    final File file = File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt']));
-    file.createSync(recursive: true);
-
-    final String existing = file.readAsStringSync();
-    if (existing == '') {
-      file.writeAsStringSync('0', flush: true);
-      return;
-    }
-
-    file.writeAsString((int.parse(existing) + 1).toString(), flush: true);
-  }
-
-  @internal
   void endRecovery() {
     if (!Directory(_joinedBasePath).existsSync()) return;
 
     File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt'])).createSync();
     File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt'])).deleteSync();
-
-    File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt'])).createSync();
-    File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt'])).deleteSync();
   }
 
   @internal
@@ -216,47 +197,38 @@ class MapCachingManager {
 
     if (recovery[6] == 'rectangle')
       return RecoveredRegion(
-        RegionType.rectangle,
-        LatLngBounds(
+        type: RegionType.rectangle,
+        bounds: LatLngBounds(
           LatLng(dp(recovery[0].split(',')[0]), dp(recovery[0].split(',')[1])),
           LatLng(dp(recovery[1].split(',')[0]), dp(recovery[1].split(',')[1])),
         ),
-        null,
-        null,
-        null,
-        ip(recovery[2]),
-        ip(recovery[3]),
-        recovery[4] == 'true',
-        recovery[5] == 'true',
-        File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt'])).existsSync()
-            ? int.parse(
-                File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt']))
-                    .readAsStringSync())
-            : null,
+        center: null,
+        line: null,
+        radius: null,
+        minZoom: ip(recovery[2]),
+        maxZoom: ip(recovery[3]),
+        preventRedownload: recovery[4] == 'true',
+        seaTileRemoval: recovery[5] == 'true',
       );
     else if (recovery[6] == 'circle')
       return RecoveredRegion(
-        RegionType.circle,
-        null,
-        LatLng(dp(recovery[0].split(',')[0]), dp(recovery[0].split(',')[1])),
-        null,
-        dp(recovery[1]),
-        ip(recovery[2]),
-        ip(recovery[3]),
-        recovery[4] == 'true',
-        recovery[5] == 'true',
-        File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt'])).existsSync()
-            ? int.parse(
-                File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt']))
-                    .readAsStringSync())
-            : null,
+        type: RegionType.circle,
+        bounds: null,
+        center: LatLng(
+            dp(recovery[0].split(',')[0]), dp(recovery[0].split(',')[1])),
+        line: null,
+        radius: dp(recovery[1]),
+        minZoom: ip(recovery[2]),
+        maxZoom: ip(recovery[3]),
+        preventRedownload: recovery[4] == 'true',
+        seaTileRemoval: recovery[5] == 'true',
       );
     else
       return RecoveredRegion(
-        RegionType.line,
-        null,
-        null,
-        recovery[0].split('*').map(
+        type: RegionType.line,
+        bounds: null,
+        center: null,
+        line: recovery[0].split('*').map(
           (zip) {
             print(recovery[0]);
             return LatLng(
@@ -265,16 +237,11 @@ class MapCachingManager {
             );
           },
         ).toList(),
-        dp(recovery[1]),
-        ip(recovery[2]),
-        ip(recovery[3]),
-        recovery[4] == 'true',
-        recovery[5] == 'true',
-        File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt'])).existsSync()
-            ? int.parse(
-                File(p.joinAll([_joinedBasePath, 'preciseRecovery.txt']))
-                    .readAsStringSync())
-            : null,
+        radius: dp(recovery[1]),
+        minZoom: ip(recovery[2]),
+        maxZoom: ip(recovery[3]),
+        preventRedownload: recovery[4] == 'true',
+        seaTileRemoval: recovery[5] == 'true',
       );
   }
 
@@ -292,7 +259,7 @@ class MapCachingManager {
   ///
   /// Caching in here will show caches under the App Cache - instead of App Storage - in Settings. Therefore the OS can clear cached tiles at any time without telling the user.
   ///
-  /// For this reason, it is not recommended to use this store. Use `normalDirectory` by default instead.
+  /// For this reason, it is not recommended to use this store. Use [normalCache] by default instead.
   static Future<CacheDirectory> get temporaryCache async => Directory(
         p.joinAll([(await getTemporaryDirectory()).absolute.path, 'mapCache']),
       );

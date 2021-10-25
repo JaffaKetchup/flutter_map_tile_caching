@@ -1,6 +1,3 @@
-// TODO: Implement precise recovery
-// TODO: Battery and Internet checks
-
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
@@ -8,7 +5,6 @@ import 'dart:typed_data';
 import 'package:background_fetch/background_fetch.dart';
 import 'package:battery_info/battery_info_plugin.dart';
 import 'package:battery_info/enums/charging_status.dart';
-import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -21,27 +17,55 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:queue/queue.dart';
 
 import 'bulkDownload/downloadProgress.dart';
+import 'bulkDownload/downloader.dart';
 import 'bulkDownload/tileLoops.dart';
 import 'misc.dart';
 import 'regions/downloadableRegion.dart';
 import 'regions/recoveredRegion.dart';
 import 'storageManager.dart';
 
+/// Multiple behaviors dictating how caching should be carried out, if at all
+enum CacheBehavior {
+  /// Only get tiles from the local cache
+  ///
+  /// Useful for applications with dedicated 'Offline Mode'.
+  cacheOnly,
+
+  /// Only get tiles from the Internet
+  ///
+  /// Useful if the user has disabled caching functionality.
+  onlineOnly,
+
+  /// Get tiles from the local cache, going on the Internet to update the cached tile if it has expired (`cachedValidDuration` has passed)
+  ///
+  /// Please note that if the tile has expired, the cached tile will be deleted before loading a new one from the Internet; therefore if the Internet is inaccessible then the tile will fail to load completely, even if it was previously cached.
+  cacheFirst,
+
+  /// Get tiles from the Internet and update the cache for every tile
+  ///
+  /// Please note that if the tile has been previously cached, the tile will be deleted before loading and caching a new one from the Internet; therefore if the Internet is inaccessible then the tile will fail to load completely.
+  onlineFirst,
+}
+
 /// A `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
 ///
-/// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a cache store to use it instead of the default.
+/// Requires a valid cache directory: [parentDirectory]. [storeName] defaults to the default store, 'mainStore', but can be overriden to different stores.
 ///
-/// See online documentation for more information about the caching/downloading behaviour of this library.
+/// Optionally adjust:
+///  - [maxStoreLength] - the number of tiles that can be stored at once in this cache store
+///  - [behavior] - the caching behavior to use, affecting [cachedValidDuration].
+///  - [cachedValidDuration] -  the length of time a cached tile is valid before needing to be updated in some caching behaviors
+///
+/// See each property's individual documentation for more detail.
 class StorageCachingTileProvider extends TileProvider {
-  /// Deprecated. Will be removed in the next release. Migrate to `maxStoreLength`.
+  /// Deprecated. Migrate to `maxStoreLength`. Will be removed in the next release.
   @Deprecated(
-    'This variable has been deprecated, and will be removed in the next release. Migrate to `maxStoreLength`.',
-  )
+      'Migrate to `maxStoreLength`. Will be removed in the next release.')
   static final kMaxPreloadTileAreaCount = 20000;
 
   /// The directory to place cache stores into
   ///
-  /// Use `await MapStorageManager.normalDirectory` wherever possible, or `await MapStorageManager.temporaryDirectory` alternatively (see documentation). If creating a path manually, be sure it's the correct format, use the `path` library if needed.
+  /// Use `await [MapStorageManager.normalDirectory]` wherever possible, or `await MapStorageManager.temporaryDirectory` alternatively (see documentation). If creating a path manually, be sure it's the correct format, use the `path` library if needed.
   ///
   /// Required.
   final CacheDirectory parentDirectory;
@@ -53,14 +77,14 @@ class StorageCachingTileProvider extends TileProvider {
 
   /// The behavior method to get the tile
   ///
-  /// Defaults to `cacheFirst` - get tiles from the local cache, going online to update the cache if `cachedValidDuration` has passed.
+  /// Please note that, in certain behaviors (`cacheFirst`, `onlineFirst`), the cached tile will be deleted before loading (if necessary) and caching (if necessary) a new one from the Internet; therefore if the Internet is inaccessible then the tile will fail to load completely. Always use `cacheOnly` if the user is offline or in an 'Offline Mode'.
+  ///
+  /// Defaults to `cacheFirst` - get tiles from the local cache, going on the Internet to update the cached tile if it has expired (`cachedValidDuration` has passed).
   final CacheBehavior behavior;
 
-  /// The duration until a tile expires and needs to be fetched again when browsing
+  /// The duration until a tile expires and needs to be fetched again when browsing - only applies in `cacheFirst` behavior
   ///
-  /// Several internal limitations mean this functionality is accomplished by deleting the tile before getting it from the Internet again. Therefore, this only has an effect when `behavior` is set to `cacheFirst`.
-  ///
-  /// Note that if the tile cannot be loaded from the Internet again, the tile will fail to load even if the tile was in the cache before: for this reason set `behavior` to `cacheOnly` if the user is offline or in 'an offline mode'.
+  /// Please note that, only if this time has passed, the cached tile will be deleted before loading and caching a new one from the Internet; therefore if the Internet is inaccessible then the tile will fail to load completely. Always use `cacheOnly` if the user is offline or in an 'Offline Mode'.
   ///
   /// Defaults to 16 days, set to `Duration.zero` to disable.
   final Duration cachedValidDuration;
@@ -72,15 +96,25 @@ class StorageCachingTileProvider extends TileProvider {
   /// Defaults to 20000, set to 0 to disable.
   final int maxStoreLength;
 
-  bool _downloadOngoing = false; // Used internally for recovery purposes
-  Queue? _queue; // Used to download tiles in bulk
-  StreamController<List>? _streamController; // Used to control bulk downloading
+  /// Used internally for recovery purposes
+  bool _downloadOngoing = false;
+
+  /// Used internally to queue download tiles to process in bulk
+  Queue? _queue;
+
+  /// Used internally to control bulk downloading
+  StreamController<List>? _streamController;
 
   /// Create a `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
   ///
-  /// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a cache store to use it instead of the default.
+  /// Requires a valid cache directory: [parentDirectory]. [storeName] defaults to the default store, 'mainStore', but can be overriden to different stores.
   ///
-  /// See online documentation for more information about the caching/downloading behaviour of this library.
+  /// Optionally adjust:
+  ///  - [maxStoreLength] - the number of tiles that can be stored at once in this cache store
+  ///  - [behavior] - the caching behavior to use, affecting [cachedValidDuration].
+  ///  - [cachedValidDuration] -  the length of time a cached tile is valid before needing to be updated in some caching behaviors
+  ///
+  /// See each property's individual documentation for more detail.
   StorageCachingTileProvider({
     required this.parentDirectory,
     this.storeName = 'mainStore',
@@ -117,64 +151,39 @@ class StorageCachingTileProvider extends TileProvider {
       fileList.last.deleteSync();
     }
 
-    if (behavior == CacheBehavior.cacheFirst &&
-        cachedValidDuration != Duration.zero &&
-        file.existsSync() &&
-        DateTime.now().millisecondsSinceEpoch -
-                file.lastModifiedSync().millisecondsSinceEpoch >
-            cachedValidDuration.inMilliseconds) file.deleteSync();
+    if (behavior == CacheBehavior.onlineFirst ||
+        (behavior == CacheBehavior.cacheFirst &&
+            cachedValidDuration != Duration.zero &&
+            file.existsSync() &&
+            DateTime.now().millisecondsSinceEpoch -
+                    file.lastModifiedSync().millisecondsSinceEpoch >
+                cachedValidDuration.inMilliseconds)) file.deleteSync();
 
     try {
       return NetworkToFileImage(
         url: behavior == CacheBehavior.cacheOnly ? null : url,
         file: behavior == CacheBehavior.onlineOnly ? null : file,
       );
-    } catch (e) {}
-
-    throw FallThroughError();
+    } catch (e) {
+      rethrow;
+    }
   }
 
-  //! GENERAL DOWNLOADING STARTS !//
+  //! GENERAL DOWNLOADING !//
 
-  /// Download a specified `DownloadableRegion` in the foreground
+  /// Download a specified [DownloadableRegion] in the foreground
   ///
-  /// To check the number of tiles that need to be downloaded before using this function, use `checkRegion()`.
+  /// To check the number of tiles that need to be downloaded before using this function, use [checkRegion].
   ///
-  /// Unless otherwise specified, also starts a recovery session. Enabling 'specific recovery' will slow download, but will allow a download to start again at the correct tile instead of having to start from the beginning. Leaving `specificRecovery` as `false` will mean a recovered download will have to restart.
+  /// Unless otherwise specified, also starts a recovery session.
   ///
-  /// Use `preDownloadChecksCallback` to ensure the download is good to go. Setting this to `null` will skip all checks, and is not recommended. Otherwise, the function must take a `ConnectivityResult` representing the status of the Internet connection, a nullable-integer representing the battery/charge level of the device if readable, and a nullable-`ChargingStatus` representing the charging status of the device if readable. The function must be asynchronus (to allow for asking the user through something like a dialog box) and return either `null` representing 'do default', `true` representing 'let the download continue', or `false` representing 'cancel the download'. The 'default' is to cancel the download if the user is on cellular data, disconnected, or under 15% charge and not connected to a power source. See below to see how to check if the checks fail.
+  /// For more information on [preDownloadChecksCallback], see documentation on [PreDownloadChecksCallback]. In a few words, use this callback to check the devices information/status before starting a download.
   ///
-  /// Useful simple ideas for `preDownloadChecksCallback`:
-  ///
-  /// 1. Do default
-  /// ```dart
-  /// preDownloadChecksCallback: (_, __, ___) async => null
-  /// ```
-  ///
-  /// 2. Only consider battery
-  /// ```dart
-  /// preDownloadChecksCallback: (_, lvl, status) async => lvl! > 15 || status == ChargingStatus.Charging
-  /// ```
-  ///
-  /// 3. Only consider connectivity
-  /// ```dart
-  /// preDownloadChecksCallback: (c, _, __) async => c == ConnectivityResult.wifi || c == ConnectivityResult.ethernet
-  /// ```
-  ///
-  /// 4. Check if the checks have failed
-  /// ```dart
-  /// final Stream<DownloadProgress> downloadStream = downloadRegion(...);
-  /// if (await downloadStream.isEmpty) "<checks have failed>"
-  /// else "<checks have passed, listen to stream>"
-  /// ```
-  ///
-  /// Streams a `DownloadProgress` object containing lots of handy information about the download's progression status; unless the pre-download checks fail, in which case the stream's `.isEmpty` will be `true`. If you get messages about 'Bad State' after dealing with the checks, just add `.asBroadcastStream()` on the end of `downloadRegion()`.
+  /// Streams a [DownloadProgress] object containing lots of handy information about the download's progression status; unless the pre-download checks fail, in which case the stream's `.isEmpty` will be `true` and no new events will be emitted. If you get messages about 'Bad State' after dealing with the checks, just add `.asBroadcastStream()` on the end of [downloadRegion].
   Stream<DownloadProgress> downloadRegion(
     DownloadableRegion region, {
     bool disableRecovery = false,
-    bool specificRecovery = false,
-    required Future<bool?> Function(ConnectivityResult, int?, ChargingStatus?)?
-        preDownloadChecksCallback,
+    required PreDownloadChecksCallback preDownloadChecksCallback,
   }) async* {
     if (preDownloadChecksCallback != null) {
       final ConnectivityResult connectivity =
@@ -245,9 +254,9 @@ class StorageCachingTileProvider extends TileProvider {
     );
   }
 
-  /// Check approximately how many downloadable tiles are within a specified `DownloadableRegion`
+  /// Check approximately how many downloadable tiles are within a specified [DownloadableRegion]
   ///
-  /// This does not take into account sea tile removal or redownload prevention, as these are handled in the download portion of the code. Specific recovery is also ignored.
+  /// This does not take into account sea tile removal or redownload prevention, as these are handled in the download area of the code.
   ///
   /// Returns an `int` which is the number of tiles.
   static Future<int> checkRegion(DownloadableRegion region) async =>
@@ -272,7 +281,9 @@ class StorageCachingTileProvider extends TileProvider {
 
   /// Cancels the ongoing foreground download and recovery session (within the current object)
   ///
-  /// Will throw errors if there is no ongoing download. Do not use to cancel background downloads, return `true` from the background download callback to cancel a background download.
+  /// Do not use to cancel background downloads, return `true` from the background download callback to cancel a background download. Background download cancellations require a few more 'shut-down' steps that can create unexpected issues and memory leaks if not carried out.
+  ///
+  /// Should remain silent if there was no ongoing download.
   void cancelDownload() {
     _queue?.dispose();
     _streamController?.close();
@@ -282,11 +293,11 @@ class StorageCachingTileProvider extends TileProvider {
 
   /// Recover a download that has been stopped without the correct methods, for example after closing the app during a download
   ///
-  /// Returns `null` if there is no recoverable download, otherwise returns a `RecoveredRegion` containing the salvaged data. Use `.toDownloadable()` on the region to recieve a `DownloadableRegion`, which can be passed normally to other functions.
+  /// Returns `null` if there is no recoverable download, otherwise returns a [RecoveredRegion] containing the salvaged data. Use `.toDownloadable` on the region to recieve a [DownloadableRegion], which can be passed normally to other functions.
   ///
-  /// Optionally make `deleteRecovery` `false` if you would like the download to still be recoverable after this method has been called.
+  /// Optionally make [deleteRecovery] `false` if you would like the download to still be recoverable after this method has been called.
   ///
-  /// How does recovery work? At the start of a download, a file is created including information about the download. At the end of a download or when a download is correctly cancelled, this file is deleted. However, if there is no ongoing download (controlled by an internal variable) and the recovery file exists, the download has obviously been stopped incorrectly, meaning it can be recovered using the information within the recovery file. If specific recovery was enabled, this download can be resumed from the last known tile number (stored alongside the recovery file), otherwise the download must start from the beginning.
+  /// How does recovery work? At the start of a download, a file is created including information about the download. At the end of a download or when a download is correctly cancelled, this file is deleted. However, if there is no ongoing download (controlled by an internal variable) and the recovery file exists, the download has obviously been stopped incorrectly, meaning it can be recovered using the information within the recovery file.
   RecoveredRegion? recoverDownload({bool deleteRecovery = true}) {
     if (_downloadOngoing) return null;
 
@@ -301,7 +312,7 @@ class StorageCachingTileProvider extends TileProvider {
     return recovered;
   }
 
-  //! BACKGROUND DOWNLOADING STARTS*/
+  //! BACKGROUND DOWNLOADING !//
 
   /// Request to be excluded from battery optimizations (allows background task to run when app minimized)
   ///
@@ -331,23 +342,21 @@ class StorageCachingTileProvider extends TileProvider {
           'The background download feature is only available on Android due to limitations with other operating systems.');
   }
 
-  /// Download a specified `DownloadableRegion` in the background, and show a notification progress bar (by default)
+  /// Download a specified [DownloadableRegion] in the background, and show a notification progress bar (by default)
   ///
   /// Only available on Android devices, due to limitations with other operating systems. Downloading in the the background is likely to be slower and/or less stable than downloading in the foreground.
   ///
-  /// To check the number of tiles that need to be downloaded before using this function, use `checkRegion()`.
+  /// To check the number of tiles that need to be downloaded before using this function, use [checkRegion].
   ///
-  /// You may want to call `requestIgnoreBatteryOptimizations()` beforehand, depending on how/where/why this background download will be used. See documentation on that method for more information.
+  /// You may want to call [requestIgnoreBatteryOptimizations] beforehand, depending on how/where/why this background download will be used. See documentation on that method for more information.
   ///
-  /// Optionally specify `showNotification` as `false` to disable the built-in notification system.
+  /// Optionally specify [showNotification] as `false` to disable the built-in notification system.
   ///
-  /// Optionally specify a `callback` that gets fired every time another tile is downloaded/failed, takes one `DownloadProgress` argument, and returns a boolean. Download can be cancelled by returning `true` from `callback` function or by fully closing the app.
+  /// Optionally specify a [callback] that gets fired every time another tile is downloaded/failed, takes one [DownloadProgress] argument, and returns a boolean. Download can be cancelled by returning `true` from [callback] function.
   ///
-  /// Always starts a specific recovery session.
+  /// If the download doesn't seem to start on a device, try changing [useAltMethod] to `true`. This will switch to an older Android API, so should only be used if it is the most stable on a device. You may be able to programatically detect if the download hasn't started by using the callback, therefore allowing you to call this method again with [useAltMethod], but this isn't guranteed.
   ///
-  /// If the download doesn't seem to start on a device, try changing `useAltMethod` to `true`. This will switch to an older Android API, so should only be used if it is the most stable on a device. You may be able to programatically detect if the download hasn't started by using the callback, therefore allowing you to call this method again with `useAltMethod`, but this isn't guranteed.
-  ///
-  /// See `downloadRegion(...)` for an explanation and examples of `preDownloadChecksCallback`. `preDownloadChecksFailedCallback` is optional and will be called if the checks do fail, after cancelling the download.
+  /// For more information on [preDownloadChecksCallback], see documentation on [PreDownloadChecksCallback]. In a few words, use this callback to check the devices information/status before starting a download. [preDownloadChecksFailedCallback] is optional and will be called if the checks do fail, after cancelling the download.
   ///
   /// Returns nothing.
   void downloadRegionBackground(
@@ -355,13 +364,13 @@ class StorageCachingTileProvider extends TileProvider {
     StorageCachingTileProvider provider, {
     bool showNotification = true,
     bool Function(DownloadProgress)? callback,
-    required Future<bool?> Function(ConnectivityResult, int?, ChargingStatus?)?
-        preDownloadChecksCallback,
+    required PreDownloadChecksCallback preDownloadChecksCallback,
     void Function()? preDownloadChecksFailedCallback,
     bool useAltMethod = false,
     String notificationChannelName = 'Map Background Downloader',
     String notificationChannelDescription =
         'Displays progress notifications to inform the user about the progress of their map download.',
+    String notificationIcon = '@mipmap/ic_launcher',
     String subText = 'Map Downloader',
     String ongoingTitle = 'Map Downloading...',
     String Function(DownloadProgress)? ongoingBodyBuilder,
@@ -373,8 +382,8 @@ class StorageCachingTileProvider extends TileProvider {
     if (Platform.isAndroid) {
       FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
       flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-      const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+      final AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings(notificationIcon);
       final InitializationSettings initializationSettings =
           InitializationSettings(android: initializationSettingsAndroid);
       await flutterLocalNotificationsPlugin.initialize(initializationSettings);
@@ -389,9 +398,8 @@ class StorageCachingTileProvider extends TileProvider {
             StreamSubscription<DownloadProgress>? sub;
             final download = downloadRegion(
               region,
-              specificRecovery: true,
               preDownloadChecksCallback: preDownloadChecksCallback,
-            );
+            ).asBroadcastStream();
             if (await download.isEmpty) {
               cancelDownload();
               if (preDownloadChecksFailedCallback != null)
@@ -507,16 +515,7 @@ class StorageCachingTileProvider extends TileProvider {
     int existingTiles = 0;
     final DateTime startTime = DateTime.now();
 
-    assert(
-      !(_queue?.isCancelled ?? true),
-      'The download function has not been called properly and the `Queue` object does not exist yet or has been cancelled. Try again.',
-    );
-    assert(
-      !(_streamController?.isClosed ?? true),
-      'The download function has not been called properly and the `StreamController` object does not exist yet or has been cancelled. Try again.',
-    );
-
-    final Stream<List<dynamic>> downloadStream = _bulkDownloader(
+    final Stream<List<dynamic>> downloadStream = bulkDownloader(
       tiles: tiles,
       parentDirectory: parentDirectory,
       storeName: storeName,
@@ -550,98 +549,5 @@ class StorageCachingTileProvider extends TileProvider {
     }
 
     client.close();
-  }
-
-  static Stream<List> _bulkDownloader({
-    required List<Coords<num>> tiles,
-    required Directory parentDirectory,
-    required String storeName,
-    required StorageCachingTileProvider provider,
-    required TileLayerOptions options,
-    required http.Client client,
-    required Function(dynamic)? errorHandler,
-    required int parallelThreads,
-    required bool preventRedownload,
-    required Uint8List? seaTileBytes,
-    required Queue queue,
-    required StreamController<List> streamController,
-  }) {
-    tiles.forEach((e) {
-      if (!queue.isCancelled)
-        queue
-            .add(
-          () => _getAndSaveTile(
-            parentDirectory,
-            storeName,
-            provider,
-            e,
-            options,
-            client,
-            errorHandler,
-            preventRedownload,
-            seaTileBytes,
-          ),
-        )
-            .then(
-          (value) {
-            if (!streamController.isClosed)
-              streamController.add(
-                [
-                  value[0],
-                  value[1],
-                  value[2],
-                  value[3],
-                ],
-              );
-          },
-        );
-    });
-
-    return streamController.stream;
-  }
-
-  static Future<List<dynamic>> _getAndSaveTile(
-    CacheDirectory parentDirectory,
-    String storeName,
-    StorageCachingTileProvider provider,
-    Coords<num> coord,
-    TileLayerOptions options,
-    http.Client client,
-    Function(dynamic)? errorHandler,
-    bool preventRedownload,
-    Uint8List? seaTileBytes,
-  ) async {
-    final Coords<double> coordDouble =
-        Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
-    final String url = provider.getTileUrl(coordDouble, options);
-    final String path = p.joinAll([
-      parentDirectory.absolute.path,
-      storeName,
-      url
-          .replaceAll('https://', '')
-          .replaceAll('http://', '')
-          .replaceAll("/", "")
-          .replaceAll(".", ""),
-    ]);
-
-    try {
-      if (preventRedownload && File(path).existsSync()) return [1, '', 0, 1];
-
-      File(path).writeAsBytesSync(
-        (await client.get(Uri.parse(url))).bodyBytes,
-        flush: true,
-      );
-
-      if (seaTileBytes != null &&
-          ListEquality().equals(File(path).readAsBytesSync(), seaTileBytes)) {
-        File(path).deleteSync();
-        return [1, '', 1, 0];
-      }
-    } catch (e) {
-      if (errorHandler != null) errorHandler(e);
-      return [0, url, 0, 0];
-    }
-
-    return [1, '', 0, 0];
   }
 }

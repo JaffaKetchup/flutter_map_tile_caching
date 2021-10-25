@@ -9,7 +9,7 @@ import 'rectangle.dart';
 
 /// A mixture between `BaseRegion` and `DownloadableRegion` containing all the salvaged data from a recovered download
 ///
-/// How does recovery work? At the start of a download, a file is created including information about the download. At the end of a download or when a download is correctly cancelled, this file is deleted. However, if there is no ongoing download (controlled by an internal variable) and the recovery file exists, the download has obviously been stopped incorrectly, meaning it can be recovered using the information within the recovery file. If specific recovery was enabled, this download can be resumed from the last known tile number (stored alongside the recovery file), otherwise the download must start from the beginning.
+/// How does recovery work? At the start of a download, a file is created including information about the download. At the end of a download or when a download is correctly cancelled, this file is deleted. However, if there is no ongoing download (controlled by an internal variable) and the recovery file exists, the download has obviously been stopped incorrectly, meaning it can be recovered using the information within the recovery file.
 ///
 /// The availability of `bounds`, `line`, `center` & `radius` depend on the `type` of the recovered region.
 ///
@@ -48,22 +48,18 @@ class RecoveredRegion {
   /// This is a storage saving feature, not a time saving or data saving feature: tiles still have to be fully downloaded before they can be checked.
   final bool seaTileRemoval;
 
-  /// If precise recovery was enabled, this contains the last known tile number
-  final int? preciseRecovery;
-
   @internal
-  RecoveredRegion(
-    this.type,
-    this.bounds,
-    this.center,
-    this.line,
-    this.radius,
-    this.minZoom,
-    this.maxZoom,
-    this.preventRedownload,
-    this.seaTileRemoval, [
-    this.preciseRecovery,
-  ]);
+  RecoveredRegion({
+    required this.type,
+    required this.bounds,
+    required this.center,
+    required this.line,
+    required this.radius,
+    required this.minZoom,
+    required this.maxZoom,
+    required this.preventRedownload,
+    required this.seaTileRemoval,
+  });
 
   DownloadableRegion toDownloadable(
     TileLayerOptions options, {
@@ -82,7 +78,6 @@ class RecoveredRegion {
         seaTileRemoval: seaTileRemoval,
         crs: crs,
         errorHandler: errorHandler,
-        resumeTile: preciseRecovery,
       );
     else if (type == RegionType.circle)
       return DownloadableRegion(
@@ -96,7 +91,6 @@ class RecoveredRegion {
         seaTileRemoval: seaTileRemoval,
         crs: crs,
         errorHandler: errorHandler,
-        resumeTile: preciseRecovery,
       );
     else
       return DownloadableRegion(
@@ -110,7 +104,6 @@ class RecoveredRegion {
         seaTileRemoval: seaTileRemoval,
         crs: crs,
         errorHandler: errorHandler,
-        resumeTile: preciseRecovery,
       );
   }
 }

@@ -92,9 +92,9 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
   // 5. Keep track of the number of overlaps per row: if there was one overlap and now there isn't, skip the rest of the row because we can be sure there are no more tiles
 
   // Overlap algorithm originally in Python, available at https://stackoverflow.com/a/56962827/11846040
-  bool overlap(Polygon a, Polygon b) {
+  bool overlap(_Polygon a, _Polygon b) {
     for (int x = 0; x < 2; x++) {
-      final Polygon polygon = (x == 0) ? a : b;
+      final _Polygon polygon = (x == 0) ? a : b;
 
       for (int i1 = 0; i1 < polygon.points.length; i1++) {
         final int i2 = (i1 + 1) % polygon.points.length;
@@ -199,13 +199,13 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
         bool foundOverlappingTile = false;
         for (num y = srNorthWest.y; y <= srSouthEast.y; y++) {
           if (overlap(
-            Polygon(
+            _Polygon(
               rrNorthWest,
               rrNorthEast,
               rrSouthEast,
               rrSouthWest,
             ),
-            Polygon(
+            _Polygon(
               CustomPoint(x, y),
               CustomPoint(x + 1, y),
               CustomPoint(x + 1, y + 1),
@@ -223,13 +223,13 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
   return coords;
 }
 
-class Polygon {
+class _Polygon {
   final CustomPoint<num> nw;
   final CustomPoint<num> ne;
   final CustomPoint<num> se;
   final CustomPoint<num> sw;
 
-  Polygon(this.nw, this.ne, this.se, this.sw);
+  _Polygon(this.nw, this.ne, this.se, this.sw);
 
   List<CustomPoint<num>> get points => [nw, ne, se, sw];
 }
