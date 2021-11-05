@@ -9,7 +9,7 @@ import 'package:vector_math/vector_math.dart';
 
 import 'downloadableRegion.dart';
 
-/// A region with the border as the loci of a line at it's center
+/// A region with the border as the locus of a line at it's center
 class LineRegion extends BaseRegion {
   /// A line defined by a list of`LatLng`s
   final List<LatLng> line;
@@ -17,10 +17,10 @@ class LineRegion extends BaseRegion {
   /// The offset of the border in each direction in meters, like a radius
   final double radius;
 
-  /// Creates a region with the border as the loci of a line at it's center
+  /// Creates a region with the border as the locus of a line at it's center
   LineRegion(this.line, this.radius);
 
-  /// Creates a list of rectangles made of the loci of the specified line which can be used anywhere
+  /// Creates a list of rectangles made of the locus of the specified line which can be used anywhere
   ///
   /// Use the optional `overlap` argument to set the end of rectangle behavior. -1 is reduced, 0 is normal (default), 1 is full (as downloaded).
   List<List<LatLng>> toOutlines([int overlap = 0]) {
@@ -76,9 +76,8 @@ class LineRegion extends BaseRegion {
     bool seaTileRemoval = false,
     Function(dynamic)? errorHandler,
     Crs crs = const Epsg3857(),
-    CustomPoint<num> tileSize = const CustomPoint(256, 256),
   }) {
-    return DownloadableRegion(
+    return DownloadableRegion.internal(
       toOutlines(1).expand((x) => x).toList(),
       minZoom,
       maxZoom,
@@ -93,24 +92,20 @@ class LineRegion extends BaseRegion {
     );
   }
 
-  /// Create a drawable area for `FlutterMap()` out of this region
+  /// Create a drawable area for a [FlutterMap] out of this region
   ///
-  /// Configurable options besides those available normally in `Polygon()`:
-  ///  * `prettyPaint` (defaults to `true`)
-  ///  * `curveSmoothening` (defaults to 50)
-  ///  * `overlap` (defaults to 0)
+  /// Configurable options besides those available normally in [Polygon] :
+  ///  - [prettyPaint] - controls whether the rectangles formed by the line are joined nicely, whether they are just joined by the closest corners, or whether they are just left as rectangles - defaults to `true`
+  ///  - [curveSmoothening] - controls the amount of curve segments per curve, if [prettyPaint] is enabled - defaults to 50
+  ///  - [overlap] - usually controls the rendering if [prettyPaint] is disabled - defaults to 0
   ///
-  /// `curveSmoothening` controls the amount of curve segments per curve, if `prettyPaint`ing is enabled.
-  /// `prettyPaint` controls whether the rectangles formed by the line are joined nicely, whether they are just joined by the closest corners, or whether they are just left as rectangles.
-  /// `overlap` usually controls the rendering if `prettyPaint`ing is disabled.
+  /// Set [prettyPaint] to `false` and [overlap] to `-1` to get the 'reduced' appearance. Or, set to `0` to get the normal appearance, and `1` to get the rectangles that are actually downloaded.
   ///
-  /// Set `prettyPaint` to `false` and `overlap` to `-1` to get the 'reduced' appearance. Or, set to `0` to get the normal appearance, and `1` to get the rectangles that are actually downloaded.
+  /// Set [prettyPaint] to `true` and [overlap] to `-1` to get the rectangles joined by their nearest corners. Setting to `0` will show the line with joining curves - the default. Setting to `1` will cause an error.
   ///
-  /// Set `prettyPaint` to `true` and `overlap` to `-1` to get the rectangles joined by their nearest corners. Setting to `0` will show the line with joining curves - the default. Setting to `1` will cause an error.
+  /// Disabling [prettyPaint] will increase speed and is recommended on slower devices. Decreasing the [curveSmoothening] will also increase speed - set to a smaller value if corners are likely to be small (for example along a route).
   ///
-  /// Disabling `prettyPaint`ing will increase speed and is recommended on slower devices. Decreasing the `curveSmoothening` will also increase speed - set to a smaller value if corners are likely to be small (for example along a route).
-  ///
-  /// Returns a `PolygonLayerOptions` to be added to the `layer` property of a `FlutterMap()`.
+  /// Returns a [PolygonLayerOptions] to be added to the `layer` property of a [FlutterMap].
   @override
   PolygonLayerOptions toDrawable(
     Color fillColor,
@@ -169,7 +164,7 @@ class LineRegion extends BaseRegion {
 
         if (intersectionA == null || intersectionB == null)
           throw StateError(
-              'Well done! You seemed to have create a rectangle exactly parallel to your previous one. Needless to say, this is extremely unlikely.');
+              'Well done! You seemed to have create a rectangle exactly parallel to your previous one. Needless to say, this is extremely unlikely, and I haven\'t handled this. If this happened honestly, please report an error.');
 
         final Distance distance = Distance();
 
@@ -247,7 +242,7 @@ class LineRegion extends BaseRegion {
     return PolygonLayerOptions(polygons: returnable);
   }
 
-  /// This method is unavailable for this region type: use `toOutlines()` instead
+  /// This method is unavailable for this region type: use [toOutlines] instead
   @alwaysThrows
   @override
   List<LatLng> toList() {

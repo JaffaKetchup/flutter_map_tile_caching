@@ -48,8 +48,9 @@ class RecoveredRegion {
   /// This is a storage saving feature, not a time saving or data saving feature: tiles still have to be fully downloaded before they can be checked.
   final bool seaTileRemoval;
 
+  /// Avoid construction using this method.
   @internal
-  RecoveredRegion({
+  RecoveredRegion.internal({
     required this.type,
     required this.bounds,
     required this.center,
@@ -67,7 +68,7 @@ class RecoveredRegion {
     Function(dynamic)? errorHandler,
   }) {
     if (type == RegionType.rectangle)
-      return DownloadableRegion(
+      return DownloadableRegion.internal(
         [bounds!.northWest, bounds!.southEast],
         minZoom,
         maxZoom,
@@ -80,7 +81,7 @@ class RecoveredRegion {
         errorHandler: errorHandler,
       );
     else if (type == RegionType.circle)
-      return DownloadableRegion(
+      return DownloadableRegion.internal(
         CircleRegion(center!, radius!).toList(),
         minZoom,
         maxZoom,
@@ -93,7 +94,7 @@ class RecoveredRegion {
         errorHandler: errorHandler,
       );
     else
-      return DownloadableRegion(
+      return DownloadableRegion.internal(
         LineRegion(line!, radius!).toList(),
         minZoom,
         maxZoom,

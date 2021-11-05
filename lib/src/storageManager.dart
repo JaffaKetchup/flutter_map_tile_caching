@@ -16,7 +16,7 @@ import 'regions/recoveredRegion.dart';
 class MapCachingManager {
   /// The directory to place cache stores into
   ///
-  /// Use `await MapStorageManager.normalDirectory` wherever possible, or `await MapStorageManager.temporaryDirectory` alternatively (see documentation). If creating a path manually, be sure it's the correct format, use the `path` library if needed.
+  /// Use [normalCache] wherever possible, or [temporaryCache] alternatively (see documentation). To use those `Future` values, you may need to use the `async` `await` pattern. If creating a path manually, be sure it's the correct format, use the `path` library if needed.
   ///
   /// Required.
   final CacheDirectory parentDirectory;
@@ -196,7 +196,7 @@ class MapCachingManager {
         int.parse;
 
     if (recovery[6] == 'rectangle')
-      return RecoveredRegion(
+      return RecoveredRegion.internal(
         type: RegionType.rectangle,
         bounds: LatLngBounds(
           LatLng(dp(recovery[0].split(',')[0]), dp(recovery[0].split(',')[1])),
@@ -211,7 +211,7 @@ class MapCachingManager {
         seaTileRemoval: recovery[5] == 'true',
       );
     else if (recovery[6] == 'circle')
-      return RecoveredRegion(
+      return RecoveredRegion.internal(
         type: RegionType.circle,
         bounds: null,
         center: LatLng(
@@ -224,7 +224,7 @@ class MapCachingManager {
         seaTileRemoval: recovery[5] == 'true',
       );
     else
-      return RecoveredRegion(
+      return RecoveredRegion.internal(
         type: RegionType.line,
         bounds: null,
         center: null,

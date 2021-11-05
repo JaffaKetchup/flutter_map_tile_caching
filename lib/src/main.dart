@@ -65,7 +65,7 @@ class StorageCachingTileProvider extends TileProvider {
 
   /// The directory to place cache stores into
   ///
-  /// Use `await [MapStorageManager.normalDirectory]` wherever possible, or `await MapStorageManager.temporaryDirectory` alternatively (see documentation). If creating a path manually, be sure it's the correct format, use the `path` library if needed.
+  /// Use [MapCachingManager.normalCache] wherever possible, or [MapCachingManager.temporaryCache] alternatively (see documentation). To use those `Future` values here, you will need to wrap your [FlutterMap] widget in a [FutureBuilder] to await the returned directory or show a loading indicator; this shouldn't cause any interference. If creating a path manually, be sure it's the correct format, use the `path` library if needed.
   ///
   /// Required.
   final CacheDirectory parentDirectory;
@@ -145,7 +145,7 @@ class StorageCachingTileProvider extends TileProvider {
 
     final List<FileSystemEntity> fileList = store.listSync();
 
-    if (fileList.length > maxStoreLength) {
+    if (maxStoreLength != 0 && fileList.length > maxStoreLength) {
       fileList.sort(
           (a, b) => b.statSync().modified.compareTo(a.statSync().modified));
       fileList.last.deleteSync();
@@ -314,13 +314,13 @@ class StorageCachingTileProvider extends TileProvider {
 
   //! BACKGROUND DOWNLOADING !//
 
-  /// Request to be excluded from battery optimizations (allows background task to run when app minimized)
+  /// Requests for app to be excluded from battery optimizations to aid running a background process
   ///
   /// Only available on Android devices, due to limitations with other operating systems.
   ///
-  /// Pops up an intrusive system dialog asking to be given the permission. There is no explanation for the user, except that the app will be allowed to run in the background all the time, so less technical users may be put off. It is up to you to decide (and program accordingly) if you want to show a reason first, then request the permission.
+  /// Background downloading is complicated: see the main README for more information.
   ///
-  /// Not needed if background download is only intented to be used whilst still within the app. If this is not granted, minimizing the app will usually pause the task. Closing the app fully will always cancel the task, no matter what this permission is.
+  /// Pops up an intrusive system dialog asking to be given the permission. There is no explanation for the user, except that the app will be allowed to run in the background all the time, so less technical users may be put off. It is up to you to decide (and program accordingly) if you want to show a reason first, then request the permission.
   ///
   /// Will return (`Future`) `true` if permission was granted, `false` if the permission was denied.
   static Future<bool> requestIgnoreBatteryOptimizations(
@@ -344,9 +344,10 @@ class StorageCachingTileProvider extends TileProvider {
 
   /// Download a specified [DownloadableRegion] in the background, and show a notification progress bar (by default)
   ///
-  /// Only available on Android devices, due to limitations with other operating systems. Downloading in the the background is likely to be slower and/or less stable than downloading in the foreground.
-  ///
+  /// Only available on Android devices, due to limitations with other operating systems.
   /// To check the number of tiles that need to be downloaded before using this function, use [checkRegion].
+  ///
+  /// Background downloading is complicated: see the main README for more information.
   ///
   /// You may want to call [requestIgnoreBatteryOptimizations] beforehand, depending on how/where/why this background download will be used. See documentation on that method for more information.
   ///
@@ -536,7 +537,7 @@ class StorageCachingTileProvider extends TileProvider {
       seaTiles += event[2] as int;
       existingTiles += event[3] as int;
 
-      final DownloadProgress prog = DownloadProgress(
+      final DownloadProgress prog = DownloadProgress.internal(
         maxTiles: tiles.length,
         successfulTiles: successfulTiles,
         failedTiles: failedTiles,

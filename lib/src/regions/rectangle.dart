@@ -23,7 +23,7 @@ class RectangleRegion extends BaseRegion {
     Crs crs = const Epsg3857(),
     Function(dynamic)? errorHandler,
   }) {
-    return DownloadableRegion(
+    return DownloadableRegion.internal(
       [this.bounds.northWest, this.bounds.southEast],
       minZoom,
       maxZoom,

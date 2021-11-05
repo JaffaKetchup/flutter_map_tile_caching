@@ -28,7 +28,7 @@ class CircleRegion extends BaseRegion {
     Crs crs = const Epsg3857(),
     Function(dynamic)? errorHandler,
   }) {
-    return DownloadableRegion(
+    return DownloadableRegion.internal(
       toList(),
       minZoom,
       maxZoom,

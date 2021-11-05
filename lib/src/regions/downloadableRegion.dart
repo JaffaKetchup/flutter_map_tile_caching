@@ -3,7 +3,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
-/// Describes what shape, and therefore rules, a `DownloadableRegion` conforms to
+/// Describes what shape, and therefore rules, a [DownloadableRegion] conforms to
 enum RegionType {
   /// A region containing 2 points representing the top-left and bottom-right corners of a rectangle
   rectangle,
@@ -19,7 +19,7 @@ enum RegionType {
 abstract class BaseRegion {
   /// Create a downloadable region out of this region
   ///
-  /// Returns a `DownloadableRegion` to be passed to the `StorageCachingTileProvider().downloadRegion()`, `StorageCachingTileProvider().downloadRegionBackground()`, or `StorageCachingTileProvider().checkRegion()` function.
+  /// Returns a [DownloadableRegion] to be passed to the `StorageCachingTileProvider().downloadRegion()`, `StorageCachingTileProvider().downloadRegionBackground()`, or `StorageCachingTileProvider().checkRegion()` function.
   DownloadableRegion toDownloadable(
     int minZoom,
     int maxZoom,
@@ -30,9 +30,9 @@ abstract class BaseRegion {
     Function(dynamic)? errorHandler,
   });
 
-  /// Create a drawable area for `FlutterMap()` out of this region
+  /// Create a drawable area for a [FlutterMap] out of this region
   ///
-  /// Returns a `PolygonLayerOptions` to be added to the `layer` property of a `FlutterMap()`.
+  /// Returns a [PolygonLayerOptions] to be added to the `layer` property of a [FlutterMap].
   PolygonLayerOptions toDrawable(
     Color fillColor,
     Color borderColor, {
@@ -76,7 +76,7 @@ class DownloadableRegion {
   ///
   /// This will significatly increase speed, at the expense of faster battery drain. Note that some servers may forbid multithreading, in which case this should be set to 1.
   ///
-  /// Set to 1 to disable multithreading (download will still be run in seperate isolate). Defaults to 10.
+  /// Set to 1 to disable multithreading. Defaults to 10.
   final int parallelThreads;
 
   /// Whether to skip downloading tiles that already exist
@@ -101,16 +101,9 @@ class DownloadableRegion {
   /// A function that takes any type of error as an argument to be called in the event a tile fetch fails
   final Function(dynamic)? errorHandler;
 
-  /// Deprecated. Will be removed in next release. Migrate to the equivalent in the `TileLayerOptions`.
-  ///
-  /// The size of each tile. Defaults to 256 by 256.
-  @Deprecated(
-    'This paramter has been deprectated and will be removed in next release. Migrate to the equivalent in the `TileLayerOptions`.',
-  )
-  final CustomPoint<num> tileSize = CustomPoint(256, 256);
-
+  /// Avoid construction using this method. Use [BaseRegion.toDownloadable] to generate [DownloadableRegion]s from other regions.
   @internal
-  DownloadableRegion(
+  DownloadableRegion.internal(
     this.points,
     this.minZoom,
     this.maxZoom,

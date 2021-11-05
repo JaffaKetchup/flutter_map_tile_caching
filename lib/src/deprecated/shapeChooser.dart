@@ -113,12 +113,12 @@ class ShapeChooser {
           true,
           CircleRegion(
             _selectedPoints[0],
-            _selectedPoints[0] >> _selectedPoints[1],
+            Distance().distance(_selectedPoints[0], _selectedPoints[1]),
           ).toDrawable(fillColor, borderColor,
               borderStrokeWidth: borderStrokeWidth, isDotted: isDotted),
           CircleRegion(
             _selectedPoints[0],
-            _selectedPoints[0] >> _selectedPoints[1],
+            Distance().distance(_selectedPoints[0], _selectedPoints[1]),
           ),
         );
       } else if (choosingShape == RegionType.line) {

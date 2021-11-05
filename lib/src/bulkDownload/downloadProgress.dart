@@ -98,7 +98,7 @@ class DownloadProgress {
 
   /// Avoid construction using this method. Use [DownloadProgress.empty] to generate empty placeholders where necessary.
   @internal
-  DownloadProgress({
+  DownloadProgress.internal({
     required this.successfulTiles,
     required this.failedTiles,
     required this.maxTiles,

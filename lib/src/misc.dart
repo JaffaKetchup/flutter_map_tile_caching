@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:battery_info/enums/charging_status.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
@@ -39,18 +38,24 @@ typedef CacheDirectory = Directory;
 /// preDownloadChecksCallback: (c, _, __) async => c == ConnectivityResult.wifi || c == ConnectivityResult.ethernet
 /// ```
 ///
-/// To check if the tests have failed:
+/// To check if the tests have failed (if tests do fail, the download will be cancelled for you):
 ///
 /// - In the foreground downloader `StorageCachingTileProvider().downloadRegion()`:
 /// ```dart
 /// final Stream<DownloadProgress> downloadStream = provider.downloadRegion(...).asBroadcastStream();
-/// if (await downloadStream.isEmpty) "<checks have failed>"
-/// else "<checks have passed, listen to stream for progress events>"
+/// if (await downloadStream.isEmpty) {
+///     // Checks have failed: display something to the user
+///     alert();
+/// }
+/// else {
+///     // Checks have succeeded: listen to stream for progress events
+///     downloadStream.listen();
+/// }
 /// ```
 ///
 /// - In the background downloader `StorageCachingTileProvider().downloadRegionBackground()`:
 /// ```dart
-/// // Will only fire if the checks have failed; the download will already be cancelled
+/// // Called if the checks fail, otherwise download continues as normal (`callback()`)
 /// preDownloadChecksFailedCallback: () {}
 /// ```
 typedef PreDownloadChecksCallback = Future<bool?> Function(
@@ -89,30 +94,4 @@ extension ListExtensionsE<E> on List<E> {
 extension ListExtensionsDouble on List<double> {
   double get minNum => this.reduce(math.min);
   double get maxNum => this.reduce(math.max);
-}
-
-/// Deprecated due to other better methods. Migrate to `latlong2\'s` [Distance] methods for a more accurate, customizable and efficient result.
-@Deprecated(
-    'Due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.')
-extension LatLngExts on LatLng {
-  /// Deprecated due to other better methods. Migrate to `latlong2\'s` [Distance] methods for a more accurate, customizable and efficient result.
-  @Deprecated(
-      'Due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.')
-  double distanceTo(LatLng b) {
-    final double p = 0.017453292519943295;
-    final double formula = 0.5 -
-        math.cos((b.latitude - this.latitude) * p) / 2 +
-        math.cos(this.latitude * p) *
-            math.cos(b.latitude * p) *
-            (1 - math.cos((b.longitude - this.longitude) * p)) /
-            2;
-    return 12742 * math.asin(math.sqrt(formula)) * 1000;
-  }
-
-  /// Deprecated due to other better methods. Migrate to `latlong2\'s` [Distance] methods for a more accurate, customizable and efficient result.
-  @Deprecated(
-      'Due to other better methods. Migrate to `latlong2\'s` `Distance().distance()` method for a more accurate, customizable and efficient result.')
-  double operator >>(LatLng point) {
-    return this.distanceTo(point);
-  }
 }
