@@ -472,7 +472,6 @@ class StorageCachingTileProvider extends TileProvider {
     required List<Coords<num>> tiles,
   }) async* {
     final http.Client client = http.Client();
-    //Directory(_joinedBasePath).createSync(recursive: true);
 
     Uint8List? seaTileBytes;
     if (region.seaTileRemoval)
