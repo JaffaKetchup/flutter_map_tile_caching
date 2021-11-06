@@ -12,6 +12,8 @@ import 'regions/recoveredRegion.dart';
 
 /// Handles caching for tiles
 ///
+/// On initialisation, automatically creates the cache store if it does not exist.
+///
 /// Used internally for downloading regions, another library is depended on for 'browse caching'.
 class MapCachingManager {
   /// The directory to place cache stores into
@@ -24,30 +26,36 @@ class MapCachingManager {
   /// The name of a cache store. Defaults to 'mainStore'.
   final String storeName;
 
-  /// The joined `parentDirectory` and `storeName`
-  final String _joinedBasePath;
+  /// Automatically generated. Contains the absolute path to the cache store after initialization.
+  final String storePath;
 
   /// Create an instance to handle caching for tiles
   ///
+  /// On initialization, automatically creates the cache store if it does not exist.
+  ///
   /// Used internally for downloading regions, another library is depended on for 'browse caching'.
   MapCachingManager(this.parentDirectory, [this.storeName = 'mainStore'])
-      : _joinedBasePath = p.joinAll([parentDirectory.absolute.path, storeName]);
+      : storePath = p.joinAll([parentDirectory.absolute.path, storeName]) {
+    Directory(storePath).createSync(recursive: true);
+  }
 
   /// Check if the cache store exists
   ///
   /// Returns `true` if it does, `false` if only the [parentDirectory] exists, `null` if neither exist.
-  bool? get exists => Directory(_joinedBasePath).existsSync()
+  bool? get exists => Directory(storePath).existsSync()
       ? true
       : Directory(parentDirectory.absolute.path).existsSync()
           ? false
           : null;
 
-  /// Explicitly create the store
-  void createStore() => Directory(_joinedBasePath).createSync(recursive: true);
+  /// Deprecated. To create the store, reinitialize the [MapCachingManager], and it will be created automatically.
+  @Deprecated(
+      'To create the store, reinitialize the `MapCachingManager`, and it will be created automatically')
+  void createStore() => Directory(storePath).createSync(recursive: true);
 
   /// Delete a cache store
   void deleteStore() {
-    if (exists ?? false) Directory(_joinedBasePath).deleteSync(recursive: true);
+    if (exists ?? false) Directory(storePath).deleteSync(recursive: true);
   }
 
   /// Delete all cache stores
@@ -61,9 +69,19 @@ class MapCachingManager {
   /// The old [MapCachingManager] will still retain it's link to the old store, so always use the new returned value instead: returns a new [MapCachingManager] after a successful renaming operation or `null` if the cache does not exist.
   MapCachingManager? renameStore(String newName) {
     if (exists == null) return null;
-    Directory(_joinedBasePath)
+    Directory(storePath)
         .renameSync(p.joinAll([parentDirectory.absolute.path, newName]));
     return MapCachingManager(parentDirectory, newName);
+  }
+
+  /// Watch for changes in the current cache store
+  ///
+  /// Useful to update UI only when required, for example, in a `StreamBuilder`. It is not recommended to use the events from the stream: you should you the other statistic functions in [MapCachingManager] to display information.
+  ///
+  /// Returns `null` if the store does not exist.
+  Stream? get watchChanges {
+    if (!(exists ?? false)) return null;
+    return Directory(storePath).watch();
   }
 
   /// Retrieve a list of all names of existing cache stores
@@ -85,7 +103,7 @@ class MapCachingManager {
   /// Returns `null` if the store does not exist.
   int? get storeSize {
     if (!(exists ?? false)) return null;
-    return Directory(_joinedBasePath).statSync().size;
+    return Directory(storePath).statSync().size;
   }
 
   /// Retrieve the size (in bytes) of all cache stores
@@ -106,7 +124,7 @@ class MapCachingManager {
   /// Returns `null` if the store does not exist.
   int? get storeLength {
     if (!(exists ?? false)) return null;
-    return Directory(_joinedBasePath).listSync().length;
+    return Directory(storePath).listSync().length;
   }
 
   /// Retrieve the number of stored tiles in all cache stores
@@ -132,7 +150,7 @@ class MapCachingManager {
     bool preventRedownload,
     bool seaTileRemoval,
   ) {
-    final File file = File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt']));
+    final File file = File(p.joinAll([storePath, 'downloadOngoing.txt']));
     file.createSync(recursive: true);
 
     if (type == RegionType.rectangle) {
@@ -178,15 +196,15 @@ class MapCachingManager {
 
   @internal
   void endRecovery() {
-    if (!Directory(_joinedBasePath).existsSync()) return;
+    if (!Directory(storePath).existsSync()) return;
 
-    File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt'])).createSync();
-    File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt'])).deleteSync();
+    File(p.joinAll([storePath, 'downloadOngoing.txt'])).createSync();
+    File(p.joinAll([storePath, 'downloadOngoing.txt'])).deleteSync();
   }
 
   @internal
   RecoveredRegion? recoverDownload() {
-    final File file = File(p.joinAll([_joinedBasePath, 'downloadOngoing.txt']));
+    final File file = File(p.joinAll([storePath, 'downloadOngoing.txt']));
     if (!file.existsSync()) return null;
 
     final List<String> recovery = file.readAsLinesSync();
@@ -230,7 +248,6 @@ class MapCachingManager {
         center: null,
         line: recovery[0].split('*').map(
           (zip) {
-            print(recovery[0]);
             return LatLng(
               double.parse(zip.split(',')[0]),
               double.parse(zip.split(',')[1]),

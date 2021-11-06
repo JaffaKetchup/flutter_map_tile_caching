@@ -11,7 +11,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
-import 'package:network_to_file_image/network_to_file_image.dart';
 import 'package:path/path.dart' as p show joinAll;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:queue/queue.dart';
@@ -19,6 +18,7 @@ import 'package:queue/queue.dart';
 import 'bulkDownload/downloadProgress.dart';
 import 'bulkDownload/downloader.dart';
 import 'bulkDownload/tileLoops.dart';
+import 'imageProvider.dart';
 import 'misc.dart';
 import 'regions/downloadableRegion.dart';
 import 'regions/recoveredRegion.dart';
@@ -31,25 +31,16 @@ enum CacheBehavior {
   /// Useful for applications with dedicated 'Offline Mode'.
   cacheOnly,
 
-  /// Only get tiles from the Internet
-  ///
-  /// Useful if the user has disabled caching functionality.
-  onlineOnly,
-
   /// Get tiles from the local cache, going on the Internet to update the cached tile if it has expired (`cachedValidDuration` has passed)
-  ///
-  /// Please note that if the tile has expired, the cached tile will be deleted before loading a new one from the Internet; therefore if the Internet is inaccessible then the tile will fail to load completely, even if it was previously cached.
   cacheFirst,
 
   /// Get tiles from the Internet and update the cache for every tile
-  ///
-  /// Please note that if the tile has been previously cached, the tile will be deleted before loading and caching a new one from the Internet; therefore if the Internet is inaccessible then the tile will fail to load completely.
   onlineFirst,
 }
 
 /// A `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
 ///
-/// Requires a valid cache directory: [parentDirectory]. [storeName] defaults to the default store, 'mainStore', but can be overriden to different stores.
+/// Requires a valid cache directory: [parentDirectory]. [storeName] defaults to the default store, 'mainStore', but can be overriden to different stores. On initialisation, automatically creates the cache store if it does not exist.
 ///
 /// Optionally adjust:
 ///  - [maxStoreLength] - the number of tiles that can be stored at once in this cache store
@@ -75,29 +66,33 @@ class StorageCachingTileProvider extends TileProvider {
   /// Defaults to the default store, 'mainStore'.
   final String storeName;
 
-  /// The behavior method to get the tile
+  /// The behavior method to get and cache a tile
   ///
-  /// Please note that, in certain behaviors (`cacheFirst`, `onlineFirst`), the cached tile will be deleted before loading (if necessary) and caching (if necessary) a new one from the Internet; therefore if the Internet is inaccessible then the tile will fail to load completely. Always use `cacheOnly` if the user is offline or in an 'Offline Mode'.
-  ///
-  /// Defaults to `cacheFirst` - get tiles from the local cache, going on the Internet to update the cached tile if it has expired (`cachedValidDuration` has passed).
+  /// Defaults to [CacheBehavior.cacheFirst] - get tiles from the local cache, going on the Internet to update the cached tile if it has expired ([cachedValidDuration] has passed).
   final CacheBehavior behavior;
 
-  /// The duration until a tile expires and needs to be fetched again when browsing - only applies in `cacheFirst` behavior
+  /// The duration until a tile expires and needs to be fetched again when browsing
   ///
-  /// Please note that, only if this time has passed, the cached tile will be deleted before loading and caching a new one from the Internet; therefore if the Internet is inaccessible then the tile will fail to load completely. Always use `cacheOnly` if the user is offline or in an 'Offline Mode'.
-  ///
-  /// Defaults to 16 days, set to `Duration.zero` to disable.
+  /// Defaults to 16 days, set to [Duration.zero] to disable.
   final Duration cachedValidDuration;
 
   /// The maximum number of tiles allowed in a cache store (only whilst 'browsing' - see below) before the oldest tile gets deleted
   ///
-  /// Only applies to 'browse caching', ie. downloading regions will bypass this limit. Please note that this can be computationally expensive as it potentially involves sorting through this many files to find the oldest file.
+  /// Only applies to 'browse caching', ie. downloading regions will bypass this limit. This can be computationally expensive as it potentially involves sorting through this many files to find the oldest file.
+  ///
+  /// Please note that this limit is a 'suggestion'. Due to the nature of the application, it is difficult to set a hard limit on a the store's length. Therefore, fast browsing may go above this limit.
   ///
   /// Defaults to 20000, set to 0 to disable.
   final int maxStoreLength;
 
+  /// Automatically generated. Contains the absolute path to the cache store after initialization.
+  final String storePath;
+
   /// Used internally for recovery purposes
   bool _downloadOngoing = false;
+
+  /// Used internally for browsing-caused tile requests
+  http.Client _httpClient = http.Client();
 
   /// Used internally to queue download tiles to process in bulk
   Queue? _queue;
@@ -107,11 +102,11 @@ class StorageCachingTileProvider extends TileProvider {
 
   /// Create a `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
   ///
-  /// Requires a valid cache directory: [parentDirectory]. [storeName] defaults to the default store, 'mainStore', but can be overriden to different stores.
+  /// Requires a valid cache directory: [parentDirectory]. [storeName] defaults to the default store, 'mainStore', but can be overriden to different stores. On initialisation, automatically creates the cache store if it does not exist.
   ///
   /// Optionally adjust:
   ///  - [maxStoreLength] - the number of tiles that can be stored at once in this cache store
-  ///  - [behavior] - the caching behavior to use, affecting [cachedValidDuration].
+  ///  - [behavior] - the caching behavior to use, affecting [cachedValidDuration]
   ///  - [cachedValidDuration] -  the length of time a cached tile is valid before needing to be updated in some caching behaviors
   ///
   /// See each property's individual documentation for more detail.
@@ -121,53 +116,30 @@ class StorageCachingTileProvider extends TileProvider {
     this.behavior = CacheBehavior.cacheFirst,
     this.cachedValidDuration = const Duration(days: 16),
     this.maxStoreLength = 20000,
-  });
+  }) : storePath = p.joinAll([parentDirectory.absolute.path, storeName]) {
+    Directory(storePath).createSync(recursive: true);
+  }
 
-  //! TILE PROVIDER !//
+  /// Always call (if necessary) after finishing
+  ///
+  /// Ensures the internal stream controller is closed, the internal HTTP client is closed, and the internal queue controller is cancelled. If you require this provider again, you will need to reconstruct it.
+  @override
+  void dispose() {
+    super.dispose();
+    _httpClient.close();
+    if (!(_queue?.isCancelled ?? true)) _queue?.cancel();
+    if (!(_streamController?.isClosed ?? true)) _streamController?.close();
+  }
 
   /// Get a browsed tile as an image, paint it on the map and save it's bytes to cache for later
   @override
-  ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
-    final String url = getTileUrl(coords, options);
-    final Directory store =
-        Directory(p.joinAll([parentDirectory.absolute.path, storeName]));
-    store.createSync();
-    final File file = File(
-      p.joinAll([
-        store.absolute.path,
-        url
-            .replaceAll('https://', '')
-            .replaceAll('http://', '')
-            .replaceAll("/", "")
-            .replaceAll(".", ""),
-      ]),
-    );
-
-    final List<FileSystemEntity> fileList = store.listSync();
-
-    if (maxStoreLength != 0 && fileList.length > maxStoreLength) {
-      fileList.sort(
-          (a, b) => b.statSync().modified.compareTo(a.statSync().modified));
-      fileList.last.deleteSync();
-    }
-
-    if (behavior == CacheBehavior.onlineFirst ||
-        (behavior == CacheBehavior.cacheFirst &&
-            cachedValidDuration != Duration.zero &&
-            file.existsSync() &&
-            DateTime.now().millisecondsSinceEpoch -
-                    file.lastModifiedSync().millisecondsSinceEpoch >
-                cachedValidDuration.inMilliseconds)) file.deleteSync();
-
-    try {
-      return NetworkToFileImage(
-        url: behavior == CacheBehavior.cacheOnly ? null : url,
-        file: behavior == CacheBehavior.onlineOnly ? null : file,
+  ImageProvider getImage(Coords<num> coords, TileLayerOptions options) =>
+      FMTCImageProvider(
+        provider: this,
+        options: options,
+        coords: coords,
+        httpClient: _httpClient,
       );
-    } catch (e) {
-      rethrow;
-    }
-  }
 
   //! GENERAL DOWNLOADING !//
 
@@ -500,8 +472,7 @@ class StorageCachingTileProvider extends TileProvider {
     required List<Coords<num>> tiles,
   }) async* {
     final http.Client client = http.Client();
-    Directory(p.joinAll([parentDirectory.absolute.path, storeName]))
-        .createSync(recursive: true);
+    //Directory(_joinedBasePath).createSync(recursive: true);
 
     Uint8List? seaTileBytes;
     if (region.seaTileRemoval)
@@ -518,8 +489,6 @@ class StorageCachingTileProvider extends TileProvider {
 
     final Stream<List<dynamic>> downloadStream = bulkDownloader(
       tiles: tiles,
-      parentDirectory: parentDirectory,
-      storeName: storeName,
       provider: this,
       options: region.options,
       client: client,
