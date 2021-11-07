@@ -17,7 +17,7 @@ local/
 *.ipr
 *.iws
 .idea/
-#.vscode/
+.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/

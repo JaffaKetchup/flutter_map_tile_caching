@@ -76,12 +76,12 @@ class MapCachingManager {
 
   /// Watch for changes in the current cache store
   ///
-  /// Useful to update UI only when required, for example, in a `StreamBuilder`. It is not recommended to use the events from the stream: you should you the other statistic functions in [MapCachingManager] to display information.
+  /// Useful to update UI only when required, for example, in a `StreamBuilder`. Whenever this has an event, it is likely the other statistics will have changed.
   ///
   /// Returns `null` if the store does not exist.
-  Stream? get watchChanges {
+  Stream<Null>? get watchChanges {
     if (!(exists ?? false)) return null;
-    return Directory(storePath).watch();
+    return Directory(storePath).watch().map((event) => null);
   }
 
   /// Retrieve a list of all names of existing cache stores

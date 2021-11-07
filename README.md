@@ -38,6 +38,11 @@ For these steps please go to these sites:
 
 - [`background_fetch` Installation Instructions For Android](https://github.com/transistorsoft/flutter_background_fetch/blob/master/help/INSTALL-ANDROID.md)
 - [`permission_handler` Installation Instructions](https://pub.dev/packages/permission_handler#setup)
+  - If you plan to use background downloading functionality and you want to request to ignore battery optimizations, you should add this to your 'android/app/src/.../AndroidManifest.xml' as seen in the example app:  
+  
+    ``` xml
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+    ```
 
 ### iOS
 

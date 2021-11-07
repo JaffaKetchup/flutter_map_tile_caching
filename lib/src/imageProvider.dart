@@ -11,7 +11,7 @@ import 'package:path/path.dart' as p show joinAll;
 import 'main.dart';
 import 'misc.dart';
 
-/// A specialised [ImageProvider] dedicated to `flutter_map_tile_caching`
+/// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
 class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// An instance of the [StorageCachingTileProvider] in use
   final StorageCachingTileProvider provider;
@@ -25,7 +25,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// A HTTP client used to send requests
   final http.Client httpClient;
 
-  /// Create a specialised [ImageProvider] dedicated to `flutter_map_tile_caching`
+  /// Create a specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
   FMTCImageProvider({
     required this.provider,
     required this.options,

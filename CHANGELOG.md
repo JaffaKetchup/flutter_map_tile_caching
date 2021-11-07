@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.0.0-dev.7] - 2021/11/06
+
+* Major performance improvements through custom `ImageProvider`
+* Automatic cache store creation on initialization of `StorageCachingTileProvider` and `MapCachingManager`
+* Added watchable stream to `MapCachingManager` to listen to changes in statistics
+* Removed 'network_to_file_image' dependency
+* Fixed and improved 'browse caching' logic
+* Better hidden internal constructors
+* Deprecated and removed some functionality
+
 ## [4.0.0-dev.6] - 2021/10/10
 
 * Added pre-download check functionality

@@ -1,4 +1,4 @@
-// This is `flutter_map_tile_caching's` main file
+// This is 'flutter_map_tile_caching's' main file
 // You should never need to include anything other than this file from this library in your project
 
 // Main
