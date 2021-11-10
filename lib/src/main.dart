@@ -19,7 +19,7 @@ import 'bulkDownload/downloadProgress.dart';
 import 'bulkDownload/downloader.dart';
 import 'bulkDownload/tileLoops.dart';
 import 'imageProvider.dart';
-import 'misc.dart';
+import 'privateMisc.dart';
 import 'regions/downloadableRegion.dart';
 import 'regions/recoveredRegion.dart';
 import 'storageManager.dart';

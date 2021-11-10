@@ -39,11 +39,13 @@ class MapView extends StatelessWidget {
                 urlTemplate:
                     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 subdomains: ['a', 'b', 'c'],
-                tileProvider: NonCachingNetworkTileProvider(),
-                /*StorageCachingTileProvider(
-                  parentDirectory: parentDirectory,
-                  storeName: 'none',
-                ),*/
+                tileProvider: provider.cachingEnabled
+                    ? StorageCachingTileProvider(
+                        parentDirectory:
+                            provider.currentMapCachingManager.parentDirectory,
+                        storeName: provider.currentMapCachingManager.storeName,
+                      )
+                    : const NonCachingNetworkTileProvider(),
                 maxZoom: 20,
               ),
             ],

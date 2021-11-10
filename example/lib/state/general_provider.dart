@@ -9,13 +9,6 @@ class GeneralProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool _offlineMode = false;
-  bool get offlineMode => _offlineMode;
-  set offlineMode(bool newVal) {
-    _offlineMode = newVal;
-    notifyListeners();
-  }
-
   late MapCachingManager _currentMapCachingManager;
   MapCachingManager get currentMapCachingManager => _currentMapCachingManager;
   set currentMapCachingManager(MapCachingManager newVal) {

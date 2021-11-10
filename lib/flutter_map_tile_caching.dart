@@ -4,7 +4,7 @@
 // Main
 export 'src/main.dart';
 export 'src/storageManager.dart';
-export 'src/misc.dart' hide ListExtensionsE, ListExtensionsDouble, safeFilename;
+export 'src/publicMisc.dart';
 export 'src/bulkDownload/downloadProgress.dart';
 
 // Regions

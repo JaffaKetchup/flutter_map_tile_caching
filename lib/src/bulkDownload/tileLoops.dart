@@ -1,7 +1,7 @@
 import 'package:flutter_map/flutter_map.dart' hide Polygon;
 import 'package:latlong2/latlong.dart';
 
-import '../misc.dart';
+import '../privateMisc.dart';
 
 List<Coords<num>> rectangleTiles(Map<String, dynamic> input) {
   final LatLngBounds bounds = input['bounds'];

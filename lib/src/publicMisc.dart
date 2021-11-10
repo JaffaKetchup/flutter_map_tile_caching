@@ -1,14 +1,7 @@
 import 'dart:io';
-import 'dart:math' as math;
 import 'dart:math';
 
-import 'package:battery_info/enums/charging_status.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:meta/meta.dart';
-
-import 'main.dart';
-
-//! TYPEDEFS !//
+import '../flutter_map_tile_caching.dart';
 
 /// The parent directory of all cache stores, to be used for `parentDirectory` arguments
 typedef CacheDirectory = Directory;
@@ -67,8 +60,6 @@ typedef PreDownloadChecksCallback = Future<bool?> Function(
   ChargingStatus?,
 )?;
 
-//! EXTENSIONS !//
-
 /// Conversions to perform on an integer number of bytes to get more human-friendly figures. Useful after getting a cache's or cache store's size from `MapCachingManager`, for example.
 ///
 /// All calculations use binary calculations (1024) instead of decimal calculations (1000), and are therefore more accurate.
@@ -82,48 +73,3 @@ extension ByteExts on int {
   /// Convert bytes to gigabytes
   double get bytesToGigabytes => this / pow(1024, 3);
 }
-
-@internal
-extension ListExtensionsE<E> on List<E> {
-  List<List<E>> chunked(int size) {
-    List<List<E>> chunks = [];
-
-    for (var i = 0; i < length; i += size)
-      chunks.add(this.sublist(i, (i + size < length) ? i + size : length));
-
-    return chunks;
-  }
-}
-
-@internal
-extension ListExtensionsDouble on List<double> {
-  double get minNum => this.reduce(math.min);
-  double get maxNum => this.reduce(math.max);
-}
-
-//! ERRORS !//
-
-class FMTCBrowsingError implements Exception {
-  /// A general message, human readable
-  final String message;
-
-  /// The [CacheBehavior] in use at the time of the error
-  final CacheBehavior behavior;
-
-  /// Contains the actual exception thrown by a process, if applicable
-  final Object? caughtErrorObject;
-
-  /// Avoid constructing this error outside of the inteneded library
-  @internal
-  FMTCBrowsingError.internal({
-    required this.message,
-    required this.behavior,
-    this.caughtErrorObject,
-  });
-}
-
-//! FUNCTIONS !//
-
-@internal
-String safeFilename(String original) =>
-    original.replaceAll(RegExp(r'[^a-zA-Z0-9]'), ' ');

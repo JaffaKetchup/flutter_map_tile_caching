@@ -7,7 +7,7 @@ import 'package:meta/meta.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p show joinAll, split;
 
-import 'misc.dart';
+import 'privateMisc.dart';
 import 'regions/recoveredRegion.dart';
 
 /// Handles caching for tiles
