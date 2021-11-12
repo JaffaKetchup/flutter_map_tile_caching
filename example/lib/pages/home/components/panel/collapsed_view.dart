@@ -11,36 +11,83 @@ class CollapsedView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.blueGrey,
-      child: Consumer<GeneralProvider>(
-        builder: (context, provider, _) => StreamBuilder<void>(
-          stream: provider.currentMapCachingManager.watchChanges,
-          builder: (context, snapshot) {
-            return Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+    return Consumer<GeneralProvider>(
+      builder: (context, provider, _) {
+        if (!provider.cachingEnabled) {
+          return Container(
+            color: Colors.blueGrey,
+            child: SafeArea(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  statBuilder(
-                    stat: (provider.currentMapCachingManager.storeLength ?? 0)
-                        .toString(),
-                    description: 'Total Tiles',
+                children: const [
+                  Text(
+                    'Caching is disabled',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                  statBuilder(
-                    stat: (provider.currentMapCachingManager.storeSize ?? 0)
-                            .bytesToMegabytes
-                            .toStringAsPrecision(2) +
-                        'MB',
-                    description: 'Store Size',
+                  Text(
+                    'Use the switch to enable caching\nUse the SD-card button to manage stores',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
-            );
-          },
-        ),
-      ),
+            ),
+          );
+        }
+
+        return Container(
+          color: Colors.blueGrey,
+          child: StreamBuilder<void>(
+            stream: provider.currentMapCachingManager.watchChanges,
+            builder: (context, snapshot) {
+              return Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Column(
+                  children: [
+                    Container(
+                      height: 5,
+                      width: MediaQuery.of(context).size.width / 6,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        statBuilder(
+                          stat:
+                              (provider.currentMapCachingManager.storeLength ??
+                                      0)
+                                  .toString(),
+                          description: 'Total Tiles',
+                        ),
+                        statBuilder(
+                          stat:
+                              (provider.currentMapCachingManager.storeSize ?? 0)
+                                      .bytesToMegabytes
+                                      .toStringAsPrecision(2) +
+                                  'MB',
+                          description: 'Store Size',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

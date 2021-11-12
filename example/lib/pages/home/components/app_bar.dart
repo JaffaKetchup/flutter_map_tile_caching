@@ -8,9 +8,13 @@ AppBar buildAppBar(BuildContext context, PanelController controller) {
   return AppBar(
     actions: [
       IconButton(
-        onPressed: () {},
+        onPressed: () {
+          Provider.of<GeneralProvider>(context, listen: false)
+              .currentMapCachingManager
+              .deleteAllStores();
+        },
         icon: const Icon(Icons.sd_card),
-        tooltip: 'Manage Caching Storess',
+        tooltip: 'Manage Caching Stores',
       ),
       IconButton(
         onPressed: () {},
@@ -21,7 +25,7 @@ AppBar buildAppBar(BuildContext context, PanelController controller) {
     leading: Tooltip(
       message: 'Enable/Disable Caching',
       child: Switch(
-        onChanged: (bool newVal) {
+        onChanged: (bool newVal) async {
           final GeneralProvider provider =
               Provider.of<GeneralProvider>(context, listen: false);
           provider.cachingEnabled = newVal;
@@ -33,19 +37,10 @@ AppBar buildAppBar(BuildContext context, PanelController controller) {
                 ),
                 action: SnackBarAction(
                   label: 'Stop Caching',
-                  onPressed: () {
-                    provider.cachingEnabled = false;
-                    controller.hide();
-                  },
+                  onPressed: () => provider.cachingEnabled = false,
                 ),
               ),
             );
-            controller.show();
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Caching Disabled')),
-            );
-            controller.hide();
           }
         },
         value: Provider.of<GeneralProvider>(context).cachingEnabled,

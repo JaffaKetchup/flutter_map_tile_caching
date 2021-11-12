@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+
+import '../../misc/components/loading_builder.dart';
 import '../../state/general_provider.dart';
 import 'components/app_bar.dart';
-import 'components/panel/collapsed_view.dart';
 import 'components/map.dart';
+import 'components/panel/collapsed_view.dart';
 import 'components/panel/panel_view.dart';
 
 class HomePage extends StatefulWidget {
@@ -18,7 +22,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final PanelController panelController;
-  bool loadingVisible = true;
+  late final MapController mapController;
 
   @override
   void initState() {
@@ -34,42 +38,48 @@ class _HomePageState extends State<HomePage> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
     panelController = PanelController();
-
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
-      panelController
-          .hide()
-          .then((value) => setState(() => loadingVisible = false));
-    });
+    mapController = MapController();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: buildAppBar(context, panelController),
-      body: Stack(
-        children: [
-          Consumer<GeneralProvider>(
-            builder: (context, provider, _) => SlidingUpPanel(
-              body: const MapView(),
-              collapsed: const CollapsedView(),
-              panel: const PanelView(),
-              backdropEnabled: true,
-              maxHeight: MediaQuery.of(context).size.height - kToolbarHeight,
-              boxShadow: const [],
-              isDraggable: provider.cachingEnabled,
-              controller: panelController,
-            ),
-          ),
-          Positioned.fill(
-            child: Visibility(
-              visible: loadingVisible,
-              child: Container(
-                color: Colors.white,
-                child: const Center(child: CircularProgressIndicator()),
-              ),
-            ),
-          ),
-        ],
+      body: Consumer<GeneralProvider>(
+        builder: (context, provider, _) {
+          return FutureBuilder<CacheDirectory>(
+            future: MapCachingManager.normalCache,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return loadingScreen(
+                    context, 'Waiting for the caching directory');
+              }
+
+              final CacheDirectory parentDirectory = snapshot.data!;
+
+              provider.newMapCachingManager = MapCachingManager(
+                parentDirectory,
+                'Default Store',
+              );
+
+              return FutureBuilder<void>(
+                  future: mapController.onReady,
+                  builder: (context, snapshot) {
+                    return SlidingUpPanel(
+                      body: MapView(controller: mapController),
+                      collapsed: const CollapsedView(),
+                      panel: const PanelView(),
+                      backdropEnabled: true,
+                      maxHeight:
+                          MediaQuery.of(context).size.height - kToolbarHeight,
+                      boxShadow: const [],
+                      isDraggable: provider.cachingEnabled,
+                      controller: panelController,
+                    );
+                  });
+            },
+          );
+        },
       ),
     );
   }
