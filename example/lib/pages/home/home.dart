@@ -44,7 +44,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: buildAppBar(context, panelController),
+      appBar: buildAppBar(context),
       body: Consumer<GeneralProvider>(
         builder: (context, provider, _) {
           return FutureBuilder<CacheDirectory>(
@@ -59,24 +59,25 @@ class _HomePageState extends State<HomePage> {
 
               provider.newMapCachingManager = MapCachingManager(
                 parentDirectory,
-                'Default Store',
+                provider.storeName,
               );
 
               return FutureBuilder<void>(
-                  future: mapController.onReady,
-                  builder: (context, snapshot) {
-                    return SlidingUpPanel(
-                      body: MapView(controller: mapController),
-                      collapsed: const CollapsedView(),
-                      panel: const PanelView(),
-                      backdropEnabled: true,
-                      maxHeight:
-                          MediaQuery.of(context).size.height - kToolbarHeight,
-                      boxShadow: const [],
-                      isDraggable: provider.cachingEnabled,
-                      controller: panelController,
-                    );
-                  });
+                future: mapController.onReady,
+                builder: (context, snapshot) {
+                  return SlidingUpPanel(
+                    body: MapView(controller: mapController),
+                    collapsed: const CollapsedView(),
+                    panel: const PanelView(),
+                    backdropEnabled: true,
+                    maxHeight:
+                        MediaQuery.of(context).size.height - kToolbarHeight,
+                    boxShadow: const [],
+                    isDraggable: provider.cachingEnabled,
+                    controller: panelController,
+                  );
+                },
+              );
             },
           );
         },

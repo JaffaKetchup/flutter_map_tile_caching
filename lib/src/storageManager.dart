@@ -1,14 +1,19 @@
 import 'dart:io';
+import 'dart:math';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p show joinAll, split;
+import 'package:path_provider/path_provider.dart';
 
 import 'privateMisc.dart';
+import 'regions/circle.dart';
+import 'regions/downloadableRegion.dart';
+import 'regions/line.dart';
 import 'regions/recoveredRegion.dart';
+import 'regions/rectangle.dart';
 
 /// Handles caching for tiles
 ///
@@ -139,6 +144,53 @@ class MapCachingManager {
           .length;
     });
     return totalLength;
+  }
+
+  /// Retrieves a (potentially random) tile from the store and uses it to create a cover image
+  ///
+  /// [random] controls whether the chosen tile is chosen at random or whether the chosen tile is the 'first' tile in the store.
+  ///
+  /// Using random mode may take a while to generate if the random number is large.
+  ///
+  /// If using random mode, optionally set [maxRange] to an integer (1 <= [maxRange] <= [storeLength]) to only generate a random number between 0 and the specified number. Useful to reduce waiting times or enforce consistency.
+  ///
+  /// Returns `null` if the store does not exist or there are no cached tiles.
+  Future<Widget?> coverImage({
+    required bool random,
+    int? maxRange,
+    double? size,
+  }) async {
+    final int? storeLen = storeLength;
+
+    if (!(exists ?? false)) return null;
+    if (storeLen == 0) return null;
+
+    assert(
+      random ? true : maxRange == null,
+      'If not in random mode, `maxRange` must be left as `null`',
+    );
+    assert(
+      (maxRange ?? 1) >= 1 && (maxRange ?? 1) <= storeLen!,
+      'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`',
+    );
+
+    final int randInt =
+        random ? Random().nextInt(maxRange ?? (storeLen! + 1)) : -1;
+
+    int i = 0;
+
+    await for (FileSystemEntity evt in Directory(storePath).list()) {
+      if (!random || i == randInt) {
+        return Image.file(
+          File(evt.absolute.path),
+          width: size,
+          height: size,
+        );
+      }
+      i++;
+    }
+
+    throw FallThroughError();
   }
 
   @internal

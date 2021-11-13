@@ -37,6 +37,7 @@ class MapView extends StatelessWidget {
                     )
                   : const NonCachingNetworkTileProvider(),
               maxZoom: 20,
+              reset: provider.resetController.stream,
             ),
             PolylineLayerOptions(
               polylines: [
