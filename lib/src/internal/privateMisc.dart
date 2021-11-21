@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'package:meta/meta.dart';
 
-export 'publicMisc.dart';
+export '../publicMisc.dart'; // Also export the public miscellaneous file for use internally
 
-//! TYPEDEFS !//
+//! EXTENSIONS !//
 
 @internal
 extension ListExtensionsE<E> on List<E> {

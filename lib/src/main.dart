@@ -18,8 +18,8 @@ import 'package:queue/queue.dart';
 import 'bulkDownload/downloadProgress.dart';
 import 'bulkDownload/downloader.dart';
 import 'bulkDownload/tileLoops.dart';
-import 'imageProvider.dart';
-import 'privateMisc.dart';
+import 'internal/imageProvider.dart';
+import 'internal/privateMisc.dart';
 import 'regions/downloadableRegion.dart';
 import 'regions/recoveredRegion.dart';
 import 'storageManager.dart';
@@ -120,7 +120,24 @@ class StorageCachingTileProvider extends TileProvider {
     Directory(storePath).createSync(recursive: true);
   }
 
-  /// Always call (if necessary) after finishing
+  /// Converts a [MapCachingManager] to [StorageCachingTileProvider], using the same [parentDirectory] and [storeName].
+  ///
+  /// For more information about this constructor, see the main class [StorageCachingTileProvider].
+  StorageCachingTileProvider.fromMapCachingManager(
+    MapCachingManager mapCachingManager, {
+    this.behavior = CacheBehavior.cacheFirst,
+    this.cachedValidDuration = const Duration(days: 16),
+    this.maxStoreLength = 20000,
+  })  : parentDirectory = mapCachingManager.parentDirectory,
+        storeName = mapCachingManager.storeName,
+        storePath = p.joinAll([
+          mapCachingManager.parentDirectory.absolute.path,
+          mapCachingManager.storeName
+        ]) {
+    Directory(storePath).createSync(recursive: true);
+  }
+
+  /// Always call (if necessary) after finishing with caching
   ///
   /// Ensures the internal stream controller is closed, the internal HTTP client is closed, and the internal queue controller is cancelled. If you require this provider again, you will need to reconstruct it.
   @override
@@ -188,7 +205,7 @@ class StorageCachingTileProvider extends TileProvider {
     }
 
     if (!disableRecovery) {
-      if (!MapCachingManager(parentDirectory, storeName).startRecovery(
+      if (!MapCachingManager(parentDirectory, storeName).startInternalRecovery(
         region.type,
         region.originalRegion,
         region.minZoom,
@@ -259,7 +276,7 @@ class StorageCachingTileProvider extends TileProvider {
   void cancelDownload() {
     _queue?.dispose();
     _streamController?.close();
-    MapCachingManager(parentDirectory, storeName).endRecovery();
+    MapCachingManager(parentDirectory, storeName).endInternalRecovery();
     _downloadOngoing = false;
   }
 
@@ -274,12 +291,13 @@ class StorageCachingTileProvider extends TileProvider {
     if (_downloadOngoing) return null;
 
     final RecoveredRegion? recovered =
-        MapCachingManager(parentDirectory, storeName).recoverDownload();
+        MapCachingManager(parentDirectory, storeName)
+            .recoverDownloadInternally();
 
     if (recovered == null) return null;
 
     if (deleteRecovery)
-      MapCachingManager(parentDirectory, storeName).endRecovery();
+      MapCachingManager(parentDirectory, storeName).endInternalRecovery();
 
     return recovered;
   }

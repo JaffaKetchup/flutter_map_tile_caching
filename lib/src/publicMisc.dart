@@ -1,12 +1,11 @@
 import 'dart:io';
-import 'dart:math';
 
 import '../flutter_map_tile_caching.dart';
 
 /// The parent directory of all cache stores, to be used for `parentDirectory` arguments
 typedef CacheDirectory = Directory;
 
-/// Use in `preDownloadChecksCallback` in `StorageCachingTileProvider().downloadRegion()` and `StorageCachingTileProvider().downloadRegionBackground()` to ensure the download is OK to start by considering the device's status.
+/// Use in `preDownloadChecksCallback` in the bulk downloaders to ensure the download is OK to start by considering the device's status.
 ///
 /// Setting the parameter to `null` will skip all tests and allow under any circumstances. However, returning `null` from the function will use the default rules: cancel the download if the user is on cellular data or disconnected from the network (not necessarily Internet), or under 15% charge and not connected to a power source.
 ///
@@ -36,7 +35,7 @@ typedef CacheDirectory = Directory;
 ///
 /// To check if the tests have failed (if tests do fail, the download will be cancelled for you):
 ///
-/// - In the foreground downloader `StorageCachingTileProvider().downloadRegion()`:
+/// - In the foreground bulk downloader [StorageCachingTileProvider.downloadRegion] :
 /// ```dart
 /// final Stream<DownloadProgress> downloadStream = provider.downloadRegion(...).asBroadcastStream();
 /// if (await downloadStream.isEmpty) {
@@ -49,7 +48,7 @@ typedef CacheDirectory = Directory;
 /// }
 /// ```
 ///
-/// - In the background downloader `StorageCachingTileProvider().downloadRegionBackground()`:
+/// - In the background bulk downloader [StorageCachingTileProvider.downloadRegionBackground] :
 /// ```dart
 /// // Called if the checks fail, otherwise download continues as normal (`callback()`)
 /// preDownloadChecksFailedCallback: () {}
@@ -59,17 +58,3 @@ typedef PreDownloadChecksCallback = Future<bool?> Function(
   int?,
   ChargingStatus?,
 )?;
-
-/// Conversions to perform on an integer number of bytes to get more human-friendly figures. Useful after getting a cache's or cache store's size from `MapCachingManager`, for example.
-///
-/// All calculations use binary calculations (1024) instead of decimal calculations (1000), and are therefore more accurate.
-extension ByteExts on int {
-  /// Convert bytes to kilobytes
-  double get bytesToKilobytes => this / 1024;
-
-  /// Convert bytes to megabytes
-  double get bytesToMegabytes => this / pow(1024, 2);
-
-  /// Convert bytes to gigabytes
-  double get bytesToGigabytes => this / pow(1024, 3);
-}

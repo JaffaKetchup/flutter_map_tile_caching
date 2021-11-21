@@ -8,7 +8,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p show joinAll;
 
-import 'main.dart';
+import '../main.dart';
 import 'privateMisc.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'

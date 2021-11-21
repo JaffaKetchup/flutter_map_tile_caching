@@ -8,7 +8,8 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p show joinAll, split;
 import 'package:path_provider/path_provider.dart';
 
-import 'privateMisc.dart';
+import 'internal/privateMisc.dart';
+import 'main.dart';
 import 'regions/circle.dart';
 import 'regions/downloadableRegion.dart';
 import 'regions/line.dart';
@@ -18,6 +19,8 @@ import 'regions/rectangle.dart';
 /// Handles caching for tiles
 ///
 /// On initialisation, automatically creates the cache store if it does not exist.
+///
+/// Please note that most internal file handling is performed synchronusly to make this library easier to use. This comes at the cost of performance: keep usage of stat checking to a minimum.
 ///
 /// Used internally for downloading regions, another library is depended on for 'browse caching'.
 class MapCachingManager {
@@ -37,6 +40,8 @@ class MapCachingManager {
   /// Create an instance to handle caching for tiles
   ///
   /// On initialization, automatically creates the cache store if it does not exist.
+  ///
+  /// Please note that most internal file handling is performed synchronusly to make this library easier to use. This comes at the cost of performance: keep usage of stat checking to a minimum.
   ///
   /// Used internally for downloading regions, another library is depended on for 'browse caching'.
   MapCachingManager(this.parentDirectory, [this.storeName = 'mainStore'])
@@ -79,14 +84,26 @@ class MapCachingManager {
     return MapCachingManager(parentDirectory, newName);
   }
 
-  /// Watch for changes in the current cache store
+  /// Watch for changes in the current store
   ///
-  /// Useful to update UI only when required, for example, in a `StreamBuilder`. Whenever this has an event, it is likely the other statistics will have changed.
+  /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
   ///
   /// Returns `null` if the store does not exist.
-  Stream<Null>? get watchChanges {
+  Stream<Null>? get watchStoreChanges {
     if (!(exists ?? false)) return null;
     return Directory(storePath).watch().map((event) => null);
+  }
+
+  /// Watch for changes in the current cache (not recursive, so does not include events from [watchStoreChanges])
+  ///
+  /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
+  ///
+  /// Returns `null` if the store does not exist.
+  Stream<Null>? get watchCacheChanges {
+    if (!(exists ?? false)) return null;
+    return Directory(parentDirectory.absolute.path)
+        .watch()
+        .map((event) => null);
   }
 
   /// Retrieve a list of all names of existing cache stores
@@ -101,24 +118,20 @@ class MapCachingManager {
     return returnable;
   }
 
-  /// Retrieve the size (in bytes) of a cache store
-  ///
-  /// Use `.bytesToMegabytes` on the output to get the real number of megabytes
+  /// Retrieve the size of a cache store in kibibytes (KiB)
   ///
   /// Returns `null` if the store does not exist.
-  int? get storeSize {
+  double? get storeSize {
     if (!(exists ?? false)) return null;
-    return Directory(storePath).statSync().size;
+    return Directory(storePath).statSync().size / 1024;
   }
 
-  /// Retrieve the size (in bytes) of all cache stores
-  ///
-  /// Use `.bytesToMegabytes` on the output to get the real number of megabytes.
+  /// Retrieve the size of all cache stores in kibibytes (KiB)
   ///
   /// Returns `null` if the cache does not exist.
-  int? get allStoresSizes {
+  double? get allStoresSizes {
     if (exists == null) return null;
-    int returnable = 0;
+    double returnable = 0;
     allStoresNames!.forEach((storeName) => returnable +=
         MapCachingManager(parentDirectory, storeName).storeSize ?? 0);
     return returnable;
@@ -137,25 +150,25 @@ class MapCachingManager {
   /// Returns `null` if the cache does not exist.
   int? get allStoresLengths {
     if (exists == null) return null;
-    int totalLength = 0;
+    int returnable = 0;
     allStoresNames!.forEach((name) {
-      totalLength += Directory(p.joinAll([parentDirectory.absolute.path, name]))
+      returnable += Directory(p.joinAll([parentDirectory.absolute.path, name]))
           .listSync(recursive: true)
           .length;
     });
-    return totalLength;
+    return returnable;
   }
 
-  /// Retrieves a (potentially random) tile from the store and uses it to create a cover image
+  /// Retrieves a (potentially random) tile from the store and uses it to create a cover [Image]
   ///
-  /// [random] controls whether the chosen tile is chosen at random or whether the chosen tile is the 'first' tile in the store.
+  /// [random] controls whether the chosen tile is chosen at random or whether the chosen tile is the 'first' tile in the store. Note that 'first' means alphabetically, not chronologically.
   ///
   /// Using random mode may take a while to generate if the random number is large.
   ///
   /// If using random mode, optionally set [maxRange] to an integer (1 <= [maxRange] <= [storeLength]) to only generate a random number between 0 and the specified number. Useful to reduce waiting times or enforce consistency.
   ///
   /// Returns `null` if the store does not exist or there are no cached tiles.
-  Future<Widget?> coverImage({
+  Future<Image?> coverImage({
     required bool random,
     int? maxRange,
     double? size,
@@ -193,8 +206,9 @@ class MapCachingManager {
     throw FallThroughError();
   }
 
+  /// For internal use only. Recovery is managed automatically for you.
   @internal
-  bool startRecovery(
+  bool startInternalRecovery(
     RegionType type,
     BaseRegion inputRegion,
     int minZoom,
@@ -246,16 +260,18 @@ class MapCachingManager {
     return file.existsSync();
   }
 
+  /// For internal use only. Recovery is managed automatically for you.
   @internal
-  void endRecovery() {
+  void endInternalRecovery() {
     if (!Directory(storePath).existsSync()) return;
 
     File(p.joinAll([storePath, 'downloadOngoing.txt'])).createSync();
     File(p.joinAll([storePath, 'downloadOngoing.txt'])).deleteSync();
   }
 
+  /// For internal use only. Use [StorageCachingTileProvider.recoverDownload] instead.
   @internal
-  RecoveredRegion? recoverDownload() {
+  RecoveredRegion? recoverDownloadInternally() {
     final File file = File(p.joinAll([storePath, 'downloadOngoing.txt']));
     if (!file.existsSync()) return null;
 

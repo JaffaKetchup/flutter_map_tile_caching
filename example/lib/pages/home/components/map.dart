@@ -19,6 +19,11 @@ class MapView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<GeneralProvider>(
       builder: (context, provider, _) {
+        final MapCachingManager mcm =
+            MapCachingManager(provider.parentDirectory!, provider.storeName);
+        final String? source =
+            provider.persistent!.getString('source ${provider.storeName}');
+
         return FlutterMap(
           mapController: controller,
           options: MapOptions(
@@ -27,14 +32,12 @@ class MapView extends StatelessWidget {
           ),
           layers: [
             TileLayerOptions(
-              urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+              urlTemplate: !provider.cachingEnabled || source == null
+                  ? 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                  : source,
               subdomains: ['a', 'b', 'c'],
               tileProvider: provider.cachingEnabled
-                  ? StorageCachingTileProvider(
-                      parentDirectory:
-                          provider.currentMapCachingManager.parentDirectory,
-                      storeName: provider.currentMapCachingManager.storeName,
-                    )
+                  ? StorageCachingTileProvider.fromMapCachingManager(mcm)
                   : const NonCachingNetworkTileProvider(),
               maxZoom: 20,
               reset: provider.resetController.stream,

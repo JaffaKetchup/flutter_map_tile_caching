@@ -13,15 +13,6 @@ AppBar buildAppBar(BuildContext context) {
         icon: const Icon(Icons.sd_card),
         tooltip: 'Manage Caching Stores',
       ),
-      IconButton(
-        onPressed: () {
-          Provider.of<GeneralProvider>(context, listen: false)
-              .currentMapCachingManager
-              .deleteAllStores();
-        },
-        icon: const Icon(Icons.layers),
-        tooltip: 'Manage Map Layers',
-      ),
     ],
     leading: Tooltip(
       message: 'Enable/Disable Caching',

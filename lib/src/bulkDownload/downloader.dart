@@ -4,11 +4,11 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_tile_caching/src/privateMisc.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p show joinAll;
 import 'package:queue/queue.dart';
 
+import '../internal/privateMisc.dart';
 import '../main.dart';
 
 Stream<List> bulkDownloader({

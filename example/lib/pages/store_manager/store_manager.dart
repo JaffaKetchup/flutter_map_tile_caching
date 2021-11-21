@@ -1,14 +1,13 @@
+// ignore_for_file: prefer_void_to_null
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
-import '../../misc/components/loading_builder.dart';
 import '../../state/general_provider.dart';
-import 'components/app_bar.dart';
-import 'components/fab.dart';
 import 'components/list_tile_image.dart';
-import 'components/modals/store_modal.dart';
+import 'components/store_modal.dart';
 
 class StoreManager extends StatelessWidget {
   const StoreManager({Key? key}) : super(key: key);
@@ -16,41 +15,43 @@ class StoreManager extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: buildAppBar(context),
-      floatingActionButton: const FAB(),
-      body: Consumer<GeneralProvider>(
-        builder: (context, provider, _) {
-          return FutureBuilder<CacheDirectory>(
-            future: MapCachingManager.normalCache,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return loadingScreen(
-                    context, 'Waiting for the caching directory');
-              }
+      appBar: AppBar(
+        title: const Text('Store Manager'),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.pushNamed(context, '/storeEditor'),
+        label: const Text('Create New Store'),
+        icon: const Icon(Icons.create_new_folder),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Consumer<GeneralProvider>(
+          builder: (context, provider, _) {
+            final MapCachingManager mcm = MapCachingManager(
+                provider.parentDirectory!, provider.storeName);
 
-              final List<String> availableStores =
-                  MapCachingManager(snapshot.data!, provider.storeName)
-                      .allStoresNames!;
+            return StreamBuilder<void>(
+              stream: mcm.watchCacheChanges!,
+              builder: (context, _) {
+                final List<String> storeNames = mcm.allStoresNames!;
 
-              return Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: ListView.separated(
-                  itemCount: availableStores.length,
+                return ListView.separated(
                   itemBuilder: (context, i) {
-                    final MapCachingManager mcm =
-                        MapCachingManager(snapshot.data!, availableStores[i]);
+                    final MapCachingManager currentMCM = MapCachingManager(
+                        provider.parentDirectory!, storeNames[i]);
 
                     return ListTile(
-                      title: Text(availableStores[i]),
+                      title: Text(currentMCM.storeName),
                       subtitle: Text(
-                          '${mcm.storeLength} tiles\n${(mcm.storeSize ?? 0).bytesToMegabytes.toStringAsPrecision(2)} MB'),
-                      leading: buildListTileImage(mcm),
-                      trailing: provider.storeName == availableStores[i]
+                          '${currentMCM.storeLength} tiles\n${currentMCM.storeSize!.toStringAsFixed(2)} KiB'),
+                      leading: buildListTileImage(currentMCM),
+                      trailing: provider.storeName == currentMCM.storeName
                           ? const Icon(Icons.done)
                           : null,
-                      onTap: () {
-                        provider.currentMapCachingManager = mcm;
-                        provider.storeName = availableStores[i];
+                      onTap: () async {
+                        provider.storeName = currentMCM.storeName;
+                        provider.persistent!
+                            .setString('lastUsedStore', provider.storeName);
                         provider.resetMap();
                       },
                       onLongPress: () {
@@ -58,21 +59,21 @@ class StoreManager extends StatelessWidget {
                           context: context,
                           builder: (context) {
                             return StoreModal(
-                              mcm: mcm,
-                              availableStores: availableStores,
-                              provider: provider,
+                              currentMCM: currentMCM,
+                              storeNames: storeNames,
                             );
                           },
                         );
                       },
                     );
                   },
-                  separatorBuilder: (context, i) => const Divider(),
-                ),
-              );
-            },
-          );
-        },
+                  separatorBuilder: (context, _) => const Divider(),
+                  itemCount: storeNames.length,
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }

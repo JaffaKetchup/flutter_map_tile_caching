@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'pages/home/home.dart';
+import 'pages/store_editor/store_editor.dart';
 import 'pages/store_manager/store_manager.dart';
 import 'state/general_provider.dart';
 
-void main() {
+void main() async {
   runApp(const MyApp());
 }
 
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/': (context) => const HomePage(),
           '/storeManager': (context) => const StoreManager(),
+          '/storeEditor': (context) => const StoreEditor(),
         },
       ),
     );

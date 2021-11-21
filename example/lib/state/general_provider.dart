@@ -1,9 +1,15 @@
+// ignore_for_file: prefer_void_to_null
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class GeneralProvider extends ChangeNotifier {
+  //! CACHING !//
+
   bool _cachingEnabled = false;
   bool get cachingEnabled => _cachingEnabled;
   set cachingEnabled(bool newVal) {
@@ -13,23 +19,18 @@ class GeneralProvider extends ChangeNotifier {
 
   String _storeName = 'Default Store';
   String get storeName => _storeName;
+  set storeNameQuiet(String newVal) => _storeName = newVal;
   set storeName(String newVal) {
     _storeName = newVal;
     notifyListeners();
   }
 
-  late MapCachingManager _currentMapCachingManager;
-  MapCachingManager get currentMapCachingManager => _currentMapCachingManager;
-  set currentMapCachingManager(MapCachingManager newVal) {
-    _currentMapCachingManager = newVal;
-    notifyListeners();
-  }
+  CacheDirectory? parentDirectory; // Should only be set once
+  SharedPreferences? persistent; // Should only be set once
 
-  set newMapCachingManager(MapCachingManager newVal) {
-    _currentMapCachingManager = newVal;
-  }
+  //! MISC !//
 
-  StreamController<Null> _resetController = StreamController.broadcast();
+  final StreamController<Null> _resetController = StreamController.broadcast();
   StreamController<Null> get resetController => _resetController;
   void resetMap() {
     _resetController.add(null);

@@ -97,9 +97,10 @@ class TileStorageCachingManager {
     'This getter has been deprecated, and will be removed in the next release. Migrate to `MapCachingManager().allStoresSize`.',
   )
   static Future<int> get cacheDbSize async {
-    return MapCachingManager(await MapCachingManager.normalCache)
-            .allStoresSizes ??
-        0;
+    return (MapCachingManager(await MapCachingManager.normalCache)
+                .allStoresSizes ??
+            0)
+        .toInt();
   }
 
   /// Deprecated. Will be removed in the next release. Migrate to `MapCachingManager().allStoresLength`.

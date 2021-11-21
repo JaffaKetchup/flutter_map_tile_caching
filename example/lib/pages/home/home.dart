@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
-import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../misc/components/loading_builder.dart';
 import '../../state/general_provider.dart';
 import 'components/app_bar.dart';
 import 'components/map.dart';
-import 'components/panel/collapsed_view.dart';
-import 'components/panel/panel_view.dart';
+import 'components/panel/panel.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -21,7 +20,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final PanelController panelController;
   late final MapController mapController;
 
   @override
@@ -37,7 +35,6 @@ class _HomePageState extends State<HomePage> {
     );
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-    panelController = PanelController();
     mapController = MapController();
   }
 
@@ -47,34 +44,48 @@ class _HomePageState extends State<HomePage> {
       appBar: buildAppBar(context),
       body: Consumer<GeneralProvider>(
         builder: (context, provider, _) {
+          // Layer 1: Get the caching directory
           return FutureBuilder<CacheDirectory>(
             future: MapCachingManager.normalCache,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
+            builder: (context, cacheDir) {
+              if (!cacheDir.hasData) {
                 return loadingScreen(
-                    context, 'Waiting for the caching directory');
+                    context, 'Waiting for the caching directory...');
               }
 
-              final CacheDirectory parentDirectory = snapshot.data!;
+              // Layer 2: Get the shared preferences instance
+              return FutureBuilder<SharedPreferences>(
+                future: SharedPreferences.getInstance(),
+                builder: (context, prefs) {
+                  if (!prefs.hasData) {
+                    return loadingScreen(
+                        context, 'Waiting for persistent storage...');
+                  }
 
-              provider.newMapCachingManager = MapCachingManager(
-                parentDirectory,
-                provider.storeName,
-              );
+                  // Setup provider & default values
+                  provider.parentDirectory ??= cacheDir.data!;
+                  provider.persistent ??= prefs.data!;
 
-              return FutureBuilder<void>(
-                future: mapController.onReady,
-                builder: (context, snapshot) {
-                  return SlidingUpPanel(
-                    body: MapView(controller: mapController),
-                    collapsed: const CollapsedView(),
-                    panel: const PanelView(),
-                    backdropEnabled: true,
-                    maxHeight:
-                        MediaQuery.of(context).size.height - kToolbarHeight,
-                    boxShadow: const [],
-                    isDraggable: provider.cachingEnabled,
-                    controller: panelController,
+                  provider.storeNameQuiet =
+                      provider.persistent!.getString('lastUsedStore') ??
+                          'Default Store';
+
+                  // Layer 3: Wait for the map controller to be ready
+                  return FutureBuilder<void>(
+                    future: mapController.onReady,
+                    builder: (context, snapshot) {
+                      return Stack(
+                        children: [
+                          MapView(controller: mapController),
+                          AnimatedPositioned(
+                            bottom: provider.cachingEnabled ? 0 : -100,
+                            width: MediaQuery.of(context).size.width,
+                            duration: const Duration(milliseconds: 200),
+                            child: const Panel(),
+                          ),
+                        ],
+                      );
+                    },
                   );
                 },
               );
