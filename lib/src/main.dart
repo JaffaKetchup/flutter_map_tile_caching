@@ -137,7 +137,7 @@ class StorageCachingTileProvider extends TileProvider {
     Directory(storePath).createSync(recursive: true);
   }
 
-  /// Always call (if necessary) after finishing with caching
+  /// Always call (if necessary) after finishing with caching, or in your widget's dispose methods
   ///
   /// Ensures the internal stream controller is closed, the internal HTTP client is closed, and the internal queue controller is cancelled. If you require this provider again, you will need to reconstruct it.
   @override

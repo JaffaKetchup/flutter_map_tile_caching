@@ -22,7 +22,7 @@ class MapView extends StatelessWidget {
         final MapCachingManager mcm =
             MapCachingManager(provider.parentDirectory!, provider.storeName);
         final String? source =
-            provider.persistent!.getString('source ${provider.storeName}');
+            provider.persistent!.getString('${provider.storeName}: sourceURL');
 
         return FlutterMap(
           mapController: controller,

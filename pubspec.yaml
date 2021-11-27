@@ -13,19 +13,19 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  background_fetch: ^1.0.1
+  background_fetch: ^1.0.3
   battery_info: ^1.0.8
   bezier: ^1.2.0
   collection: ^1.15.0
-  connectivity_plus: ^2.0.2
-  flutter_local_notifications: ^9.0.2
+  connectivity_plus: ^2.0.3
+  flutter_local_notifications: ^9.1.4
   flutter_map: ^0.14.0
   http: ^0.13.3
   latlong2: ^0.8.0
   meta: ^1.7.0
   path: ^1.8.0
-  path_provider: ^2.0.6
-  permission_handler: ^8.2.6
+  path_provider: ^2.0.7
+  permission_handler: ^8.3.0
   queue: ^3.1.0+1
   vector_math: ^2.1.0
 

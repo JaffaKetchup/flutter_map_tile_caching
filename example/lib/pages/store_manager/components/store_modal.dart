@@ -26,7 +26,13 @@ class StoreModal extends StatelessWidget {
             ListTile(
               title: const Text('Download Region'),
               leading: const Icon(Icons.download),
-              onTap: () {},
+              onTap: () {
+                Navigator.popAndPushNamed(
+                  context,
+                  '/bulkDownloader',
+                  arguments: currentMCM,
+                );
+              },
               visualDensity: VisualDensity.compact,
             ),
             const Divider(),

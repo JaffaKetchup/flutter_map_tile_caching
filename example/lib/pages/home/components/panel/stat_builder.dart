@@ -5,6 +5,7 @@ Column statBuilder({
   required String description,
 }) {
   return Column(
+    mainAxisSize: MainAxisSize.min,
     children: [
       Text(
         stat,

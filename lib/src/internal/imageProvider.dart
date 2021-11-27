@@ -101,7 +101,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       });
 
       // If an new tile was created over the tile limit, delete the oldest tile
-      if (needsCreating)
+      if (needsCreating && provider.maxStoreLength != 0)
         compute(deleteOldestFile, {
           'storePath': provider.storePath,
           'maxStoreLength': provider.maxStoreLength,
@@ -137,7 +137,7 @@ void deleteOldestFile(Map<String, dynamic> input) {
   while (true) {
     final List<FileSystemEntity> fileList = store.listSync();
 
-    if (maxStoreLength != 0 && fileList.length > maxStoreLength) {
+    if (fileList.length > maxStoreLength) {
       fileList.sort(
           (a, b) => b.statSync().modified.compareTo(a.statSync().modified));
       try {

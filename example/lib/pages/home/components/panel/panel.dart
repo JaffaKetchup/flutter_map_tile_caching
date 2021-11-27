@@ -16,28 +16,30 @@ class Panel extends StatelessWidget {
         color: Colors.blueGrey,
         borderRadius: BorderRadius.circular(8.0),
       ),
-      child: Consumer<GeneralProvider>(
-        builder: (context, provider, _) {
-          final MapCachingManager mcm =
-              MapCachingManager(provider.parentDirectory!, provider.storeName);
+      child: SafeArea(
+        child: Consumer<GeneralProvider>(
+          builder: (context, provider, _) {
+            final MapCachingManager mcm = MapCachingManager(
+                provider.parentDirectory!, provider.storeName);
 
-          return StreamBuilder<void>(
-            stream: mcm.watchStoreChanges,
-            builder: (context, _) => Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                statBuilder(
-                  stat: mcm.storeLength.toString(),
-                  description: 'Total Tiles',
-                ),
-                statBuilder(
-                  stat: mcm.storeSize!.toStringAsFixed(2) + 'KiB',
-                  description: 'Total Size',
-                ),
-              ],
-            ),
-          );
-        },
+            return StreamBuilder<void>(
+              stream: mcm.watchStoreChanges,
+              builder: (context, _) => Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  statBuilder(
+                    stat: mcm.storeLength.toString(),
+                    description: 'Total Tiles',
+                  ),
+                  statBuilder(
+                    stat: mcm.storeSize!.toStringAsFixed(2) + 'KiB',
+                    description: 'Total Size',
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

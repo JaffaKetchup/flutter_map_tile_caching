@@ -56,23 +56,32 @@ class _StoreEditorState extends State<StoreEditor> {
         Provider.of<GeneralProvider>(context, listen: false);
 
     if (mcm != null) {
-      options['storeName'] = [mcm!.storeName, mcm!.storeName];
+      options['storeName'] = [
+        mcm?.storeName ?? 'Default Store',
+        mcm?.storeName ?? 'Default Store'
+      ];
 
-      final String _sourceURL =
-          provider.persistent!.getString('${mcm!.storeName}: sourceURL')!;
-      options['sourceURL'] = [_sourceURL, _sourceURL];
+      final String? _sourceURL =
+          provider.persistent!.getString('${mcm!.storeName}: sourceURL');
+      if (_sourceURL != null) {
+        options['sourceURL'] = [_sourceURL, _sourceURL];
+      }
 
-      final String _cacheBehaviour =
-          provider.persistent!.getString('${mcm!.storeName}: cacheBehaviour')!;
-      options['cacheBehaviour'] = [_cacheBehaviour, _cacheBehaviour];
+      final String? _cacheBehaviour =
+          provider.persistent!.getString('${mcm!.storeName}: cacheBehaviour');
+      if (_cacheBehaviour != null) {
+        options['cacheBehaviour'] = [_cacheBehaviour, _cacheBehaviour];
+      }
 
-      final int _validDuration =
-          provider.persistent!.getInt('${mcm!.storeName}: validDuration')!;
-      options['validDuration'] = [_validDuration, _validDuration];
+      final int? _validDuration =
+          provider.persistent!.getInt('${mcm!.storeName}: validDuration');
+      if (_validDuration != null) {
+        options['validDuration'] = [_validDuration, _validDuration];
+      }
 
-      final int _maxTiles =
-          provider.persistent!.getInt('${mcm!.storeName}: maxTiles')!;
-      options['maxTiles'] = [_maxTiles, _maxTiles];
+      final int? _maxTiles =
+          provider.persistent!.getInt('${mcm!.storeName}: maxTiles');
+      if (_maxTiles != null) options['maxTiles'] = [_maxTiles, _maxTiles];
     }
   }
 
