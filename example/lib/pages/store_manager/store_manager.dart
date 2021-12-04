@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_void_to_null
 
 import 'package:flutter/material.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -52,7 +53,12 @@ class StoreManager extends StatelessWidget {
                         provider.storeName = currentMCM.storeName;
                         provider.persistent!
                             .setString('lastUsedStore', provider.storeName);
+                        //PaintingBinding.instance?.imageCache?.clearLiveImages();
+                        //PaintingBinding.instance?.imageCache?.clear();
+                        //print(PaintingBinding
+                        //    .instance?.imageCache?.maximumSize = 0);
                         provider.resetMap();
+                        Phoenix.rebirth(context);
                       },
                       onLongPress: () {
                         showModalBottomSheet(

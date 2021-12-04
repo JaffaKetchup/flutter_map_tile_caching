@@ -23,6 +23,12 @@ class MapView extends StatelessWidget {
             MapCachingManager(provider.parentDirectory!, provider.storeName);
         final String? source =
             provider.persistent!.getString('${provider.storeName}: sourceURL');
+        final String? cacheBehaviour = provider.persistent!
+            .getString('${provider.storeName}: cacheBehaviour');
+        final int? validDuration =
+            provider.persistent!.getInt('${provider.storeName}: validDuration');
+        final int? maxTiles =
+            provider.persistent!.getInt('${provider.storeName}: maxTiles');
 
         return FlutterMap(
           mapController: controller,
@@ -37,7 +43,18 @@ class MapView extends StatelessWidget {
                   : source,
               subdomains: ['a', 'b', 'c'],
               tileProvider: provider.cachingEnabled
-                  ? StorageCachingTileProvider.fromMapCachingManager(mcm)
+                  ? StorageCachingTileProvider.fromMapCachingManager(
+                      mcm,
+                      behavior: cacheBehaviour == 'cacheFirst'
+                          ? CacheBehavior.cacheFirst
+                          : cacheBehaviour == 'cacheOnly'
+                              ? CacheBehavior.cacheOnly
+                              : cacheBehaviour == 'onlineFirst'
+                                  ? CacheBehavior.onlineFirst
+                                  : CacheBehavior.cacheFirst,
+                      cachedValidDuration: Duration(days: validDuration ?? 16),
+                      maxStoreLength: maxTiles ?? 20000,
+                    )
                   : const NonCachingNetworkTileProvider(),
               maxZoom: 20,
               reset: provider.resetController.stream,

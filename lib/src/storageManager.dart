@@ -8,8 +8,8 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p show joinAll, split;
 import 'package:path_provider/path_provider.dart';
 
-import 'internal/privateMisc.dart';
 import 'main.dart';
+import 'misc.dart';
 import 'regions/circle.dart';
 import 'regions/downloadableRegion.dart';
 import 'regions/line.dart';

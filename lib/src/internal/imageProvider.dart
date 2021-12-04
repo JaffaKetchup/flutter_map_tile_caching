@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p show joinAll;
 
 import '../main.dart';
-import 'privateMisc.dart';
+import '../misc.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
 class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
@@ -156,3 +156,6 @@ void writeFile(Map<String, dynamic> input) {
   file.createSync();
   file.writeAsBytesSync(bytes);
 }
+
+String safeFilename(String original) =>
+    original.replaceAll(RegExp(r'[^a-zA-Z0-9]'), ' ');

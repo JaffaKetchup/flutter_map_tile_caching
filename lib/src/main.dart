@@ -19,24 +19,10 @@ import 'bulkDownload/downloadProgress.dart';
 import 'bulkDownload/downloader.dart';
 import 'bulkDownload/tileLoops.dart';
 import 'internal/imageProvider.dart';
-import 'internal/privateMisc.dart';
+import 'misc.dart';
 import 'regions/downloadableRegion.dart';
 import 'regions/recoveredRegion.dart';
 import 'storageManager.dart';
-
-/// Multiple behaviors dictating how caching should be carried out, if at all
-enum CacheBehavior {
-  /// Only get tiles from the local cache
-  ///
-  /// Useful for applications with dedicated 'Offline Mode'.
-  cacheOnly,
-
-  /// Get tiles from the local cache, going on the Internet to update the cached tile if it has expired (`cachedValidDuration` has passed)
-  cacheFirst,
-
-  /// Get tiles from the Internet and update the cache for every tile
-  onlineFirst,
-}
 
 /// A `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
 ///
@@ -66,17 +52,17 @@ class StorageCachingTileProvider extends TileProvider {
   /// Defaults to the default store, 'mainStore'.
   final String storeName;
 
-  /// The behavior method to get and cache a tile
+  /// The behavior method to get and cache a tile. Also called `cacheBehaviour`.
   ///
   /// Defaults to [CacheBehavior.cacheFirst] - get tiles from the local cache, going on the Internet to update the cached tile if it has expired ([cachedValidDuration] has passed).
   final CacheBehavior behavior;
 
-  /// The duration until a tile expires and needs to be fetched again when browsing
+  /// The duration until a tile expires and needs to be fetched again when browsing. Also called `validDuration`.
   ///
   /// Defaults to 16 days, set to [Duration.zero] to disable.
   final Duration cachedValidDuration;
 
-  /// The maximum number of tiles allowed in a cache store (only whilst 'browsing' - see below) before the oldest tile gets deleted
+  /// The maximum number of tiles allowed in a cache store (only whilst 'browsing' - see below) before the oldest tile gets deleted. Also called `maxTiles`.
   ///
   /// Only applies to 'browse caching', ie. downloading regions will bypass this limit. This can be computationally expensive as it potentially involves sorting through this many files to find the oldest file.
   ///
@@ -536,5 +522,16 @@ class StorageCachingTileProvider extends TileProvider {
     }
 
     client.close();
+  }
+}
+
+extension _ListExtensionsE<E> on List<E> {
+  List<List<E>> chunked(int size) {
+    List<List<E>> chunks = [];
+
+    for (var i = 0; i < length; i += size)
+      chunks.add(this.sublist(i, (i + size < length) ? i + size : length));
+
+    return chunks;
   }
 }

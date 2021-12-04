@@ -28,6 +28,7 @@ dependencies:
   permission_handler: ^8.3.0
   queue: ^3.1.0+1
   vector_math: ^2.1.0
+  shared_preferences: ^2.0.9
 
 dev_dependencies:
   test: ^1.19.3

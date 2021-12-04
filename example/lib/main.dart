@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:provider/provider.dart';
 
 import 'pages/bulk_downloader/bulk_downloader.dart';
@@ -9,7 +10,7 @@ import 'pages/store_manager/store_manager.dart';
 import 'state/general_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(Phoenix(child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {

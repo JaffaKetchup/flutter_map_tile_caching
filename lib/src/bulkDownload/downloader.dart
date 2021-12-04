@@ -8,7 +8,6 @@ import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p show joinAll;
 import 'package:queue/queue.dart';
 
-import '../internal/privateMisc.dart';
 import '../main.dart';
 
 Stream<List> bulkDownloader({
@@ -69,7 +68,7 @@ Future<List<dynamic>> _getAndSaveTile({
   final String path = p.joinAll([provider.storePath, safeFilename(url)]);
 
   try {
-    if (preventRedownload && File(path).existsSync()) return [1, '', 0, 1];
+    if (preventRedownload && await File(path).exists()) return [1, '', 0, 1];
 
     File(path).writeAsBytesSync(
       (await client.get(Uri.parse(url))).bodyBytes,
@@ -77,8 +76,8 @@ Future<List<dynamic>> _getAndSaveTile({
     );
 
     if (seaTileBytes != null &&
-        ListEquality().equals(File(path).readAsBytesSync(), seaTileBytes)) {
-      File(path).deleteSync();
+        ListEquality().equals(await File(path).readAsBytes(), seaTileBytes)) {
+      await File(path).delete();
       return [1, '', 1, 0];
     }
   } catch (e) {
@@ -88,3 +87,6 @@ Future<List<dynamic>> _getAndSaveTile({
 
   return [1, '', 0, 0];
 }
+
+String safeFilename(String original) =>
+    original.replaceAll(RegExp(r'[^a-zA-Z0-9]'), ' ');

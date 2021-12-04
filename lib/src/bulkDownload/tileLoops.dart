@@ -1,7 +1,7 @@
+import 'dart:math';
+
 import 'package:flutter_map/flutter_map.dart' hide Polygon;
 import 'package:latlong2/latlong.dart';
-
-import '../internal/privateMisc.dart';
 
 List<Coords<num>> rectangleTiles(Map<String, dynamic> input) {
   final LatLngBounds bounds = input['bounds'];
@@ -52,24 +52,20 @@ List<Coords<num>> circleTiles(Map<String, dynamic> input) {
     outlineTileNums[zoomLvl] = {};
 
     for (LatLng node in circleOutline) {
-      final CustomPoint<num> tile = crs
+      final tile = crs
           .latLngToPoint(node, zoomLvl.toDouble())
           .unscaleBy(tileSize)
-          .floor();
+          .floor() as CustomPoint<int>;
 
-      if (outlineTileNums[zoomLvl]![tile.x.toInt()] == null)
-        outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-          999999999999999999,
-          -999999999999999999
-        ];
+      outlineTileNums[zoomLvl]![tile.x] ??= [1000000000000, -1000000000000];
 
-      outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-        tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0])
-            ? tile.y.toInt()
-            : (outlineTileNums[zoomLvl]![tile.x.toInt()]![0]),
-        tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1])
-            ? tile.y.toInt()
-            : (outlineTileNums[zoomLvl]![tile.x.toInt()]![1]),
+      outlineTileNums[zoomLvl]![tile.x] = [
+        tile.y < outlineTileNums[zoomLvl]![tile.x]![0]
+            ? tile.y
+            : outlineTileNums[zoomLvl]![tile.x]![0],
+        tile.y > outlineTileNums[zoomLvl]![tile.x]![1]
+            ? tile.y
+            : outlineTileNums[zoomLvl]![tile.x]![1],
       ];
     }
 
@@ -232,4 +228,9 @@ class _Polygon {
   _Polygon(this.nw, this.ne, this.se, this.sw);
 
   List<CustomPoint<num>> get points => [nw, ne, se, sw];
+}
+
+extension on List<double> {
+  double get minNum => this.reduce(min);
+  double get maxNum => this.reduce(max);
 }

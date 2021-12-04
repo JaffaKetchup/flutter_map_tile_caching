@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -102,36 +103,90 @@ class _StoreEditorState extends State<StoreEditor> {
             body: Consumer<GeneralProvider>(
               builder: (context, provider, _) => Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 300,
-                      child: MapView(
-                        source: optNewFallback<String>('sourceURL'),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 300,
+                        child: MapView(
+                          source: optNewFallback<String>('sourceURL'),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      initialValue: options['storeName']![0],
-                      onChanged: (newVal) =>
-                          updateOpt<String>('storeName', newVal),
-                      decoration:
-                          const InputDecoration(labelText: 'Store Name'),
-                      textCapitalization: TextCapitalization.words,
-                    ),
-                    const SizedBox(height: 5),
-                    TextFormField(
-                      initialValue: options['sourceURL']![0],
-                      onChanged: (newVal) =>
-                          updateOpt<String>('sourceURL', newVal),
-                      decoration: const InputDecoration(
-                        labelText: 'Source URL',
-                        helperText:
-                            'You must abide by your tile server\'s Terms Of Service',
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        initialValue: options['storeName']![0],
+                        onChanged: (newVal) =>
+                            updateOpt<String>('storeName', newVal),
+                        decoration:
+                            const InputDecoration(labelText: 'Store Name'),
+                        textCapitalization: TextCapitalization.words,
                       ),
-                      keyboardType: TextInputType.url,
-                    ),
-                  ],
+                      const SizedBox(height: 5),
+                      TextFormField(
+                        initialValue: options['sourceURL']![0],
+                        onChanged: (newVal) =>
+                            updateOpt<String>('sourceURL', newVal),
+                        decoration: const InputDecoration(
+                          labelText: 'Source URL',
+                          helperText:
+                              'You must abide by your tile server\'s Terms Of Service',
+                        ),
+                        keyboardType: TextInputType.url,
+                      ),
+                      const SizedBox(height: 5),
+                      const Divider(),
+                      const SizedBox(height: 5),
+                      TextFormField(
+                        initialValue: options['validDuration']![0].toString(),
+                        onChanged: (newVal) => updateOpt<int>(
+                            'validDuration', int.tryParse(newVal) ?? 16),
+                        decoration: const InputDecoration(
+                          labelText: 'Valid Duration (days)',
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: <TextInputFormatter>[
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      TextFormField(
+                        initialValue: options['maxTiles']![0].toString(),
+                        onChanged: (newVal) => updateOpt<int>(
+                            'maxTiles', int.tryParse(newVal) ?? 16),
+                        decoration: const InputDecoration(
+                          labelText: 'Max Tiles',
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: <TextInputFormatter>[
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          const Text('Cache Behaviour:'),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: DropdownButton<String>(
+                              value: optNewFallback<String>('cacheBehaviour'),
+                              onChanged: (newVal) =>
+                                  updateOpt<String>('cacheBehaviour', newVal),
+                              items: <String>[
+                                'cacheFirst',
+                                'onlineFirst',
+                                'cacheOnly'
+                              ].map<DropdownMenuItem<String>>((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
