@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.3] - 2021/09/12
+
+* Fix bug #32 (on Github)
+* Update .gitignore
+* Update README to recommend v4
+
 ## [3.0.2] - 2021/07/25
 
 * Fix bug #20 (on GitHub)

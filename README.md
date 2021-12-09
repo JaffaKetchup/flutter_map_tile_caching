@@ -9,6 +9,9 @@ A plugin for the [`flutter_map`](https://pub.dev/packages/flutter_map) library t
 
 ## Installation
 
+> It is now recommended to use the v4 development version instead of the latest main version, due to significant developments/improvements and breaking changes.  
+> Where possible (ie. except in production ready versions of your app), use the pre-releases of [v4](https://github.com/JaffaKetchup/flutter_map_tile_caching/tree/v4).
+
 To install this plugin, use the normal installation method:
 
 ```shell
