@@ -263,7 +263,7 @@ class StorageCachingTileProvider extends TileProvider {
     Crs crs = const Epsg3857(),
     CustomPoint<num> tileSize = const CustomPoint(256, 256),
   }) {
-    final Map<int, Map<int, List<int>>> outlineTileNums = {};
+    final Map<int, Map<int, List<BigInt>>> outlineTileNums = {};
 
     final List<Coords<num>> coords = [];
 
@@ -289,24 +289,24 @@ class StorageCachingTileProvider extends TileProvider {
 
         if (outlineTileNums[zoomLvl]![tile.x.toInt()] == null) {
           outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-            999999999999999999,
-            -999999999999999999
+            BigInt.parse("999999999999999999"),
+            BigInt.parse("-999999999999999999")
           ];
         }
 
         outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-          tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0])
-              ? tile.y.toInt()
+          tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0].toInt())
+              ? BigInt.from(tile.y.toInt())
               : (outlineTileNums[zoomLvl]![tile.x.toInt()]![0]),
-          tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1])
-              ? tile.y.toInt()
+          tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1].toInt())
+              ? BigInt.from(tile.y.toInt())
               : (outlineTileNums[zoomLvl]![tile.x.toInt()]![1]),
         ];
       }
 
       for (int x in outlineTileNums[zoomLvl]!.keys) {
-        for (int y = outlineTileNums[zoomLvl]![x]![0];
-            y <= outlineTileNums[zoomLvl]![x]![1];
+        for (int y = outlineTileNums[zoomLvl]![x]![0].toInt();
+            y <= outlineTileNums[zoomLvl]![x]![1].toInt();
             y++) {
           coords.add(
             Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble(),
