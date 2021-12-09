@@ -335,7 +335,7 @@ class _BulkDownloaderState extends State<BulkDownloader> {
                           );
                         } else {
                           return Row(
-                            children: [],
+                            children: const [],
                           );
                         }
                       },

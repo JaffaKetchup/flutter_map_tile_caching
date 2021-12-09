@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.0-dev.8] - 2021/12/09
+
+* New example app (in progress)
+* Added `coverImage()` functionality
+* General improvements
+* Fixed issues for web compilation (needs more testing)
+* Acknowledged issue with dynamic tile source swapping (see #31 on GitHub), still needs resolving
+
 ## [4.0.0-dev.7] - 2021/11/06
 
 * Major performance improvements through custom `ImageProvider`
