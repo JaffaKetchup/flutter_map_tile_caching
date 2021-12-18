@@ -20,62 +20,83 @@ class StoreModal extends StatelessWidget {
     return Consumer<GeneralProvider>(
       builder: (context, provider, _) => Padding(
         padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            ListTile(
-              title: const Text('Download Region'),
-              leading: const Icon(Icons.download),
-              onTap: () {
-                Navigator.popAndPushNamed(
-                  context,
-                  '/bulkDownloader',
-                  arguments: currentMCM,
-                );
-              },
-              visualDensity: VisualDensity.compact,
-            ),
-            const Divider(),
-            ListTile(
-              title: const Text('Edit'),
-              leading: const Icon(Icons.edit),
-              onTap: () {
-                Navigator.popAndPushNamed(
-                  context,
-                  '/storeEditor',
-                  arguments: currentMCM,
-                );
-              },
-              visualDensity: VisualDensity.compact,
-            ),
-            ListTile(
-              title: Text(
-                'Delete',
-                style: provider.storeName == currentMCM.storeName
-                    ? null
-                    : const TextStyle(color: Colors.red),
-              ),
-              leading: Icon(
-                Icons.delete_forever,
-                color: provider.storeName == currentMCM.storeName
-                    ? null
-                    : Colors.red,
-              ),
-              onTap: () {
-                currentMCM.deleteStore();
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      '${currentMCM.storeName} deleted successfully',
-                    ),
+        child: StreamBuilder<void>(
+          stream: currentMCM.watchCacheChanges,
+          builder: (context, snapshot) {
+            return ListView(
+              shrinkWrap: true,
+              children: [
+                ListTile(
+                  title: const Text('Download Region'),
+                  leading: const Icon(Icons.download),
+                  onTap: () {
+                    Navigator.popAndPushNamed(
+                      context,
+                      '/bulkDownloader',
+                      arguments: currentMCM,
+                    );
+                  },
+                  visualDensity: VisualDensity.compact,
+                ),
+                const Divider(),
+                ListTile(
+                  title: const Text('Edit'),
+                  leading: const Icon(Icons.edit),
+                  onTap: () {
+                    Navigator.popAndPushNamed(
+                      context,
+                      '/storeEditor',
+                      arguments: currentMCM,
+                    );
+                  },
+                  visualDensity: VisualDensity.compact,
+                ),
+                ListTile(
+                  title: const Text('Empty'),
+                  leading: const Icon(Icons.delete),
+                  onTap: () {
+                    currentMCM.emptyStore();
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '${currentMCM.storeName} emptied successfully',
+                        ),
+                      ),
+                    );
+                  },
+                  visualDensity: VisualDensity.compact,
+                ),
+                ListTile(
+                  title: Text(
+                    'Delete Permanently',
+                    style: provider.storeName == currentMCM.storeName
+                        ? null
+                        : const TextStyle(color: Colors.red),
                   ),
-                );
-              },
-              visualDensity: VisualDensity.compact,
-              enabled: provider.storeName != currentMCM.storeName,
-            ),
-          ],
+                  leading: Icon(
+                    Icons.delete_forever,
+                    color: provider.storeName == currentMCM.storeName
+                        ? null
+                        : Colors.red,
+                  ),
+                  onTap: () {
+                    currentMCM.deleteStore();
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '${currentMCM.storeName} deleted successfully',
+                        ),
+                      ),
+                    );
+                  },
+                  visualDensity: VisualDensity.compact,
+                  enabled: provider.storeName != currentMCM.storeName,
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

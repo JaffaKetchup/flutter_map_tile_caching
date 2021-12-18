@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-AppBar buildAppBar(BuildContext context) {
+AppBar buildAppBar(
+  BuildContext context,
+) {
   return AppBar(
     title: const Text('Download Region'),
     actions: [

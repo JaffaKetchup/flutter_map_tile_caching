@@ -68,6 +68,14 @@ class MapCachingManager {
     if (exists ?? false) Directory(storePath).deleteSync(recursive: true);
   }
 
+  /// Empty a cache store (delete all contained tiles)
+  void emptyStore() {
+    if (exists ?? false)
+      Directory(storePath).listSync(recursive: true).forEach((element) {
+        element.deleteSync();
+      });
+  }
+
   /// Delete all cache stores
   void deleteAllStores() {
     if (exists != null)

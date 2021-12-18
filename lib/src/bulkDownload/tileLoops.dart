@@ -55,17 +55,20 @@ List<Coords<num>> circleTiles(Map<String, dynamic> input) {
       final tile = crs
           .latLngToPoint(node, zoomLvl.toDouble())
           .unscaleBy(tileSize)
-          .floor() as CustomPoint<int>;
+          .floor();
 
-      outlineTileNums[zoomLvl]![tile.x] ??= [1000000000000, -1000000000000];
+      outlineTileNums[zoomLvl]![tile.x.toInt()] ??= [
+        1000000000000,
+        -1000000000000
+      ];
 
-      outlineTileNums[zoomLvl]![tile.x] = [
-        tile.y < outlineTileNums[zoomLvl]![tile.x]![0]
-            ? tile.y
-            : outlineTileNums[zoomLvl]![tile.x]![0],
-        tile.y > outlineTileNums[zoomLvl]![tile.x]![1]
-            ? tile.y
-            : outlineTileNums[zoomLvl]![tile.x]![1],
+      outlineTileNums[zoomLvl]![tile.x.toInt()] = [
+        tile.y < outlineTileNums[zoomLvl]![tile.x.toInt()]![0]
+            ? tile.y.toInt()
+            : outlineTileNums[zoomLvl]![tile.x.toInt()]![0],
+        tile.y > outlineTileNums[zoomLvl]![tile.x.toInt()]![1]
+            ? tile.y.toInt()
+            : outlineTileNums[zoomLvl]![tile.x.toInt()]![1],
       ];
     }
 
