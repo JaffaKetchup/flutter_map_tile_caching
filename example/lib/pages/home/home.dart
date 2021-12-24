@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../misc/components/loading_builder.dart';
 import '../../state/general_provider.dart';
 import 'components/app_bar.dart';
 import 'components/map.dart';
@@ -78,7 +77,7 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           MapView(controller: mapController),
                           AnimatedPositioned(
-                            bottom: provider.cachingEnabled ? 0 : -100,
+                            bottom: provider.cachingEnabled ? 0 : -125,
                             width: MediaQuery.of(context).size.width,
                             duration: const Duration(milliseconds: 200),
                             child: const Panel(),
@@ -95,4 +94,21 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
+
+Widget loadingScreen(BuildContext context, String extraInfo) {
+  return SizedBox(
+    width: MediaQuery.of(context).size.width,
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const CircularProgressIndicator.adaptive(),
+        const SizedBox(height: 20),
+        Text(
+          'Loading...\n$extraInfo',
+          textAlign: TextAlign.center,
+        ),
+      ],
+    ),
+  );
 }

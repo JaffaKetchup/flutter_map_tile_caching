@@ -10,11 +10,14 @@ class Panel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100,
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
         color: Colors.blueGrey,
         borderRadius: BorderRadius.circular(8.0),
+      ),
+      padding: const EdgeInsets.symmetric(
+        vertical: 10,
+        horizontal: 10,
       ),
       child: SafeArea(
         child: Consumer<GeneralProvider>(
@@ -23,7 +26,7 @@ class Panel extends StatelessWidget {
                 provider.parentDirectory!, provider.storeName);
 
             return StreamBuilder<void>(
-              stream: mcm.watchStoreChanges,
+              stream: mcm.watchStoreChanges(true)!,
               builder: (context, _) => Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -32,7 +35,7 @@ class Panel extends StatelessWidget {
                     description: 'Total Tiles',
                   ),
                   statBuilder(
-                    stat: mcm.storeSize!.toStringAsFixed(2) + 'KiB',
+                    stat: (mcm.storeSize! / 1024).toStringAsFixed(2) + 'MiB',
                     description: 'Total Size',
                   ),
                 ],

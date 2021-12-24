@@ -22,7 +22,8 @@ class MapView extends StatelessWidget {
     return Consumer<GeneralProvider>(
       builder: (context, provider, _) {
         final String? source =
-            provider.persistent!.getString('${mcm.storeName}: sourceURL');
+            provider.persistent!.getString('${mcm.storeName}: sourceURL') ??
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
         return FutureBuilder<void>(
           future: controller.onReady,
@@ -46,6 +47,26 @@ class MapView extends StatelessWidget {
                     child: child,
                   ),
                 ),
+                /*PolygonLayerOptions(
+                  polygons: [
+                    Polygon(
+                      points: [
+                        Provider.of<BulkDownloadProvider>(context)
+                            .testingBounds
+                            .northEast!,
+                        Provider.of<BulkDownloadProvider>(context)
+                            .testingBounds
+                            .southEast,
+                        Provider.of<BulkDownloadProvider>(context)
+                            .testingBounds
+                            .southWest!,
+                        Provider.of<BulkDownloadProvider>(context)
+                            .testingBounds
+                            .northWest,
+                      ],
+                    ),
+                  ],
+                ),*/
               ],
             );
           },

@@ -6,8 +6,6 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
-import '../regions/downloadableRegion.dart';
-
 /// Deprecated due to overcomplication leading to need for code reduction. This same functionality can be easily constructed on a case-to-case basis using just one or two variables. See the example project for how to do this.
 @Deprecated(
     'Due to overcomplication leading to need for code reduction. This same functionality can be easily constructed on a case-to-case basis using just one or two variables. See the example project for how to do this.')

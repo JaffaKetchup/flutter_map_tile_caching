@@ -32,8 +32,9 @@ class StoreManager extends StatelessWidget {
                 provider.parentDirectory!, provider.storeName);
 
             return StreamBuilder<void>(
-              stream: mcm.watchCacheChanges!,
-              builder: (context, _) {
+              stream: mcm.watchCacheChanges(true)!,
+              builder: (context, s) {
+                print(s);
                 final List<String> storeNames = mcm.allStoresNames!;
 
                 return ListView.separated(
@@ -44,7 +45,7 @@ class StoreManager extends StatelessWidget {
                     return ListTile(
                       title: Text(currentMCM.storeName),
                       subtitle: Text(
-                          '${currentMCM.storeLength} tiles\n${currentMCM.storeSize!.toStringAsFixed(2)} KiB'),
+                          '${currentMCM.storeLength} tiles\n${(currentMCM.storeSize! / 1024).toStringAsFixed(2)} MiB'),
                       leading: buildListTileImage(currentMCM),
                       trailing: provider.storeName == currentMCM.storeName
                           ? const Icon(Icons.done)
@@ -53,12 +54,9 @@ class StoreManager extends StatelessWidget {
                         provider.storeName = currentMCM.storeName;
                         provider.persistent!
                             .setString('lastUsedStore', provider.storeName);
-                        //PaintingBinding.instance?.imageCache?.clearLiveImages();
-                        //PaintingBinding.instance?.imageCache?.clear();
-                        //print(PaintingBinding
-                        //    .instance?.imageCache?.maximumSize = 0);
+                        PaintingBinding.instance?.imageCache?.clear();
                         provider.resetMap();
-                        Phoenix.rebirth(context);
+                        //Phoenix.rebirth(context);
                       },
                       onLongPress: () {
                         showModalBottomSheet(

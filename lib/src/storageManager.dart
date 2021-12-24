@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p show joinAll, split;
 import 'package:path_provider/path_provider.dart';
+import 'package:stream_transform/stream_transform.dart';
 
 import 'main.dart';
 import 'misc.dart';
@@ -92,26 +93,54 @@ class MapCachingManager {
     return MapCachingManager(parentDirectory, newName);
   }
 
+  /// Watch for changes in the current cache (not recursive, so should not include events from [watchStoreChanges])
+  ///
+  /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
+  ///
+  /// Enable debouncing to prevent unnecessary rebuilding for tiny changes in detail using [enableDebounce]. Optionally change the [debounceDuration] from 200ms to 'fire' more or less frequently.
+  ///
+  /// Debouncing example (dash represents [debounceDuration]):
+  /// ```dart
+  /// input:  1-2-3---4---5-6-|
+  /// output: ------3---4-----6|
+  /// ```
+  ///
+  /// Returns `null` if the store does not exist.
+  Stream<void>? watchCacheChanges(
+    bool enableDebounce, [
+    Duration debounceDuration = const Duration(milliseconds: 200),
+  ]) {
+    if (!(exists ?? false)) return null;
+
+    final Stream<void> stream =
+        Directory(parentDirectory.absolute.path).watch().map((event) => null);
+
+    return enableDebounce ? stream.debounce(debounceDuration) : stream;
+  }
+
   /// Watch for changes in the current store
   ///
   /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
   ///
+  /// Enable debouncing to prevent unnecessary rebuilding for tiny changes in detail using [enableDebounce]. Optionally change the [debounceDuration] from 200ms to 'fire' more or less frequently.
+  ///
+  /// Debouncing example (dash represents [debounceDuration]):
+  /// ```dart
+  /// input:  1-2-3---4---5-6-|
+  /// output: ------3---4-----6|
+  /// ```
+  ///
   /// Returns `null` if the store does not exist.
-  Stream<Null>? get watchStoreChanges {
+  Stream<void>? watchStoreChanges(
+    bool enableDebounce, [
+    Duration debounceDuration = const Duration(milliseconds: 200),
+  ]) {
     if (!(exists ?? false)) return null;
-    return Directory(storePath).watch().map((event) => null);
-  }
 
-  /// Watch for changes in the current cache (not recursive, so does not include events from [watchStoreChanges])
-  ///
-  /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
-  ///
-  /// Returns `null` if the store does not exist.
-  Stream<Null>? get watchCacheChanges {
-    if (!(exists ?? false)) return null;
-    return Directory(parentDirectory.absolute.path)
-        .watch()
-        .map((event) => null);
+    final Stream<void> stream =
+        Directory(storePath).watch().map((event) => null);
+
+    return enableDebounce ? stream.debounce(debounceDuration) : stream;
   }
 
   /// Retrieve a list of all names of existing cache stores
@@ -131,7 +160,13 @@ class MapCachingManager {
   /// Returns `null` if the store does not exist.
   double? get storeSize {
     if (!(exists ?? false)) return null;
-    return Directory(storePath).statSync().size / 1024;
+
+    int totalSize = 0;
+    Directory(storePath).listSync(recursive: true).forEach(
+          (FileSystemEntity e) => totalSize += e is File ? e.lengthSync() : 0,
+        );
+
+    return totalSize / 1024;
   }
 
   /// Retrieve the size of all cache stores in kibibytes (KiB)
