@@ -11,7 +11,7 @@ Widget buildListTileImage(MapCachingManager mcm) {
               child: Icon(Icons.help_outline),
             ),
           )
-        : mcm.coverImage(
+        : mcm.coverImageAsync(
             random: false,
             size: 50,
           ),

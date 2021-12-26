@@ -68,7 +68,7 @@ Widget _buildInfoPanel(context) {
                   ),
                   TextSpan(
                     text:
-                        'Drag the viewfinder over an area you would like to download, and choose a suitable shape using the switch chips. Once you\'ve decided on your perfect area, tap the Done button and input other information such as zoom levels, number of threads, and other optional functionality. Then start the download and watch the percentage tick up.\n\n',
+                        'Drag the viewfinder over an area you would like to download, and choose a suitable shape using the switch chips. The crosshairs will help you get your real center and will confirm your corner/edge.\nOnce you\'ve decided on your perfect area, tap the Done button and input other information such as zoom levels, number of threads, and other optional functionality. Then start the download and watch the percentage tick up.\n\n',
                   ),
                   TextSpan(
                     text: 'Download not starting? All tiles fail?\n',

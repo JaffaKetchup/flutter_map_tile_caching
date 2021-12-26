@@ -47,9 +47,7 @@ Future<LatLng> xyToLatLng({
 
   final CustomPoint<num> point =
       (CustomPoint(input['offset'].dx, input['offset'].dy) -
-              (CustomPoint<double>(
-                      input['width'], input['height'] - kToolbarHeight) /
-                  2.0))
+              (CustomPoint<double>(input['width'], input['height']) / 2.0))
           .rotate(input['rotation'] * pi / 180);
 
   return const Epsg3857().pointToLatLng(focalStartPt + point, input['zoom'])!;

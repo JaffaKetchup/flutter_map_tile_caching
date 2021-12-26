@@ -1,7 +1,6 @@
 // ignore_for_file: prefer_void_to_null
 
 import 'package:flutter/material.dart';
-import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';

@@ -26,7 +26,8 @@ class TileLoader extends StatefulWidget {
 }
 
 class _TileLoaderState extends State<TileLoader> {
-  late Future<List<LatLng>> future;
+  late Future<List<LatLng>> tileCountFuture;
+  late Future<List<LatLng>> uiConfirmationFuture;
 
   @override
   void didChangeDependencies() {
@@ -34,36 +35,61 @@ class _TileLoaderState extends State<TileLoader> {
 
     final BulkDownloadProvider bdp = Provider.of<BulkDownloadProvider>(context);
 
-    future = Future.wait(
+    final bool isCircle = bdp.mode == RegionMode.Circle;
+    const Offset offset = Offset(0, 60);
+    final double height = bdp.region?.screenConstraints.maxHeight ?? 0;
+    final double width = bdp.region?.screenConstraints.maxWidth ?? 0;
+
+    tileCountFuture = Future.wait(
       [
         xyToLatLng(
           controller: widget.controller,
-          offset: ((bdp.mode == RegionMode.Circle
-                      ? bdp.region?.middleCenter
-                      : bdp.region?.topLeft) ??
-                  Offset.zero) -
-              Offset(0, MediaQuery.of(context).viewPadding.bottom + 72),
-          height: bdp.region?.screenConstraints.maxHeight ?? 0,
-          width: bdp.region?.screenConstraints.maxWidth ?? 0,
+          offset:
+              ((isCircle ? bdp.region?.middleCenter : bdp.region?.topLeft) ??
+                      Offset.zero) -
+                  offset,
+          height: height,
+          width: width,
         ),
         xyToLatLng(
           controller: widget.controller,
-          offset: ((bdp.mode == RegionMode.Circle
-                      ? bdp.region?.edgeCenter
-                      : bdp.region?.bottomRight) ??
-                  Offset.zero) -
-              Offset(0, MediaQuery.of(context).viewPadding.bottom + 72),
-          height: bdp.region?.screenConstraints.maxHeight ?? 0,
-          width: bdp.region?.screenConstraints.maxWidth ?? 0,
+          offset:
+              ((isCircle ? bdp.region?.edgeCenter : bdp.region?.bottomRight) ??
+                      Offset.zero) -
+                  offset,
+          height: height,
+          width: width,
         ),
       ],
     );
+
+    uiConfirmationFuture = Future.wait(
+      [
+        xyToLatLng(
+          controller: widget.controller,
+          offset: (bdp.region?.middleCenter ?? Offset.zero) - offset,
+          height: height,
+          width: width,
+        ),
+        xyToLatLng(
+          controller: widget.controller,
+          offset: (bdp.region?.topLeft ?? Offset.zero) - offset,
+          height: height,
+          width: width,
+        ),
+      ],
+    );
+
+    /*(() async {
+      await widget.controller.onReady;
+    }());*/
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<BulkDownloadProvider>(
-      builder: (context, bdp, _) => Container(
+    return Selector<BulkDownloadProvider, RegionMode>(
+      selector: (_, bdp) => bdp.mode,
+      builder: (context, mode, _) => Container(
         decoration: BoxDecoration(
           border: Border.all(
             color: Colors.black,
@@ -72,48 +98,76 @@ class _TileLoaderState extends State<TileLoader> {
         ),
         padding: const EdgeInsets.only(left: 16),
         child: FutureBuilder<List<LatLng>>(
-          future: future,
-          builder: (context, xy) {
-            if (!xy.hasData || xy.connectionState == ConnectionState.waiting) {
-              return Center(
-                child: Row(
-                  children: const [
-                    CircularProgressIndicator(),
-                    SizedBox(width: 16),
-                    Text('Calculating Lat/Lng Values...'),
-                  ],
-                ),
-              );
+          future: uiConfirmationFuture,
+          builder: (context, ui) {
+            /*if (!ui.hasData ||
+                    ui.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: Row(
+                      children: const [
+                        CircularProgressIndicator(),
+                        SizedBox(width: 16),
+                        Text('Calculating Lat/Lng Values (1)...'),
+                      ],
+                    ),
+                  );
+                }*/
+
+            if (ui.hasData) {
+              WidgetsBinding.instance!.addPostFrameCallback((_) {
+                //bdp.centerAndEdge = ui.data!;
+                //Provider.of<BulkDownloadProvider>(context, listen: false)
+                //    .centerAndEdge = ui.data!;
+              });
             }
 
-            final DownloadableRegion region = (bdp.mode == RegionMode.Circle
-                    ? CircleRegion(
-                        xy.data![0],
-                        const Distance().distance(xy.data![0], xy.data![1]) /
-                            1000,
-                      )
-                    : RectangleRegion(
-                        LatLngBounds(
-                          xy.data![0],
-                          xy.data![1],
-                        ),
-                      ))
-                .toDownloadable(
-              1,
-              16,
-              TileLayerOptions(
-                urlTemplate: widget.mapSource,
-                subdomains: [
-                  'a',
-                  'b',
-                  'c',
-                ],
-              ),
-            );
+            return FutureBuilder<List<LatLng>>(
+              future: tileCountFuture,
+              builder: (context, xy) {
+                if (!xy.hasData ||
+                    xy.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: Row(
+                      children: const [
+                        CircularProgressIndicator(),
+                        SizedBox(width: 16),
+                        Text('Calculating Lat/Lng Values (2)...'),
+                      ],
+                    ),
+                  );
+                }
 
-            return TileLoader2(
-              region: region,
-              mcm: widget.mcm,
+                final DownloadableRegion region = (mode == RegionMode.Circle
+                        ? CircleRegion(
+                            xy.data![0],
+                            const Distance()
+                                    .distance(xy.data![0], xy.data![1]) /
+                                1000,
+                          )
+                        : RectangleRegion(
+                            LatLngBounds(
+                              xy.data![0],
+                              xy.data![1],
+                            ),
+                          ))
+                    .toDownloadable(
+                  1,
+                  16,
+                  TileLayerOptions(
+                    urlTemplate: widget.mapSource,
+                    subdomains: [
+                      'a',
+                      'b',
+                      'c',
+                    ],
+                  ),
+                );
+
+                return TileLoader2(
+                  region: region,
+                  mcm: widget.mcm,
+                );
+              },
             );
           },
         ),

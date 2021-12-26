@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../pages/bulk_downloader/components/region_constraints.dart';
 import '../pages/bulk_downloader/components/region_mode.dart';
 
 class BulkDownloadProvider extends ChangeNotifier {
-  RegionConstraints? region; // Problem-causer 9000 - DONT TOUCH
+  // I hate state management
+  RegionConstraints? region; // Problem-causer 9000
 
   RegionMode _mode = RegionMode.Square;
   RegionMode get mode => _mode;
@@ -19,4 +22,19 @@ class BulkDownloadProvider extends ChangeNotifier {
     _regionSelected = newBool;
     notifyListeners();
   }
+
+  LatLngBounds _testingBounds = LatLngBounds(LatLng(0, 0), LatLng(0, 0));
+  LatLngBounds get testingBounds => _testingBounds;
+  set testingBounds(LatLngBounds newBounds) {
+    _testingBounds = newBounds;
+    notifyListeners();
+  }
+
+  List<LatLng> _centerAndEdge = List<LatLng>.filled(2, LatLng(0,0));
+  List<LatLng> get centerAndEdge => _centerAndEdge;
+  set centerAndEdge(List<LatLng> newCenterAndEdge) {
+    _centerAndEdge = newCenterAndEdge;
+    notifyListeners();
+  }
+
 }

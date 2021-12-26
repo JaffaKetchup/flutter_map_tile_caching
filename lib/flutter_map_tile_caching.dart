@@ -4,6 +4,7 @@
 // Main
 export 'src/main.dart';
 export 'src/storageManager.dart';
+export 'src/asyncStorageManager.dart';
 export 'src/misc.dart';
 export 'src/bulkDownload/downloadProgress.dart';
 
