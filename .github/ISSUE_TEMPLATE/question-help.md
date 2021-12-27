@@ -1,7 +1,7 @@
 ---
 name: Question/Help
 about: Ask for clarification or get help for a certain feature
-title: "[QUESTION]"
+title: Question - ...
 labels: question/help
 assignees: JaffaKetchup
 

@@ -33,7 +33,6 @@ class StoreManager extends StatelessWidget {
             return StreamBuilder<void>(
               stream: mcm.watchCacheChanges(true)!,
               builder: (context, s) {
-                print(s);
                 final List<String> storeNames = mcm.allStoresNames!;
 
                 return ListView.separated(

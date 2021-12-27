@@ -256,6 +256,7 @@ class _TileLoader2State extends State<TileLoader2> {
                 );
 
                 download.listen((event) {
+                  // ignore: avoid_print
                   print(
                     event.percentageProgress.toStringAsFixed(2) +
                         '% complete - ' +
