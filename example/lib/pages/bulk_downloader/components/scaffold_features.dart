@@ -81,14 +81,14 @@ Widget _buildInfoPanel(context) {
                         'Try removing the \'{s}\' subdomain part from your source URL using the Store Editor. Only subdomains a, b & c are supported in this example (fully functional in the API).\nTry selecting a smaller area and fewer zoom levels, and avoid use of the Circle shape region.\nDisable multithreading and sea tile removal as a last resort.\n\n',
                   ),
                   TextSpan(
-                    text: 'Is this allowed? Limitations apply.\n',
+                    text: 'Limitations apply.\n',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   TextSpan(
                     text:
-                        'Bulk downloading using this manner places a large amount of strain on tile servers as it involves potentially rendering a large amount of new tiles, especially at more detailed zoom levels (> 14).\nTherefore, many tile servers - especially free ones - will state in their Terms of Service that bulk downloading is forbidden. Other servers allow this (or do not state either way), so this functionality is provided anyway.\nAs such, limitations have been enforced in this example app. You cannot: download more than 50000 tiles at once, download at zoom levels above 16, nor use more than 2 download threads.',
+                        'Bulk downloading using this manner places a large amount of strain on tile servers as it involves potentially rendering a large amount of new tiles, especially at more detailed zoom levels (> 14).\nTherefore, many tile servers - especially free ones - will state in their Terms of Service that bulk downloading is forbidden. Other servers allow this (or do not state either way), so this functionality is provided anyway.\nAs such, limitations have been enforced in this example app. You cannot: download more than 50000 tiles at once, download at zoom levels above 16, nor use more than 5 download threads.',
                   ),
                 ],
               ),

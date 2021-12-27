@@ -2,7 +2,7 @@ name: fmtc_example
 description: The example application for 'flutter_map_tile_caching', showcasing it's functionality and use-cases.
 publish_to: "none"
 
-version: 4.0.0
+version: 4.0.0-dev.9
 
 environment:
   sdk: ">=2.15.0 <3.0.0"
@@ -12,16 +12,12 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Mapping
   flutter_map: ^0.14.0
   flutter_map_tile_caching:
     path: ../
 
-  # Provider & Persistence
   provider: ^6.0.1
   shared_preferences: ^2.0.11
-
-  flutter_phoenix: ^1.0.0
   stream_transform: ^2.0.0
 
 dev_dependencies:

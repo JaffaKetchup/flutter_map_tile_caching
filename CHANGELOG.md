@@ -1,5 +1,14 @@
 # Changelog
 
+## [4.0.0-dev.9] - 2021/12/27
+
+* Added new functionality: `AsyncMapCachingManager` (extension methods)
+* Added new functionality: debouncing for `watch...` methods in `MapCachingManager`
+* Added new functionality: `emptyStore()` in `MapCachingManager`
+* Fix inaccurate size reporting
+* Example improvements - new example app still in progress
+* General changes to README
+
 ## [4.0.0-dev.8] - 2021/12/09
 
 * New example app (in progress)

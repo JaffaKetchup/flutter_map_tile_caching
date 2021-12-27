@@ -54,7 +54,6 @@ class StoreManager extends StatelessWidget {
                             .setString('lastUsedStore', provider.storeName);
                         PaintingBinding.instance?.imageCache?.clear();
                         provider.resetMap();
-                        //Phoenix.rebirth(context);
                       },
                       onLongPress: () {
                         showModalBottomSheet(

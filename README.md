@@ -57,11 +57,16 @@ Please note that this library has not been tested on iOS devices, so issues may 
 
 ## Example
 
-To run the example project, create a new project and copy/replace the existing 'main.dart' file with the 'main.dart' file from this project's example folder. Remember to complete the TODOs at the top of the file. Finally, follow the platform-specific installation instructions above to get your app to build successfully.  
-It's not recommended to copy directly from the example: it's a bit of a mess and not organized very well, and a bit buggy. Just use it to see how things work before implementing this library into your own project.
+As of v4, this package contains a full example application showcasing most of the features of this package. Simply clone the this project, enter the 'example' directory, and then build for your desired platform:
 
-Alternatively, if you just want to see how it works quickly, you can run the example app on an Android device by installing the APK file found in the 'example' directory.  
-If you do this, you must comply to the [Open Street Map Tile Server rules](https://operations.osmfoundation.org/policies/tiles), specifically the section about [Bulk Downloads](https://operations.osmfoundation.org/policies/tiles/#:~:text=above%20technical%20requirements.-,Bulk%20Downloading,-Bulk%20downloading%20is). In short, don't bulk download over 250 tiles at zoom level 13 or more.
+- Android & Windows users should run 'androidBuilder.bat'
+- Android & Linux/MacOS users should run 'androidBuilder.sh' (bash)
+
+... to build the smallest output .apk files possible (< 13MB).  
+There is no build automation for iOS devices: users will need to build manually as usual.
+
+By using the example application, you must comply to your tile server's ToS. OpenStreetMap's (the default throughout the application) can be [found here](https://operations.osmfoundation.org/policies/tiles). If you cannot comply to these rules, you should find one that you can comply to and get the appropriate source URL (which can be customised in the application).  
+Some safeguards have been built in - specifically in the bulk download screen. You can read more about these by tapping the help icon in the app bar.
 
 ## Functionality
 
@@ -70,9 +75,14 @@ This package provides every thing you should need to implement advanced caching 
 This terminology appears throughout documentation:
 
 - A 'cache' contains multiple 'stores'. There's usually only one cache per device, but there can be many stores.
-- A 'region' is an area of a map formed by particular rules and coordinates.
-- 'Browse caching' is the caching performed when a user pans over a tile in the map view and it becomes visible. If not otherwise specified, this is also usually referred to as just 'caching'.
-- 'Bulk downloading' is the caching performed when a user initiates a download by specifying a region to download at once. If not otherwise specified, this is also usually referred to as just 'downloading'. This action is banned by some servers, make sure you comply with the appropriate rules and ToS for your server.
+  - A cache is referred to as the `parentDirectory` throughout the API as well. Getting the directory will be an asynchronous process, so it is likely a `FutureBuilder` will be needed.
+  - A store is sometimes referred to as a 'cache store', but this is just for extra clarification.
+- A 'region' is an area of a map formed by particular rules ('shapes') and coordinates.
+- 'Browse caching' is the caching performed when a user pans over a tile in the map view and it becomes visible.
+  - If not otherwise specified, this is also usually referred to as just 'caching'.
+- 'Bulk downloading' is the caching performed when a user initiates a download by specifying a region to download at once.
+  - If not otherwise specified, this is also usually referred to as just 'downloading'.
+  - This caching is banned by some servers, make sure you comply with the appropriate rules and ToS for your server.
 
 Below are some special highlights in no particular order - my personal pick of things I "quite like" and spent a lot of time on. By no means is this an exhaustive list!
 
@@ -81,13 +91,14 @@ Below are some special highlights in no particular order - my personal pick of t
 
 Select a multitude of region shapes for displaying to the user and downloading. Choose from a standard rectangle/square, a circle, or a line-based region.
 
-Rectangle regions are formed from 2 coordinates, representing the north-west and south-east corners. The code automatically creates the other necessary corners.  
-Circle regions are formed from a center coordinate and a radius. Internal 'outline' coordinates are generated per degree automatically from this information.  
-Line-based regions are formed from multiple coordinates and a radius, creating a locus. Internal 'outline' coordinates are generated for every vertex and curve.
+- Rectangle regions are formed from 2 coordinates, representing the north-west and south-east corners. The code automatically creates the other necessary corners.  
+- Circle regions are formed from a center coordinate and a radius. Internal 'outline' coordinates are generated per degree automatically from this information.  
+- Line-based regions are formed from multiple coordinates and a radius, creating a locus. Internal 'outline' coordinates are generated for every vertex and curve.
+
 </details>
 
 <details>
-<summary> Device Condition Controlled Downloading </summary>
+<summary> Device Status Controlled Bulk Downloading </summary>
 
 Run tests automatically before starting a bulk download, to consider multiple device-independent factors such as battery level/status and network connectivity.
 
@@ -124,7 +135,7 @@ Instead of repeating the process of downloading an image and writing it to syste
 For example, 10 simultaneous threads would work through 100 tiles approximately 10x quicker than 1 thread: each thread would get approximately 10 tiles. In reality, the speed gain is unlikely to be as significant as in theory, but it will be similar. However, speed does start to decrease at a certain number of threads: there is an optimal point at about 10-20 threads.
 
 Note that using multithreading will increase power consumption significantly and may be less stable if there are too many threads.  
-Some tile servers ban multithreaded downloading, even paid ones, as it puts a lot of strain on servers. For this reason, the example app is limited to 2 threads.
+Some tile servers ban multithreaded downloading, even paid ones, as it puts a lot of strain on servers.
 
 This functionality is enabled by default with a thread count of 10.
 </details>
@@ -184,14 +195,15 @@ I've tried to make v4 even easier to understand and use, even with all the new f
 ## Limitations, Known Bugs & Testing
 
 - This package does not support the web platform. A fix for this is unlikely to appear because the web platform is ill-suited for caching anyway.
-- The region functions get less accurate the larger the region. In particular the circle and line-based regions can be quite inaccurate at large sizes. To prevent interruptive errors, the values of the calculation have been clamped to a valid minimum and maximum, but this causes side effects. To prevent unwanted results, try to use small regions, no larger than the size of Europe.
-- Apps may become unstable if large numbers of tiles have been downloaded. Try to keep the amount of downloaded tiles below 50,000.
-- This package has only been tested on two Android devices: a Xiaomi Redmi Note 10 Pro (Android 11), and a Pixel 4 emulator (Android 11). Automated tests are run usually before release.  
+- The region functions can be inaccurate at large sizes and when located to extremities such as (-)180°. To prevent errors, the values of the calculation have been clamped to a valid minimum and maximum, but this causes other side effects. To prevent unwanted results, try to use small regions, no larger than the size of Europe, and keep them away from the extremities.
+- Apps may become unstable if large numbers of tiles have been downloaded. Try to keep the amount of downloaded tiles below 100,000.
+- This package has only been tested on two Android devices: a Xiaomi Redmi Note 10 Pro (Android 11), and a Pixel 4 emulator (Android 11).
+
 However, due to the large amounts of functionality, each with many different variations, it is nearly impossible to find many bugs. Therefore, if you find a bug, please do file an issue on GitHub, and I will do my very best to get it fixed quickly.
 
 ## Supporting Me
 
-A donation through my Ko-Fi page would be infinitely appreciated (Ko-fi doesn't take a fee, so all donated money goes to me):  
+A donation through my Ko-Fi page would be infinitely appreciated (Ko-fi doesn't take a fee, so all donated money goes to me :) ):  
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/N4N151INN)  
 but, if you can't or won't, a star on GitHub and a like on pub.dev would also go a long way!
 
@@ -199,4 +211,4 @@ Every donation/star/like gives me 'mental fuel' to continue my open-source proje
 
 ## Credits
 
-The basis of this library was originally coded by [bugDim88](https://github.com/bugDim88), and improved upon by [multiple people](https://github.com/JaffaKetchup/flutter_map_tile_caching/graphs/contributors). You can see the original pull request here: [pull request #564 on fleaflet/flutter_map](https://github.com/fleaflet/flutter_map/pull/564).
+The basis of this library was originally coded by [bugDim88](https://github.com/bugDim88), and improved upon by [multiple people](https://github.com/JaffaKetchup/flutter_map_tile_caching/graphs/contributors).
