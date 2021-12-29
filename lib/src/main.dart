@@ -15,16 +15,34 @@ import 'package:path/path.dart' as p show joinAll;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:queue/queue.dart';
 
-import 'bulkDownload/downloadProgress.dart';
+import 'bulkDownload/download_progress.dart';
 import 'bulkDownload/downloader.dart';
-import 'bulkDownload/tileLoops.dart';
-import 'internal/imageProvider.dart';
-import 'misc.dart';
-import 'regions/downloadableRegion.dart';
-import 'regions/recoveredRegion.dart';
-import 'storageManager.dart';
+import 'bulkDownload/tile_loops.dart';
+import 'internal/image_provider.dart';
+import 'internal/recovery/recovery.dart';
+import 'misc/typedefs.dart';
+import 'misc/validate.dart';
+import 'regions/downloadable_region.dart';
+import 'regions/recovered_region.dart';
+import 'storageManagers/storage_manager.dart';
 
-/// A `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
+/// Multiple behaviors dictating how browse caching should be carried out
+///
+/// Check documentation on each value for more information.
+enum CacheBehavior {
+  /// Only get tiles from the local cache
+  ///
+  /// Useful for applications with dedicated 'Offline Mode'.
+  cacheOnly,
+
+  /// Get tiles from the local cache, going on the Internet to update the cached tile if it has expired (`cachedValidDuration` has passed)
+  cacheFirst,
+
+  /// Get tiles from the Internet and update the cache for every tile
+  onlineFirst,
+}
+
+/// A [TileProvider] to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
 ///
 /// Requires a valid cache directory: [parentDirectory]. [storeName] defaults to the default store, 'mainStore', but can be overriden to different stores. On initialisation, automatically creates the cache store if it does not exist.
 ///
@@ -38,7 +56,7 @@ class StorageCachingTileProvider extends TileProvider {
   /// Deprecated. Migrate to `maxStoreLength`. Will be removed in the next release.
   @Deprecated(
       'Migrate to `maxStoreLength`. Will be removed in the next release.')
-  static final kMaxPreloadTileAreaCount = 20000;
+  static const kMaxPreloadTileAreaCount = 20000;
 
   /// The directory to place cache stores into
   ///
@@ -78,7 +96,7 @@ class StorageCachingTileProvider extends TileProvider {
   bool _downloadOngoing = false;
 
   /// Used internally for browsing-caused tile requests
-  http.Client _httpClient = http.Client();
+  final http.Client _httpClient = http.Client();
 
   /// Used internally to queue download tiles to process in bulk
   Queue? _queue;
@@ -102,7 +120,10 @@ class StorageCachingTileProvider extends TileProvider {
     this.behavior = CacheBehavior.cacheFirst,
     this.cachedValidDuration = const Duration(days: 16),
     this.maxStoreLength = 20000,
-  }) : storePath = p.joinAll([parentDirectory.absolute.path, storeName]) {
+  }) : storePath = p.joinAll([
+          parentDirectory.absolute.path,
+          safeFilesystemString(inputString: storeName, throwIfInvalid: true),
+        ]) {
     Directory(storePath).createSync(recursive: true);
   }
 
@@ -118,7 +139,8 @@ class StorageCachingTileProvider extends TileProvider {
         storeName = mapCachingManager.storeName,
         storePath = p.joinAll([
           mapCachingManager.parentDirectory.absolute.path,
-          mapCachingManager.storeName
+          safeFilesystemString(
+              inputString: mapCachingManager.storeName, throwIfInvalid: true),
         ]) {
     Directory(storePath).createSync(recursive: true);
   }
@@ -126,6 +148,8 @@ class StorageCachingTileProvider extends TileProvider {
   /// Always call (if necessary) after finishing with caching, or in your widget's dispose methods
   ///
   /// Ensures the internal stream controller is closed, the internal HTTP client is closed, and the internal queue controller is cancelled. If you require this provider again, you will need to reconstruct it.
+  ///
+  /// Do not call unless you are sure there are no ongoing downloads.
   @override
   void dispose() {
     super.dispose();
@@ -146,19 +170,45 @@ class StorageCachingTileProvider extends TileProvider {
 
   //! GENERAL DOWNLOADING !//
 
+  static Future<List<Coords<num>>> _generateTilesComputer(
+    DownloadableRegion region, {
+    bool applyRange = true,
+  }) async {
+    final List<Coords<num>> tiles = await compute(
+      region.type == RegionType.rectangle
+          ? rectangleTiles
+          : region.type == RegionType.circle
+              ? circleTiles
+              : lineTiles,
+      {
+        'bounds': LatLngBounds.fromPoints(region.points),
+        'circleOutline': region.points,
+        'lineOutline': region.points.chunked(4),
+        'minZoom': region.minZoom,
+        'maxZoom': region.maxZoom,
+        'crs': region.crs,
+        'tileSize':
+            CustomPoint(region.options.tileSize, region.options.tileSize),
+      },
+    );
+
+    if (!applyRange) return tiles;
+    return tiles.getRange(region.start, region.end ?? tiles.length).toList();
+  }
+
   /// Download a specified [DownloadableRegion] in the foreground
   ///
   /// To check the number of tiles that need to be downloaded before using this function, use [checkRegion].
   ///
   /// Unless otherwise specified, also starts a recovery session.
   ///
-  /// For more information on [preDownloadChecksCallback], see documentation on [PreDownloadChecksCallback]. In a few words, use this callback to check the devices information/status before starting a download.
+  /// For more information on [preDownloadChecksCallback], see documentation on [PreDownloadChecksCallback]. In a few words, use this callback to check the devices information/status before starting a download. By default, no checks are made (null), but this is not recommended.
   ///
   /// Streams a [DownloadProgress] object containing lots of handy information about the download's progression status; unless the pre-download checks fail, in which case the stream's `.isEmpty` will be `true` and no new events will be emitted. If you get messages about 'Bad State' after dealing with the checks, just add `.asBroadcastStream()` on the end of [downloadRegion].
   Stream<DownloadProgress> downloadRegion(
     DownloadableRegion region, {
     bool disableRecovery = false,
-    required PreDownloadChecksCallback preDownloadChecksCallback,
+    PreDownloadChecksCallback preDownloadChecksCallback,
   }) async* {
     if (preDownloadChecksCallback != null) {
       final ConnectivityResult connectivity =
@@ -174,8 +224,9 @@ class StorageCachingTileProvider extends TileProvider {
         final _info = await BatteryInfoPlugin().iosBatteryInfo;
         batteryLevel = _info?.batteryLevel;
         chargingStatus = _info?.chargingStatus;
-      } else
+      } else {
         throw FallThroughError();
+      }
 
       final bool? result = await preDownloadChecksCallback(
           connectivity, batteryLevel, chargingStatus);
@@ -191,16 +242,7 @@ class StorageCachingTileProvider extends TileProvider {
     }
 
     if (!disableRecovery) {
-      if (!MapCachingManager(parentDirectory, storeName).startInternalRecovery(
-        region.type,
-        region.originalRegion,
-        region.minZoom,
-        region.maxZoom,
-        region.preventRedownload,
-        region.seaTileRemoval,
-      ))
-        throw StateError(
-            'Failed to create recovery session. Restart app and retry. If issue persists, disable recovery to continue.');
+      await Recovery(storePath).startRecovery(region);
       _downloadOngoing = true;
     }
 
@@ -209,23 +251,7 @@ class StorageCachingTileProvider extends TileProvider {
 
     yield* _startDownload(
       region: region,
-      tiles: await compute(
-        region.type == RegionType.rectangle
-            ? rectangleTiles
-            : region.type == RegionType.circle
-                ? circleTiles
-                : lineTiles,
-        {
-          'bounds': LatLngBounds.fromPoints(region.points),
-          'circleOutline': region.points,
-          'lineOutline': region.points.chunked(4),
-          'minZoom': region.minZoom,
-          'maxZoom': region.maxZoom,
-          'crs': region.crs,
-          'tileSize':
-              CustomPoint(region.options.tileSize, region.options.tileSize),
-        },
-      ),
+      tiles: await _generateTilesComputer(region),
     );
   }
 
@@ -235,36 +261,19 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Returns an `int` which is the number of tiles.
   static Future<int> checkRegion(DownloadableRegion region) async =>
-      (await compute(
-        region.type == RegionType.rectangle
-            ? rectangleTiles
-            : region.type == RegionType.circle
-                ? circleTiles
-                : lineTiles,
-        {
-          'bounds': LatLngBounds.fromPoints(region.points),
-          'circleOutline': region.points,
-          'lineOutline': region.points.chunked(4),
-          'minZoom': region.minZoom,
-          'maxZoom': region.maxZoom,
-          'crs': region.crs,
-          'tileSize':
-              CustomPoint(region.options.tileSize, region.options.tileSize),
-        },
-      ))
-          .length;
+      (await _generateTilesComputer(region)).length;
 
   /// Cancels the ongoing foreground download and recovery session (within the current object)
   ///
   /// Do not use to cancel background downloads, return `true` from the background download callback to cancel a background download. Background download cancellations require a few more 'shut-down' steps that can create unexpected issues and memory leaks if not carried out.
-  ///
-  /// Should remain silent if there was no ongoing download.
-  void cancelDownload() {
+  Future<void> cancelDownload() async {
     _queue?.dispose();
     _streamController?.close();
-    MapCachingManager(parentDirectory, storeName).endInternalRecovery();
+    await Recovery(storePath).endRecovery();
     _downloadOngoing = false;
   }
+
+  //! RECOVERY !//
 
   /// Recover a download that has been stopped without the correct methods, for example after closing the app during a download
   ///
@@ -273,17 +282,16 @@ class StorageCachingTileProvider extends TileProvider {
   /// Optionally make [deleteRecovery] `false` if you would like the download to still be recoverable after this method has been called.
   ///
   /// How does recovery work? At the start of a download, a file is created including information about the download. At the end of a download or when a download is correctly cancelled, this file is deleted. However, if there is no ongoing download (controlled by an internal variable) and the recovery file exists, the download has obviously been stopped incorrectly, meaning it can be recovered using the information within the recovery file.
-  RecoveredRegion? recoverDownload({bool deleteRecovery = true}) {
+  Future<RecoveredRegion?> recoverDownload({bool deleteRecovery = true}) async {
     if (_downloadOngoing) return null;
 
-    final RecoveredRegion? recovered =
-        MapCachingManager(parentDirectory, storeName)
-            .recoverDownloadInternally();
+    final Recovery rec = Recovery(storePath);
+
+    final RecoveredRegion? recovered = await rec.readRecovery();
 
     if (recovered == null) return null;
 
-    if (deleteRecovery)
-      MapCachingManager(parentDirectory, storeName).endInternalRecovery();
+    if (deleteRecovery) await rec.endRecovery();
 
     return recovered;
   }
@@ -309,13 +317,15 @@ class StorageCachingTileProvider extends TileProvider {
             await Permission.ignoreBatteryOptimizations.request();
         if (statusAfter.isGranted) return true;
         return false;
-      } else if (status.isGranted)
+      } else if (status.isGranted) {
         return true;
-      else
+      } else {
         return false;
-    } else
+      }
+    } else {
       throw UnsupportedError(
           'The background download feature is only available on Android due to limitations with other operating systems.');
+    }
   }
 
   /// Download a specified [DownloadableRegion] in the background, and show a notification progress bar (by default)
@@ -333,17 +343,17 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// If the download doesn't seem to start on a device, try changing [useAltMethod] to `true`. This will switch to an older Android API, so should only be used if it is the most stable on a device. You may be able to programatically detect if the download hasn't started by using the callback, therefore allowing you to call this method again with [useAltMethod], but this isn't guranteed.
   ///
-  /// For more information on [preDownloadChecksCallback], see documentation on [PreDownloadChecksCallback]. In a few words, use this callback to check the devices information/status before starting a download. [preDownloadChecksFailedCallback] is optional and will be called if the checks do fail, after cancelling the download.
+  /// For more information on [preDownloadChecksCallback], see documentation on [PreDownloadChecksCallback]. In a few words, use this callback to check the devices information/status before starting a download. By default, no checks are made (null), but this is not recommended. [preDownloadChecksFailedCallback] is optional and will be called if the checks do fail, after cancelling the download.
   ///
   /// Returns nothing.
   void downloadRegionBackground(
     DownloadableRegion region,
     StorageCachingTileProvider provider, {
-    bool showNotification = true,
     bool Function(DownloadProgress)? callback,
-    required PreDownloadChecksCallback preDownloadChecksCallback,
+    PreDownloadChecksCallback preDownloadChecksCallback,
     void Function()? preDownloadChecksFailedCallback,
     bool useAltMethod = false,
+    bool showNotification = true,
     String notificationChannelName = 'Map Background Downloader',
     String notificationChannelDescription =
         'Displays progress notifications to inform the user about the progress of their map download.',
@@ -379,8 +389,9 @@ class StorageCachingTileProvider extends TileProvider {
             ).asBroadcastStream();
             if (await download.isEmpty) {
               cancelDownload();
-              if (preDownloadChecksFailedCallback != null)
+              if (preDownloadChecksFailedCallback != null) {
                 preDownloadChecksFailedCallback();
+              }
               BackgroundFetch.finish(taskId);
               return;
             }
@@ -452,8 +463,9 @@ class StorageCachingTileProvider extends TileProvider {
                 BackgroundFetch.finish(taskId);
               }
             });
-          } else
+          } else {
             BackgroundFetch.finish(taskId);
+          }
         },
         (String taskId) async => BackgroundFetch.finish(taskId),
       );
@@ -464,12 +476,13 @@ class StorageCachingTileProvider extends TileProvider {
           forceAlarmManager: useAltMethod,
         ),
       );
-    } else
+    } else {
       throw UnsupportedError(
           'The background download feature is only available on Android due to limitations with other operating systems.');
+    }
   }
 
-  //! DOWNLOAD FUNCTIONS !//
+  //! INTERNAL DOWNLOAD FUNCTION !//
 
   Stream<DownloadProgress> _startDownload({
     required DownloadableRegion region,
@@ -478,11 +491,12 @@ class StorageCachingTileProvider extends TileProvider {
     final http.Client client = http.Client();
 
     Uint8List? seaTileBytes;
-    if (region.seaTileRemoval)
+    if (region.seaTileRemoval) {
       seaTileBytes = (await client.get(
-        Uri.parse(this.getTileUrl(Coords(0, 0)..z = 19, region.options)),
+        Uri.parse(getTileUrl(Coords(0, 0)..z = 19, region.options)),
       ))
           .bodyBytes;
+    }
 
     int successfulTiles = 0;
     List<String> failedTiles = [];
@@ -529,8 +543,9 @@ extension _ListExtensionsE<E> on List<E> {
   List<List<E>> chunked(int size) {
     List<List<E>> chunks = [];
 
-    for (var i = 0; i < length; i += size)
-      chunks.add(this.sublist(i, (i + size < length) ? i + size : length));
+    for (var i = 0; i < length; i += size) {
+      chunks.add(sublist(i, (i + size < length) ? i + size : length));
+    }
 
     return chunks;
   }

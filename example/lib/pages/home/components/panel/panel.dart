@@ -30,13 +30,35 @@ class Panel extends StatelessWidget {
               builder: (context, _) => Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  statBuilder(
-                    stat: mcm.storeLength.toString(),
-                    description: 'Total Tiles',
+                  FutureBuilder<int?>(
+                    future: mcm.storeLengthAsync,
+                    builder: (context, len) {
+                      if (!len.hasData) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+
+                      return statBuilder(
+                        stat: len.data.toString(),
+                        description: 'Total Tiles',
+                      );
+                    },
                   ),
-                  statBuilder(
-                    stat: (mcm.storeSize! / 1024).toStringAsFixed(2) + 'MiB',
-                    description: 'Total Size',
+                  FutureBuilder<double?>(
+                    future: mcm.storeSizeAsync,
+                    builder: (context, size) {
+                      if (!size.hasData) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+
+                      return statBuilder(
+                        stat: (size.data! / 1024).toStringAsFixed(2) + 'MiB',
+                        description: 'Total Size',
+                      );
+                    },
                   ),
                 ],
               ),

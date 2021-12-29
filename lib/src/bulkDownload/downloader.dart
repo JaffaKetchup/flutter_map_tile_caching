@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p show joinAll;
 import 'package:queue/queue.dart';
 
 import '../main.dart';
+import '../misc/validate.dart';
 
 Stream<List> bulkDownloader({
   required List<Coords<num>> tiles,
@@ -22,7 +23,7 @@ Stream<List> bulkDownloader({
   required Queue queue,
   required StreamController<List> streamController,
 }) {
-  tiles.forEach((coord) {
+  for (var coord in tiles) {
     queue
         .add(
       () => _getAndSaveTile(
@@ -37,7 +38,7 @@ Stream<List> bulkDownloader({
     )
         .then(
       (value) {
-        if (!streamController.isClosed)
+        if (!streamController.isClosed) {
           streamController.add(
             [
               value[0],
@@ -46,9 +47,10 @@ Stream<List> bulkDownloader({
               value[3],
             ],
           );
+        }
       },
     );
-  });
+  }
 
   return streamController.stream;
 }
@@ -65,7 +67,10 @@ Future<List<dynamic>> _getAndSaveTile({
   final Coords<double> coordDouble =
       Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
   final String url = provider.getTileUrl(coordDouble, options);
-  final String path = p.joinAll([provider.storePath, safeFilename(url)]);
+  final String path = p.joinAll([
+    provider.storePath,
+    safeFilesystemString(inputString: url, throwIfInvalid: false),
+  ]);
 
   try {
     if (preventRedownload && await File(path).exists()) return [1, '', 0, 1];
@@ -76,7 +81,8 @@ Future<List<dynamic>> _getAndSaveTile({
     );
 
     if (seaTileBytes != null &&
-        ListEquality().equals(await File(path).readAsBytes(), seaTileBytes)) {
+        const ListEquality()
+            .equals(await File(path).readAsBytes(), seaTileBytes)) {
       await File(path).delete();
       return [1, '', 1, 0];
     }
@@ -87,6 +93,3 @@ Future<List<dynamic>> _getAndSaveTile({
 
   return [1, '', 0, 0];
 }
-
-String safeFilename(String original) =>
-    original.replaceAll(RegExp(r'[^a-zA-Z0-9]'), ' ');

@@ -17,15 +17,18 @@ enum RegionType {
 
 /// A region that can be downloaded, drawn on a map, or converted to a list of points, that forms a particular shape
 abstract class BaseRegion {
-  /// Create a downloadable region out of this region
+  /// Create a downloadable region out of this region - for more information see [DownloadableRegion]'s properties' documentation
   ///
   /// Returns a [DownloadableRegion] to be passed to the `StorageCachingTileProvider().downloadRegion()`, `StorageCachingTileProvider().downloadRegionBackground()`, or `StorageCachingTileProvider().checkRegion()` function.
   DownloadableRegion toDownloadable(
     int minZoom,
     int maxZoom,
     TileLayerOptions options, {
+    int parallelThreads = 10,
     bool preventRedownload = false,
-    bool seaTileRemoval,
+    bool seaTileRemoval = false,
+    int start = 0,
+    int? end,
     Crs crs = const Epsg3857(),
     Function(dynamic)? errorHandler,
   });
@@ -40,7 +43,7 @@ abstract class BaseRegion {
     bool isDotted = false,
   });
 
-  /// Create a list of all the `LatLng`s along the outline of this region
+  /// Create a list of all the [LatLng]s along the outline of this region
   ///
   /// Not supported on line regions: use `toOutlines()` instead.
   ///
@@ -57,7 +60,7 @@ class DownloadableRegion {
   /// The shape that this region conforms to
   final RegionType type;
 
-  /// The original `BaseRegion`, used internally for recovery purposes
+  /// The original [BaseRegion], used internally for recovery purposes
   final BaseRegion originalRegion;
 
   /// All the verticies on the outline of a polygon
@@ -95,6 +98,16 @@ class DownloadableRegion {
   /// Set to `false` to keep sea tiles, which is the default.
   final bool seaTileRemoval;
 
+  /// Optionally skip past a number of tiles 'at the start' of a region
+  ///
+  /// Set to 0 to skip none, which is the default.
+  final int start;
+
+  /// Optionally skip a number of tiles 'at the end' of a region
+  ///
+  /// Set to `null` to skip none, which is the default.
+  final int? end;
+
   /// The map projection to use to calculate tiles. Defaults to `Espg3857()`.
   final Crs crs;
 
@@ -103,18 +116,20 @@ class DownloadableRegion {
 
   /// Avoid construction using this method. Use [BaseRegion.toDownloadable] to generate [DownloadableRegion]s from other regions.
   @internal
-  DownloadableRegion.internal(
-    this.points,
-    this.minZoom,
-    this.maxZoom,
-    this.options,
-    this.type,
-    this.originalRegion, {
-    this.parallelThreads = 10,
-    this.preventRedownload = false,
-    this.seaTileRemoval = false,
-    this.crs = const Epsg3857(),
-    this.errorHandler,
+  DownloadableRegion.internal({
+    required this.points,
+    required this.minZoom,
+    required this.maxZoom,
+    required this.options,
+    required this.type,
+    required this.originalRegion,
+    required this.parallelThreads,
+    required this.preventRedownload,
+    required this.seaTileRemoval,
+    required this.start,
+    required this.end,
+    required this.crs,
+    required this.errorHandler,
   })  : assert(
           minZoom <= maxZoom,
           '`minZoom` should be less than or equal to `maxZoom`',

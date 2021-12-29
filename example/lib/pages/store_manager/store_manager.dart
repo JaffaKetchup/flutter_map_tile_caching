@@ -31,45 +31,54 @@ class StoreManager extends StatelessWidget {
                 provider.parentDirectory!, provider.storeName);
 
             return StreamBuilder<void>(
-              stream: mcm.watchCacheChanges(true)!,
+              stream: mcm.watchCacheChanges(false)!,
               builder: (context, s) {
-                final List<String> storeNames = mcm.allStoresNames!;
+                return FutureBuilder<List<String>?>(
+                  future: mcm.allStoresNamesAsync,
+                  builder: (context, storeNames) {
+                    if (!storeNames.hasData) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
 
-                return ListView.separated(
-                  itemBuilder: (context, i) {
-                    final MapCachingManager currentMCM = MapCachingManager(
-                        provider.parentDirectory!, storeNames[i]);
+                    return ListView.separated(
+                      itemBuilder: (context, i) {
+                        final MapCachingManager currentMCM = MapCachingManager(
+                            provider.parentDirectory!, storeNames.data![i]);
 
-                    return ListTile(
-                      title: Text(currentMCM.storeName),
-                      subtitle: Text(
-                          '${currentMCM.storeLength} tiles\n${(currentMCM.storeSize! / 1024).toStringAsFixed(2)} MiB'),
-                      leading: buildListTileImage(currentMCM),
-                      trailing: provider.storeName == currentMCM.storeName
-                          ? const Icon(Icons.done)
-                          : null,
-                      onTap: () async {
-                        provider.storeName = currentMCM.storeName;
-                        provider.persistent!
-                            .setString('lastUsedStore', provider.storeName);
-                        PaintingBinding.instance?.imageCache?.clear();
-                        provider.resetMap();
-                      },
-                      onLongPress: () {
-                        showModalBottomSheet(
-                          context: context,
-                          builder: (context) {
-                            return StoreModal(
-                              currentMCM: currentMCM,
-                              storeNames: storeNames,
+                        return ListTile(
+                          title: Text(currentMCM.storeName),
+                          subtitle: Text(
+                              '${currentMCM.storeLength} tiles\n${(currentMCM.storeSize! / 1024).toStringAsFixed(2)} MiB'),
+                          leading: buildListTileImage(currentMCM),
+                          trailing: provider.storeName == currentMCM.storeName
+                              ? const Icon(Icons.done)
+                              : null,
+                          onTap: () async {
+                            provider.storeName = currentMCM.storeName;
+                            provider.persistent!
+                                .setString('lastUsedStore', provider.storeName);
+                            PaintingBinding.instance?.imageCache?.clear();
+                            provider.resetMap();
+                          },
+                          onLongPress: () {
+                            showModalBottomSheet(
+                              context: context,
+                              builder: (context) {
+                                return StoreModal(
+                                  currentMCM: currentMCM,
+                                  storeNames: storeNames.data!,
+                                );
+                              },
                             );
                           },
                         );
                       },
+                      separatorBuilder: (context, _) => const Divider(),
+                      itemCount: storeNames.data!.length,
                     );
                   },
-                  separatorBuilder: (context, _) => const Divider(),
-                  itemCount: storeNames.length,
                 );
               },
             );

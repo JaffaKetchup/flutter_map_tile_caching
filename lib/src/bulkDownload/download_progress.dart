@@ -114,7 +114,7 @@ class DownloadProgress {
         maxTiles = 0,
         seaTiles = 0,
         existingTiles = 0,
-        duration = Duration(seconds: 0);
+        duration = const Duration(seconds: 0);
 
   /// Deprecated due to internal refactoring. Migrate to the named constructor [DownloadProgress.empty]. Will be removed in next update.
   @Deprecated(

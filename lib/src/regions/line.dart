@@ -7,10 +7,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 import 'package:vector_math/vector_math.dart';
 
-import 'downloadableRegion.dart';
+import 'downloadable_region.dart';
 
 /// A region with the border as the locus of a line at it's center
-class LineRegion extends BaseRegion {
+class LineRegion implements BaseRegion {
   /// A line defined by a list of`LatLng`s
   final List<LatLng> line;
 
@@ -27,7 +27,7 @@ class LineRegion extends BaseRegion {
     assert(overlap >= -1 && overlap <= 1,
         '`overlap` must be between -1 and 1 inclusive');
 
-    final Distance dist = Distance();
+    const Distance dist = Distance();
     final int rad = (radius * math.pi / 4).round();
 
     return line.map((pos) {
@@ -74,23 +74,26 @@ class LineRegion extends BaseRegion {
     int parallelThreads = 10,
     bool preventRedownload = false,
     bool seaTileRemoval = false,
-    Function(dynamic)? errorHandler,
+    int start = 0,
+    int? end,
     Crs crs = const Epsg3857(),
-  }) {
-    return DownloadableRegion.internal(
-      toOutlines(1).expand((x) => x).toList(),
-      minZoom,
-      maxZoom,
-      options,
-      RegionType.line,
-      this,
-      parallelThreads: parallelThreads,
-      preventRedownload: preventRedownload,
-      seaTileRemoval: seaTileRemoval,
-      crs: crs,
-      errorHandler: errorHandler,
-    );
-  }
+    Function(dynamic)? errorHandler,
+  }) =>
+      DownloadableRegion.internal(
+        points: toOutlines(1).expand((x) => x).toList(),
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        options: options,
+        type: RegionType.line,
+        originalRegion: this,
+        parallelThreads: parallelThreads,
+        preventRedownload: preventRedownload,
+        seaTileRemoval: seaTileRemoval,
+        start: start,
+        end: end,
+        crs: crs,
+        errorHandler: errorHandler,
+      );
 
   /// Create a drawable area for a [FlutterMap] out of this region
   ///
@@ -140,10 +143,11 @@ class LineRegion extends BaseRegion {
         final double d = l1[0] * l2[1] - l1[1] * l2[0];
         final double dx = l1[2] * l2[1] - l1[1] * l2[2];
         final double dy = l1[0] * l2[2] - l1[2] * l2[0];
-        if (d != 0)
+        if (d != 0) {
           return LatLng(dy / d, dx / d);
-        else
+        } else {
           return null;
+        }
       }
 
       for (int i = 0; i <= rects.length - 2; i++) {
@@ -162,11 +166,12 @@ class LineRegion extends BaseRegion {
           intersectLine(bottomLineNext[0], bottomLineNext[1]),
         );
 
-        if (intersectionA == null || intersectionB == null)
+        if (intersectionA == null || intersectionB == null) {
           throw StateError(
               'Well done! You seemed to have create a rectangle exactly parallel to your previous one. Needless to say, this is extremely unlikely, and I haven\'t handled this. If this happened honestly, please report an error.');
+        }
 
-        final Distance distance = Distance();
+        const Distance distance = Distance();
 
         bool aCurve = distance.distance(rects[i][2], intersectionA) >
             distance.distance(rects[i][1], intersectionB);
@@ -205,9 +210,10 @@ class LineRegion extends BaseRegion {
 
           curves.add([]);
 
-          for (var ii = 0; ii <= curveSmoothening; ii++)
+          for (var ii = 0; ii <= curveSmoothening; ii++) {
             curves[i].add(LatLng(curve.pointAt(ii / curveSmoothening).y,
                 curve.pointAt(ii / curveSmoothening).x));
+          }
 
           curves[i].add(aCurve ? intersectionB : intersectionA);
         }
@@ -226,7 +232,7 @@ class LineRegion extends BaseRegion {
         )
         .toList();
 
-    if (prettyPaint && overlap != -1)
+    if (prettyPaint && overlap != -1) {
       returnable.addAll(
         curves.map(
           (curve) => Polygon(
@@ -238,6 +244,7 @@ class LineRegion extends BaseRegion {
           ),
         ),
       );
+    }
 
     return PolygonLayerOptions(polygons: returnable);
   }

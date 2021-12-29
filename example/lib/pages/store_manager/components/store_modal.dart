@@ -80,13 +80,13 @@ class StoreModal extends StatelessWidget {
               onTap: () {
                 currentMCM.deleteStore();
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      '${currentMCM.storeName} deleted successfully',
-                    ),
-                  ),
-                );
+                //ScaffoldMessenger.of(context).showSnackBar(
+                //SnackBar(
+                //content: Text(
+                //'${currentMCM.storeName} deleted successfully',
+                //),
+                //),
+                //);
               },
               visualDensity: VisualDensity.compact,
               enabled: provider.storeName != currentMCM.storeName,

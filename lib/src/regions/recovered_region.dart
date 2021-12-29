@@ -3,17 +3,17 @@ import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
 import 'circle.dart';
-import 'downloadableRegion.dart';
+import 'downloadable_region.dart';
 import 'line.dart';
 import 'rectangle.dart';
 
-/// A mixture between `BaseRegion` and `DownloadableRegion` containing all the salvaged data from a recovered download
+/// A mixture between [BaseRegion] and [DownloadableRegion] containing all the salvaged data from a recovered download
 ///
 /// How does recovery work? At the start of a download, a file is created including information about the download. At the end of a download or when a download is correctly cancelled, this file is deleted. However, if there is no ongoing download (controlled by an internal variable) and the recovery file exists, the download has obviously been stopped incorrectly, meaning it can be recovered using the information within the recovery file.
 ///
-/// The availability of `bounds`, `line`, `center` & `radius` depend on the `type` of the recovered region.
+/// The availability of [bounds], [line], [center] & [radius] depend on the [type] of the recovered region.
 ///
-/// Should avoid manual construction. Use `.toDownloadable()` to restore a `DownloadableRegion`.
+/// Should avoid manual construction. Use [toDownloadable] to restore a valid [DownloadableRegion].
 class RecoveredRegion {
   /// The shape that this region conforms to
   final RegionType type;
@@ -35,6 +35,17 @@ class RecoveredRegion {
 
   /// The maximum zoom level to fetch tiles for
   final int maxZoom;
+
+  /// Optionally skip past a number of tiles 'at the start' of a region
+  final int start;
+
+  /// Optionally skip a number of tiles 'at the end' of a region
+  final int? end;
+
+  /// The number of download threads allowed to run simultaneously
+  ///
+  /// This will significatly increase speed, at the expense of faster battery drain. Note that some servers may forbid multithreading, in which case this should be set to 1.
+  final int parallelThreads;
 
   /// Whether to skip downloading tiles that already exist
   final bool preventRedownload;
@@ -58,6 +69,9 @@ class RecoveredRegion {
     required this.radius,
     required this.minZoom,
     required this.maxZoom,
+    required this.start,
+    required this.end,
+    required this.parallelThreads,
     required this.preventRedownload,
     required this.seaTileRemoval,
   });
@@ -67,44 +81,26 @@ class RecoveredRegion {
     Crs crs = const Epsg3857(),
     Function(dynamic)? errorHandler,
   }) {
-    if (type == RegionType.rectangle)
-      return DownloadableRegion.internal(
-        [bounds!.northWest, bounds!.southEast],
-        minZoom,
-        maxZoom,
-        options,
-        type,
-        RectangleRegion(bounds!),
-        preventRedownload: preventRedownload,
-        seaTileRemoval: seaTileRemoval,
-        crs: crs,
-        errorHandler: errorHandler,
-      );
-    else if (type == RegionType.circle)
-      return DownloadableRegion.internal(
-        CircleRegion(center!, radius!).toList(),
-        minZoom,
-        maxZoom,
-        options,
-        type,
-        CircleRegion(center!, radius!),
-        preventRedownload: preventRedownload,
-        seaTileRemoval: seaTileRemoval,
-        crs: crs,
-        errorHandler: errorHandler,
-      );
-    else
-      return DownloadableRegion.internal(
-        LineRegion(line!, radius!).toList(),
-        minZoom,
-        maxZoom,
-        options,
-        type,
-        CircleRegion(center!, radius!),
-        preventRedownload: preventRedownload,
-        seaTileRemoval: seaTileRemoval,
-        crs: crs,
-        errorHandler: errorHandler,
-      );
+    final BaseRegion region = type == RegionType.rectangle
+        ? RectangleRegion(bounds!)
+        : type == RegionType.circle
+            ? CircleRegion(center!, radius!)
+            : LineRegion(line!, radius!);
+
+    return DownloadableRegion.internal(
+      points: region.toList(),
+      minZoom: minZoom,
+      maxZoom: maxZoom,
+      options: options,
+      type: type,
+      originalRegion: region,
+      parallelThreads: parallelThreads,
+      preventRedownload: preventRedownload,
+      seaTileRemoval: seaTileRemoval,
+      start: start,
+      end: end,
+      crs: crs,
+      errorHandler: errorHandler,
+    );
   }
 }

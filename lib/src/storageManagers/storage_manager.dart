@@ -2,20 +2,12 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/widgets.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p show joinAll, split;
 import 'package:path_provider/path_provider.dart';
 import 'package:stream_transform/stream_transform.dart';
 
-import 'main.dart';
-import 'misc.dart';
-import 'regions/circle.dart';
-import 'regions/downloadableRegion.dart';
-import 'regions/line.dart';
-import 'regions/recoveredRegion.dart';
-import 'regions/rectangle.dart';
+import '../misc/typedefs.dart';
+import '../misc/validate.dart';
 
 /// Handles caching for tiles (synchronously or asynchronously)
 ///
@@ -44,7 +36,10 @@ class MapCachingManager {
   ///
   /// Used internally for downloading regions, another library is depended on for 'browse caching'.
   MapCachingManager(this.parentDirectory, [this.storeName = 'mainStore'])
-      : storePath = p.joinAll([parentDirectory.absolute.path, storeName]) {
+      : storePath = p.joinAll([
+          parentDirectory.absolute.path,
+          safeFilesystemString(inputString: storeName, throwIfInvalid: true),
+        ]) {
     Directory(storePath).createSync(recursive: true);
   }
 
@@ -69,16 +64,18 @@ class MapCachingManager {
 
   /// Empty a cache store (delete all contained tiles)
   void emptyStore() {
-    if (exists ?? false)
+    if (exists ?? false) {
       Directory(storePath).listSync(recursive: true).forEach((element) {
         element.deleteSync();
       });
+    }
   }
 
   /// Delete all cache stores
   void deleteAllStores() {
-    if (exists != null)
+    if (exists != null) {
       Directory(parentDirectory.absolute.path).deleteSync(recursive: true);
+    }
   }
 
   /// Rename the current cache store to a new name
@@ -173,8 +170,10 @@ class MapCachingManager {
   double? get allStoresSizes {
     if (exists == null) return null;
     double returnable = 0;
-    allStoresNames!.forEach((storeName) => returnable +=
-        MapCachingManager(parentDirectory, storeName).storeSize ?? 0);
+    for (var storeName in allStoresNames!) {
+      returnable +=
+          MapCachingManager(parentDirectory, storeName).storeSize ?? 0;
+    }
     return returnable;
   }
 
@@ -192,11 +191,11 @@ class MapCachingManager {
   int? get allStoresLengths {
     if (exists == null) return null;
     int returnable = 0;
-    allStoresNames!.forEach((name) {
+    for (var name in allStoresNames!) {
       returnable += Directory(p.joinAll([parentDirectory.absolute.path, name]))
           .listSync(recursive: true)
           .length;
-    });
+    }
     return returnable;
   }
 
@@ -245,130 +244,6 @@ class MapCachingManager {
     }
 
     throw FallThroughError();
-  }
-
-  /// For internal use only. Recovery is managed automatically for you.
-  @internal
-  bool startInternalRecovery(
-    RegionType type,
-    BaseRegion inputRegion,
-    int minZoom,
-    int maxZoom,
-    bool preventRedownload,
-    bool seaTileRemoval,
-  ) {
-    final File file = File(p.joinAll([storePath, 'downloadOngoing.txt']));
-    file.createSync(recursive: true);
-
-    if (type == RegionType.rectangle) {
-      final RectangleRegion region = inputRegion as RectangleRegion;
-      file.writeAsStringSync(
-        region.bounds.northWest.latitude.toString() +
-            ',' +
-            region.bounds.northWest.longitude.toString() +
-            '\n' +
-            region.bounds.southEast.latitude.toString() +
-            ',' +
-            region.bounds.southEast.longitude.toString() +
-            '\n${minZoom.toString()}\n${maxZoom.toString()}\n$preventRedownload\n$seaTileRemoval\nrectangle',
-        flush: true,
-      );
-    } else if (type == RegionType.circle) {
-      final CircleRegion region = inputRegion as CircleRegion;
-      file.writeAsStringSync(
-        region.center.latitude.toString() +
-            ',' +
-            region.center.longitude.toString() +
-            '\n' +
-            region.radius.toString() +
-            '\n${minZoom.toString()}\n${maxZoom.toString()}\n$preventRedownload\n$seaTileRemoval\ncircle',
-        flush: true,
-      );
-    } else if (type == RegionType.line) {
-      final LineRegion region = inputRegion as LineRegion;
-      file.writeAsStringSync(
-        region.line
-                .map((pos) =>
-                    pos.latitude.toString() + ',' + pos.longitude.toString())
-                .join('*') +
-            '\n' +
-            region.radius.toString() +
-            '\n${minZoom.toString()}\n${maxZoom.toString()}\n$preventRedownload\n$seaTileRemoval\nline',
-        flush: true,
-      );
-    }
-
-    return file.existsSync();
-  }
-
-  /// For internal use only. Recovery is managed automatically for you.
-  @internal
-  void endInternalRecovery() {
-    if (!Directory(storePath).existsSync()) return;
-
-    File(p.joinAll([storePath, 'downloadOngoing.txt'])).createSync();
-    File(p.joinAll([storePath, 'downloadOngoing.txt'])).deleteSync();
-  }
-
-  /// For internal use only. Use [StorageCachingTileProvider.recoverDownload] instead.
-  @internal
-  RecoveredRegion? recoverDownloadInternally() {
-    final File file = File(p.joinAll([storePath, 'downloadOngoing.txt']));
-    if (!file.existsSync()) return null;
-
-    final List<String> recovery = file.readAsLinesSync();
-
-    final double Function(String, [double Function(String)?]) dp = double.parse;
-    final int Function(String, {int Function(String)? onError, int? radix}) ip =
-        int.parse;
-
-    if (recovery[6] == 'rectangle')
-      return RecoveredRegion.internal(
-        type: RegionType.rectangle,
-        bounds: LatLngBounds(
-          LatLng(dp(recovery[0].split(',')[0]), dp(recovery[0].split(',')[1])),
-          LatLng(dp(recovery[1].split(',')[0]), dp(recovery[1].split(',')[1])),
-        ),
-        center: null,
-        line: null,
-        radius: null,
-        minZoom: ip(recovery[2]),
-        maxZoom: ip(recovery[3]),
-        preventRedownload: recovery[4] == 'true',
-        seaTileRemoval: recovery[5] == 'true',
-      );
-    else if (recovery[6] == 'circle')
-      return RecoveredRegion.internal(
-        type: RegionType.circle,
-        bounds: null,
-        center: LatLng(
-            dp(recovery[0].split(',')[0]), dp(recovery[0].split(',')[1])),
-        line: null,
-        radius: dp(recovery[1]),
-        minZoom: ip(recovery[2]),
-        maxZoom: ip(recovery[3]),
-        preventRedownload: recovery[4] == 'true',
-        seaTileRemoval: recovery[5] == 'true',
-      );
-    else
-      return RecoveredRegion.internal(
-        type: RegionType.line,
-        bounds: null,
-        center: null,
-        line: recovery[0].split('*').map(
-          (zip) {
-            return LatLng(
-              double.parse(zip.split(',')[0]),
-              double.parse(zip.split(',')[1]),
-            );
-          },
-        ).toList(),
-        radius: dp(recovery[1]),
-        minZoom: ip(recovery[2]),
-        maxZoom: ip(recovery[3]),
-        preventRedownload: recovery[4] == 'true',
-        seaTileRemoval: recovery[5] == 'true',
-      );
   }
 
   /// Get the application's documents directory

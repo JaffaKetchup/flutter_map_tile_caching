@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:meta/meta.dart';
 
-import '../storageManager.dart';
+import '../storageManagers/storage_manager.dart';
 
 /// Deprecated. Will be removed in the next release. Use the newer alternative `MapCachingManager()` as soon as possible - see the API docs for documentation. The newer alternative offers much more functionality and fine grained control/information, can offer performance improvements on larger caches, and reduces this library's size (over 50% reduction in this file). All APIs inside this class have also been deprecated/moved: see deprecation warning on applicable APIs for more information.
 @Deprecated(

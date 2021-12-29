@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p show joinAll;
 
 import '../main.dart';
-import '../misc.dart';
+import '../misc/validate.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
 class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
@@ -47,7 +47,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
   Future<Codec> _loadAsync(DecoderCallback decode) async {
     final String url = provider.getTileUrl(coords, options);
-    final File file = File(p.joinAll([provider.storePath, safeFilename(url)]));
+    final File file = File(p.joinAll([
+      provider.storePath,
+      safeFilesystemString(inputString: url, throwIfInvalid: false),
+    ]));
 
     // Logic to check whether the tile needs creating or updating
     final bool needsCreating = !(await file.exists());
@@ -80,8 +83,9 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         if (needsCreating) {
           PaintingBinding.instance?.imageCache?.evict(this);
           throw 'FMTCBrowsingError: Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.';
-        } else
+        } else {
           return await decode(bytes!);
+        }
       }
 
       // Check for an OK HTTP status code, throwing an error if not possible & the tile does not exist
@@ -89,23 +93,25 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         if (needsCreating) {
           PaintingBinding.instance?.imageCache?.evict(this);
           throw 'FMTCBrowsingError: Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.';
-        } else
+        } else {
           return await decode(bytes!);
+        }
       }
 
       // Cache the tile in a seperate isolate
       bytes = serverData.bodyBytes;
-      compute(writeFile, {
+      compute(_writeFile, {
         'filePath': file.absolute.path,
         'bytes': bytes,
       });
 
       // If an new tile was created over the tile limit, delete the oldest tile
-      if (needsCreating && provider.maxStoreLength != 0)
-        compute(deleteOldestFile, {
+      if (needsCreating && provider.maxStoreLength != 0) {
+        compute(_deleteOldestFile, {
           'storePath': provider.storePath,
           'maxStoreLength': provider.maxStoreLength,
         });
+      }
 
       return await decode(bytes);
     }
@@ -130,18 +136,19 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   int get hashCode => coords.hashCode;
 }
 
-void deleteOldestFile(Map<String, dynamic> input) {
+Future<void> _deleteOldestFile(Map<String, dynamic> input) async {
   final Directory store = Directory(input['storePath'] as String);
   final int maxStoreLength = input['maxStoreLength'];
 
   while (true) {
-    final List<FileSystemEntity> fileList = store.listSync();
+    final List<FileSystemEntity> fileList = await store.list().toList();
 
     if (fileList.length > maxStoreLength) {
       fileList.sort(
           (a, b) => b.statSync().modified.compareTo(a.statSync().modified));
       try {
-        fileList.last.deleteSync();
+        await fileList.last.delete();
+        // ignore: empty_catches
       } catch (e) {}
     }
 
@@ -149,13 +156,10 @@ void deleteOldestFile(Map<String, dynamic> input) {
   }
 }
 
-void writeFile(Map<String, dynamic> input) {
+Future<void> _writeFile(Map<String, dynamic> input) async {
   final File file = File(input['filePath'] as String);
   final Uint8List bytes = input['bytes'];
 
-  file.createSync();
-  file.writeAsBytesSync(bytes);
+  await file.create();
+  await file.writeAsBytes(bytes);
 }
-
-String safeFilename(String original) =>
-    original.replaceAll(RegExp(r'[^a-zA-Z0-9]'), ' ');

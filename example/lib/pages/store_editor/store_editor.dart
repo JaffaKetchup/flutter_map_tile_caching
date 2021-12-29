@@ -120,6 +120,7 @@ class _StoreEditorState extends State<StoreEditor> {
                         decoration:
                             const InputDecoration(labelText: 'Store Name'),
                         textCapitalization: TextCapitalization.words,
+                        validator: validateStoreNameString,
                       ),
                       const SizedBox(height: 5),
                       TextFormField(

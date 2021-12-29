@@ -2,4 +2,4 @@ include: package:flutter_lints/flutter.yaml
 
 linter:
   rules:
-    # avoid_print: false
+    avoid_returning_null_for_void: false

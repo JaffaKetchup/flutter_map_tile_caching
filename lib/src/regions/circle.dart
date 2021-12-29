@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'downloadableRegion.dart';
+import 'downloadable_region.dart';
 
 /// A circular region with a center point and a radius
-class CircleRegion extends BaseRegion {
+class CircleRegion implements BaseRegion {
   /// The center of the circle as a `LatLng`
   final LatLng center;
 
@@ -25,23 +25,26 @@ class CircleRegion extends BaseRegion {
     int parallelThreads = 10,
     bool preventRedownload = false,
     bool seaTileRemoval = false,
+    int start = 0,
+    int? end,
     Crs crs = const Epsg3857(),
     Function(dynamic)? errorHandler,
-  }) {
-    return DownloadableRegion.internal(
-      toList(),
-      minZoom,
-      maxZoom,
-      options,
-      RegionType.circle,
-      this,
-      parallelThreads: parallelThreads,
-      preventRedownload: preventRedownload,
-      seaTileRemoval: seaTileRemoval,
-      crs: crs,
-      errorHandler: errorHandler,
-    );
-  }
+  }) =>
+      DownloadableRegion.internal(
+        points: toList(),
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        options: options,
+        type: RegionType.circle,
+        originalRegion: this,
+        parallelThreads: parallelThreads,
+        preventRedownload: preventRedownload,
+        seaTileRemoval: seaTileRemoval,
+        start: start,
+        end: end,
+        crs: crs,
+        errorHandler: errorHandler,
+      );
 
   @override
   PolygonLayerOptions toDrawable(
@@ -57,7 +60,7 @@ class CircleRegion extends BaseRegion {
           borderColor: borderColor,
           borderStrokeWidth: borderStrokeWidth,
           isDotted: isDotted,
-          points: this.toList(),
+          points: toList(),
         )
       ],
     );

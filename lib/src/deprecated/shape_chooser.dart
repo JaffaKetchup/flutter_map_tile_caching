@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use_from_same_package
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -113,12 +111,12 @@ class ShapeChooser {
           true,
           CircleRegion(
             _selectedPoints[0],
-            Distance().distance(_selectedPoints[0], _selectedPoints[1]),
+            const Distance().distance(_selectedPoints[0], _selectedPoints[1]),
           ).toDrawable(fillColor, borderColor,
               borderStrokeWidth: borderStrokeWidth, isDotted: isDotted),
           CircleRegion(
             _selectedPoints[0],
-            Distance().distance(_selectedPoints[0], _selectedPoints[1]),
+            const Distance().distance(_selectedPoints[0], _selectedPoints[1]),
           ),
         );
       } else if (choosingShape == RegionType.line) {
@@ -142,6 +140,7 @@ class ShapeChooser {
 /// Deprecated due to overcomplication leading to need for code reduction. This same functionality can be easily constructed on a case-to-case basis using just one or two variables. See the example project for how to do this.
 @Deprecated(
     'Due to overcomplication leading to need for code reduction. This same functionality can be easily constructed on a case-to-case basis using just one or two variables. See the example project for how to do this.')
+// ignore: deprecated_member_use_from_same_package
 extension ShapeChooserResultExts on ShapeChooserResult? {
   /// Deprecated due to overcomplication leading to need for code reduction. This same functionality can be easily constructed on a case-to-case basis using just one or two variables. See the example project for how to do this.
   @Deprecated(

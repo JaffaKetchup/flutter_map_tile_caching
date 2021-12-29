@@ -1,19 +1,21 @@
+// ignore_for_file: prefer_contains
+
 import 'dart:io';
 
-import '../flutter_map_tile_caching.dart';
+import '../../flutter_map_tile_caching.dart';
 
 /// The parent directory of all cache stores, to be used for `parentDirectory` arguments
 typedef CacheDirectory = Directory;
 
 /// Use in `preDownloadChecksCallback` in the bulk downloaders to ensure the download is OK to start by considering the device's status.
 ///
-/// Setting the parameter to `null` will skip all tests and allow under any circumstances. However, returning `null` from the function will use the default rules: cancel the download if the user is on cellular data or disconnected from the network (not necessarily Internet), or under 15% charge and not connected to a power source.
+/// Setting the parameter to `null` will skip all tests and allow under any circumstances - this is the default, but not recommended. However, returning `null` from the function will use the default rules: cancel the download if the user is on cellular data or disconnected from the network (not necessarily Internet), or under 15% charge and not connected to a power source.
 ///
 /// Otherwise, the testing function must take a [ConnectivityResult] representing the status of the Internet connection, a nullable-integer representing the battery/charge level of the device if readable, and a nullable-[ChargingStatus] representing the charging status of the device if readable. The function must be asynchronus (to allow for asking the user through something like a dialog box) and return either `true` representing 'let the download continue', or `false` representing 'cancel the download'.
 ///
 /// Useful examples/presets for `preDownloadChecksCallback`:
 ///
-/// 1. Allow under any circumstances
+/// 1. Allow under any circumstances (default)
 /// ```dart
 /// preDownloadChecksCallback: null
 /// ```
@@ -58,19 +60,3 @@ typedef PreDownloadChecksCallback = Future<bool?> Function(
   int?,
   ChargingStatus?,
 )?;
-
-/// Multiple behaviors dictating how browse caching should be carried out
-///
-/// Check documentation on each value for more information.
-enum CacheBehavior {
-  /// Only get tiles from the local cache
-  ///
-  /// Useful for applications with dedicated 'Offline Mode'.
-  cacheOnly,
-
-  /// Get tiles from the local cache, going on the Internet to update the cached tile if it has expired (`cachedValidDuration` has passed)
-  cacheFirst,
-
-  /// Get tiles from the Internet and update the cache for every tile
-  onlineFirst,
-}

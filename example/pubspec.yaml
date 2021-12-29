@@ -16,14 +16,14 @@ dependencies:
   flutter_map_tile_caching:
     path: ../
 
-  provider: ^6.0.1
+  provider: ^6.0.2
   shared_preferences: ^2.0.11
   stream_transform: ^2.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^1.0.0
+  flutter_lints: ^1.0.4
   flutter_app_name: ^0.1.0
 
 flutter_app_name:

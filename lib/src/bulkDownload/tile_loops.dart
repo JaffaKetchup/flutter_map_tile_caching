@@ -20,7 +20,7 @@ List<Coords<num>> rectangleTiles(Map<String, dynamic> input) {
             .latLngToPoint(bounds.southEast, zoomLvl.toDouble())
             .unscaleBy(tileSize)
             .ceil() -
-        CustomPoint(1, 1);
+        const CustomPoint(1, 1);
 
     for (num x = nwCustomPoint.x; x <= seCustomPoint.x; x++) {
       for (num y = nwCustomPoint.y; y <= seCustomPoint.y; y++) {
@@ -74,11 +74,13 @@ List<Coords<num>> circleTiles(Map<String, dynamic> input) {
       ];
     }
 
-    for (int x in outlineTileNums[zoomLvl]!.keys)
+    for (int x in outlineTileNums[zoomLvl]!.keys) {
       for (int y = outlineTileNums[zoomLvl]![x]![0];
           y <= outlineTileNums[zoomLvl]![x]![1];
-          y++)
+          y++) {
         coords.add(Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble());
+      }
+    }
   }
 
   return coords;
@@ -168,17 +170,17 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
               .latLngToPoint(rrTopRight, zoomLvl.toDouble())
               .unscaleBy(tileSize)
               .ceil() -
-          CustomPoint(1, 0);
+          const CustomPoint(1, 0);
       final rrSouthWest = crs
               .latLngToPoint(rrBottomLeft, zoomLvl.toDouble())
               .unscaleBy(tileSize)
               .ceil() -
-          CustomPoint(0, 1);
+          const CustomPoint(0, 1);
       final rrSouthEast = crs
               .latLngToPoint(rrBottomRight, zoomLvl.toDouble())
               .unscaleBy(tileSize)
               .ceil() -
-          CustomPoint(1, 1);
+          const CustomPoint(1, 1);
 
       final srNorthWest = crs
           .latLngToPoint(
@@ -194,7 +196,7 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
               )
               .unscaleBy(tileSize)
               .ceil() -
-          CustomPoint(1, 1);
+          const CustomPoint(1, 1);
 
       for (num x = srNorthWest.x; x <= srSouthEast.x; x++) {
         bool foundOverlappingTile = false;
@@ -215,7 +217,9 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
           )) {
             coords.add(Coords(x, y)..z = zoomLvl);
             foundOverlappingTile = true;
-          } else if (foundOverlappingTile) break;
+          } else if (foundOverlappingTile) {
+            break;
+          }
         }
       }
     }
@@ -236,6 +240,6 @@ class _Polygon {
 }
 
 extension on List<double> {
-  double get minNum => this.reduce(min);
-  double get maxNum => this.reduce(max);
+  double get minNum => reduce(min);
+  double get maxNum => reduce(max);
 }
