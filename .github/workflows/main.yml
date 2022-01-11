@@ -20,6 +20,6 @@ jobs:
         run: |
           if (( $TOTAL < ($TOTAL_MAX - 10) ))
           then
-            echo Total score percentage below expected minimum score. Improve the score!
+            echo Total score below expected minimum score. Improve the score!
             exit 1
           fi

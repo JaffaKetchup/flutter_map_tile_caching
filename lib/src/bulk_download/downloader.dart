@@ -68,7 +68,7 @@ Future<List<dynamic>> _getAndSaveTile({
       Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
   final String url = provider.getTileUrl(coordDouble, options);
   final String path = p.joinAll([
-    provider.storePath,
+    provider.storeDirectory.absolute.path,
     safeFilesystemString(inputString: url, throwIfInvalid: false),
   ]);
 

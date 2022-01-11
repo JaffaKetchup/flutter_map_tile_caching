@@ -29,11 +29,14 @@ class _TileLoaderState extends State<TileLoader> {
   late Future<List<LatLng>> tileCountFuture;
   late Future<List<LatLng>> uiConfirmationFuture;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void _setCrosshairs(List<LatLng> data) =>
+      Provider.of<BulkDownloadProvider>(context, listen: false).centerAndEdge =
+          data;
 
-    final BulkDownloadProvider bdp = Provider.of<BulkDownloadProvider>(context);
+  @override
+  Widget build(BuildContext context) {
+    final BulkDownloadProvider bdp =
+        Provider.of<BulkDownloadProvider>(context, listen: false);
 
     final bool isCircle = bdp.mode == RegionMode.Circle;
     const Offset offset = Offset(0, 60);
@@ -80,16 +83,8 @@ class _TileLoaderState extends State<TileLoader> {
       ],
     );
 
-    /*(() async {
-      await widget.controller.onReady;
-    }());*/
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Selector<BulkDownloadProvider, RegionMode>(
-      selector: (_, bdp) => bdp.mode,
-      builder: (context, mode, _) => Container(
+    return Consumer<BulkDownloadProvider>(
+      builder: (context, bdp, _) => Container(
         decoration: BoxDecoration(
           border: Border.all(
             color: Colors.black,
@@ -100,27 +95,6 @@ class _TileLoaderState extends State<TileLoader> {
         child: FutureBuilder<List<LatLng>>(
           future: uiConfirmationFuture,
           builder: (context, ui) {
-            /*if (!ui.hasData ||
-                    ui.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: Row(
-                      children: const [
-                        CircularProgressIndicator(),
-                        SizedBox(width: 16),
-                        Text('Calculating Lat/Lng Values (1)...'),
-                      ],
-                    ),
-                  );
-                }*/
-
-            if (ui.hasData) {
-              WidgetsBinding.instance!.addPostFrameCallback((_) {
-                //bdp.centerAndEdge = ui.data!;
-                //Provider.of<BulkDownloadProvider>(context, listen: false)
-                //    .centerAndEdge = ui.data!;
-              });
-            }
-
             return FutureBuilder<List<LatLng>>(
               future: tileCountFuture,
               builder: (context, xy) {
@@ -131,13 +105,13 @@ class _TileLoaderState extends State<TileLoader> {
                       children: const [
                         CircularProgressIndicator(),
                         SizedBox(width: 16),
-                        Text('Calculating Lat/Lng Values (2)...'),
+                        Text('Calculating Lat/Lng Values...'),
                       ],
                     ),
                   );
                 }
 
-                final DownloadableRegion region = (mode == RegionMode.Circle
+                final DownloadableRegion region = (bdp.mode == RegionMode.Circle
                         ? CircleRegion(
                             xy.data![0],
                             const Distance()
@@ -151,8 +125,8 @@ class _TileLoaderState extends State<TileLoader> {
                             ),
                           ))
                     .toDownloadable(
-                  1,
-                  16,
+                  bdp.minMaxZoom[0],
+                  bdp.minMaxZoom[1],
                   TileLayerOptions(
                     urlTemplate: widget.mapSource,
                     subdomains: [
@@ -161,6 +135,9 @@ class _TileLoaderState extends State<TileLoader> {
                       'c',
                     ],
                   ),
+                  parallelThreads: bdp.parallelThreads,
+                  preventRedownload: bdp.preventRedownload,
+                  seaTileRemoval: bdp.seaTileRemoval,
                 );
 
                 return TileLoader2(
@@ -248,7 +225,32 @@ class _TileLoader2State extends State<TileLoader2> {
             ),
             ElevatedButton.icon(
               onPressed: () {
-                final Stream<DownloadProgress> download =
+                final BulkDownloadProvider bdp =
+                    Provider.of<BulkDownloadProvider>(context, listen: false);
+
+                if (!bdp.backgroundDownloading) {
+                  final download =
+                      StorageCachingTileProvider.fromMapCachingManager(
+                              widget.mcm)
+                          .downloadRegion(
+                    widget.region,
+                    preDownloadChecksCallback: (_, __, ___) async => null,
+                  );
+                } else {
+                  StorageCachingTileProvider.fromMapCachingManager(widget.mcm)
+                      .downloadRegionBackground(
+                    widget.region,
+                    preDownloadChecksCallback: (_, __, ___) async => null,
+                    useAltMethod: true,
+                  );
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Downloading In Background'),
+                    ),
+                  );
+                }
+                /*final Stream<DownloadProgress> download =
                     StorageCachingTileProvider.fromMapCachingManager(widget.mcm)
                         .downloadRegion(
                   widget.region,
@@ -263,7 +265,7 @@ class _TileLoader2State extends State<TileLoader2> {
                         event.remainingTiles.toString() +
                         ' tiles remaining',
                   );
-                });
+                });*/
               },
               icon: const Icon(Icons.download),
               label: const Text('Download'),

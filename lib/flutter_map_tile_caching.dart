@@ -4,13 +4,13 @@
 export 'src/main.dart';
 
 // Misc
-export 'src/misc/typedefs.dart';
+export 'src/misc/typedefs_and_exts.dart';
 export 'src/misc/validate.dart' hide safeFilesystemString;
 
 // Storage Managers & Download Progress
-export 'src/storageManagers/storage_manager.dart';
-export 'src/storageManagers/async_storage_manager.dart';
-export 'src/bulkDownload/download_progress.dart';
+export 'src/storage_managers/storage_manager.dart';
+export 'src/storage_managers/async_storage_manager.dart';
+export 'src/bulk_download/download_progress.dart';
 
 // Regions
 export 'src/regions/downloadable_region.dart';
@@ -23,6 +23,7 @@ export 'src/regions/line.dart';
 export 'package:connectivity_plus/connectivity_plus.dart'
     show ConnectivityResult;
 export 'package:battery_info/enums/charging_status.dart';
+export 'dart:io' show Directory;
 
 // Deprecated
 export 'src/deprecated/old_caching_manager.dart';

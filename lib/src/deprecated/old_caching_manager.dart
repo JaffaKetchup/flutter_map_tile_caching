@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:meta/meta.dart';
 
-import '../storageManagers/storage_manager.dart';
+import '../storage_managers/storage_manager.dart';
 
 /// Deprecated. Will be removed in the next release. Use the newer alternative `MapCachingManager()` as soon as possible - see the API docs for documentation. The newer alternative offers much more functionality and fine grained control/information, can offer performance improvements on larger caches, and reduces this library's size (over 50% reduction in this file). All APIs inside this class have also been deprecated/moved: see deprecation warning on applicable APIs for more information.
 @Deprecated(
@@ -98,8 +98,7 @@ class TileStorageCachingManager {
   )
   static Future<int> get cacheDbSize async {
     return (MapCachingManager(await MapCachingManager.normalCache)
-                .allStoresSizes ??
-            0)
+            .allStoresSizes)
         .toInt();
   }
 
@@ -109,8 +108,7 @@ class TileStorageCachingManager {
   )
   static Future<int> get cachedTilesAmount async {
     return MapCachingManager(await MapCachingManager.normalCache)
-            .allStoresLengths ??
-        0;
+        .allStoresLengths;
   }
 
   /// Deprecated. Will be removed in the next release. Migrate to `MapCachingManager().storeLength`.
@@ -119,8 +117,7 @@ class TileStorageCachingManager {
   )
   static Future<int> cachedTilesAmountName(String cacheName) async {
     return MapCachingManager(await MapCachingManager.normalCache, cacheName)
-            .storeLength ??
-        0;
+        .storeLength;
   }
 
   /// Deprecated. Will be removed in the next release. Migrate to `MapCachingManager().allStoresNames`.
@@ -129,8 +126,7 @@ class TileStorageCachingManager {
   )
   static Future<List<String>> get allCacheNames async {
     return MapCachingManager(await MapCachingManager.normalCache)
-            .allStoresNames ??
-        [];
+        .allStoresNames;
   }
 
   /// Deprecated. Functionality has been removed (calling this getter will always return 20000). Migrate to `StorageCachingTileProvider().maxStoreLength`.

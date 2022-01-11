@@ -141,8 +141,8 @@ class _BulkDownloaderState extends State<BulkDownloader> {
               AnimatedPositioned(
                 bottom: bdp.regionSelected
                     ? 0
-                    : -(MediaQuery.of(context).size.height / 2),
-                height: MediaQuery.of(context).size.height / 2,
+                    : -(MediaQuery.of(context).size.height / 2 + 16),
+                height: MediaQuery.of(context).size.height / 2 + 16,
                 width: MediaQuery.of(context).size.width,
                 child: Panel(
                   mcm: mcm!,

@@ -1,10 +1,9 @@
-// ignore_for_file: prefer_contains
-
-import 'dart:io';
-
 import '../../flutter_map_tile_caching.dart';
 
-/// The parent directory of all cache stores, to be used for `parentDirectory` arguments
+/// `CacheDirectory` is deprecated in favour of \'dart:io\'s [Directory], which is now automatically exported by \'flutter_map_tile_caching\'. Will be removed in next release.
+@Deprecated(
+  '`CacheDirectory` is deprecated in favour of \'dart:io\'s `Directory`, which is now automatically exported by \'flutter_map_tile_caching\'. Will be removed in next release',
+)
 typedef CacheDirectory = Directory;
 
 /// Use in `preDownloadChecksCallback` in the bulk downloaders to ensure the download is OK to start by considering the device's status.

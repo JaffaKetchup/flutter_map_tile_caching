@@ -25,7 +25,7 @@ class GeneralProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  CacheDirectory? parentDirectory; // Should only be set once
+  Directory? parentDirectory; // Should only be set once
   SharedPreferences? persistent; // Should only be set once
 
   //! MISC !//

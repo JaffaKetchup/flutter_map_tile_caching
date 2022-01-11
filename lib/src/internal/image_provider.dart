@@ -48,7 +48,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   Future<Codec> _loadAsync(DecoderCallback decode) async {
     final String url = provider.getTileUrl(coords, options);
     final File file = File(p.joinAll([
-      provider.storePath,
+      provider.storeDirectory.absolute.path,
       safeFilesystemString(inputString: url, throwIfInvalid: false),
     ]));
 
@@ -59,7 +59,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         : provider.behavior == CacheBehavior.onlineFirst ||
             (provider.cachedValidDuration != Duration.zero &&
                 DateTime.now().millisecondsSinceEpoch -
-                        file.lastModifiedSync().millisecondsSinceEpoch >
+                        (await file.lastModified()).millisecondsSinceEpoch >
                     provider.cachedValidDuration.inMilliseconds);
 
     // Read the tile file if it exists
@@ -108,11 +108,12 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       // If an new tile was created over the tile limit, delete the oldest tile
       if (needsCreating && provider.maxStoreLength != 0) {
         compute(_deleteOldestFile, {
-          'storePath': provider.storePath,
+          'storePath': provider.storeDirectory.absolute.path,
           'maxStoreLength': provider.maxStoreLength,
         });
       }
 
+      PaintingBinding.instance?.imageCache?.evict(this);
       return await decode(bytes);
     }
 

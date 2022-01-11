@@ -14,8 +14,9 @@ class Recovery {
   final File recoveryFile;
 
   /// Used internally to manage bulk download recovery
-  Recovery(String storePath)
-      : recoveryFile = File(p.joinAll([storePath, 'fmtcDownload.recovery']));
+  Recovery(Directory storeDirectory)
+      : recoveryFile = File(
+            p.joinAll([storeDirectory.absolute.path, 'fmtcDownload.recovery']));
 
   /// Start the recovery - create and configure the file
   Future<void> startRecovery(DownloadableRegion region) =>

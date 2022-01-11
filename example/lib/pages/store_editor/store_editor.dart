@@ -23,8 +23,8 @@ class _StoreEditorState extends State<StoreEditor> {
       null,
     ],
     'sourceURL': [
-      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
     ],
     'cacheBehaviour': [
       'cacheFirst',
@@ -46,6 +46,7 @@ class _StoreEditorState extends State<StoreEditor> {
       () => options[opt]![1] = T == String && newVal.isEmpty ? null : newVal);
 
   late final MapCachingManager? mcm;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void didChangeDependencies() {
@@ -91,7 +92,11 @@ class _StoreEditorState extends State<StoreEditor> {
     return Consumer<GeneralProvider>(
       builder: (context, provider, _) {
         return WillPopScope(
-          onWillPop: () => exit(context, options),
+          onWillPop: () => exit(
+            context,
+            options,
+            _formKey,
+          ),
           child: Scaffold(
             appBar: AppBar(
               title: Text(
@@ -101,92 +106,119 @@ class _StoreEditorState extends State<StoreEditor> {
               ),
             ),
             body: Consumer<GeneralProvider>(
-              builder: (context, provider, _) => Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: 300,
-                        child: MapView(
-                          source: optNewFallback<String>('sourceURL'),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        initialValue: options['storeName']![0],
-                        onChanged: (newVal) =>
-                            updateOpt<String>('storeName', newVal),
-                        decoration:
-                            const InputDecoration(labelText: 'Store Name'),
-                        textCapitalization: TextCapitalization.words,
-                        validator: validateStoreNameString,
-                      ),
-                      const SizedBox(height: 5),
-                      TextFormField(
-                        initialValue: options['sourceURL']![0],
-                        onChanged: (newVal) =>
-                            updateOpt<String>('sourceURL', newVal),
-                        decoration: const InputDecoration(
-                          labelText: 'Source URL',
-                          helperText:
-                              'You must abide by your tile server\'s Terms Of Service',
-                        ),
-                        keyboardType: TextInputType.url,
-                      ),
-                      const SizedBox(height: 5),
-                      const Divider(),
-                      const SizedBox(height: 5),
-                      TextFormField(
-                        initialValue: options['validDuration']![0].toString(),
-                        onChanged: (newVal) => updateOpt<int>(
-                            'validDuration', int.tryParse(newVal) ?? 16),
-                        decoration: const InputDecoration(
-                          labelText: 'Valid Duration (days)',
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: <TextInputFormatter>[
-                          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      TextFormField(
-                        initialValue: options['maxTiles']![0].toString(),
-                        onChanged: (newVal) => updateOpt<int>(
-                            'maxTiles', int.tryParse(newVal) ?? 16),
-                        decoration: const InputDecoration(
-                          labelText: 'Max Tiles',
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: <TextInputFormatter>[
-                          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          const Text('Cache Behaviour:'),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: DropdownButton<String>(
-                              value: optNewFallback<String>('cacheBehaviour'),
-                              onChanged: (newVal) =>
-                                  updateOpt<String>('cacheBehaviour', newVal),
-                              items: <String>[
-                                'cacheFirst',
-                                'onlineFirst',
-                                'cacheOnly'
-                              ].map<DropdownMenuItem<String>>((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
+              builder: (context, provider, _) => SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 8,
+                    right: 8,
+                    top: 8,
+                    bottom: 0,
+                  ),
+                  child: Scrollbar(
+                    isAlwaysShown: true,
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: _formKey,
+                        autovalidateMode: AutovalidateMode.always,
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              height: 300,
+                              child: MapView(
+                                source: optNewFallback<String>('sourceURL'),
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 10),
+                            TextFormField(
+                              initialValue: options['storeName']![0],
+                              onChanged: (newVal) =>
+                                  updateOpt<String>('storeName', newVal),
+                              decoration: const InputDecoration(
+                                  labelText: 'Store Name'),
+                              textCapitalization: TextCapitalization.words,
+                              validator: validateStoreNameString,
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: 5),
+                            TextFormField(
+                              initialValue: options['sourceURL']![0],
+                              onChanged: (newVal) =>
+                                  updateOpt<String>('sourceURL', newVal),
+                              decoration: const InputDecoration(
+                                labelText: 'Source URL',
+                                helperText:
+                                    'You must abide by your tile server\'s Terms Of Service',
+                              ),
+                              keyboardType: TextInputType.url,
+                              validator: (value) => ((value ?? '')
+                                      .contains('{s}'))
+                                  ? 'Subdomains are not supported in the example app'
+                                  : null,
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: 5),
+                            const Divider(),
+                            const SizedBox(height: 5),
+                            TextFormField(
+                              initialValue:
+                                  options['validDuration']![0].toString(),
+                              onChanged: (newVal) => updateOpt<int>(
+                                  'validDuration', int.tryParse(newVal) ?? 16),
+                              decoration: const InputDecoration(
+                                labelText: 'Valid Duration (days)',
+                              ),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: <TextInputFormatter>[
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r'[0-9]')),
+                              ],
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: 5),
+                            TextFormField(
+                              initialValue: options['maxTiles']![0].toString(),
+                              onChanged: (newVal) => updateOpt<int>(
+                                  'maxTiles', int.tryParse(newVal) ?? 16),
+                              decoration: const InputDecoration(
+                                labelText: 'Max Tiles',
+                              ),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: <TextInputFormatter>[
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r'[0-9]')),
+                              ],
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              children: [
+                                const Text('Cache Behaviour:'),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: DropdownButton<String>(
+                                    value: optNewFallback<String>(
+                                        'cacheBehaviour'),
+                                    onChanged: (newVal) => updateOpt<String>(
+                                        'cacheBehaviour', newVal),
+                                    items: <String>[
+                                      'cacheFirst',
+                                      'onlineFirst',
+                                      'cacheOnly'
+                                    ].map<DropdownMenuItem<String>>(
+                                        (String value) {
+                                      return DropdownMenuItem<String>(
+                                        value: value,
+                                        child: Text(value),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),

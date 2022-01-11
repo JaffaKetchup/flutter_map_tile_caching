@@ -1,7 +1,7 @@
 import 'package:meta/meta.dart';
 
 import '../main.dart';
-import '../storageManagers/storage_manager.dart';
+import '../storage_managers/storage_manager.dart';
 
 /// Makes any string safe for storing in a filesystem structure, platform-universally
 ///
@@ -14,6 +14,8 @@ import '../storageManagers/storage_manager.dart';
 ///  - a duplicate of another sanitized file within the same directory
 ///
 /// ... otherwise it should be `false`.
+///
+/// See [validateStoreNameString] for a public facing validator.
 @internal
 String safeFilesystemString({
   required String inputString,

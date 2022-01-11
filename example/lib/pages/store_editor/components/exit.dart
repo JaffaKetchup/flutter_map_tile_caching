@@ -7,7 +7,17 @@ import '../../../state/general_provider.dart';
 Future<bool> exit(
   BuildContext context,
   Map<String, List<dynamic>> options,
+  GlobalKey<FormState> formKey,
 ) async {
+  // Validate form
+  if (!formKey.currentState!.validate()) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('One or more fields failed validation')),
+    );
+
+    return false;
+  }
+
   // Check no values are empty or 0
   if (options.values.any(
       (element) => element[1] == null || element[1] == '' || element[1] == 0)) {

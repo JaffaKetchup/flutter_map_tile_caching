@@ -15,16 +15,16 @@ import 'package:path/path.dart' as p show joinAll;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:queue/queue.dart';
 
-import 'bulkDownload/download_progress.dart';
-import 'bulkDownload/downloader.dart';
-import 'bulkDownload/tile_loops.dart';
+import 'bulk_download/download_progress.dart';
+import 'bulk_download/downloader.dart';
+import 'bulk_download/tile_loops.dart';
 import 'internal/image_provider.dart';
 import 'internal/recovery/recovery.dart';
-import 'misc/typedefs.dart';
+import 'misc/typedefs_and_exts.dart';
 import 'misc/validate.dart';
 import 'regions/downloadable_region.dart';
 import 'regions/recovered_region.dart';
-import 'storageManagers/storage_manager.dart';
+import 'storage_managers/storage_manager.dart';
 
 /// Multiple behaviors dictating how browse caching should be carried out
 ///
@@ -53,22 +53,22 @@ enum CacheBehavior {
 ///
 /// See each property's individual documentation for more detail.
 class StorageCachingTileProvider extends TileProvider {
-  /// Deprecated. Migrate to `maxStoreLength`. Will be removed in the next release.
-  @Deprecated(
-      'Migrate to `maxStoreLength`. Will be removed in the next release.')
-  static const kMaxPreloadTileAreaCount = 20000;
-
-  /// The directory to place cache stores into
+  /// Container directory for stores (previously `parentDirectory`)
   ///
-  /// Use [MapCachingManager.normalCache] wherever possible, or [MapCachingManager.temporaryCache] alternatively (see documentation). To use those `Future` values here, you will need to wrap your [FlutterMap] widget in a [FutureBuilder] to await the returned directory or show a loading indicator; this shouldn't cause any interference. If creating a path manually, be sure it's the correct format, use the `path` library if needed.
+  /// Use [MapCachingManager.normalCache] wherever possible, or [MapCachingManager.temporaryCache] alternatively (see documentation). To use those [Future] values, you will need to wrap your [FlutterMap] widget in a [FutureBuilder] to await the returned directory or show a loading indicator; this shouldn't cause any interference. If creating a path manually, be sure it's the correct format, use the 'package:path' library if needed.
   ///
   /// Required.
-  final CacheDirectory parentDirectory;
+  final Directory parentDirectory;
 
-  /// The name of the cache store to use for this instance
+  /// Name of a store (to use for this instance), defaulting to 'mainStore'.
   ///
-  /// Defaults to the default store, 'mainStore'.
+  /// Is validated through [safeFilesystemString] : an error will be thrown if the store name is given and invalid, see [validateStoreNameString] to validate names safely before construction.
   final String storeName;
+
+  /// Directory containing all cached tiles and metadata for the store
+  ///
+  /// Automatically generated from [parentDirectory] & [storeName].
+  final Directory storeDirectory;
 
   /// The behavior method to get and cache a tile. Also called `cacheBehaviour`.
   ///
@@ -88,9 +88,6 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Defaults to 20000, set to 0 to disable.
   final int maxStoreLength;
-
-  /// Automatically generated. Contains the absolute path to the cache store after initialization.
-  final String storePath;
 
   /// Used internally for recovery purposes
   bool _downloadOngoing = false;
@@ -120,14 +117,14 @@ class StorageCachingTileProvider extends TileProvider {
     this.behavior = CacheBehavior.cacheFirst,
     this.cachedValidDuration = const Duration(days: 16),
     this.maxStoreLength = 20000,
-  }) : storePath = p.joinAll([
+  }) : storeDirectory = Directory(p.joinAll([
           parentDirectory.absolute.path,
           safeFilesystemString(inputString: storeName, throwIfInvalid: true),
-        ]) {
-    Directory(storePath).createSync(recursive: true);
+        ])) {
+    storeDirectory.createSync(recursive: true);
   }
 
-  /// Converts a [MapCachingManager] to [StorageCachingTileProvider], using the same [parentDirectory] and [storeName].
+  /// Converts a [MapCachingManager] to [StorageCachingTileProvider], using the same [parentDirectory] and [storeName] (which must be non-null).
   ///
   /// For more information about this constructor, see the main class [StorageCachingTileProvider].
   StorageCachingTileProvider.fromMapCachingManager(
@@ -136,13 +133,13 @@ class StorageCachingTileProvider extends TileProvider {
     this.cachedValidDuration = const Duration(days: 16),
     this.maxStoreLength = 20000,
   })  : parentDirectory = mapCachingManager.parentDirectory,
-        storeName = mapCachingManager.storeName,
-        storePath = p.joinAll([
+        storeName = mapCachingManager.storeName!,
+        storeDirectory = Directory(p.joinAll([
           mapCachingManager.parentDirectory.absolute.path,
           safeFilesystemString(
-              inputString: mapCachingManager.storeName, throwIfInvalid: true),
-        ]) {
-    Directory(storePath).createSync(recursive: true);
+              inputString: mapCachingManager.storeName!, throwIfInvalid: true),
+        ])) {
+    storeDirectory.createSync(recursive: true);
   }
 
   /// Always call (if necessary) after finishing with caching, or in your widget's dispose methods
@@ -160,13 +157,20 @@ class StorageCachingTileProvider extends TileProvider {
 
   /// Get a browsed tile as an image, paint it on the map and save it's bytes to cache for later
   @override
-  ImageProvider getImage(Coords<num> coords, TileLayerOptions options) =>
-      FMTCImageProvider(
-        provider: this,
-        options: options,
-        coords: coords,
-        httpClient: _httpClient,
-      );
+  ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
+    final Stopwatch stopwatch = Stopwatch()..start();
+    final fmtc = FMTCImageProvider(
+      provider: this,
+      options: options,
+      coords: coords,
+      httpClient: _httpClient,
+    );
+    stopwatch.stop();
+    if (kDebugMode) {
+      print('Executed in ${stopwatch.elapsed}: ${fmtc.coords}');
+    }
+    return fmtc;
+  }
 
   //! GENERAL DOWNLOADING !//
 
@@ -242,7 +246,7 @@ class StorageCachingTileProvider extends TileProvider {
     }
 
     if (!disableRecovery) {
-      await Recovery(storePath).startRecovery(region);
+      await Recovery(storeDirectory).startRecovery(region);
       _downloadOngoing = true;
     }
 
@@ -269,7 +273,7 @@ class StorageCachingTileProvider extends TileProvider {
   Future<void> cancelDownload() async {
     _queue?.dispose();
     _streamController?.close();
-    await Recovery(storePath).endRecovery();
+    await Recovery(storeDirectory).endRecovery();
     _downloadOngoing = false;
   }
 
@@ -285,7 +289,7 @@ class StorageCachingTileProvider extends TileProvider {
   Future<RecoveredRegion?> recoverDownload({bool deleteRecovery = true}) async {
     if (_downloadOngoing) return null;
 
-    final Recovery rec = Recovery(storePath);
+    final Recovery rec = Recovery(storeDirectory);
 
     final RecoveredRegion? recovered = await rec.readRecovery();
 
@@ -347,8 +351,7 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Returns nothing.
   void downloadRegionBackground(
-    DownloadableRegion region,
-    StorageCachingTileProvider provider, {
+    DownloadableRegion region, {
     bool Function(DownloadProgress)? callback,
     PreDownloadChecksCallback preDownloadChecksCallback,
     void Function()? preDownloadChecksFailedCallback,

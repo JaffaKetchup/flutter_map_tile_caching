@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:stream_transform/stream_transform.dart';
 
+import 'panel_opts.dart';
 import 'tile_loaders.dart';
 
-class Panel extends StatelessWidget {
+class Panel extends StatefulWidget {
   const Panel({
     Key? key,
     required this.mcm,
@@ -16,6 +18,11 @@ class Panel extends StatelessWidget {
   final MapController controller;
   final String? mapSource;
 
+  @override
+  State<Panel> createState() => _PanelState();
+}
+
+class _PanelState extends State<Panel> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -40,7 +47,7 @@ class Panel extends StatelessWidget {
               left: 0,
               child: Column(
                 children: [
-                  const Expanded(child: Placeholder()),
+                  const Expanded(child: PanelOpts()),
                   const SizedBox(height: 10),
                   Text(
                     'You must conform to the ToS of your tile server!',
@@ -56,10 +63,19 @@ class Panel extends StatelessWidget {
               left: 0,
               right: 0,
               height: 58,
-              child: TileLoader(
-                mcm: mcm,
-                controller: controller,
-                mapSource: mapSource,
+              child: StreamBuilder(
+                stream: widget.controller.mapEventStream
+                    .debounce(const Duration(seconds: 1)),
+                builder: (
+                  context,
+                  evt,
+                ) =>
+                    TileLoader(
+                  key: ValueKey(evt.data.toString()),
+                  mcm: widget.mcm,
+                  controller: widget.controller,
+                  mapSource: widget.mapSource,
+                ),
               ),
             ),
           ],

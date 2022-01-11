@@ -44,7 +44,7 @@ class _HomePageState extends State<HomePage> {
       body: Consumer<GeneralProvider>(
         builder: (context, provider, _) {
           // Layer 1: Get the caching directory
-          return FutureBuilder<CacheDirectory>(
+          return FutureBuilder<Directory>(
             future: MapCachingManager.normalCache,
             builder: (context, cacheDir) {
               if (!cacheDir.hasData) {

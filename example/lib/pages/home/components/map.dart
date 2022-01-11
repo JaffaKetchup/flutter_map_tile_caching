@@ -39,9 +39,8 @@ class MapView extends StatelessWidget {
           layers: [
             TileLayerOptions(
               urlTemplate: !provider.cachingEnabled || source == null
-                  ? 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                  ? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
                   : source,
-              subdomains: ['a', 'b', 'c'],
               tileProvider: provider.cachingEnabled
                   ? StorageCachingTileProvider.fromMapCachingManager(
                       mcm,
@@ -57,7 +56,7 @@ class MapView extends StatelessWidget {
                     )
                   : const NonCachingNetworkTileProvider(),
               maxZoom: 20,
-              reset: provider.resetController.stream,
+              //reset: provider.resetController.stream,
             ),
             PolylineLayerOptions(
               polylines: [

@@ -27,11 +27,11 @@ class StoreManager extends StatelessWidget {
         padding: const EdgeInsets.only(top: 10),
         child: Consumer<GeneralProvider>(
           builder: (context, provider, _) {
-            final MapCachingManager mcm = MapCachingManager(
-                provider.parentDirectory!, provider.storeName);
+            final MapCachingManager mcm =
+                MapCachingManager(provider.parentDirectory!);
 
             return StreamBuilder<void>(
-              stream: mcm.watchCacheChanges(false)!,
+              stream: mcm.watchCacheChanges(false),
               builder: (context, s) {
                 return FutureBuilder<List<String>?>(
                   future: mcm.allStoresNamesAsync,
@@ -48,15 +48,15 @@ class StoreManager extends StatelessWidget {
                             provider.parentDirectory!, storeNames.data![i]);
 
                         return ListTile(
-                          title: Text(currentMCM.storeName),
+                          title: Text(currentMCM.storeName!),
                           subtitle: Text(
-                              '${currentMCM.storeLength} tiles\n${(currentMCM.storeSize! / 1024).toStringAsFixed(2)} MiB'),
+                              '${currentMCM.storeLength} tiles\n${(currentMCM.storeSize / 1024).toStringAsFixed(2)} MiB'),
                           leading: buildListTileImage(currentMCM),
                           trailing: provider.storeName == currentMCM.storeName
                               ? const Icon(Icons.done)
                               : null,
                           onTap: () async {
-                            provider.storeName = currentMCM.storeName;
+                            provider.storeName = currentMCM.storeName!;
                             provider.persistent!
                                 .setString('lastUsedStore', provider.storeName);
                             PaintingBinding.instance?.imageCache?.clear();

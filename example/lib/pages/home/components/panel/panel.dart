@@ -26,7 +26,7 @@ class Panel extends StatelessWidget {
                 provider.parentDirectory!, provider.storeName);
 
             return StreamBuilder<void>(
-              stream: mcm.watchStoreChanges(true)!,
+              stream: mcm.watchStoreChanges(true),
               builder: (context, _) => Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
