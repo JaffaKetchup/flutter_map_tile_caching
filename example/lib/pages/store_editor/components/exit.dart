@@ -10,7 +10,8 @@ Future<bool> exit(
   GlobalKey<FormState> formKey,
 ) async {
   // Validate form
-  if (!formKey.currentState!.validate()) {
+  if (!(options['storeName']?[1] == null) &&
+      !formKey.currentState!.validate()) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('One or more fields failed validation')),
     );

@@ -71,16 +71,6 @@ Widget _buildInfoPanel(context) {
                         'Drag the viewfinder over an area you would like to download, and choose a suitable shape using the switch chips. The crosshairs will help you get your real center and will confirm your corner/edge.\nOnce you\'ve decided on your perfect area, tap the Done button and input other information such as zoom levels, number of threads, and other optional functionality. Then start the download and watch the percentage tick up.\n\n',
                   ),
                   TextSpan(
-                    text: 'Download not starting? All tiles fail?\n',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextSpan(
-                    text:
-                        'Try removing the \'{s}\' subdomain part from your source URL using the Store Editor. Only subdomains a, b & c are supported in this example (fully functional in the API).\nTry selecting a smaller area and fewer zoom levels, and avoid use of the Circle shape region.\nDisable multithreading and sea tile removal as a last resort.\n\n',
-                  ),
-                  TextSpan(
                     text: 'Limitations apply.\n',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,

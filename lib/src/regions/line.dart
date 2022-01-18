@@ -24,8 +24,9 @@ class LineRegion implements BaseRegion {
   ///
   /// Use the optional `overlap` argument to set the end of rectangle behavior. -1 is reduced, 0 is normal (default), 1 is full (as downloaded).
   List<List<LatLng>> toOutlines([int overlap = 0]) {
-    assert(overlap >= -1 && overlap <= 1,
-        '`overlap` must be between -1 and 1 inclusive');
+    if (overlap >= -1 && overlap <= 1) {
+      throw ArgumentError('`overlap` must be between -1 and 1 inclusive');
+    }
 
     const Distance dist = Distance();
     final int rad = (radius * math.pi / 4).round();
@@ -119,10 +120,13 @@ class LineRegion implements BaseRegion {
     int curveSmoothening = 50,
     int overlap = 0,
   }) {
-    assert(overlap >= -1 && overlap <= 1,
-        '`overlap` must be between -1 and 1 inclusive');
-    assert(prettyPaint ? overlap == 0 || overlap == -1 : true,
-        '`overlap` must be either -1 or 0 when `prettyPaint` is enabled');
+    if (overlap >= -1 && overlap <= 1) {
+      throw ArgumentError('`overlap` must be between -1 and 1 inclusive');
+    }
+    if (prettyPaint ? overlap == 0 || overlap == -1 : true) {
+      throw ArgumentError(
+          '`overlap` must be either -1 or 0 when `prettyPaint` is enabled');
+    }
 
     final List<List<LatLng>> rects = toOutlines(prettyPaint ? -1 : overlap);
 

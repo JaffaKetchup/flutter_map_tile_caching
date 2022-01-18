@@ -120,4 +120,32 @@ class DownloadProgress {
   @Deprecated(
       'Due to internal refactoring. Migrate to the named constructor [DownloadProgress.empty]. Will be removed in next update.')
   static DownloadProgress get placeholder => DownloadProgress.empty();
+
+  //! GENERAL OBJECT STUFF !//
+
+  @override
+  String toString() =>
+      'DownloadProgress(successfulTiles: $successfulTiles, failedTiles: $failedTiles, maxTiles: $maxTiles, seaTiles: $seaTiles, existingTiles: $existingTiles, duration: $duration)';
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is DownloadProgress &&
+        other.successfulTiles == successfulTiles &&
+        other.failedTiles == failedTiles &&
+        other.maxTiles == maxTiles &&
+        other.seaTiles == seaTiles &&
+        other.existingTiles == existingTiles &&
+        other.duration == duration;
+  }
+
+  @override
+  int get hashCode =>
+      successfulTiles.hashCode ^
+      failedTiles.hashCode ^
+      maxTiles.hashCode ^
+      seaTiles.hashCode ^
+      existingTiles.hashCode ^
+      duration.hashCode;
 }

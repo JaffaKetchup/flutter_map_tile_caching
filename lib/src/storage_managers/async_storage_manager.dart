@@ -91,7 +91,7 @@ extension AsyncMapCachingManager on MapCachingManager {
     await _cacheRequired;
 
     return await _computeWrapper(
-      (cacheDir, storeDir, otherArgs) async => await cacheDir
+      (cacheDir, storeDir, _) async => await cacheDir
           .list()
           .map((e) => p.split(e.absolute.path).last)
           .toList(),
@@ -103,7 +103,7 @@ extension AsyncMapCachingManager on MapCachingManager {
     await _storeRequired;
 
     return (await _computeWrapper(
-          (cacheDir, storeDir, otherArgs) async => (await storeDir!
+          (cacheDir, storeDir, _) async => (await storeDir!
                   .list()
                   .asyncMap((e) async => e is File ? await e.length() : 0)
                   .toList())
@@ -117,7 +117,7 @@ extension AsyncMapCachingManager on MapCachingManager {
     await _cacheRequired;
 
     return (await _computeWrapper(
-      (cacheDir, storeDir, otherArgs) async => await cacheDir
+      (cacheDir, storeDir, _) async => await cacheDir
           .list()
           .asyncMap(
             (e) async =>
@@ -138,7 +138,7 @@ extension AsyncMapCachingManager on MapCachingManager {
     await _storeRequired;
 
     return (await _computeWrapper(
-      (cacheDir, storeDir, otherArgs) async => await storeDir!.list().length,
+      (cacheDir, storeDir, _) async => await storeDir!.list().length,
     ));
   }
 
@@ -147,7 +147,7 @@ extension AsyncMapCachingManager on MapCachingManager {
     await _cacheRequired;
 
     return (await _computeWrapper(
-      (cacheDir, storeDir, otherArgs) async => await cacheDir
+      (cacheDir, storeDir, _) async => await cacheDir
           .list()
           .asyncMap(
             (e) async => await (e as Directory).list().length,
@@ -176,14 +176,14 @@ extension AsyncMapCachingManager on MapCachingManager {
     final int storeLen = await storeLengthAsync;
     if (storeLen == 0) return null;
 
-    assert(
-      random ? true : maxRange == null,
-      'If not in random mode, `maxRange` must be left as `null`',
-    );
-    assert(
-      (maxRange ?? 1) >= 1 && (maxRange ?? 1) <= storeLen,
-      'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`',
-    );
+    if (!random && maxRange != null) {
+      throw ArgumentError(
+          'If not in random mode, `maxRange` must be left as `null`');
+    }
+    if (maxRange != null && (maxRange < 1 || maxRange > storeLen)) {
+      throw ArgumentError(
+          'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`');
+    }
 
     return await _computeWrapper(
       (cacheDir, storeDir, otherArgs) async {
@@ -194,11 +194,11 @@ extension AsyncMapCachingManager on MapCachingManager {
         int i = 0;
 
         await for (FileSystemEntity e in storeDir!.list()) {
-          if (!random || i == randInt) {
+          if (!otherArgs['random'] || i == randInt) {
             return Image.file(
               File(e.absolute.path),
-              width: size,
-              height: size,
+              width: otherArgs['size'],
+              height: otherArgs['size'],
             );
           }
           i++;

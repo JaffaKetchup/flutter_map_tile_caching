@@ -149,12 +149,14 @@ class MapCachingManager {
   /// output: ------3---4-----6|
   /// ```
   Stream<void> watchCacheChanges(
-    bool enableDebounce, [
+    bool enableDebounce, {
     Duration debounceDuration = const Duration(milliseconds: 200),
-  ]) {
+    int fileSystemEvents = ~FileSystemEvent.modify,
+  }) {
     _cacheRequired;
 
-    final Stream<void> stream = parentDirectory.watch().map((event) => null);
+    final Stream<void> stream =
+        parentDirectory.watch(events: fileSystemEvents).map((event) => null);
     return enableDebounce ? stream.debounce(debounceDuration) : stream;
   }
 
@@ -170,12 +172,14 @@ class MapCachingManager {
   /// output: ------3---4-----6|
   /// ```
   Stream<void> watchStoreChanges(
-    bool enableDebounce, [
+    bool enableDebounce, {
     Duration debounceDuration = const Duration(milliseconds: 200),
-  ]) {
+    int fileSystemEvents = ~FileSystemEvent.modify,
+  }) {
     _storeRequired;
 
-    final Stream<void> stream = storeDirectory!.watch().map((event) => null);
+    final Stream<void> stream =
+        storeDirectory!.watch(events: fileSystemEvents).map((event) => null);
     return enableDebounce ? stream.debounce(debounceDuration) : stream;
   }
 
@@ -255,22 +259,20 @@ class MapCachingManager {
     final int storeLen = storeLength;
     if (storeLen == 0) return null;
 
-    assert(
-      random ? true : maxRange == null,
-      'If not in random mode, `maxRange` must be left as `null`',
-    );
-    assert(
-      (maxRange ?? 1) >= 1 && (maxRange ?? 1) <= storeLen,
-      'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`',
-    );
+    if (!random && maxRange != null) {
+      throw ArgumentError(
+          'If not in random mode, `maxRange` must be left as `null`');
+    }
+    if (maxRange != null && (maxRange < 1 || maxRange > storeLen)) {
+      throw ArgumentError(
+          'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`');
+    }
 
-    final int randInt =
-        random ? Random().nextInt(maxRange ?? (storeLen + 1)) : -1;
-
+    final int? randInt = !random ? null : Random().nextInt(maxRange!);
     int i = 0;
 
     for (FileSystemEntity evt in storeDirectory!.listSync()) {
-      if (!random || i == randInt) {
+      if (i == (randInt ?? 0)) {
         return Image.file(
           File(evt.absolute.path),
           width: size,

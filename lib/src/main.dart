@@ -157,20 +157,13 @@ class StorageCachingTileProvider extends TileProvider {
 
   /// Get a browsed tile as an image, paint it on the map and save it's bytes to cache for later
   @override
-  ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
-    final Stopwatch stopwatch = Stopwatch()..start();
-    final fmtc = FMTCImageProvider(
-      provider: this,
-      options: options,
-      coords: coords,
-      httpClient: _httpClient,
-    );
-    stopwatch.stop();
-    if (kDebugMode) {
-      print('Executed in ${stopwatch.elapsed}: ${fmtc.coords}');
-    }
-    return fmtc;
-  }
+  ImageProvider getImage(Coords<num> coords, TileLayerOptions options) =>
+      FMTCImageProvider(
+        provider: this,
+        options: options,
+        coords: coords,
+        httpClient: _httpClient,
+      );
 
   //! GENERAL DOWNLOADING !//
 

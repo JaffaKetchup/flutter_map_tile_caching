@@ -130,12 +130,14 @@ class DownloadableRegion {
     required this.end,
     required this.crs,
     required this.errorHandler,
-  })  : assert(
-          minZoom <= maxZoom,
-          '`minZoom` should be less than or equal to `maxZoom`',
-        ),
-        assert(
-          parallelThreads >= 1,
-          '`parallelThreads` should be more than or equal to 1. Set to 1 to disable multithreading',
-        );
+  }) {
+    if (minZoom > maxZoom) {
+      throw ArgumentError(
+          '`minZoom` should be less than or equal to `maxZoom`');
+    }
+    if (parallelThreads < 1) {
+      throw ArgumentError(
+          '`parallelThreads` should be more than or equal to 1. Set to 1 to disable multithreading');
+    }
+  }
 }

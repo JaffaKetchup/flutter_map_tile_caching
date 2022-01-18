@@ -9,8 +9,26 @@ import '../../state/general_provider.dart';
 import 'components/list_tile_image.dart';
 import 'components/store_modal.dart';
 
-class StoreManager extends StatelessWidget {
+class StoreManager extends StatefulWidget {
   const StoreManager({Key? key}) : super(key: key);
+
+  @override
+  State<StoreManager> createState() => _StoreManagerState();
+}
+
+class _StoreManagerState extends State<StoreManager> {
+  MapCachingManager? mcm;
+  Stream<void>? stream;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    mcm ??= MapCachingManager(
+        Provider.of<GeneralProvider>(context).parentDirectory!);
+    stream ??=
+        mcm!.watchCacheChanges(false, fileSystemEvents: FileSystemEvent.all);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +45,11 @@ class StoreManager extends StatelessWidget {
         padding: const EdgeInsets.only(top: 10),
         child: Consumer<GeneralProvider>(
           builder: (context, provider, _) {
-            final MapCachingManager mcm =
-                MapCachingManager(provider.parentDirectory!);
-
             return StreamBuilder<void>(
-              stream: mcm.watchCacheChanges(false),
+              stream: stream,
               builder: (context, s) {
                 return FutureBuilder<List<String>?>(
-                  future: mcm.allStoresNamesAsync,
+                  future: mcm!.allStoresNamesAsync,
                   builder: (context, storeNames) {
                     if (!storeNames.hasData) {
                       return const Center(
