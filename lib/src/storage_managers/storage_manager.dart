@@ -101,13 +101,13 @@ class MapCachingManager {
   /// To only empty the store, see [emptyStore].
   void deleteStore() {
     _storeRequired;
-
     storeDirectory!.deleteSync(recursive: true);
   }
 
   /// Empty a store (delete all contained tiles and metadata)
   void emptyStore() {
     _storeRequired;
+
     for (FileSystemEntity e in storeDirectory!.listSync(recursive: true)) {
       e.deleteSync();
     }
@@ -137,26 +137,33 @@ class MapCachingManager {
 
   //! WATCHERS !//
 
-  /// Watch for changes in the current cache (not recursive, so should not include events from [watchStoreChanges])
+  /// Watch for changes in the current cache
+  ///
+  /// By default, [recursive] is set to `false`, meaning only top level changes (those to do with each store) will be caught. Enable recursivity to also include events from [watchStoreChanges].
   ///
   /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
   ///
+  /// Control which changes are caught through the [fileSystemEvents] property, which takes [FileSystemEvent]s, and by default ignores modifications (ie. renaming).
+  ///
   /// Enable debouncing to prevent unnecessary rebuilding for tiny changes in detail using [enableDebounce]. Optionally change the [debounceDuration] from 200ms to 'fire' more or less frequently.
   ///
-  /// Debouncing example (dash represents [debounceDuration]):
+  /// Debouncing example (dash roughly represents [debounceDuration]):
   /// ```dart
   /// input:  1-2-3---4---5-6-|
   /// output: ------3---4-----6|
   /// ```
   Stream<void> watchCacheChanges(
     bool enableDebounce, {
+    bool recursive = false,
     Duration debounceDuration = const Duration(milliseconds: 200),
     int fileSystemEvents = ~FileSystemEvent.modify,
   }) {
     _cacheRequired;
 
-    final Stream<void> stream =
-        parentDirectory.watch(events: fileSystemEvents).map((event) => null);
+    final Stream<void> stream = parentDirectory
+        .watch(events: fileSystemEvents, recursive: recursive)
+        .map((_) => null);
+
     return enableDebounce ? stream.debounce(debounceDuration) : stream;
   }
 
@@ -164,9 +171,11 @@ class MapCachingManager {
   ///
   /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
   ///
+  /// Control which changes are caught through the [fileSystemEvents] property, which takes [FileSystemEvent]s, and by default ignores modifications (ie. renaming).
+  ///
   /// Enable debouncing to prevent unnecessary rebuilding for tiny changes in detail using [enableDebounce]. Optionally change the [debounceDuration] from 200ms to 'fire' more or less frequently.
   ///
-  /// Debouncing example (dash represents [debounceDuration]):
+  /// Debouncing example (dash roughly represents [debounceDuration]):
   /// ```dart
   /// input:  1-2-3---4---5-6-|
   /// output: ------3---4-----6|
@@ -349,4 +358,13 @@ class MapCachingManager {
   @override
   int get hashCode =>
       storeName.hashCode ^ parentDirectory.hashCode ^ storeDirectory.hashCode;
+
+  MapCachingManager copyWith({
+    Directory? parentDirectory,
+    String? storeName,
+  }) =>
+      MapCachingManager(
+        parentDirectory ?? this.parentDirectory,
+        storeName ?? this.storeName,
+      );
 }

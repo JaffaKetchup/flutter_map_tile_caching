@@ -1,11 +1,22 @@
 # Changelog
 
+## [4.0.0-dev.10] - 2022/01/26
+
+* Fixed major performance issues
+* Example improvements - new example app still in progress
+* Tweaked `AsyncMapCachingManager` & `MapCachingManager`
+* Replaced assertions with throws
+* Internal refactoring
+* Added build tools
+* Recovery system reworked - needs testing
+* Added linter
+
 ## [4.0.0-dev.9] - 2021/12/27
 
 * Added new functionality: `AsyncMapCachingManager` (extension methods)
 * Added new functionality: debouncing for `watch...` methods in `MapCachingManager`
 * Added new functionality: `emptyStore()` in `MapCachingManager`
-* Fix inaccurate size reporting
+* Fixed inaccurate size reporting
 * Example improvements - new example app still in progress
 * General changes to README
 

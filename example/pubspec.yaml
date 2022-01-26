@@ -17,7 +17,7 @@ dependencies:
     path: ../
 
   provider: ^6.0.2
-  shared_preferences: ^2.0.11
+  shared_preferences: ^2.0.12
   numberpicker: ^2.1.1
   stream_transform: ^2.0.0
 

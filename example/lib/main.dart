@@ -6,7 +6,6 @@ import 'pages/bulk_downloader/bulk_downloader.dart';
 import 'pages/home/home.dart';
 import 'pages/store_editor/store_editor.dart';
 import 'pages/store_manager/store_manager.dart';
-
 import 'state/general_provider.dart';
 
 void main() {

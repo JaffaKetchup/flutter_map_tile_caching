@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p show joinAll;
+import 'package:queue/queue.dart';
 
 import '../main.dart';
 import '../misc/validate.dart';
@@ -24,6 +25,9 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
   /// A HTTP client used to send requests
   final http.Client httpClient;
+
+  static final Queue removeOldestQueue =
+      Queue(timeout: const Duration(seconds: 1));
 
   /// Create a specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
   FMTCImageProvider({
@@ -100,16 +104,36 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
       // Cache the tile in a seperate isolate
       bytes = serverData.bodyBytes;
-      compute(_writeFile, {
-        'filePath': file.absolute.path,
-        'bytes': bytes,
-      });
+      file.create().then((_) => file.writeAsBytes(bytes as Uint8List));
 
       // If an new tile was created over the tile limit, delete the oldest tile
       if (needsCreating && provider.maxStoreLength != 0) {
-        compute(_deleteOldestFile, {
-          'storePath': provider.storeDirectory.absolute.path,
-          'maxStoreLength': provider.maxStoreLength,
+        removeOldestQueue.add(() async {
+          int currentIteration = 0;
+          bool needToDelete = false;
+
+          File? currentOldestFile;
+          DateTime? currentOldestDateTime;
+
+          await for (FileSystemEntity e in provider.storeDirectory.list()) {
+            if (e is! File) break;
+
+            currentIteration++;
+            if (currentIteration >= provider.maxStoreLength) {
+              needToDelete = true;
+              continue;
+            }
+
+            final DateTime modified = (await e.stat()).modified;
+
+            if (modified.isBefore(currentOldestDateTime ?? DateTime.now())) {
+              currentOldestFile = e;
+              currentOldestDateTime = modified;
+            }
+          }
+
+          if (!needToDelete) return;
+          await currentOldestFile?.delete();
         });
       }
 
@@ -135,32 +159,4 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
   @override
   int get hashCode => coords.hashCode;
-}
-
-Future<void> _deleteOldestFile(Map<String, dynamic> input) async {
-  final Directory store = Directory(input['storePath'] as String);
-  final int maxStoreLength = input['maxStoreLength'];
-
-  while (true) {
-    final List<FileSystemEntity> fileList = await store.list().toList();
-
-    if (fileList.length > maxStoreLength) {
-      fileList.sort(
-          (a, b) => b.statSync().modified.compareTo(a.statSync().modified));
-      try {
-        await fileList.last.delete();
-        // ignore: empty_catches
-      } catch (e) {}
-    }
-
-    break;
-  }
-}
-
-Future<void> _writeFile(Map<String, dynamic> input) async {
-  final File file = File(input['filePath'] as String);
-  final Uint8List bytes = input['bytes'];
-
-  await file.create();
-  await file.writeAsBytes(bytes);
 }

@@ -17,25 +17,29 @@ class StoreManager extends StatefulWidget {
 }
 
 class _StoreManagerState extends State<StoreManager> {
-  MapCachingManager? mcm;
-  Stream<void>? stream;
+  late MapCachingManager mcm;
+  late final Stream<void> stream;
+  late Future<List<String>> future;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    mcm ??= MapCachingManager(
-        Provider.of<GeneralProvider>(context).parentDirectory!);
-    stream ??=
-        mcm!.watchCacheChanges(false, fileSystemEvents: FileSystemEvent.all);
+    mcm = MapCachingManager(context.read<GeneralProvider>().parentDirectory!);
+    stream = mcm.watchCacheChanges(
+      false,
+      fileSystemEvents: FileSystemEvent.all,
+      recursive: true,
+    );
+    future = mcm.allStoresNamesAsync;
+
+    stream.listen((_) => future = mcm.allStoresNamesAsync);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Store Manager'),
-      ),
+      appBar: AppBar(title: const Text('Store Manager')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.pushNamed(context, '/storeEditor'),
         label: const Text('Create New Store'),
@@ -43,61 +47,78 @@ class _StoreManagerState extends State<StoreManager> {
       ),
       body: Padding(
         padding: const EdgeInsets.only(top: 10),
-        child: Consumer<GeneralProvider>(
-          builder: (context, provider, _) {
-            return StreamBuilder<void>(
-              stream: stream,
-              builder: (context, s) {
-                return FutureBuilder<List<String>?>(
-                  future: mcm!.allStoresNamesAsync,
-                  builder: (context, storeNames) {
-                    if (!storeNames.hasData) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
+        child: SizedBox(
+          width: double.infinity,
+          child: Consumer<GeneralProvider>(
+            builder: (context, provider, _) {
+              return StreamBuilder<void>(
+                stream: stream,
+                builder: (context, s) {
+                  return FutureBuilder<List<String>>(
+                    future: future,
+                    builder: (context, storeNames) {
+                      if (storeNames.connectionState != ConnectionState.done ||
+                          !storeNames.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                    return ListView.separated(
-                      itemBuilder: (context, i) {
-                        final MapCachingManager currentMCM = MapCachingManager(
-                            provider.parentDirectory!, storeNames.data![i]);
+                      return ListView.separated(
+                        itemBuilder: (context, i) {
+                          final MapCachingManager currentMCM =
+                              mcm.copyWith(storeName: storeNames.data![i]);
 
-                        return ListTile(
-                          title: Text(currentMCM.storeName!),
-                          subtitle: Text(
-                              '${currentMCM.storeLength} tiles\n${(currentMCM.storeSize / 1024).toStringAsFixed(2)} MiB'),
-                          leading: buildListTileImage(currentMCM),
-                          trailing: provider.storeName == currentMCM.storeName
-                              ? const Icon(Icons.done)
-                              : null,
-                          onTap: () async {
-                            provider.storeName = currentMCM.storeName!;
-                            provider.persistent!
-                                .setString('lastUsedStore', provider.storeName);
-                            PaintingBinding.instance?.imageCache?.clear();
-                            provider.resetMap();
-                          },
-                          onLongPress: () {
-                            showModalBottomSheet(
-                              context: context,
-                              builder: (context) {
-                                return StoreModal(
-                                  currentMCM: currentMCM,
-                                  storeNames: storeNames.data!,
-                                );
+                          return ListTile(
+                            title: Text(currentMCM.storeName!),
+                            subtitle: FutureBuilder<List<num>>(
+                              future: Future.wait([
+                                currentMCM.storeLengthAsync,
+                                currentMCM.storeSizeAsync,
+                              ]),
+                              builder: (context, stats) {
+                                if (stats.connectionState !=
+                                        ConnectionState.done ||
+                                    !stats.hasData) {
+                                  return const Text(
+                                      'Loading Statistics...\nPlease Wait...');
+                                }
+
+                                return Text(
+                                    '${stats.data![0]} tiles\n${(stats.data![1] / 1024).toStringAsFixed(2)} MiB');
                               },
-                            );
-                          },
-                        );
-                      },
-                      separatorBuilder: (context, _) => const Divider(),
-                      itemCount: storeNames.data!.length,
-                    );
-                  },
-                );
-              },
-            );
-          },
+                            ),
+                            leading: buildListTileImage(currentMCM),
+                            trailing: provider.storeName == currentMCM.storeName
+                                ? const Icon(Icons.done)
+                                : null,
+                            onTap: () async {
+                              provider.storeName = currentMCM.storeName!;
+                              provider.persistent!.setString(
+                                  'lastUsedStore', provider.storeName);
+                              PaintingBinding.instance?.imageCache?.clear();
+                              provider.resetMap();
+                            },
+                            onLongPress: () {
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (context) {
+                                  return StoreModal(
+                                    currentMCM: currentMCM,
+                                    storeNames: storeNames.data!,
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                        separatorBuilder: (context, _) => const Divider(),
+                        itemCount: storeNames.data!.length,
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          ),
         ),
       ),
     );

@@ -1,7 +1,7 @@
 ---
 name: Bug Report
-about: Create a bug report to help us improve
-title: Bug - ...
+about: Create a bug report to help us fix a bug
+title: [BUG] - ...
 labels: bug, needs verification
 assignees: JaffaKetchup
 

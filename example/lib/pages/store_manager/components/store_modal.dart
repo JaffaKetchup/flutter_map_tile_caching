@@ -51,8 +51,8 @@ class StoreModal extends StatelessWidget {
             ListTile(
               title: const Text('Empty'),
               leading: const Icon(Icons.delete),
-              onTap: () {
-                currentMCM.emptyStore();
+              onTap: () async {
+                await currentMCM.emptyStoreAsync();
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -77,16 +77,15 @@ class StoreModal extends StatelessWidget {
                     ? null
                     : Colors.red,
               ),
-              onTap: () {
-                currentMCM.deleteStore();
+              onTap: () async {
+                await currentMCM.deleteStoreAsync();
                 Navigator.pop(context);
-                //ScaffoldMessenger.of(context).showSnackBar(
-                //SnackBar(
-                //content: Text(
-                //'${currentMCM.storeName} deleted successfully',
-                //),
-                //),
-                //);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content:
+                        Text('${currentMCM.storeName} deleted successfully'),
+                  ),
+                );
               },
               visualDensity: VisualDensity.compact,
               enabled: provider.storeName != currentMCM.storeName,

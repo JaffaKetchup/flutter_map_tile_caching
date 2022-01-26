@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:math' show Random;
 
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/widgets.dart' show Image;
 import 'package:path/path.dart' as p show joinAll, split;
 
@@ -45,25 +44,22 @@ extension AsyncMapCachingManager on MapCachingManager {
   /// To only empty the store, see [emptyStoreAsync].
   Future<void> deleteStoreAsync() async {
     await _storeRequired;
-    await _computeWrapper((cacheDir, storeDir, _) async =>
-        await storeDir!.delete(recursive: true));
+    await storeDirectory!.delete(recursive: true);
   }
 
   /// Empty a store (delete all contained tiles and metadata)
   Future<void> emptyStoreAsync() async {
     await _storeRequired;
-    await _computeWrapper((cacheDir, storeDir, _) async {
-      await for (FileSystemEntity e in storeDir!.list(recursive: true)) {
-        await e.delete();
-      }
-    });
+
+    await for (FileSystemEntity e in storeDirectory!.list(recursive: true)) {
+      await e.delete();
+    }
   }
 
   /// Delete all stores
   Future<void> deleteAllStoresAsync() async {
     await _cacheRequired;
-    await _computeWrapper((cacheDir, storeDir, _) async =>
-        await cacheDir.delete(recursive: true));
+    await parentDirectory.delete(recursive: true);
   }
 
   /// Rename the current store
@@ -74,41 +70,38 @@ extension AsyncMapCachingManager on MapCachingManager {
   Future<MapCachingManager> renameStoreAsync(String newName) async {
     await _storeRequired;
 
-    return await _computeWrapper(
-      (cacheDir, storeDir, otherArgs) async {
-        final String safeNewName = safeFilesystemString(
-            inputString: otherArgs!['newName'], throwIfInvalid: true);
-        await storeDir!
-            .rename(p.joinAll([cacheDir.absolute.path, safeNewName]));
-        return MapCachingManager(cacheDir, safeNewName);
-      },
-      otherArgs: {'newName': newName},
-    );
+    final String safeNewName =
+        safeFilesystemString(inputString: newName, throwIfInvalid: true);
+    await storeDirectory!
+        .rename(p.joinAll([parentDirectory.absolute.path, safeNewName]));
+
+    return await MapCachingManager.async(parentDirectory, safeNewName);
   }
 
   /// Retrieve a list of all names of existing stores
   Future<List<String>> get allStoresNamesAsync async {
     await _cacheRequired;
 
-    return await _computeWrapper(
-      (cacheDir, storeDir, _) async => await cacheDir
-          .list()
-          .map((e) => p.split(e.absolute.path).last)
-          .toList(),
-    );
+    return await parentDirectory
+        .list()
+        .map((e) => p.split(e.absolute.path).last)
+        .toList();
   }
 
   /// Retrieve the size of a store in kibibytes (KiB)
   Future<double> get storeSizeAsync async {
     await _storeRequired;
 
-    return (await _computeWrapper(
-          (cacheDir, storeDir, _) async => (await storeDir!
-                  .list()
-                  .asyncMap((e) async => e is File ? await e.length() : 0)
-                  .toList())
-              .sum,
-        )) /
+    return (await storeDirectory!.list().asyncMap((e) async {
+          if (e is! File) return 0;
+
+          try {
+            return await e.length();
+          } catch (e) {
+            return 0;
+          }
+        }).toList())
+            .sum /
         1024;
   }
 
@@ -116,44 +109,36 @@ extension AsyncMapCachingManager on MapCachingManager {
   Future<double> get allStoresSizesAsync async {
     await _cacheRequired;
 
-    return (await _computeWrapper(
-      (cacheDir, storeDir, _) async => await cacheDir
-          .list()
-          .asyncMap(
-            (e) async =>
-                (await (e as Directory)
-                        .list()
-                        .asyncMap((f) async => f is File ? await f.length() : 0)
-                        .toList())
-                    .sum /
-                1024,
-          )
-          .toList(),
-    ))
+    return (await parentDirectory
+            .list()
+            .asyncMap(
+              (e) async =>
+                  (await (e as Directory)
+                          .list()
+                          .asyncMap(
+                              (f) async => f is File ? await f.length() : 0)
+                          .toList())
+                      .sum /
+                  1024,
+            )
+            .toList())
         .sum;
   }
 
   /// Retrieve the number of stored tiles in a store
   Future<int> get storeLengthAsync async {
     await _storeRequired;
-
-    return (await _computeWrapper(
-      (cacheDir, storeDir, _) async => await storeDir!.list().length,
-    ));
+    return await storeDirectory!.list().length;
   }
 
   /// Retrieve the number of stored tiles in all stores
   Future<int> get allStoresLengthsAsync async {
     await _cacheRequired;
 
-    return (await _computeWrapper(
-      (cacheDir, storeDir, _) async => await cacheDir
-          .list()
-          .asyncMap(
-            (e) async => await (e as Directory).list().length,
-          )
-          .toList(),
-    ))
+    return (await parentDirectory
+            .list()
+            .asyncMap((e) async => await (e as Directory).list().length)
+            .toList())
         .sum;
   }
 
@@ -185,82 +170,38 @@ extension AsyncMapCachingManager on MapCachingManager {
           'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`');
     }
 
-    return await _computeWrapper(
-      (cacheDir, storeDir, otherArgs) async {
-        final int randInt = otherArgs!['random']
-            ? Random().nextInt(otherArgs['maxRange'] ?? otherArgs['storeLen'])
-            : -1;
+    final int randInt =
+        random ? Random().nextInt(maxRange ?? storeLen + 1) : -1;
 
-        int i = 0;
+    int i = 0;
 
-        await for (FileSystemEntity e in storeDir!.list()) {
-          if (!otherArgs['random'] || i == randInt) {
-            return Image.file(
-              File(e.absolute.path),
-              width: otherArgs['size'],
-              height: otherArgs['size'],
-            );
-          }
-          i++;
-        }
-      },
-      otherArgs: {
-        'storeLen': storeLen + 1,
-        'random': random,
-        'maxRange': maxRange,
-        'size': size,
-      },
-    );
-  }
-
-  /// Internal function to start Isolates automatically, and pass in all required information
-  ///
-  /// [function] should return a [FutureOr], and takes arguments:
-  ///  - `cacheDir` is the cache directory ([parentDirectory])
-  ///  - `storeDir` is the store directory ([storeDirectory])
-  ///  - `otherArgs` can take a `Map` of other custom args
-  FutureOr<T> _computeWrapper<T>(
-    FutureOr<T> Function(
-      Directory cacheDir,
-      Directory? storeDir,
-      Map<String, dynamic>? otherArgs,
-    )
-        function, {
-    Map<String, dynamic>? otherArgs,
-  }) {
-    return compute(
-      (Map<String, dynamic> inp) async => await function(
-        Directory(inp['cachePath']),
-        inp['storePath'] == null ? null : Directory(inp['storePath']!),
-        inp['otherArgs'],
-      ),
-      <String, dynamic>{
-        'cachePath': parentDirectory.absolute.path,
-        'storePath': storeDirectory?.absolute.path,
-        'otherArgs': otherArgs,
-      },
-    );
+    await for (FileSystemEntity e in storeDirectory!.list()) {
+      if (!random || i == randInt) {
+        return Image.file(
+          File(e.absolute.path),
+          width: size,
+          height: size,
+        );
+      }
+      i++;
+    }
   }
 
   /// Functions that require [storeDirectory] or [storeName] should call to ensure they are usable
   ///
   /// Superset of [_cacheRequired].
   Future<void> get _storeRequired async {
-    await _computeWrapper((cacheDir, storeDir, _) async {
-      if (storeDir == null || !(await storeDir.exists())) {
-        throw '`storeName` is required, and `storeDirectory` must exist, to use this function';
-      }
-    });
+    if (storeDirectory == null || !(await storeDirectory!.exists())) {
+      throw '`storeName` is required, and `parentDirectory` must exist, to use this function';
+    }
   }
 
   /// Functions that require [parentDirectory] should call to ensure they are usable
   ///
   /// Subset of [_storeRequired].
   Future<void> get _cacheRequired async {
-    await _computeWrapper((cacheDir, storeDir, _) async {
-      if (!(await parentDirectory.exists())) {
-        throw '`cacheDirectory` must exist to use this function';
-      }
-    });
+    if (!(await parentDirectory.exists())) {
+      throw '`parentDirectory` must exist to use this function';
+    }
   }
 }
