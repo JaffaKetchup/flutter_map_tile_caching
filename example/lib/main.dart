@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fmtc_example/state/bulk_download_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'pages/bulk_downloader/bulk_downloader.dart';
@@ -30,11 +29,11 @@ class MyApp extends StatelessWidget {
           '/': (context) => const HomePage(),
           '/storeManager': (context) => const StoreManager(),
           '/storeEditor': (context) => const StoreEditor(),
-          '/bulkDownloader': (context) =>
-              ChangeNotifierProvider<BulkDownloadProvider>(
+          '/bulkDownloader': (context) => const BulkDownloader(),
+          /*ChangeNotifierProvider<BulkDownloadProvider>(
                 create: (context) => BulkDownloadProvider(),
                 child: const BulkDownloader(),
-              ),
+              ),*/
         },
       ),
     );

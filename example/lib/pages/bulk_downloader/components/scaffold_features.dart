@@ -1,34 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-
-import '../../../state/bulk_download_provider.dart';
-
-AppBar buildAppBar(
-  BuildContext context,
-) {
-  return AppBar(
-    title: const Text('Download Region'),
-    actions: [
-      Builder(
-        builder: (context) {
-          return IconButton(
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                builder: _buildInfoPanel,
-              );
-            },
-            icon: const Icon(Icons.help),
-          );
-        },
-      ),
-    ],
-  );
+class DownloadAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const DownloadAppBar({Key? key, required this.builder}) : super(key: key);
+  final PreferredSizeWidget Function(BuildContext context) builder;
+  @override
+  Widget build(BuildContext context) => Builder(builder: builder);
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-Widget _buildInfoPanel(context) {
+Widget buildInfoPanel(context) {
   return SafeArea(
     child: Padding(
       padding: const EdgeInsets.all(8.0),
@@ -88,26 +69,4 @@ Widget _buildInfoPanel(context) {
       ),
     ),
   );
-}
-
-class FAB extends StatelessWidget {
-  const FAB({
-    Key? key,
-    required this.mcm,
-  }) : super(key: key);
-
-  final MapCachingManager mcm;
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<BulkDownloadProvider>(
-      builder: (context, bdp, _) {
-        return FloatingActionButton(
-          onPressed: () => bdp.regionSelected = true,
-          child: const Icon(Icons.done),
-          tooltip: 'Select Region',
-        );
-      },
-    );
-  }
 }

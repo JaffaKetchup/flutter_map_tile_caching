@@ -77,7 +77,7 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           MapView(controller: mapController),
                           AnimatedPositioned(
-                            bottom: provider.cachingEnabled ? 0 : -125,
+                            bottom: provider.cachingEnabled ? 0 : -145,
                             width: MediaQuery.of(context).size.width,
                             duration: const Duration(milliseconds: 200),
                             child: const Panel(),

@@ -11,9 +11,12 @@ class Panel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.blueGrey,
-        borderRadius: BorderRadius.circular(8.0),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
       ),
       padding: const EdgeInsets.symmetric(
         vertical: 10,
@@ -27,38 +30,51 @@ class Panel extends StatelessWidget {
 
             return StreamBuilder<void>(
               stream: mcm.watchStoreChanges(true),
-              builder: (context, _) => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              builder: (context, _) => Column(
                 children: [
-                  FutureBuilder<int?>(
-                    future: mcm.storeLengthAsync,
-                    builder: (context, len) {
-                      if (!len.hasData) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
-
-                      return statBuilder(
-                        stat: len.data.toString(),
-                        description: 'Total Tiles',
-                      );
-                    },
+                  Text(
+                    provider.storeName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  FutureBuilder<double?>(
-                    future: mcm.storeSizeAsync,
-                    builder: (context, size) {
-                      if (!size.hasData) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
+                  const SizedBox(height: 5),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      FutureBuilder<int?>(
+                        future: mcm.storeLengthAsync,
+                        builder: (context, len) {
+                          if (!len.hasData) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
 
-                      return statBuilder(
-                        stat: (size.data! / 1024).toStringAsFixed(2) + 'MiB',
-                        description: 'Total Size',
-                      );
-                    },
+                          return statBuilder(
+                            stat: len.data.toString(),
+                            description: 'Total Tiles',
+                          );
+                        },
+                      ),
+                      FutureBuilder<double?>(
+                        future: mcm.storeSizeAsync,
+                        builder: (context, size) {
+                          if (!size.hasData) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+
+                          return statBuilder(
+                            stat:
+                                (size.data! / 1024).toStringAsFixed(2) + 'MiB',
+                            description: 'Total Size',
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

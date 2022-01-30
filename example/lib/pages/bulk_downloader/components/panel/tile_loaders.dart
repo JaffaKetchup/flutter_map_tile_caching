@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 import '../../../../state/bulk_download_provider.dart';
-import '../region_mode.dart';
+import '../../bulk_downloader.dart';
 import '../xy_to_latlng.dart';
 
 class TileLoader extends StatefulWidget {
@@ -38,7 +38,7 @@ class _TileLoaderState extends State<TileLoader> {
     final BulkDownloadProvider bdp =
         Provider.of<BulkDownloadProvider>(context, listen: false);
 
-    final bool isCircle = bdp.mode == RegionMode.Circle;
+    final bool isCircle = bdp.mode == RegionMode.circle;
     const Offset offset = Offset(0, 60);
     final double height = bdp.region?.screenConstraints.maxHeight ?? 0;
     final double width = bdp.region?.screenConstraints.maxWidth ?? 0;
@@ -111,7 +111,7 @@ class _TileLoaderState extends State<TileLoader> {
                   );
                 }
 
-                final DownloadableRegion region = (bdp.mode == RegionMode.Circle
+                final DownloadableRegion region = (bdp.mode == RegionMode.circle
                         ? CircleRegion(
                             xy.data![0],
                             const Distance()
@@ -283,3 +283,4 @@ class _TileLoader2State extends State<TileLoader2> {
     );
   }
 }
+*/

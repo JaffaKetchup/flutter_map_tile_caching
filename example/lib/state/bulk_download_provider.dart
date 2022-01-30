@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+/*import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../pages/bulk_downloader/components/region_constraints.dart';
@@ -8,7 +8,7 @@ class BulkDownloadProvider extends ChangeNotifier {
   // I hate state management
   RegionConstraints? region; // Problem-causer 9000
 
-  RegionMode _mode = RegionMode.Square;
+  RegionMode _mode = RegionMode.square;
   RegionMode get mode => _mode;
   set mode(RegionMode newMode) {
     _mode = newMode;
@@ -64,3 +64,4 @@ class BulkDownloadProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+*/

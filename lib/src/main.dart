@@ -167,32 +167,6 @@ class StorageCachingTileProvider extends TileProvider {
 
   //! GENERAL DOWNLOADING !//
 
-  static Future<List<Coords<num>>> _generateTilesComputer(
-    DownloadableRegion region, {
-    bool applyRange = true,
-  }) async {
-    final List<Coords<num>> tiles = await compute(
-      region.type == RegionType.rectangle
-          ? rectangleTiles
-          : region.type == RegionType.circle
-              ? circleTiles
-              : lineTiles,
-      {
-        'bounds': LatLngBounds.fromPoints(region.points),
-        'circleOutline': region.points,
-        'lineOutline': region.points.chunked(4),
-        'minZoom': region.minZoom,
-        'maxZoom': region.maxZoom,
-        'crs': region.crs,
-        'tileSize':
-            CustomPoint(region.options.tileSize, region.options.tileSize),
-      },
-    );
-
-    if (!applyRange) return tiles;
-    return tiles.getRange(region.start, region.end ?? tiles.length).toList();
-  }
-
   /// Download a specified [DownloadableRegion] in the foreground
   ///
   /// To check the number of tiles that need to be downloaded before using this function, use [checkRegion].
@@ -283,11 +257,9 @@ class StorageCachingTileProvider extends TileProvider {
     if (_downloadOngoing) return null;
 
     final Recovery rec = Recovery(storeDirectory);
-
     final RecoveredRegion? recovered = await rec.readRecovery();
 
     if (recovered == null) return null;
-
     if (deleteRecovery) await rec.endRecovery();
 
     return recovered;
@@ -303,7 +275,7 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Pops up an intrusive system dialog asking to be given the permission. There is no explanation for the user, except that the app will be allowed to run in the background all the time, so less technical users may be put off. It is up to you to decide (and program accordingly) if you want to show a reason first, then request the permission.
   ///
-  /// Will return (`Future`) `true` if permission was granted, `false` if the permission was denied.
+  /// Will return ([Future]) `true` if permission was granted, `false` if the permission was denied.
   static Future<bool> requestIgnoreBatteryOptimizations(
       BuildContext context) async {
     if (Platform.isAndroid) {
@@ -532,6 +504,32 @@ class StorageCachingTileProvider extends TileProvider {
     }
 
     client.close();
+  }
+
+  static Future<List<Coords<num>>> _generateTilesComputer(
+    DownloadableRegion region, {
+    bool applyRange = true,
+  }) async {
+    final List<Coords<num>> tiles = await compute(
+      region.type == RegionType.rectangle
+          ? rectangleTiles
+          : region.type == RegionType.circle
+              ? circleTiles
+              : lineTiles,
+      {
+        'bounds': LatLngBounds.fromPoints(region.points),
+        'circleOutline': region.points,
+        'lineOutline': region.points.chunked(4),
+        'minZoom': region.minZoom,
+        'maxZoom': region.maxZoom,
+        'crs': region.crs,
+        'tileSize':
+            CustomPoint(region.options.tileSize, region.options.tileSize),
+      },
+    );
+
+    if (!applyRange) return tiles;
+    return tiles.getRange(region.start, region.end ?? tiles.length).toList();
   }
 }
 

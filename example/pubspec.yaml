@@ -1,5 +1,6 @@
 name: fmtc_example
-description: The example application for 'flutter_map_tile_caching', showcasing it's functionality and use-cases.
+description: The example application for 'flutter_map_tile_caching', showcasing
+  it's functionality and use-cases.
 publish_to: "none"
 
 version: 4.0.0-dev.9
@@ -9,23 +10,23 @@ environment:
   flutter: ">=2.8.0"
 
 dependencies:
+  backdrop: ^0.7.1
   flutter:
     sdk: flutter
-
   flutter_map: ^0.14.0
   flutter_map_tile_caching:
     path: ../
-
+  flutter_speed_dial: ^5.0.0+1
+  numberpicker: ^2.1.1
   provider: ^6.0.2
   shared_preferences: ^2.0.12
-  numberpicker: ^2.1.1
   stream_transform: ^2.0.0
 
 dev_dependencies:
+  flutter_app_name: ^0.1.0
+  flutter_lints: ^1.0.4
   flutter_test:
     sdk: flutter
-  flutter_lints: ^1.0.4
-  flutter_app_name: ^0.1.0
 
 flutter_app_name:
   name: "FMTC Example"
