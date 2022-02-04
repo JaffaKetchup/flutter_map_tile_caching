@@ -1,4 +1,6 @@
+import 'package:backdrop/backdrop.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
 class DownloadAppBar extends StatelessWidget implements PreferredSizeWidget {
   const DownloadAppBar({Key? key, required this.builder}) : super(key: key);
@@ -69,4 +71,42 @@ Widget buildInfoPanel(context) {
       ),
     ),
   );
+}
+
+class FAB extends StatelessWidget {
+  const FAB({
+    Key? key,
+    required this.calculateCornersCallback,
+  }) : super(key: key);
+
+  final Future<void> Function() calculateCornersCallback;
+
+  @override
+  Widget build(BuildContext context) {
+    if (Backdrop.of(context).isBackLayerRevealed) {
+      return FloatingActionButton(
+        onPressed: () async {
+          await calculateCornersCallback();
+          Backdrop.of(context).concealBackLayer();
+        },
+        child: const Icon(Icons.done),
+      );
+    } else {
+      return SpeedDial(
+        tooltip: 'Download Region',
+        icon: Icons.download,
+        activeIcon: Icons.cancel,
+        children: [
+          SpeedDialChild(
+            label: 'Download In Foreground',
+            child: const Icon(Icons.download),
+          ),
+          SpeedDialChild(
+            label: 'Download In Background',
+            child: const Icon(Icons.miscellaneous_services),
+          ),
+        ],
+      );
+    }
+  }
 }

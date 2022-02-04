@@ -22,6 +22,7 @@ class MyApp extends StatelessWidget {
         title: 'FMTC Example',
         theme: ThemeData(
           primarySwatch: Colors.orange,
+          useMaterial3: true,
         ),
         debugShowCheckedModeBanner: false,
         initialRoute: '/',
@@ -30,10 +31,6 @@ class MyApp extends StatelessWidget {
           '/storeManager': (context) => const StoreManager(),
           '/storeEditor': (context) => const StoreEditor(),
           '/bulkDownloader': (context) => const BulkDownloader(),
-          /*ChangeNotifierProvider<BulkDownloadProvider>(
-                create: (context) => BulkDownloadProvider(),
-                child: const BulkDownloader(),
-              ),*/
         },
       ),
     );

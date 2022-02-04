@@ -185,6 +185,8 @@ extension AsyncMapCachingManager on MapCachingManager {
       }
       i++;
     }
+
+    throw FallThroughError();
   }
 
   /// Functions that require [storeDirectory] or [storeName] should call to ensure they are usable
