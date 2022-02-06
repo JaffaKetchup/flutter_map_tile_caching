@@ -89,8 +89,6 @@ class _BulkDownloaderState extends State<BulkDownloader> {
               ],
             ),
           );
-
-          return;
         },
       ),
       frontLayer: FrontLayer(
@@ -202,6 +200,7 @@ class _BulkDownloaderState extends State<BulkDownloader> {
                       Navigator.of(context).pop();
                     }
                   : null,
+              enabled: i != regionShapes.length - 1,
             );
           },
           separatorBuilder: (context, i) =>

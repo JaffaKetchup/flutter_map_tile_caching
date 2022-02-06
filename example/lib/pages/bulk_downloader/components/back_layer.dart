@@ -29,7 +29,10 @@ class BackLayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16.0),
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(16.0),
+        topRight: Radius.circular(16.0),
+      ),
       child: Stack(
         children: [
           MapView(

@@ -1,6 +1,8 @@
 import 'package:backdrop/backdrop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:fmtc_example/state/bulk_download_provider.dart';
+import 'package:provider/provider.dart';
 
 class DownloadAppBar extends StatelessWidget implements PreferredSizeWidget {
   const DownloadAppBar({Key? key, required this.builder}) : super(key: key);
@@ -51,7 +53,7 @@ Widget buildInfoPanel(context) {
                   ),
                   TextSpan(
                     text:
-                        'Drag the viewfinder over an area you would like to download, and choose a suitable shape using the switch chips. The crosshairs will help you get your real center and will confirm your corner/edge.\nOnce you\'ve decided on your perfect area, tap the Done button and input other information such as zoom levels, number of threads, and other optional functionality. Then start the download and watch the percentage tick up.\n\n',
+                        'Drag the viewfinder over an area you would like to download, and choose a suitable shape using the switch chips. The crosshairs will help you get your real center and will confirm your corner/edge.\nOnce you\'ve decided on your perfect area, tap the Done button and input other information such as zoom levels, number of threads, and other optional functionality. Then start the download and watch the percentage tick up!\n\n',
                   ),
                   TextSpan(
                     text: 'Limitations apply.\n',
@@ -61,7 +63,7 @@ Widget buildInfoPanel(context) {
                   ),
                   TextSpan(
                     text:
-                        'Bulk downloading using this manner places a large amount of strain on tile servers as it involves potentially rendering a large amount of new tiles, especially at more detailed zoom levels (> 14).\nTherefore, many tile servers - especially free ones - will state in their Terms of Service that bulk downloading is forbidden. Other servers allow this (or do not state either way), so this functionality is provided anyway.\nAs such, limitations have been enforced in this example app. You cannot: download more than 50000 tiles at once, download at zoom levels above 16, nor use more than 5 download threads.',
+                        'Bulk downloading using this manner places a large amount of strain on tile servers as it involves potentially rendering a large amount of new tiles, especially at more detailed zoom levels (> 14).\nTherefore, many tile servers - especially free ones - will state in their Terms of Service that bulk downloading is forbidden. Other servers allow this (or do not state either way), so this functionality is provided anyway.\nAs such, limitations have been enforced in this example app. You cannot: download more than 50000 tiles at once, download at zoom levels above 18, nor use more than 5 download threads.',
                   ),
                 ],
               ),
@@ -90,6 +92,15 @@ class FAB extends StatelessWidget {
           Backdrop.of(context).concealBackLayer();
         },
         child: const Icon(Icons.done),
+      );
+    } else if (context.watch<BulkDownloadProvider>().needsRecalculation) {
+      return FloatingActionButton(
+        onPressed: () {
+          calculateCornersCallback();
+          context.read<BulkDownloadProvider>().needsRecalculation = false;
+        },
+        child: const Icon(Icons.refresh),
+        tooltip: 'Recalculate',
       );
     } else {
       return SpeedDial(

@@ -25,6 +25,7 @@ class StoreModal extends StatelessWidget {
           children: [
             ListTile(
               title: const Text('Download Region'),
+              subtitle: const Text('You must abide by your tile server\'s TOS'),
               leading: const Icon(Icons.download),
               onTap: () {
                 Navigator.popAndPushNamed(
@@ -71,6 +72,9 @@ class StoreModal extends StatelessWidget {
                     ? null
                     : const TextStyle(color: Colors.red),
               ),
+              subtitle: provider.storeName != currentMCM.storeName
+                  ? null
+                  : const Text('Cannot delete store currently in use'),
               leading: Icon(
                 Icons.delete_forever,
                 color: provider.storeName == currentMCM.storeName

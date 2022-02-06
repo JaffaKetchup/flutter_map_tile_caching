@@ -56,22 +56,7 @@ class MapView extends StatelessWidget {
                     )
                   : const NonCachingNetworkTileProvider(),
               maxZoom: 20,
-              //reset: provider.resetController.stream,
-            ),
-            PolylineLayerOptions(
-              polylines: [
-                Polyline(
-                  points: [
-                    LatLng(51.524100927515704, -0.6701460534212902),
-                    LatLng(51.5200421491665, -0.654524867958212),
-                    LatLng(51.51160300471206, -0.6633654281532659),
-                  ],
-                  strokeWidth: 50,
-                  color: Colors.black45,
-                  borderColor: Colors.black,
-                  borderStrokeWidth: 5,
-                ),
-              ],
+              reset: provider.resetController.stream,
             ),
           ],
         );

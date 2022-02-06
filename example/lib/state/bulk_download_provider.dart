@@ -1,38 +1,19 @@
-/*import 'package:flutter/foundation.dart';
-import 'package:latlong2/latlong.dart';
-
-import '../pages/bulk_downloader/components/region_constraints.dart';
-import '../pages/bulk_downloader/components/region_mode.dart';
+import 'package:flutter/cupertino.dart';
 
 class BulkDownloadProvider extends ChangeNotifier {
-  // I hate state management
-  RegionConstraints? region; // Problem-causer 9000
-
-  RegionMode _mode = RegionMode.square;
-  RegionMode get mode => _mode;
-  set mode(RegionMode newMode) {
-    _mode = newMode;
+  int _minZoom = 2;
+  int get minZoom => _minZoom;
+  set minZoom(int newNum) {
+    _minZoom = newNum;
+    needsRecalculation = true;
     notifyListeners();
   }
 
-  bool _regionSelected = false;
-  bool get regionSelected => _regionSelected;
-  set regionSelected(bool newBool) {
-    _regionSelected = newBool;
-    notifyListeners();
-  }
-
-  List<LatLng> _centerAndEdge = List.filled(2, LatLng(0, 0));
-  List<LatLng> get centerAndEdge => _centerAndEdge;
-  set centerAndEdge(List<LatLng> newCenterAndEdge) {
-    _centerAndEdge = newCenterAndEdge;
-    notifyListeners();
-  }
-
-  List<int> _minMaxZoom = [1, 16];
-  List<int> get minMaxZoom => _minMaxZoom;
-  set minMaxZoom(List<int> newMinMaxZoom) {
-    _minMaxZoom = newMinMaxZoom;
+  int _maxZoom = 16;
+  int get maxZoom => _maxZoom;
+  set maxZoom(int newNum) {
+    _maxZoom = newNum;
+    needsRecalculation = true;
     notifyListeners();
   }
 
@@ -40,13 +21,6 @@ class BulkDownloadProvider extends ChangeNotifier {
   int get parallelThreads => _parallelThreads;
   set parallelThreads(int newNum) {
     _parallelThreads = newNum;
-    notifyListeners();
-  }
-
-  bool _backgroundDownloading = false;
-  bool get backgroundDownloading => _backgroundDownloading;
-  set backgroundDownloading(bool newBool) {
-    _backgroundDownloading = newBool;
     notifyListeners();
   }
 
@@ -63,5 +37,18 @@ class BulkDownloadProvider extends ChangeNotifier {
     _seaTileRemoval = newBool;
     notifyListeners();
   }
+
+  bool _disableRecovery = false;
+  bool get disableRecovery => _disableRecovery;
+  set disableRecovery(bool newBool) {
+    _disableRecovery = newBool;
+    notifyListeners();
+  }
+
+  bool _needsRecalculation = false;
+  bool get needsRecalculation => _needsRecalculation;
+  set needsRecalculation(bool newBool) {
+    _needsRecalculation = newBool;
+    notifyListeners();
+  }
 }
-*/
