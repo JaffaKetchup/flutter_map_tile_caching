@@ -14,7 +14,7 @@ dependencies:
   flutter:
     sdk: flutter
   background_fetch: ^1.0.0
-  flutter_local_notifications: ^9.1.5
+  flutter_local_notifications: ^9.2.0
   flutter_map: ^0.13.1
   http: ^0.13.3
   latlong2: ^0.8.0
