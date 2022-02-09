@@ -182,7 +182,8 @@ class StorageCachingTileProvider extends TileProvider {
                   AndroidNotificationDetails(
                 'MapDownloading',
                 'Map Background Downloader',
-                'Displays progress notifications to inform the user about the progress of their map download.',
+                channelDescription:
+                    'Displays progress notifications to inform the user about the progress of their map download.',
                 importance: Importance.defaultImportance,
                 priority: Priority.low,
                 showWhen: false,
@@ -295,10 +296,12 @@ class StorageCachingTileProvider extends TileProvider {
         }
 
         outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-          tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0].toInt())
+          tile.y.toInt() <
+                  (outlineTileNums[zoomLvl]![tile.x.toInt()]![0].toInt())
               ? BigInt.from(tile.y.toInt())
               : (outlineTileNums[zoomLvl]![tile.x.toInt()]![0]),
-          tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1].toInt())
+          tile.y.toInt() >
+                  (outlineTileNums[zoomLvl]![tile.x.toInt()]![1].toInt())
               ? BigInt.from(tile.y.toInt())
               : (outlineTileNums[zoomLvl]![tile.x.toInt()]![1]),
         ];
