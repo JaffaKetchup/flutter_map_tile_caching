@@ -560,7 +560,8 @@ class _AutoCachedTilesPageContentState
                         String test = '';
                         try {
                           test = tilesErrored.reversed.toList()[index];
-                        } catch (e) {} finally {
+                        } catch (e) {
+                        } finally {
                           // ignore: control_flow_in_finally
                           return Column(
                             children: [
@@ -624,7 +625,7 @@ class _AutoCachedTilesPageContentState
               maxZoom: 19.0,
               zoom: 13.0,
               interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-              onTap: (point) {
+              onTap: (_, point) {
                 setState(() {
                   shapeChooserResult = shapeChooser.onTapReciever(point);
                 });
