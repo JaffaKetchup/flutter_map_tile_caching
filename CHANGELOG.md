@@ -1,5 +1,10 @@
 # Changelog
 
+## [3.0.4] - 2022/02/10
+
+* Fix bug #41 (on Github)
+* bumoed flutter_local_notifications version
+
 ## [3.0.3] - 2021/09/12
 
 * Fix bug #32 (on Github)
