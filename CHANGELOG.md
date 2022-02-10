@@ -1,5 +1,10 @@
 # Changelog
 
+## [3.0.4] - 2022/02/10
+
+* Fix bug #41 (on Github)
+* Bumped 'flutter_local_notifications' version to v9.2.0
+
 ## [4.0.0-dev.10] - 2022/01/26
 
 * Fixed major performance issues
@@ -70,6 +75,12 @@
 * Removed broken `compressionQuality`
 * Removed encoded polyline conversion functionality
 * ... and more
+
+## [3.0.3] - 2021/09/12
+
+* Fix bug #32 (on Github)
+* Update .gitignore
+* Update README to recommend v4
 
 ## [4.0.0-dev.4] - 2021/09/02
 
