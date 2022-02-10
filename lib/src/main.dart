@@ -5,7 +5,6 @@ import 'dart:io' as io;
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
