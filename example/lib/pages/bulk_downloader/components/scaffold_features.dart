@@ -1,7 +1,9 @@
 import 'package:backdrop/backdrop.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:fmtc_example/state/bulk_download_provider.dart';
+import 'package:fmtc_example/state/general_provider.dart';
 import 'package:provider/provider.dart';
 
 class DownloadAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -111,6 +113,14 @@ class FAB extends StatelessWidget {
           SpeedDialChild(
             label: 'Download In Foreground',
             child: const Icon(Icons.download),
+            onTap: () {
+              Navigator.popAndPushNamed(
+                context,
+                '/download',
+                arguments: MapCachingManager(
+                    context.watch<GeneralProvider>().parentDirectory!),
+              );
+            },
           ),
           SpeedDialChild(
             label: 'Download In Background',

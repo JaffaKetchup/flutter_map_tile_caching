@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'pages/bulk_downloader/bulk_downloader.dart';
+import 'pages/download/download.dart';
 import 'pages/home/home.dart';
 import 'pages/store_editor/store_editor.dart';
 import 'pages/store_manager/store_manager.dart';
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
           '/': (context) => const HomePage(),
           '/storeManager': (context) => const StoreManager(),
           '/storeEditor': (context) => const StoreEditor(),
+          '/download': (context) => const DownloadScreen(),
           '/bulkDownloader': (context) =>
               ChangeNotifierProvider<BulkDownloadProvider>(
                 create: (context) => BulkDownloadProvider(),
