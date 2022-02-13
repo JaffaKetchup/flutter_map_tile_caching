@@ -12,7 +12,8 @@ Widget buildListTileImage(MapCachingManager mcm) {
             ),
           )
         : mcm.coverImageAsync(
-            random: false,
+            random: true,
+            maxRange: 10,
             size: 50,
           ),
     builder: (context, snapshot) {

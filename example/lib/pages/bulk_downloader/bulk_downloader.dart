@@ -62,6 +62,7 @@ class _BulkDownloaderState extends State<BulkDownloader> {
       headerHeight: 0,
       appBar: buildAppBar(),
       floatingActionButton: FAB(
+        mcm: mcm!,
         calculateCornersCallback: () async {
           refreshDownloadTileCounter.add(
             Future.wait(

@@ -1,10 +1,11 @@
 import 'package:backdrop/backdrop.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:fmtc_example/state/bulk_download_provider.dart';
-import 'package:fmtc_example/state/general_provider.dart';
 import 'package:provider/provider.dart';
+
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+
+import '../../../state/bulk_download_provider.dart';
 
 class DownloadAppBar extends StatelessWidget implements PreferredSizeWidget {
   const DownloadAppBar({Key? key, required this.builder}) : super(key: key);
@@ -81,9 +82,11 @@ class FAB extends StatelessWidget {
   const FAB({
     Key? key,
     required this.calculateCornersCallback,
+    required this.mcm,
   }) : super(key: key);
 
   final Future<void> Function() calculateCornersCallback;
+  final MapCachingManager mcm;
 
   @override
   Widget build(BuildContext context) {
@@ -117,8 +120,7 @@ class FAB extends StatelessWidget {
               Navigator.popAndPushNamed(
                 context,
                 '/download',
-                arguments: MapCachingManager(
-                    context.watch<GeneralProvider>().parentDirectory!),
+                arguments: mcm,
               );
             },
           ),

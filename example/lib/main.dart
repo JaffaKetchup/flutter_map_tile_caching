@@ -1,3 +1,4 @@
+import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -18,27 +19,31 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<GeneralProvider>(
-      create: (context) => GeneralProvider(),
-      child: MaterialApp(
-        title: 'FMTC Example',
-        theme: ThemeData(
-          primarySwatch: Colors.orange,
-          useMaterial3: true,
+    return FeatureDiscovery(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<GeneralProvider>(
+            create: (context) => GeneralProvider(),
+          ),
+          ChangeNotifierProvider<BulkDownloadProvider>(
+              create: (context) => BulkDownloadProvider()),
+        ],
+        child: MaterialApp(
+          title: 'FMTC Example',
+          theme: ThemeData(
+            primarySwatch: Colors.orange,
+            useMaterial3: true,
+          ),
+          debugShowCheckedModeBanner: false,
+          initialRoute: '/',
+          routes: {
+            '/': (context) => const HomePage(),
+            '/storeManager': (context) => const StoreManager(),
+            '/storeEditor': (context) => const StoreEditor(),
+            '/download': (context) => const DownloadScreen(),
+            '/bulkDownloader': (context) => const BulkDownloader(),
+          },
         ),
-        debugShowCheckedModeBanner: false,
-        initialRoute: '/',
-        routes: {
-          '/': (context) => const HomePage(),
-          '/storeManager': (context) => const StoreManager(),
-          '/storeEditor': (context) => const StoreEditor(),
-          '/download': (context) => const DownloadScreen(),
-          '/bulkDownloader': (context) =>
-              ChangeNotifierProvider<BulkDownloadProvider>(
-                create: (context) => BulkDownloadProvider(),
-                child: const BulkDownloader(),
-              ),
-        },
       ),
     );
   }

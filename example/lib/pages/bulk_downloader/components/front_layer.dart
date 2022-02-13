@@ -58,35 +58,25 @@ class _FrontLayerState extends State<FrontLayer> {
 
           final BulkDownloadProvider bdp = context.read<BulkDownloadProvider>();
 
-          late final DownloadableRegion region;
+          bdp.regionTransfer = (widget.regionMode == RegionMode.circle)
+              ? CircleRegion(
+                  coords.data![0],
+                  distance.distance(coords.data![0], coords.data![1]) / 1000,
+                )
+              : RectangleRegion(LatLngBounds(coords.data![0], coords.data![1]));
 
-          if (widget.regionMode == RegionMode.circle) {
-            region = CircleRegion(
-              coords.data![0],
-              distance.distance(coords.data![0], coords.data![1]) / 1000,
-            ).toDownloadable(
-              bdp.minZoom,
-              bdp.maxZoom,
-              TileLayerOptions(urlTemplate: widget.mapSource),
-              parallelThreads: bdp.parallelThreads,
-              preventRedownload: bdp.preventRedownload,
-              seaTileRemoval: bdp.seaTileRemoval,
-            );
-          } else {
-            region = RectangleRegion(
-              LatLngBounds(coords.data![0], coords.data![1]),
-            ).toDownloadable(
-              bdp.minZoom,
-              bdp.maxZoom,
-              TileLayerOptions(urlTemplate: widget.mapSource),
-              parallelThreads: bdp.parallelThreads,
-              preventRedownload: bdp.preventRedownload,
-              seaTileRemoval: bdp.seaTileRemoval,
-            );
-          }
+          final DownloadableRegion downloadableRegion =
+              bdp.region.toDownloadable(
+            bdp.minZoom,
+            bdp.maxZoom,
+            TileLayerOptions(urlTemplate: widget.mapSource),
+            parallelThreads: bdp.parallelThreads,
+            preventRedownload: bdp.preventRedownload,
+            seaTileRemoval: bdp.seaTileRemoval,
+          );
 
           return FutureBuilder<int>(
-            future: StorageCachingTileProvider.checkRegion(region),
+            future: StorageCachingTileProvider.checkRegion(downloadableRegion),
             builder: (context, tiles) {
               if (tiles.connectionState != ConnectionState.done) {
                 return SizedBox(
@@ -103,68 +93,70 @@ class _FrontLayerState extends State<FrontLayer> {
               }
 
               return Consumer<BulkDownloadProvider>(
-                builder: (context, bdp, _) => Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              tiles.data!.toString(),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 28,
+                builder: (context, bdp, _) {
+                  return Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                tiles.data!.toString(),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 28,
+                                ),
                               ),
-                            ),
-                            const Text('est. tiles'),
-                          ],
-                        ),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              ((tiles.data! * 20) / 1024).toStringAsFixed(2) +
-                                  'MiB',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 28,
+                              const Text('est. tiles'),
+                            ],
+                          ),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                ((tiles.data! * 20) / 1024).toStringAsFixed(2) +
+                                    'MiB',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 28,
+                                ),
                               ),
-                            ),
-                            const Text('est. avg. storage'),
-                          ],
-                        ),
-                      ],
-                    ),
-                    buildTextDivider(const Text('Zoom Levels')),
-                    buildNumberSelector(
-                      value: bdp.minZoom,
-                      min: 1,
-                      max: 8,
-                      onChanged: (val) => bdp.minZoom = val,
-                      icon: Icons.zoom_out,
-                    ),
-                    const Divider(height: 12),
-                    buildNumberSelector(
-                      value: bdp.maxZoom,
-                      min: 6,
-                      max: 18,
-                      onChanged: (val) => bdp.maxZoom = val,
-                      icon: Icons.zoom_in,
-                    ),
-                    buildTextDivider(const Text('Parallel Threads')),
-                    buildNumberSelector(
-                      value: bdp.parallelThreads,
-                      min: 1,
-                      max: 5,
-                      onChanged: (val) => bdp.parallelThreads = val,
-                      icon: Icons.format_line_spacing,
-                    ),
-                    buildTextDivider(const Text('Optional Features')),
-                    const OptionalFeatures(),
-                  ],
-                ),
+                              const Text('est. avg. storage'),
+                            ],
+                          ),
+                        ],
+                      ),
+                      buildTextDivider(const Text('Zoom Levels')),
+                      buildNumberSelector(
+                        value: bdp.minZoom,
+                        min: 1,
+                        max: 8,
+                        onChanged: (val) => bdp.minZoom = val,
+                        icon: Icons.zoom_out,
+                      ),
+                      const SizedBox(height: 8),
+                      buildNumberSelector(
+                        value: bdp.maxZoom,
+                        min: 6,
+                        max: 18,
+                        onChanged: (val) => bdp.maxZoom = val,
+                        icon: Icons.zoom_in,
+                      ),
+                      buildTextDivider(const Text('Parallel Threads')),
+                      buildNumberSelector(
+                        value: bdp.parallelThreads,
+                        min: 1,
+                        max: 5,
+                        onChanged: (val) => bdp.parallelThreads = val,
+                        icon: Icons.format_line_spacing,
+                      ),
+                      buildTextDivider(const Text('Optional Features')),
+                      const OptionalFeatures(),
+                    ],
+                  );
+                },
               );
             },
           );

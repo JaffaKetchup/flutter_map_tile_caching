@@ -1,3 +1,4 @@
+import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -33,6 +34,15 @@ class _HomePageState extends State<HomePage> {
       ),
     );
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+    FeatureDiscovery.discoverFeatures(
+      context,
+      const <String>{
+        'cachingSwitch',
+        'manageStorage',
+        'storeSelector',
+      },
+    );
 
     mapController = MapController();
   }

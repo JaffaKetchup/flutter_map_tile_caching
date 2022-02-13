@@ -139,7 +139,7 @@ class MapCachingManager {
 
   /// Watch for changes in the current cache
   ///
-  /// By default, [recursive] is set to `false`, meaning only top level changes (those to do with each store) will be caught. Enable recursivity to also include events from [watchStoreChanges].
+  /// By default, [recursive] is set to `false`, meaning only top level changes (those to do with each store) will be caught. Enable recursivity to also include events from [watchStoreChanges]. Note that watching recursively is not supported on Linux/Android platforms.
   ///
   /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
   ///
@@ -161,7 +161,7 @@ class MapCachingManager {
     _cacheRequired;
 
     final Stream<void> stream = parentDirectory
-        .watch(events: fileSystemEvents, recursive: recursive)
+        .watch(events: fileSystemEvents, recursive: true)
         .map((_) => null);
 
     return enableDebounce ? stream.debounce(debounceDuration) : stream;
@@ -225,7 +225,7 @@ class MapCachingManager {
 
     double returnable = 0;
     for (String name in allStoresNames) {
-      returnable += MapCachingManager(parentDirectory, name).storeSize;
+      returnable += copyWith(storeName: name).storeSize;
     }
 
     return returnable;
@@ -243,7 +243,7 @@ class MapCachingManager {
 
     int returnable = 0;
     for (String name in allStoresNames) {
-      returnable += MapCachingManager(parentDirectory, name).storeLength;
+      returnable += copyWith(storeName: name).storeLength;
     }
 
     return returnable;

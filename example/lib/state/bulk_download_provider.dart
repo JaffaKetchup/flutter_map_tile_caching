@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 class BulkDownloadProvider extends ChangeNotifier {
   int _minZoom = 2;
@@ -50,5 +51,11 @@ class BulkDownloadProvider extends ChangeNotifier {
   set needsRecalculation(bool newBool) {
     _needsRecalculation = newBool;
     notifyListeners();
+  }
+
+  late BaseRegion _regionTransfer;
+  BaseRegion get region => _regionTransfer;
+  set regionTransfer(BaseRegion newRegion) {
+    _regionTransfer = newRegion;
   }
 }

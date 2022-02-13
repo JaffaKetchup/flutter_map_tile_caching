@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_void_to_null
 
+import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -29,7 +30,6 @@ class _StoreManagerState extends State<StoreManager> {
     stream = mcm.watchCacheChanges(
       false,
       fileSystemEvents: FileSystemEvent.all,
-      recursive: true,
     );
     future = mcm.allStoresNamesAsync;
 
@@ -62,56 +62,86 @@ class _StoreManagerState extends State<StoreManager> {
                         return const Center(child: CircularProgressIndicator());
                       }
 
-                      return ListView.separated(
-                        itemBuilder: (context, i) {
-                          final MapCachingManager currentMCM =
-                              mcm.copyWith(storeName: storeNames.data![i]);
-
-                          return ListTile(
-                            title: Text(currentMCM.storeName!),
-                            subtitle: FutureBuilder<List<num>>(
-                              future: Future.wait([
-                                currentMCM.storeLengthAsync,
-                                currentMCM.storeSizeAsync,
-                              ]),
-                              builder: (context, stats) {
-                                if (stats.connectionState !=
-                                        ConnectionState.done ||
-                                    !stats.hasData) {
-                                  return const Text(
-                                      'Loading Statistics...\nPlease Wait...');
-                                }
-
-                                return Text(
-                                    '${stats.data![0]} tiles\n${(stats.data![1] / 1024).toStringAsFixed(2)} MiB');
-                              },
-                            ),
-                            leading: buildListTileImage(currentMCM),
-                            trailing: provider.storeName == currentMCM.storeName
-                                ? const Icon(Icons.done)
-                                : null,
-                            onTap: () async {
-                              provider.storeName = currentMCM.storeName!;
-                              provider.persistent!.setString(
-                                  'lastUsedStore', provider.storeName);
-                              PaintingBinding.instance?.imageCache?.clear();
-                              provider.resetMap();
-                            },
-                            onLongPress: () {
-                              showModalBottomSheet(
-                                context: context,
-                                builder: (context) {
-                                  return StoreModal(
-                                    currentMCM: currentMCM,
-                                    storeNames: storeNames.data!,
-                                  );
-                                },
+                      return DescribedFeatureOverlay(
+                        featureId: 'storeSelector',
+                        tapTarget: const Icon(Icons.edit),
+                        title: const Text('Store Selector'),
+                        description: const Text(
+                          'Tap on a store listing to choose it as the current store, and it will be persisted between app restarts in shared preferences (not built into API).\nOr, long press to open a menu with more actions. Try it now...',
+                        ),
+                        contentLocation: ContentLocation.above,
+                        overflowMode: OverflowMode.extendBackground,
+                        onComplete: () async {
+                          showModalBottomSheet(
+                            context: context,
+                            builder: (context) {
+                              return StoreModal(
+                                currentMCM: mcm.copyWith(
+                                    storeName: storeNames.data![0]),
+                                storeNames: storeNames.data!,
                               );
                             },
                           );
+                          return true;
                         },
-                        separatorBuilder: (context, _) => const Divider(),
-                        itemCount: storeNames.data!.length,
+                        child: ListView.separated(
+                          itemBuilder: (context, i) {
+                            final MapCachingManager currentMCM =
+                                mcm.copyWith(storeName: storeNames.data![i]);
+
+                            return StreamBuilder<void>(
+                                stream: currentMCM.watchStoreChanges(true),
+                                builder: (context, _) {
+                                  return ListTile(
+                                    title: Text(currentMCM.storeName!),
+                                    subtitle: FutureBuilder<List<num>>(
+                                      future: Future.wait([
+                                        currentMCM.storeLengthAsync,
+                                        currentMCM.storeSizeAsync,
+                                      ]),
+                                      builder: (context, stats) {
+                                        if (stats.connectionState !=
+                                                ConnectionState.done ||
+                                            !stats.hasData) {
+                                          return const Text(
+                                              'Loading Statistics...\nPlease Wait...');
+                                        }
+
+                                        return Text(
+                                            '${stats.data![0]} tiles\n${(stats.data![1] / 1024).toStringAsFixed(2)} MiB');
+                                      },
+                                    ),
+                                    leading: buildListTileImage(currentMCM),
+                                    trailing: provider.storeName ==
+                                            currentMCM.storeName
+                                        ? const Icon(Icons.done)
+                                        : null,
+                                    onTap: () async {
+                                      provider.storeName =
+                                          currentMCM.storeName!;
+                                      provider.persistent!.setString(
+                                          'lastUsedStore', provider.storeName);
+                                      PaintingBinding.instance?.imageCache
+                                          ?.clear();
+                                      provider.resetMap();
+                                    },
+                                    onLongPress: () {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        builder: (context) {
+                                          return StoreModal(
+                                            currentMCM: currentMCM,
+                                            storeNames: storeNames.data!,
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
+                                });
+                          },
+                          separatorBuilder: (context, _) => const Divider(),
+                          itemCount: storeNames.data!.length,
+                        ),
                       );
                     },
                   );
