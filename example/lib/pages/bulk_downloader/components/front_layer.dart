@@ -109,7 +109,7 @@ class _FrontLayerState extends State<FrontLayer> {
                                   fontSize: 28,
                                 ),
                               ),
-                              const Text('est. tiles'),
+                              const Text('tiles'),
                             ],
                           ),
                           Column(

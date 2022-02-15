@@ -1,8 +1,9 @@
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 /// Represents the progress of an ongoing or finished (if [percentageProgress] is 100%) bulk download
 ///
-/// Should avoid manual construction, use named constructor `DownloadProgress.empty()` to generate placeholders.
+/// Should avoid manual construction, use named constructor [DownloadProgress.empty] to generate placeholders.
 ///
 /// Is yielded from `StorageCachingTileProvider().downloadRegion()`, and returned in a callback from `StorageCachingTileProvider().downloadRegionBackground()`.
 class DownloadProgress {
@@ -15,28 +16,35 @@ class DownloadProgress {
   /// Approximate total number of tiles to be downloaded
   final int maxTiles;
 
-  /// Number of tiles removed because they were entirely sea (these also make up part of `successfulTiles`)
+  /// Number of tiles removed because they were entirely sea (these also make up part of [successfulTiles])
   ///
   /// Only applicable if sea tile removal is enabled, otherwise this value is always 0.
   final int seaTiles;
 
-  /// Number of tiles not downloaded because they already existed (these also make up part of `successfulTiles`)
+  /// Number of tiles not downloaded because they already existed (these also make up part of [successfulTiles])
   ///
   /// Only applicable if redownload prevention is enabled, otherwise this value is always 0.
   final int existingTiles;
 
-  /// Duration since start of download process
+  /// The length of time each tile took to download (one element per tile)
+  ///
+  /// Use [duration] for time elapsed so far (each element added up)
+  final List<Duration> durationPerTile;
+
+  /// Elapsed duration since start of download process
   final Duration duration;
 
   /// Number of attempted tile downloads, including failures
+  ///
+  /// Note that this is not used in any other calculations: for example, [remainingTiles] uses [successfulTiles] instead of this.
   ///
   /// Is equal to `successfulTiles + failedTiles.length`.
   int get attemptedTiles => successfulTiles + failedTiles.length;
 
   /// Approximate number of tiles remaining to be downloaded
   ///
-  /// Is equal to `approxMaxTiles - attemptedTiles`.
-  int get remainingTiles => maxTiles - attemptedTiles;
+  /// Is equal to `approxMaxTiles - successfulTiles`.
+  int get remainingTiles => maxTiles - successfulTiles;
 
   /// Percentage of tiles saved by using sea tile removal (ie. discount)
   ///
@@ -65,21 +73,36 @@ class DownloadProgress {
   /// Is equal to `(attemptedTiles / approxMaxTiles) * 100`.
   double get percentageProgress => (attemptedTiles / maxTiles) * 100;
 
-  /// Average duration (rounded) each tile has taken to be processed
+  /// Estimated duration for entire download process, based on existing progress and elapsed duration
   ///
-  /// Is equal to `Duration(milliseconds: (duration.inMilliseconds / attemptedTiles).round())`.
-  Duration get avgDurationTile => Duration(
-      milliseconds: (duration.inMilliseconds / attemptedTiles).round());
+  /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate duration calculations, but may not return the same result as expected. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
+  Duration get estTotalDuration {
+    final List<int> data =
+        durationPerTile.map((e) => e.inMicroseconds).toList();
+    const double smoothing = 0.005;
 
-  /// Estimated duration for the whole download process based on `avgDurationTile`
-  ///
-  /// Is equal to `avgDurationTile * maxTiles`.
-  Duration get estTotalDuration => avgDurationTile * maxTiles;
+    return Duration(
+          microseconds: data.length == 1
+              ? data[0]
+              : ((smoothing * data.last) +
+                      ((1 - smoothing) * (data.sum / data.length)))
+                  .round(),
+        ) *
+        (maxTiles / 2);
+  }
 
-  /// Estimated remaining duration until the end of the download process, based on `estTotalDuration`
+  /// Estimated remaining duration until the end of the download process, based on [estTotalDuration]
   ///
   /// Is equal to `estTotalDuration - duration`
   Duration get estRemainingDuration => estTotalDuration - duration;
+
+  /// The 'exponential moving' average duration for download per tile, based on [estTotalDuration].
+  ///
+  /// Deprecated due to minimal uses, and introduction of more accurate time estimations which do not use linear averaging. No new alternative is provided.
+  @Deprecated(
+      'Deprecated due to minimal uses, and introduction of more accurate time estimations which do not use linear averaging. No new alternative is provided.')
+  Duration get avgDurationTile => Duration(
+      microseconds: (estTotalDuration.inMicroseconds / maxTiles).round());
 
   /// Deprecated due to internal refactoring. Migrate to `attemptedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
   @Deprecated(
@@ -104,6 +127,7 @@ class DownloadProgress {
     required this.maxTiles,
     required this.seaTiles,
     required this.existingTiles,
+    required this.durationPerTile,
     required this.duration,
   });
 
@@ -114,7 +138,8 @@ class DownloadProgress {
         maxTiles = 0,
         seaTiles = 0,
         existingTiles = 0,
-        duration = const Duration(seconds: 0);
+        durationPerTile = [],
+        duration = const Duration();
 
   /// Deprecated due to internal refactoring. Migrate to the named constructor [DownloadProgress.empty]. Will be removed in next update.
   @Deprecated(
@@ -122,10 +147,6 @@ class DownloadProgress {
   static DownloadProgress get placeholder => DownloadProgress.empty();
 
   //! GENERAL OBJECT STUFF !//
-
-  @override
-  String toString() =>
-      'DownloadProgress(successfulTiles: $successfulTiles, failedTiles: $failedTiles, maxTiles: $maxTiles, seaTiles: $seaTiles, existingTiles: $existingTiles, duration: $duration)';
 
   @override
   bool operator ==(Object other) {

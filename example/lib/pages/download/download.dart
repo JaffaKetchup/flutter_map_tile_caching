@@ -155,13 +155,14 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        progress.data!.maxTiles.toString(),
+                                        progress.data!.remainingTiles
+                                            .toString(),
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 28,
                                         ),
                                       ),
-                                      const Text('est. tiles'),
+                                      const Text('remaining tiles'),
                                     ],
                                   ),
                                 ],

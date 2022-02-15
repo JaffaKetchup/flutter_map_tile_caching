@@ -18,6 +18,7 @@ import 'package:queue/queue.dart';
 import 'bulk_download/download_progress.dart';
 import 'bulk_download/downloader.dart';
 import 'bulk_download/tile_loops.dart';
+import 'bulk_download/tile_progress.dart';
 import 'internal/image_provider.dart';
 import 'internal/recovery/recovery.dart';
 import 'misc/typedefs_and_exts.dart';
@@ -99,7 +100,7 @@ class StorageCachingTileProvider extends TileProvider {
   Queue? _queue;
 
   /// Used internally to control bulk downloading
-  StreamController<List>? _streamController;
+  StreamController<TileProgress>? _streamController;
 
   /// Create a `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
   ///
@@ -467,12 +468,13 @@ class StorageCachingTileProvider extends TileProvider {
     }
 
     int successfulTiles = 0;
-    List<String> failedTiles = [];
     int seaTiles = 0;
     int existingTiles = 0;
+    final List<String> failedTiles = [];
+    final List<Duration> durationPerTile = [];
     final DateTime startTime = DateTime.now();
 
-    final Stream<List<dynamic>> downloadStream = bulkDownloader(
+    final Stream<TileProgress> downloadStream = bulkDownloader(
       tiles: tiles,
       provider: this,
       options: region.options,
@@ -485,11 +487,17 @@ class StorageCachingTileProvider extends TileProvider {
       streamController: _streamController!,
     );
 
-    await for (List<dynamic> event in downloadStream) {
-      successfulTiles += event[0] as int;
-      if (event[1] != '') failedTiles.add(event[1]);
-      seaTiles += event[2] as int;
-      existingTiles += event[3] as int;
+    await for (TileProgress evt in downloadStream) {
+      if (evt.failedUrl == null) {
+        successfulTiles++;
+      } else {
+        failedTiles.add(evt.failedUrl!);
+      }
+
+      seaTiles += evt.wasSeaTile ? 1 : 0;
+      existingTiles += evt.wasExistingTile ? 1 : 0;
+
+      durationPerTile.add(evt.duration);
 
       final DownloadProgress prog = DownloadProgress.internal(
         maxTiles: tiles.length,
@@ -497,8 +505,10 @@ class StorageCachingTileProvider extends TileProvider {
         failedTiles: failedTiles,
         seaTiles: seaTiles,
         existingTiles: existingTiles,
+        durationPerTile: durationPerTile,
         duration: DateTime.now().difference(startTime),
       );
+
       yield prog;
       if (prog.percentageProgress >= 100) cancelDownload();
     }

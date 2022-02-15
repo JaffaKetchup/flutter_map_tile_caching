@@ -10,8 +10,9 @@ import 'package:queue/queue.dart';
 
 import '../main.dart';
 import '../misc/validate.dart';
+import 'tile_progress.dart';
 
-Stream<List> bulkDownloader({
+Stream<TileProgress> bulkDownloader({
   required List<Coords<num>> tiles,
   required StorageCachingTileProvider provider,
   required TileLayerOptions options,
@@ -21,9 +22,9 @@ Stream<List> bulkDownloader({
   required bool preventRedownload,
   required Uint8List? seaTileBytes,
   required Queue queue,
-  required StreamController<List> streamController,
+  required StreamController<TileProgress> streamController,
 }) {
-  for (var coord in tiles) {
+  for (Coords<num> coord in tiles) {
     queue
         .add(
       () => _getAndSaveTile(
@@ -37,17 +38,8 @@ Stream<List> bulkDownloader({
       ),
     )
         .then(
-      (value) {
-        if (!streamController.isClosed) {
-          streamController.add(
-            [
-              value[0],
-              value[1],
-              value[2],
-              value[3],
-            ],
-          );
-        }
+      (e) {
+        if (!streamController.isClosed) streamController.add(e);
       },
     );
   }
@@ -55,7 +47,7 @@ Stream<List> bulkDownloader({
   return streamController.stream;
 }
 
-Future<List<dynamic>> _getAndSaveTile({
+Future<TileProgress> _getAndSaveTile({
   required StorageCachingTileProvider provider,
   required Coords<num> coord,
   required TileLayerOptions options,
@@ -64,6 +56,9 @@ Future<List<dynamic>> _getAndSaveTile({
   required bool preventRedownload,
   required Uint8List? seaTileBytes,
 }) async {
+  final DateTime startTime = DateTime.now();
+  Duration calcElapsed() => DateTime.now().difference(startTime);
+
   final Coords<double> coordDouble =
       Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
   final String url = provider.getTileUrl(coordDouble, options);
@@ -73,7 +68,14 @@ Future<List<dynamic>> _getAndSaveTile({
   ]);
 
   try {
-    if (preventRedownload && await File(path).exists()) return [1, '', 0, 1];
+    if (preventRedownload && await File(path).exists()) {
+      return TileProgress(
+        failedUrl: null,
+        wasSeaTile: false,
+        wasExistingTile: true,
+        duration: calcElapsed(),
+      );
+    }
 
     File(path).writeAsBytesSync(
       (await client.get(Uri.parse(url))).bodyBytes,
@@ -84,12 +86,27 @@ Future<List<dynamic>> _getAndSaveTile({
         const ListEquality()
             .equals(await File(path).readAsBytes(), seaTileBytes)) {
       await File(path).delete();
-      return [1, '', 1, 0];
+      return TileProgress(
+        failedUrl: null,
+        wasSeaTile: true,
+        wasExistingTile: false,
+        duration: calcElapsed(),
+      );
     }
   } catch (e) {
     if (errorHandler != null) errorHandler(e);
-    return [0, url, 0, 0];
+    return TileProgress(
+      failedUrl: url,
+      wasSeaTile: false,
+      wasExistingTile: false,
+      duration: calcElapsed(),
+    );
   }
 
-  return [1, '', 0, 0];
+  return TileProgress(
+    failedUrl: null,
+    wasSeaTile: false,
+    wasExistingTile: false,
+    duration: DateTime.now().difference(startTime),
+  );
 }
