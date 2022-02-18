@@ -120,7 +120,10 @@ class FAB extends StatelessWidget {
               Navigator.popAndPushNamed(
                 context,
                 '/download',
-                arguments: mcm,
+                arguments: {
+                  'mcm': mcm,
+                  'ignoreDownloadChecks': false,
+                },
               );
             },
           ),

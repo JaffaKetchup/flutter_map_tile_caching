@@ -29,8 +29,8 @@ class MapView extends StatelessWidget {
         return FlutterMap(
           mapController: controller,
           options: MapOptions(
-            center: LatLng(51.50781936891249, -0.12691235597072373),
-            zoom: 10,
+            center: LatLng(51.409364, -0.128928),
+            zoom: 9.2,
             interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
           ),
           layers: [

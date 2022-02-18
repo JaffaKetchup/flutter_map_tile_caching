@@ -170,13 +170,14 @@ extension AsyncMapCachingManager on MapCachingManager {
           'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`');
     }
 
-    final int randInt =
-        random ? Random().nextInt(maxRange ?? storeLen + 1) : -1;
+    final int? randInt = !random ? null : Random().nextInt(maxRange!);
 
     int i = 0;
 
     await for (FileSystemEntity e in storeDirectory!.list()) {
-      if (!random || i == randInt) {
+      if (e.uri.pathSegments.last == 'fmtcDownload.recovery') continue;
+
+      if (i >= (randInt ?? 0)) {
         return Image.file(
           File(e.absolute.path),
           width: size,

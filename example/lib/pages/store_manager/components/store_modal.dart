@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../../state/general_provider.dart';
 
-class StoreModal extends StatelessWidget {
+class StoreModal extends StatefulWidget {
   const StoreModal({
     Key? key,
     required this.currentMCM,
@@ -16,13 +16,30 @@ class StoreModal extends StatelessWidget {
   final List<String> storeNames;
 
   @override
+  State<StoreModal> createState() => _StoreModalState();
+}
+
+class _StoreModalState extends State<StoreModal> {
+  @override
   Widget build(BuildContext context) {
     return Consumer<GeneralProvider>(
       builder: (context, provider, _) => Padding(
-        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+        padding: const EdgeInsets.only(top: 0, bottom: 8.0),
         child: ListView(
           shrinkWrap: true,
           children: [
+            if (provider.storeModalCompletedString != null)
+              ListTile(
+                tileColor: Colors.green,
+                iconColor: Colors.white,
+                textColor: Colors.white,
+                leading: const Icon(Icons.done),
+                title: Text(
+                  provider.storeModalCompletedString!,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            const SizedBox(height: 8),
             ListTile(
               title: const Text('Download Region'),
               subtitle: const Text('You must abide by your tile server\'s TOS'),
@@ -31,7 +48,7 @@ class StoreModal extends StatelessWidget {
                 Navigator.popAndPushNamed(
                   context,
                   '/bulkDownloader',
-                  arguments: currentMCM,
+                  arguments: widget.currentMCM,
                 );
               },
               visualDensity: VisualDensity.compact,
@@ -44,7 +61,7 @@ class StoreModal extends StatelessWidget {
                 Navigator.popAndPushNamed(
                   context,
                   '/storeEditor',
-                  arguments: currentMCM,
+                  arguments: widget.currentMCM,
                 );
               },
               visualDensity: VisualDensity.compact,
@@ -53,46 +70,51 @@ class StoreModal extends StatelessWidget {
               title: const Text('Empty'),
               leading: const Icon(Icons.delete),
               onTap: () async {
-                await currentMCM.emptyStoreAsync();
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      '${currentMCM.storeName} emptied successfully',
-                    ),
-                  ),
+                showModalBottomSheet(
+                  isDismissible: false,
+                  enableDrag: false,
+                  context: context,
+                  builder: (context) {
+                    return const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  },
                 );
+                await widget.currentMCM.emptyStoreAsync();
+                provider.storeModalCompletedString = 'Emptied Successfully';
+                Navigator.pop(context);
               },
               visualDensity: VisualDensity.compact,
             ),
             ListTile(
               title: Text(
                 'Delete Permanently',
-                style: provider.storeName == currentMCM.storeName
+                style: provider.storeName == widget.currentMCM.storeName
                     ? null
                     : const TextStyle(color: Colors.red),
               ),
-              subtitle: provider.storeName != currentMCM.storeName
+              subtitle: provider.storeName != widget.currentMCM.storeName
                   ? null
                   : const Text('Cannot delete store currently in use'),
               leading: Icon(
                 Icons.delete_forever,
-                color: provider.storeName == currentMCM.storeName
+                color: provider.storeName == widget.currentMCM.storeName
                     ? null
                     : Colors.red,
               ),
               onTap: () async {
-                await currentMCM.deleteStoreAsync();
+                await widget.currentMCM.deleteStoreAsync();
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content:
-                        Text('${currentMCM.storeName} deleted successfully'),
+                    content: Text(
+                        '${widget.currentMCM.storeName} deleted successfully'),
                   ),
                 );
               },
               visualDensity: VisualDensity.compact,
-              enabled: provider.storeName != currentMCM.storeName,
+              enabled: provider.storeName != widget.currentMCM.storeName,
             ),
           ],
         ),

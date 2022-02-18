@@ -35,4 +35,18 @@ class GeneralProvider extends ChangeNotifier {
   void resetMap() {
     _resetController.add(null);
   }
+
+  String? _storeModalCompletedString;
+  String? get storeModalCompletedString => _storeModalCompletedString;
+  set storeModalCompletedString(String? newString) {
+    _storeModalCompletedString = newString;
+    notifyListeners();
+
+    if (newString != null) {
+      Future.delayed(const Duration(seconds: 3), () {
+        _storeModalCompletedString = null;
+        notifyListeners();
+      });
+    }
+  }
 }

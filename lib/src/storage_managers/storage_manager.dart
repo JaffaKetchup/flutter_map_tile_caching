@@ -281,7 +281,9 @@ class MapCachingManager {
     int i = 0;
 
     for (FileSystemEntity evt in storeDirectory!.listSync()) {
-      if (i == (randInt ?? 0)) {
+      if (evt.uri.pathSegments.last == 'fmtcDownload.recovery') continue;
+
+      if (i >= (randInt ?? 0)) {
         return Image.file(
           File(evt.absolute.path),
           width: size,
