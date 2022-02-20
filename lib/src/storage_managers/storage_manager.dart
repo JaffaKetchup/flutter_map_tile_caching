@@ -42,7 +42,7 @@ class MapCachingManager {
   ///
   /// See [StorageCachingTileProvider] for object that manages browse caching and bulk downloading
   ///
-  /// On initialisation, automatically creates the cache & store, if applicable, if they do not exist. Store will not be created if not specified.
+  /// On initialisation, automatically creates the cache & store, if applicable, if they do not exist. Store will not be created if not specified. To check whether a store exists, you should see the [exists] method's documentation - calling that method with [storeName] specified here as well will always cause `true` to be returned.
   ///
   /// All operations have two versions (synchronous and asynchronous). The first provides decreases code complexity at the expense of worse performance; the latter is the opposite.
   ///
@@ -70,15 +70,16 @@ class MapCachingManager {
   ]) async =>
       await compute((_) => MapCachingManager(cacheDirectory, storeName), {});
 
-  /// Check if the store exists
+  /// Check if a store exists
+  ///
+  /// To check whether a store exists before initializing a [MapCachingManager] : create a [MapCachingManager] without the [storeName], instead passing the [storeName] to this function. This avoids the automatic creation.
   ///
   /// Returns `true` if it does, `false` if only the [parentDirectory] exists, `null` if neither exist.
-  bool? get exists {
-    try {
-      _storeRequired;
-    } catch (e) {
-      return null;
-    }
+  bool? exists(String storeName) {
+    if (!Directory(p.joinAll([
+      parentDirectory.absolute.path,
+      safeFilesystemString(inputString: storeName, throwIfInvalid: true),
+    ])).existsSync()) return null;
 
     try {
       _cacheRequired;
@@ -281,7 +282,7 @@ class MapCachingManager {
     int i = 0;
 
     for (FileSystemEntity evt in storeDirectory!.listSync()) {
-      if (evt.uri.pathSegments.last == 'fmtcDownload.recovery') continue;
+      if (evt.path.split('/').last == 'fmtcDownload.recovery') continue;
 
       if (i >= (randInt ?? 0)) {
         return Image.file(

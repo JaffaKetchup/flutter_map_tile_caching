@@ -1,8 +1,15 @@
 # Changelog
 
+## [4.0.0-dev.11] - 2022/02/20
+
+* Example improvements - new example app still in progress
+* Improve estimations for downloading durations (still needs tweaking)
+* Upgraded Dart and Flutter versions
+* Fix bug #41 (on GitHub)
+
 ## [3.0.4] - 2022/02/10
 
-* Fix bug #41 (on Github)
+* Fix bug #41 (on GitHub)
 * Bumped 'flutter_local_notifications' version to v9.2.0
 
 ## [4.0.0-dev.10] - 2022/01/26
@@ -78,7 +85,7 @@
 
 ## [3.0.3] - 2021/09/12
 
-* Fix bug #32 (on Github)
+* Fix bug #32 (on GitHub)
 * Update .gitignore
 * Update README to recommend v4
 

@@ -19,7 +19,7 @@ dependencies:
   bezier: ^1.2.0
   collection: ^1.15.0
   connectivity_plus: ^2.2.0
-  flutter_local_notifications: ^9.2.0
+  flutter_local_notifications: ^9.3.2
   flutter_map: ^0.14.0
   http: ^0.13.3
   ini: ^2.1.0
@@ -27,7 +27,7 @@ dependencies:
   meta: ^1.7.0
   path: ^1.8.0
   path_provider: ^2.0.7
-  permission_handler: ^8.3.0
+  permission_handler: ^9.1.0
   queue: ^3.1.0+1
   stream_transform: ^2.0.0
   vector_math: ^2.1.1

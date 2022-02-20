@@ -15,7 +15,8 @@ Future<void> start(
 ) async {
   if (await file.exists()) {
     throw StateError(
-        'A download recovery file already exists. Only one download recovery is supported at once: use `cancelDownload()`.');
+      'A download recovery file already exists. Only one download recovery per store is supported: use `cancelDownload()` if there is an ongoing download, or `recoverDownload()` to recover and delete the file if there is no download.',
+    );
   }
   await file.create(recursive: true);
 

@@ -45,8 +45,7 @@ class _StoreModalState extends State<StoreModal> {
               subtitle: const Text('You must abide by your tile server\'s TOS'),
               leading: const Icon(Icons.download),
               onTap: () {
-                Navigator.popAndPushNamed(
-                  context,
+                Navigator.of(context).popAndPushNamed(
                   '/bulkDownloader',
                   arguments: widget.currentMCM,
                 );
@@ -58,8 +57,7 @@ class _StoreModalState extends State<StoreModal> {
               title: const Text('Edit'),
               leading: const Icon(Icons.edit),
               onTap: () {
-                Navigator.popAndPushNamed(
-                  context,
+                Navigator.of(context).popAndPushNamed(
                   '/storeEditor',
                   arguments: widget.currentMCM,
                 );
@@ -83,7 +81,7 @@ class _StoreModalState extends State<StoreModal> {
                 );
                 await widget.currentMCM.emptyStoreAsync();
                 provider.storeModalCompletedString = 'Emptied Successfully';
-                Navigator.pop(context);
+                Navigator.of(context).pop();
               },
               visualDensity: VisualDensity.compact,
             ),
@@ -105,7 +103,7 @@ class _StoreModalState extends State<StoreModal> {
               ),
               onTap: () async {
                 await widget.currentMCM.deleteStoreAsync();
-                Navigator.pop(context);
+                Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(

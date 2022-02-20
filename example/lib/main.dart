@@ -26,7 +26,8 @@ class MyApp extends StatelessWidget {
             create: (context) => GeneralProvider(),
           ),
           ChangeNotifierProvider<BulkDownloadProvider>(
-              create: (context) => BulkDownloadProvider()),
+            create: (context) => BulkDownloadProvider(),
+          ),
         ],
         child: MaterialApp(
           title: 'FMTC Example',

@@ -117,8 +117,7 @@ class FAB extends StatelessWidget {
             label: 'Download In Foreground',
             child: const Icon(Icons.download),
             onTap: () {
-              Navigator.popAndPushNamed(
-                context,
+              Navigator.of(context).popAndPushNamed(
                 '/download',
                 arguments: {
                   'mcm': mcm,

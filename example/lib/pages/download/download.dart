@@ -98,7 +98,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                       )) ??
                       false) {
                     tileProvider!.cancelDownload();
-                    Navigator.pop(context);
+                    Navigator.of(context).pop();
                   }
                 },
               ),
@@ -109,49 +109,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
                 child: FutureBuilder<bool>(
                   future: download!.isEmpty,
                   builder: (context, isEmpty) {
-                    /*if (!isEmpty.hasData) {
-                      return SizedBox(
-                        width: double.infinity,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error,
-                              color: Colors.red,
-                              size: 56,
-                            ),
-                            const SizedBox(height: 5),
-                            const Text(
-                              'Downloading Failure',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 24,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            const Text(
-                              'The first tile of the download failed, and we can\'t recover from that. Failures in later tiles are handled, but failures in the first tile are not handled in this example due to complications (can be handled in API).',
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.popAndPushNamed(
-                                  context,
-                                  '/download',
-                                  arguments: {
-                                    'mcm': mcm,
-                                    'ignoreDownloadChecks': false,
-                                  },
-                                );
-                              },
-                              child: const Text('Try Again'),
-                            ),
-                          ],
-                        ),
-                      );
-                    }*/
-
                     if (isEmpty.data ?? false) {
                       return SizedBox(
                         width: double.infinity,
@@ -190,8 +147,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                               children: [
                                 ElevatedButton(
                                   onPressed: () {
-                                    Navigator.popAndPushNamed(
-                                      context,
+                                    Navigator.of(context).popAndPushNamed(
                                       '/download',
                                       arguments: {
                                         'mcm': mcm,
@@ -204,8 +160,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                 const SizedBox(width: 10),
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.popAndPushNamed(
-                                      context,
+                                    Navigator.of(context).popAndPushNamed(
                                       '/download',
                                       arguments: {
                                         'mcm': mcm,

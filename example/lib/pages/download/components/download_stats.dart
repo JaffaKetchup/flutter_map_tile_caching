@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-
+import 'package:http/http.dart' as http;
 import 'package:stream_transform/stream_transform.dart';
 
-class DownloadStats extends StatelessWidget {
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+
+class DownloadStats extends StatefulWidget {
   const DownloadStats({
     Key? key,
     required this.mcm,
@@ -14,15 +15,19 @@ class DownloadStats extends StatelessWidget {
   final Stream<DownloadProgress>? download;
 
   @override
+  State<DownloadStats> createState() => _DownloadStatsState();
+}
+
+class _DownloadStatsState extends State<DownloadStats> {
+  final http.Client httpClient = http.Client();
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         StreamBuilder<DownloadProgress>(
-          stream: download,
+          stream: widget.download,
           builder: (context, progress) {
-            // If connection done and no error, normal
-            // If connection not done, show loading
-            // If
             if (progress.connectionState == ConnectionState.waiting) {
               return SizedBox(
                 width: double.infinity,
@@ -35,6 +40,43 @@ class DownloadStats extends StatelessWidget {
                       'Preparing your download...\nPlease wait, this may take a while.',
                       textAlign: TextAlign.center,
                     ),
+                  ],
+                ),
+              );
+            }
+
+            if (progress.hasError) {
+              return SizedBox(
+                width: double.infinity,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error,
+                      color: Colors.red,
+                      size: 56,
+                    ),
+                    const SizedBox(height: 5),
+                    const Text(
+                      'Error Starting Download',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'There was an error whilst starting the download.\n\n${progress.error}',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Exit'),
+                    ),
+                    const SizedBox(height: 50),
                   ],
                 ),
               );
@@ -55,6 +97,7 @@ class DownloadStats extends StatelessWidget {
                             fontSize: 28,
                           ),
                         ),
+                        const Text('tiles downloaded'),
                       ],
                     ),
                     Column(
@@ -181,7 +224,7 @@ class DownloadStats extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         StreamBuilder<DownloadProgress>(
-          stream: download!.audit(const Duration(seconds: 1)),
+          stream: widget.download!.audit(const Duration(seconds: 1)),
           builder: (context, _) {
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -190,7 +233,7 @@ class DownloadStats extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     FutureBuilder<double>(
-                        future: mcm!.storeSizeAsync,
+                        future: widget.mcm!.storeSizeAsync,
                         builder: (context, size) {
                           return Text(
                             !size.hasData
@@ -210,10 +253,14 @@ class DownloadStats extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     FutureBuilder<int>(
-                        future: mcm!.storeLengthAsync,
+                        future: widget.mcm!.storeLengthAsync,
                         builder: (context, length) {
                           return Text(
-                            !length.hasData ? '...' : length.data!.toString(),
+                            !length.hasData
+                                ? '...'
+                                : (length.data! - 1)
+                                    .clamp(0, double.infinity)
+                                    .toString(),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 28,
@@ -224,6 +271,39 @@ class DownloadStats extends StatelessWidget {
                   ],
                 ),
               ],
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+        const Divider(),
+        const SizedBox(height: 20),
+        const Text(
+          'Did You Know?',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        StreamBuilder<void>(
+          stream: Stream.periodic(const Duration(seconds: 20)),
+          builder: (context, _) {
+            return FutureBuilder<http.Response>(
+              future: httpClient
+                  .get(Uri.parse('http://numbersapi.com/random/trivia')),
+              builder: (context, response) {
+                late final String fact;
+                if (!response.hasData) {
+                  fact =
+                      'A random number fact will appear here every 20 seconds - if you have an Internet connection. Isn\'t that amazing!';
+                } else {
+                  fact = response.data!.body + ' - Thanks to numbersapi.com';
+                }
+
+                return Text(
+                  fact,
+                  textAlign: TextAlign.center,
+                );
+              },
             );
           },
         ),

@@ -14,24 +14,25 @@ import 'storage_manager.dart';
 ///
 /// See [StorageCachingTileProvider] for object that manages browse caching and bulk downloading
 ///
-/// On initialisation, automatically creates the cache & store, if applicable, if they do not exist. Store will not be created if not specified.
+/// On initialisation, automatically creates the cache & store, if applicable, if they do not exist. Store will not be created if not specified. To check whether a store exists, you should see the [existsAsync] method's documentation - calling that method with [storeName] specified here as well will always cause `true` to be returned.
 ///
 /// All operations have two versions (synchronous and asynchronous). The first provides decreases code complexity at the expense of worse performance; the latter is the opposite.
 ///
 /// Functions may throw errors if requirements aren't met: for example, [allStoresNames] requires the [parentDirectory] to exist, whilst [storeName] requires [storeDirectory] to exist, and therefore [storeName] not to be `null`.
 extension AsyncMapCachingManager on MapCachingManager {
-  /// Check if the store exists
+  /// Check if a store exists
+  ///
+  /// To check whether a store exists before initializing a [MapCachingManager] : create a [MapCachingManager] without the [storeName], instead passing the [storeName] to this function. This avoids the automatic creation.
   ///
   /// Returns `true` if it does, `false` if only the [parentDirectory] exists, `null` if neither exist.
-  Future<bool?> get existsAsync async {
-    try {
-      await _storeRequired;
-    } catch (e) {
-      return null;
-    }
+  Future<bool?> existsAsync(String storeName) async {
+    if (!await Directory(p.joinAll([
+      parentDirectory.absolute.path,
+      safeFilesystemString(inputString: storeName, throwIfInvalid: true),
+    ])).exists()) return null;
 
     try {
-      await _cacheRequired;
+      _cacheRequired;
     } catch (e) {
       return false;
     }
@@ -175,7 +176,7 @@ extension AsyncMapCachingManager on MapCachingManager {
     int i = 0;
 
     await for (FileSystemEntity e in storeDirectory!.list()) {
-      if (e.uri.pathSegments.last == 'fmtcDownload.recovery') continue;
+      if (e.path.split('/').last == 'fmtcDownload.recovery') continue;
 
       if (i >= (randInt ?? 0)) {
         return Image.file(

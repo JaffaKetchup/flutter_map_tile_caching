@@ -39,6 +39,7 @@ class _HomePageState extends State<HomePage> {
       context,
       const <String>{
         'cachingSwitch',
+        'recoveryChecking',
         'manageStorage',
         'storeSelector',
       },

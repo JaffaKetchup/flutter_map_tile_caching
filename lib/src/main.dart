@@ -461,10 +461,14 @@ class StorageCachingTileProvider extends TileProvider {
 
     Uint8List? seaTileBytes;
     if (region.seaTileRemoval) {
-      seaTileBytes = (await client.get(
-        Uri.parse(getTileUrl(Coords(0, 0)..z = 19, region.options)),
-      ))
-          .bodyBytes;
+      try {
+        seaTileBytes = (await client.get(
+          Uri.parse(getTileUrl(Coords(0, 0)..z = 19, region.options)),
+        ))
+            .bodyBytes;
+      } catch (e) {
+        seaTileBytes = null;
+      }
     }
 
     int successfulTiles = 0;

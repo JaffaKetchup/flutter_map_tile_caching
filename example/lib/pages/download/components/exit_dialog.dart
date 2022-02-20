@@ -18,7 +18,7 @@ class _ExitDialogState extends State<ExitDialog> {
       actions: [
         TextButton(
           onPressed: () {
-            Navigator.pop(context, false);
+            Navigator.of(context).pop(false);
           },
           child: const Text(
             'Keep Downloading',
@@ -26,7 +26,7 @@ class _ExitDialogState extends State<ExitDialog> {
         ),
         TextButton(
           onPressed: () {
-            Navigator.pop(context, true);
+            Navigator.of(context).pop(true);
           },
           child: const Text(
             'Cancel & Exit',
