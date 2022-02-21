@@ -274,15 +274,19 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// Background downloading is complicated: see the main README for more information.
   ///
-  /// Pops up an intrusive system dialog asking to be given the permission. There is no explanation for the user, except that the app will be allowed to run in the background all the time, so less technical users may be put off. It is up to you to decide (and program accordingly) if you want to show a reason first, then request the permission.
+  /// If [requestIfDenied] is `true` (default), and the permission has not been granted, an intrusive system dialog will be displayed. If `false`, this method will only check whether it has been granted or not.
+  ///
+  /// If the dialog does appear it contains is no explanation for the user, except that the app will be allowed to run in the background all the time, so less technical users may be put off. It is up to you to decide (and program accordingly) if you want to show a reason first, then request the permission.
   ///
   /// Will return ([Future]) `true` if permission was granted, `false` if the permission was denied.
   static Future<bool> requestIgnoreBatteryOptimizations(
-      BuildContext context) async {
+    BuildContext context, {
+    bool requestIfDenied = true,
+  }) async {
     if (Platform.isAndroid) {
       final PermissionStatus status =
           await Permission.ignoreBatteryOptimizations.status;
-      if (status.isDenied || status.isLimited) {
+      if ((status.isDenied || status.isLimited) && requestIfDenied) {
         final PermissionStatus statusAfter =
             await Permission.ignoreBatteryOptimizations.request();
         if (statusAfter.isGranted) return true;
@@ -441,7 +445,7 @@ class StorageCachingTileProvider extends TileProvider {
       await BackgroundFetch.scheduleTask(
         TaskConfig(
           taskId: 'backgroundTileDownload',
-          delay: 1,
+          delay: 0,
           forceAlarmManager: useAltMethod,
         ),
       );

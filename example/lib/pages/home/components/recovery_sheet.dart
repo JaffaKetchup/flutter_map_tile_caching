@@ -89,6 +89,13 @@ void showRecoverySheet({
                   'ignoreDownloadChecks': false,
                 },
               );
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                      'Only foreground recovery downloading is supported in this example application'),
+                ),
+              );
             },
             trailing: Row(
               mainAxisSize: MainAxisSize.min,

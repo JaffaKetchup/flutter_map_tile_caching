@@ -22,7 +22,6 @@ dependencies:
   numberpicker: ^2.1.1
   provider: ^6.0.2
   shared_preferences: ^2.0.12
-  stream_transform: ^2.0.0
 
 dev_dependencies:
   flutter_app_name: ^0.1.0

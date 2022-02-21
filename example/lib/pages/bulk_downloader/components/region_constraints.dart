@@ -1,4 +1,5 @@
 import 'package:flutter/rendering.dart';
+
 import '../bulk_downloader.dart';
 
 class RegionConstraints {
@@ -46,5 +47,37 @@ class RegionConstraints {
 
     top = (screenConstraints.maxHeight - height) / 2;
     left = (screenConstraints.maxWidth - width) / 2;
+  }
+
+  @override
+  String toString() {
+    return 'RegionConstraints(screenConstraints: $screenConstraints, mode: $mode, height: $height, width: $width, top: $top, left: $left, screenConstraints.maxHeight: $screenConstraints.maxHeight, screenConstraints.maxWidth: $screenConstraints.maxWidth)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is RegionConstraints &&
+        other.screenConstraints == screenConstraints &&
+        other.mode == mode &&
+        other.height == height &&
+        other.width == width &&
+        other.top == top &&
+        other.left == left &&
+        other.screenConstraints.maxHeight == screenConstraints.maxHeight &&
+        other.screenConstraints.maxWidth == screenConstraints.maxWidth;
+  }
+
+  @override
+  int get hashCode {
+    return screenConstraints.hashCode ^
+        mode.hashCode ^
+        height.hashCode ^
+        width.hashCode ^
+        top.hashCode ^
+        left.hashCode ^
+        screenConstraints.maxHeight.hashCode ^
+        screenConstraints.maxWidth.hashCode;
   }
 }

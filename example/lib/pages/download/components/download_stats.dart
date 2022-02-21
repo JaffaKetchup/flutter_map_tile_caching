@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:stream_transform/stream_transform.dart';
 
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
@@ -76,7 +75,42 @@ class _DownloadStatsState extends State<DownloadStats> {
                       },
                       child: const Text('Exit'),
                     ),
-                    const SizedBox(height: 50),
+                  ],
+                ),
+              );
+            }
+
+            if (progress.data!.percentageProgress == 100) {
+              return SizedBox(
+                width: double.infinity,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.done_all,
+                      color: Colors.green,
+                      size: 56,
+                    ),
+                    const SizedBox(height: 5),
+                    const Text(
+                      'Download Complete',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'The download completed successfully.\n\n${progress.data!.successfulTiles} tiles were successful\n${progress.data!.failedTiles.length} tiles failed (and have not been downloaded).',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Exit'),
+                    ),
                   ],
                 ),
               );
@@ -216,58 +250,6 @@ class _DownloadStatsState extends State<DownloadStats> {
                         const Text('sea tiles'),
                       ],
                     ),
-                  ],
-                ),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 20),
-        StreamBuilder<DownloadProgress>(
-          stream: widget.download!.audit(const Duration(seconds: 1)),
-          builder: (context, _) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    FutureBuilder<double>(
-                        future: widget.mcm!.storeSizeAsync,
-                        builder: (context, size) {
-                          return Text(
-                            !size.hasData
-                                ? '...'
-                                : (size.data! / 1024).toStringAsFixed(2) +
-                                    ' MB',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 28,
-                            ),
-                          );
-                        }),
-                    const Text('total store size'),
-                  ],
-                ),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    FutureBuilder<int>(
-                        future: widget.mcm!.storeLengthAsync,
-                        builder: (context, length) {
-                          return Text(
-                            !length.hasData
-                                ? '...'
-                                : (length.data! - 1)
-                                    .clamp(0, double.infinity)
-                                    .toString(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 28,
-                            ),
-                          );
-                        }),
-                    const Text('total store length'),
                   ],
                 ),
               ],

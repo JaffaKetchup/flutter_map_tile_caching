@@ -49,30 +49,4 @@ class MapView extends StatelessWidget {
       },
     );
   }
-
-  /*Marker _buildCrosshairMarker(LatLng point) {
-    return Marker(
-      point: point,
-      builder: (context) {
-        return Stack(
-          children: [
-            Center(
-              child: Container(
-                color: Colors.black,
-                height: 1,
-                width: 10,
-              ),
-            ),
-            Center(
-              child: Container(
-                color: Colors.black,
-                height: 10,
-                width: 1,
-              ),
-            )
-          ],
-        );
-      },
-    );
-  }*/
 }

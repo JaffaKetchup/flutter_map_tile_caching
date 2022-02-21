@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 import '../../../state/bulk_download_provider.dart';
+import '../../download/background_download.dart';
 
 class DownloadAppBar extends StatelessWidget implements PreferredSizeWidget {
   const DownloadAppBar({Key? key, required this.builder}) : super(key: key);
@@ -129,6 +130,15 @@ class FAB extends StatelessWidget {
           SpeedDialChild(
             label: 'Download In Background',
             child: const Icon(Icons.miscellaneous_services),
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                builder: (context) => BackgroundDownload(
+                  mcm: mcm,
+                  contextOfPanel: context,
+                ),
+              );
+            },
           ),
         ],
       );
