@@ -151,7 +151,7 @@ extension AsyncMapCachingManager on MapCachingManager {
   ///
   /// If using random mode, optionally set [maxRange] to an integer (1 <= [maxRange] <= [storeLength]) to only generate a random number between 0 and the specified number. Useful to reduce waiting times or enforce consistency.
   ///
-  /// Returns `null` there are no cached tiles.
+  /// Returns `null` if there are no cached tiles.
   Future<Image?> coverImageAsync({
     required bool random,
     int? maxRange,

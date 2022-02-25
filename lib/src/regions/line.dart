@@ -22,7 +22,7 @@ class LineRegion implements BaseRegion {
 
   /// Creates a list of rectangles made of the locus of the specified line which can be used anywhere
   ///
-  /// Use the optional `overlap` argument to set the end of rectangle behavior. -1 is reduced, 0 is normal (default), 1 is full (as downloaded).
+  /// Use the optional `overlap` argument to set the rectangle joint(s) behaviours. -1 is reduced, 0 is normal (default), 1 is full (as downloaded).
   List<List<LatLng>> toOutlines([int overlap = 0]) {
     if (overlap >= -1 && overlap <= 1) {
       throw ArgumentError('`overlap` must be between -1 and 1 inclusive');
@@ -177,7 +177,7 @@ class LineRegion implements BaseRegion {
 
         const Distance distance = Distance();
 
-        bool aCurve = distance.distance(rects[i][2], intersectionA) >
+        final bool aCurve = distance.distance(rects[i][2], intersectionA) >
             distance.distance(rects[i][1], intersectionB);
 
         final LatLng old1 = rects[i][aCurve ? 1 : 2];
