@@ -92,20 +92,21 @@ class MapCachingManager {
 
   //! MANAGEMENT !//
 
-  /// Deprecated. To create the store, reinitialize the [MapCachingManager], and it will be created automatically.
-  @Deprecated(
-      'To create the store, reinitialize the `MapCachingManager`, and it will be created automatically')
-  void createStore() => storeDirectory?.createSync(recursive: true);
+  /// Re-create the store
+  void recreateStore() {
+    _storeRequired;
+    storeDirectory?.createSync(recursive: true);
+  }
 
   /// Delete a store
   ///
-  /// To only empty the store, see [emptyStore].
+  /// To only empty the store's contents, see [emptyStore].
   void deleteStore() {
     _storeRequired;
     storeDirectory!.deleteSync(recursive: true);
   }
 
-  /// Empty a store (delete all contained tiles and metadata)
+  /// Empty a store of it's contents (delete all contained tiles and metadata)
   void emptyStore() {
     _storeRequired;
 

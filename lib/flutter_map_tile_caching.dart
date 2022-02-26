@@ -24,7 +24,3 @@ export 'package:connectivity_plus/connectivity_plus.dart'
     show ConnectivityResult;
 export 'package:battery_info/enums/charging_status.dart';
 export 'dart:io' show Directory, File, FileSystemEvent;
-
-// Deprecated
-export 'src/deprecated/old_caching_manager.dart';
-export 'src/deprecated/shape_chooser.dart';

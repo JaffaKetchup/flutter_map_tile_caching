@@ -1,11 +1,5 @@
 import '../../flutter_map_tile_caching.dart';
 
-/// `CacheDirectory` is deprecated in favour of \'dart:io\'s [Directory], which is now automatically exported by \'flutter_map_tile_caching\'. Will be removed in next release.
-@Deprecated(
-  '`CacheDirectory` is deprecated in favour of \'dart:io\'s `Directory`, which is now automatically exported by \'flutter_map_tile_caching\'. Will be removed in next release',
-)
-typedef CacheDirectory = Directory;
-
 /// Use in `preDownloadChecksCallback` in the bulk downloaders to ensure the download is OK to start by considering the device's status.
 ///
 /// Setting the parameter to `null` will skip all tests and allow under any circumstances - this is the default, but not recommended. However, returning `null` from the function will use the default rules: cancel the download if the user is on cellular data or disconnected from the network (not necessarily Internet), or under 15% charge and not connected to a power source.

@@ -40,15 +40,21 @@ extension AsyncMapCachingManager on MapCachingManager {
     return true;
   }
 
+  /// Re-create the store
+  Future<void> recreateStoreAsync() async {
+    _storeRequired;
+    await storeDirectory?.create(recursive: true);
+  }
+
   /// Delete a store
   ///
-  /// To only empty the store, see [emptyStoreAsync].
+  /// To only empty the store's contents, see [emptyStoreAsync].
   Future<void> deleteStoreAsync() async {
     await _storeRequired;
     await storeDirectory!.delete(recursive: true);
   }
 
-  /// Empty a store (delete all contained tiles and metadata)
+  /// Empty a store of it's contents (delete all contained tiles and metadata)
   Future<void> emptyStoreAsync() async {
     await _storeRequired;
 

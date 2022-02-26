@@ -82,15 +82,3 @@ class RectangleRegion implements BaseRegion {
     ];
   }
 }
-
-/// Deprecated due to other available methods. Migrate to construction using the real constructor (`RectangleRegion()`).
-@Deprecated(
-    'Due to other available methods. Migrate to construction using the real constructor (`RectangleRegion()`).')
-extension RectangleRegionExts on LatLngBounds {
-  /// Deprecated due to other available methods. Migrate to construction using the real constructor (`RectangleRegion()`).
-  @Deprecated(
-      'Due to other available methods. Migrate to construction using the real constructor (`RectangleRegion()`).')
-  RectangleRegion toRectangleRegion() {
-    return RectangleRegion(this);
-  }
-}

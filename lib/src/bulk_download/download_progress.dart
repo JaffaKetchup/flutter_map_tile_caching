@@ -96,29 +96,6 @@ class DownloadProgress {
   /// Is equal to `estTotalDuration - duration`
   Duration get estRemainingDuration => estTotalDuration - duration;
 
-  /// The 'exponential moving' average duration for download per tile, based on [estTotalDuration].
-  ///
-  /// Deprecated due to minimal uses, and introduction of more accurate time estimations which do not use linear averaging. No new alternative is provided.
-  @Deprecated(
-      'Deprecated due to minimal uses, and introduction of more accurate time estimations which do not use linear averaging. No new alternative is provided.')
-  Duration get avgDurationTile => Duration(
-      microseconds: (estTotalDuration.inMicroseconds / maxTiles).round());
-
-  /// Deprecated due to internal refactoring. Migrate to `attemptedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
-  @Deprecated(
-      'Deprecated due to internal refactoring. Migrate to `attemptedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
-  int get completedTiles => attemptedTiles;
-
-  /// Deprecated due to internal refactoring. Migrate to `failedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
-  @Deprecated(
-      'Due to internal refactoring. Migrate to `failedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
-  List<String> get erroredTiles => failedTiles;
-
-  /// Deprecated due to internal refactoring. Migrate to `maxTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
-  @Deprecated(
-      'Due to internal refactoring. Migrate to `maxTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
-  int get totalTiles => maxTiles;
-
   /// Avoid construction using this method. Use [DownloadProgress.empty] to generate empty placeholders where necessary.
   @internal
   DownloadProgress.internal({
@@ -140,11 +117,6 @@ class DownloadProgress {
         existingTiles = 0,
         durationPerTile = [],
         duration = const Duration();
-
-  /// Deprecated due to internal refactoring. Migrate to the named constructor [DownloadProgress.empty]. Will be removed in next update.
-  @Deprecated(
-      'Due to internal refactoring. Migrate to the named constructor [DownloadProgress.empty]. Will be removed in next update.')
-  static DownloadProgress get placeholder => DownloadProgress.empty();
 
   //! GENERAL OBJECT STUFF !//
 

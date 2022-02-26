@@ -97,15 +97,3 @@ class CircleRegion implements BaseRegion {
     return output;
   }
 }
-
-/// Deprecated due to other available methods. Migrate to construction using the real constructor (`CircleRegion()`).
-@Deprecated(
-    'Due to other available methods. Migrate to construction using the real constructor (`CircleRegion()`).')
-extension CircleRegionExts on LatLng {
-  /// Deprecated due to other available methods. Migrate to construction using the real constructor (`CircleRegion()`).
-  @Deprecated(
-      'Due to other available methods. Migrate to construction using the real constructor (`CircleRegion()`).')
-  CircleRegion toCircleRegion(double radius) {
-    return CircleRegion(this, radius);
-  }
-}
