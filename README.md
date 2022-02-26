@@ -46,7 +46,7 @@ For these steps please go to these sites:
 
 ### iOS
 
-A few more steps are required on iOS due to the background download functionality, even though this functionality is unfortunately currently blocked on iOS. This is due to the way the dependency used to perform background downloading works.
+A few more steps are required on iOS due to the background download functionality, even though this functionality is unfortunately currently disabled on iOS. This is due to the way the dependency used to perform background downloading works.
 For these steps please go to these sites:
 
 - [`background_fetch` Installation Instructions For iOS](https://github.com/transistorsoft/flutter_background_fetch/blob/master/help/INSTALL-IOS.md)  
@@ -62,11 +62,13 @@ As of v4, this package contains a full example application showcasing most of th
 - Android & Windows users should run 'androidBuilder.bat'
 - Android & Linux/MacOS users should run 'androidBuilder.sh' (bash)
 
-... to build the smallest output .apk files possible (< 13MB).  
+... to build the smallest output .apk files possible (< 14MB).  
 There is no build automation for iOS devices: users will need to build manually as usual.
 
 By using the example application, you must comply to your tile server's ToS. OpenStreetMap's (the default throughout the application) can be [found here](https://operations.osmfoundation.org/policies/tiles). If you cannot comply to these rules, you should find one that you can comply to and get the appropriate source URL (which can be customised in the application).  
-Some safeguards have been built in - specifically in the bulk download screen. You can read more about these by tapping the help icon in the app bar.
+Some safeguards have been built in to protect servers - specifically in the bulk download screen. You can read more about these by tapping the help icon in the app bar on that page.
+
+Feel free to use the example app as a starting point for your application. Many screens should fit into any app - perhaps with some restyling to fit your app.
 
 ## Functionality
 
@@ -143,10 +145,10 @@ This functionality is enabled by default with a thread count of 10.
 <details>
 <summary> Background Downloading </summary>
 
-Instead of downloading in the 'foreground', there is an option only on Android to start a download in the 'background'.
+Instead of downloading in the 'foreground', there is an option (only on Android) to start a download in the 'background'.
 
 There is some confusion about the way background process handling works on Android, so let me clear it up for you: it is confusing.  
-Each vendor (eg. Samsung, Huawei, Motorola) has there own methods of handling background processes. Some manage it by providing the bare minimum user-end management, resulting in process that drain battery because they can't be stopped easily; others manage it by altogether banning/strictly limiting background processes, resulting in weird problems and buggy apps; many manage it by some layer of control on top of Android's original controls, making things confusing for everyone.  
+Each vendor (eg. Samsung, Huawei, Motorola) has there own methods of handling background processes. Some manage it by providing the bare minimum user-end management, resulting in process that drain battery because they can't be stopped easily; others manage it by altogether banning/strictly limiting background processes, resulting in weird problems and buggy apps; many manage it by some layer of control on top of Android's original controls, making things more confusing for everyone.  
 Therefore there is no guaranteed behaviour when using this functionality. You can see how many vendors will treat background processes here: [dontkillmyapp.com](https://dontkillmyapp.com/); you may wish to link your users to this site so they can properly configure your app to run in the background.
 
 To try and help your users get to the right settings quicker, use the `StorageCachingTileProvider.requestIgnoreBatteryOptimizations()` method before starting a background download. This will interrupt the app with either a dialog or a settings page where they can opt-in to reduced throttling. There is no guarantee that this will work, but it should help: this is not required and the background download will still *try* to run even if the user denies the permissions.
@@ -155,13 +157,13 @@ If the download doesn't start, your app may be being throttled by the system alr
 
 Background downloading does have some advantages, however:
 
-- Takes strain off of main threads and into special background threads
+- Takes strain off of main threads and into special background threads - may run faster on some devices
 - Push notifications to keep the user updated
-- Should* still run when app is minimized or screen is locked
+- Should? still run when app is minimized or screen is locked
 
 Foreground downloading might also work when app is minimized or the screen is locked, but it's better practise to use a dedicated, registered background process.
 
-The background download functionality has been disabled on iOS, because of the even stricter restrictions.
+The background download functionality has been disabled on iOS, because of the even stricter restrictions - note that iOS installation still requires extra setup (see Installation).
 </details>
 
 ## [API Details](https://pub.dev/documentation/flutter_map_tile_caching/latest/flutter_map_tile_caching/flutter_map_tile_caching-library.html)
@@ -169,9 +171,9 @@ The background download functionality has been disabled on iOS, because of the e
 Because of the many parts to this package and the small number of maintainers (only me), there is no 'full documentation' for everything in this README or in any wiki.
 
 Documentation has been written into the source code: you can see every public API element (and some 'private' ones) in the [auto generated docs (dartdoc)](https://pub.dev/documentation/flutter_map_tile_caching/latest/flutter_map_tile_caching/flutter_map_tile_caching-library.html). This contains all of the information for each element and suggested uses for your application.  
-Content visible there is also visible whilst writing code (in most editors), so you should rarely need to leave the comfort of your editor. This results in creativity, as it's easy to progressively browse through the API to find new functionality.
+Content visible there is also visible whilst writing code (in most editors/IDEs), so you should rarely need to leave the comfort of your editor. This results in creativity, as it's easy to progressively browse through the API to find new functionality.
 
-Some documentation can be seen for some 'private'/internal elements, marked with `@internal`. Whilst it is possible to use these in your code, you should never need to. Using one will cause a warning to appear.
+Some documentation can be seen for some 'private'/internal elements, marked with `@internal`. Whilst it is possible to use these in your code, you should never need to. Using one will cause a warning to appear in your IDE.
 
 Having said all of that, below is a brief overview of the top-level elements to get you started:
 
@@ -195,15 +197,14 @@ I've tried to make v4 even easier to understand and use, even with all the new f
 ## Limitations, Known Bugs & Testing
 
 - This package does not support the web platform. A fix for this is unlikely to appear because the web platform is ill-suited for caching anyway.
-- The region functions can be inaccurate at large sizes and when located to extremities such as (-)180°. To prevent errors, the values of the calculation have been clamped to a valid minimum and maximum, but this causes other side effects. To prevent unwanted results, try to use small regions, no larger than the size of Europe, and keep them away from the extremities.
-- Apps may become unstable if large numbers of tiles have been downloaded. Try to keep the amount of downloaded tiles below 100,000.
-- This package has only been tested on two Android devices: a Xiaomi Redmi Note 10 Pro (Android 11), and a Pixel 4 emulator (Android 11).
+- This package has not been tested on the iOS platform, and as a result, bugs may appear more frequently than on Android. I am currently looking into options to test on iOS.
+- It is unspecified and untested how tile selection code will behave when regions stretch due to latitude and longitude changes in projection. Similarly, code may behave strangely around extremities such as (-)180°. To prevent errors, the values of the calculation have been clamped to a valid minimum and maximum, but this causes other side effects. To prevent unwanted results, try to use small regions, no larger than the size of Europe, and keep them away from the extremities.
 
-However, due to the large amounts of functionality, each with many different variations, it is nearly impossible to find many bugs. Therefore, if you find a bug, please do file an issue on GitHub, and I will do my very best to get it fixed quickly.
+Due to the large amounts of functionality, each with many different variations, it is nearly impossible to find many bugs. Therefore, if you find a bug, please do file an issue on GitHub, and I will do my very best to get it fixed quickly.
 
 ## Supporting Me
 
-A donation through my Ko-Fi page would be infinitely appreciated (Ko-fi doesn't take a fee, so all donated money goes to me :) ):  
+A donation through my Ko-Fi page would be much appreciated - Ko-fi doesn't take a fee, so all donated money goes to me:  
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/N4N151INN)  
 but, if you can't or won't, a star on GitHub and a like on pub.dev would also go a long way!
 

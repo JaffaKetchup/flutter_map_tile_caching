@@ -1,5 +1,15 @@
 # Changelog
 
+1. Major version releases change the first digit and signify major (breaking) API changes
+2. Minor version releases change the second digit and signify minor (breaking or non-breaking) API changes or internal refactoring
+3. Revision version releases change the third digit and signify bug fixes or documentation changes
+
+## [4.0.0] - 2022/02/26
+
+* Miscellaneous changes
+* Check file system watching is supported before usage
+* Incorporate all pre-releases
+
 ## [4.0.0-dev.11] - 2022/02/20
 
 * Example improvements - new example app still in progress
@@ -177,7 +187,7 @@
 
 * Attempt to publish (failed)
 
-## [2.0.0] - 23/05/2021 - Breaking
+## [2.0.0] - 23/05/2021
 
 * Increased default values (increased default cache limit (tiles) to 20000 and default cache duration to 31 days)
 * Improved readme (added badges, simplified a calculation and increased detail on how to install and import)
@@ -185,7 +195,7 @@
 * Added changelog heading to please linter
 * Fixed issues with WMS tile layer options
 
-## [1.1.0] - 23/05/2021 - Breaking
+## [1.1.0] - 23/05/2021
 
 * **DO NOT UPDATE TO THIS VERSION as there is a full new release coming soon**
 * Enable sound null-safety (**Breaking Change:** Only SDK `>= 2.12.0` allowed)

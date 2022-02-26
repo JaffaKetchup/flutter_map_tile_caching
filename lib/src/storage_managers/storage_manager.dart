@@ -140,9 +140,11 @@ class MapCachingManager {
 
   /// Watch for changes in the current cache
   ///
-  /// By default, [recursive] is set to `false`, meaning only top level changes (those to do with each store) will be caught. Enable recursivity to also include events from [watchStoreChanges]. Note that watching recursively is not supported on Linux/Android platforms.
-  ///
   /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
+  ///
+  /// By default, [recursive] is set to `false`, meaning only top level changes (those to do with each store) will be caught. Enable recursivity to also include events from [watchStoreChanges].
+  ///
+  /// Only supported on some platforms. Will throw [UnsupportedError] if platform has no internal support (eg. OS X 10.6 and below). Note that recursive watching is not supported on some other platforms, but handling for this is unspecified.
   ///
   /// Control which changes are caught through the [fileSystemEvents] property, which takes [FileSystemEvent]s, and by default ignores modifications (ie. renaming).
   ///
@@ -161,6 +163,11 @@ class MapCachingManager {
   }) {
     _cacheRequired;
 
+    if (!FileSystemEntity.isWatchSupported) {
+      throw UnsupportedError(
+          'Watching is not supported on the current platform');
+    }
+
     final Stream<void> stream = parentDirectory
         .watch(events: fileSystemEvents, recursive: true)
         .map((_) => null);
@@ -171,6 +178,8 @@ class MapCachingManager {
   /// Watch for changes in the current store
   ///
   /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
+  ///
+  /// Only supported on some platforms. Will throw [UnsupportedError] if platform has no internal support (eg. OS X 10.6 and below).
   ///
   /// Control which changes are caught through the [fileSystemEvents] property, which takes [FileSystemEvent]s, and by default ignores modifications (ie. renaming).
   ///
@@ -188,8 +197,14 @@ class MapCachingManager {
   }) {
     _storeRequired;
 
+    if (!FileSystemEntity.isWatchSupported) {
+      throw UnsupportedError(
+          'Watching is not supported on the current platform');
+    }
+
     final Stream<void> stream =
         storeDirectory!.watch(events: fileSystemEvents).map((event) => null);
+
     return enableDebounce ? stream.debounce(debounceDuration) : stream;
   }
 
