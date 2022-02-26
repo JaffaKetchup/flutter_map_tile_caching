@@ -1,7 +1,7 @@
 ---
 name: Bug Report
-about: Create a bug report to help us improve
-title: Bug - ...
+about: Create a bug report to help us fix a bug
+title: [BUG] - ...
 labels: bug, needs verification
 assignees: JaffaKetchup
 
@@ -15,6 +15,7 @@ A clear and concise description of what you expected to happen, compared to what
 
 **Reproduction**
 Steps to reproduce the behaviour:
+
 1. Go to '...'
 2. Click on '....'
 3. Scroll down to '....'
