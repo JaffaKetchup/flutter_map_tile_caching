@@ -15,11 +15,14 @@ import '../storage_managers/storage_manager.dart';
 ///
 /// ... otherwise it should be `false`.
 ///
+/// [enforce255MaxLength] will take the last 255 chars of the [inputString]. This is useful on iOS systems.
+///
 /// See [validateStoreNameString] for a public facing validator.
 @internal
 String safeFilesystemString({
   required String inputString,
   required bool throwIfInvalid,
+  bool enforce255MaxLength = true,
 }) {
   String alteredString = inputString;
 
@@ -50,6 +53,14 @@ String safeFilesystemString({
       alteredString.replaceAll(RegExp(r'[\\\\/\:\*\?\"\<\>\|]'), '_');
   if (alteredString != inputString && throwIfInvalid) {
     throw 'The name cannot contain invalid characters: \'[NUL]\\/:*?"<>|\'';
+  }
+
+  // Reduce string to under 255 chars (keeps end)
+  if (enforce255MaxLength && alteredString.length > 255) {
+    alteredString = alteredString.substring(alteredString.length - 255);
+    if (alteredString != inputString && throwIfInvalid) {
+      throw 'The name cannot contain more than 255 characters';
+    }
   }
 
   return alteredString;
