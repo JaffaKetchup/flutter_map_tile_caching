@@ -4,6 +4,10 @@
 2. Minor version releases change the second digit and signify minor (breaking or non-breaking) API changes or internal refactoring
 3. Revision version releases change the third digit and signify bug fixes or documentation changes
 
+## [4.0.1] - 2022/02/28
+
+* Fix bug #45 (on GitHub)
+
 ## [4.0.0] - 2022/02/26
 
 * Miscellaneous changes
