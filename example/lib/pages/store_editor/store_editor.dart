@@ -136,7 +136,7 @@ class _StoreEditorState extends State<StoreEditor> {
                               decoration: const InputDecoration(
                                   labelText: 'Store Name'),
                               textCapitalization: TextCapitalization.words,
-                              validator: validateStoreNameString,
+                              validator: validateStoreName,
                               textInputAction: TextInputAction.next,
                             ),
                             const SizedBox(height: 5),

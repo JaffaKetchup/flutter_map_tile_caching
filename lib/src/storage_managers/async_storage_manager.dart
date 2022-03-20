@@ -73,7 +73,7 @@ extension AsyncMapCachingManager on MapCachingManager {
   ///
   /// The old [MapCachingManager] will still retain it's link to the old store, so always use the new returned value instead: returns a new [MapCachingManager] after a successful renaming operation.
   ///
-  /// An error will be thrown if the new store name is invalid, see [validateStoreNameString] to validate names safely beforehand.
+  /// An error will be thrown if the new store name is invalid, see [validateStoreName] to validate names safely beforehand.
   Future<MapCachingManager> renameStoreAsync(String newName) async {
     await _storeRequired;
 

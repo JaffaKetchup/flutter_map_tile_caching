@@ -25,7 +25,9 @@ import 'misc/typedefs_and_exts.dart';
 import 'misc/validate.dart';
 import 'regions/downloadable_region.dart';
 import 'regions/recovered_region.dart';
+import 'storage_managers/directory.dart';
 import 'storage_managers/storage_manager.dart';
+import 'structure/root.dart';
 
 /// Multiple behaviors dictating how browse caching should be carried out
 ///
@@ -59,11 +61,11 @@ class StorageCachingTileProvider extends TileProvider {
   /// Use [MapCachingManager.normalCache] wherever possible, or [MapCachingManager.temporaryCache] alternatively (see documentation). To use those [Future] values, you will need to wrap your [FlutterMap] widget in a [FutureBuilder] to await the returned directory or show a loading indicator; this shouldn't cause any interference. If creating a path manually, be sure it's the correct format, use the 'package:path' library if needed.
   ///
   /// Required.
-  final Directory parentDirectory;
+  final RootDirectory cacheDirectory;
 
   /// Name of a store (to use for this instance), defaulting to 'mainStore'.
   ///
-  /// Is validated through [safeFilesystemString] : an error will be thrown if the store name is given and invalid, see [validateStoreNameString] to validate names safely before construction.
+  /// Is validated through [safeFilesystemString] : an error will be thrown if the store name is given and invalid, see [validateStoreName] to validate names safely before construction.
   final String storeName;
 
   /// Directory containing all cached tiles and metadata for the store
