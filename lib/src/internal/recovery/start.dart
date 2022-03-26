@@ -12,6 +12,7 @@ import '../../regions/rectangle.dart';
 Future<void> start(
   File file,
   DownloadableRegion region,
+  String identification,
 ) async {
   if (await file.exists()) {
     throw StateError(
@@ -22,8 +23,9 @@ Future<void> start(
 
   final Config cfg = Config.fromStrings(await file.readAsLines());
 
-  cfg.addSection('type');
-  cfg.set('type', 'regionType', region.type.name);
+  cfg.addSection('info');
+  cfg.set('info', 'identification', identification);
+  cfg.set('info', 'regionType', region.type.name);
 
   cfg.addSection('zoom');
   cfg.set('zoom', 'minZoom', region.minZoom.toString());

@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:path/path.dart' as p show joinAll, split;
+import 'package:path/path.dart' as p show split;
 import 'package:stream_transform/stream_transform.dart';
 
+import '../internal/exts.dart';
 import '../main.dart';
 import '../structure/root.dart';
 import '../structure/store.dart';
@@ -24,10 +24,15 @@ class MapCachingManager {
   /// Set of directories, on the cache level
   ///
   /// Use [RootDirectory.normalCache] wherever possible, or [RootDirectory.temporaryCache] alternatively (see documentation on those constructors). To use those [Future] values, you may need to use the `async` `await` pattern. If creating a path manually with [CacheDirectory.custom], be sure it's correct (see documentation).
-  late final RootDirectory? rootDirectory;
+  late final RootDirectory rootDirectory;
 
   /// Set of directories, on the store level
   late final StoreDirectory? storeDirectory;
+
+  /// Forces statistic getters to recalculate and override any statistic caches that might exist
+  ///
+  /// Use sparingly, as some calculations can be expensive. Will be necessary if you alter the store manually.
+  final bool forceRecalculation;
 
   /// Manages caching statistics and general running (synchronously or asynchronously)
   ///
@@ -39,41 +44,16 @@ class MapCachingManager {
   MapCachingManager({
     RootDirectory? rootDir,
     StoreDirectory? storeDir,
+    this.forceRecalculation = false,
   }) {
     storeDirectory = storeDir;
 
-    if (rootDir == null && storeDir != null) {
-      rootDir = storeDir.rootDirectory;
-    }
+    if (rootDir == null && storeDir != null) rootDir = storeDir.rootDirectory;
 
     if (rootDir == null && storeDir == null) {
       throw ArgumentError(
           'At least one of `rootDirectory` and/or `storeDirectory` must be provided as an argument');
     }
-  }
-
-  /// Construct [MapCachingManager] inside an isolate to avoid blocking main thread
-  ///
-  /// For other information, see the standard synchronous constructor [MapCachingManager].
-  static Future<MapCachingManager> async({
-    RootDirectory? rootDir,
-    StoreDirectory? storeDir,
-  }) async {
-    if (rootDir == null && storeDir == null) {
-      throw ArgumentError(
-          'At least one of `rootDirectory` and/or `storeDirectory` must be provided as an argument');
-    }
-
-    return await compute(
-        (_) => MapCachingManager(rootDir: rootDir, storeDir: storeDir), {});
-  }
-
-  /// Empty a store of it's contents (delete all contained tiles and metadata)
-  void emptyStore() {
-    _storeRequired;
-
-    storeDirectory!.delete();
-    storeDirectory!.create();
   }
 
   //! WATCHERS !//
@@ -108,13 +88,13 @@ class MapCachingManager {
           'Watching is not supported on the current platform');
     }
 
-    final Stream<void> stream = rootDirectory!.rootDirectory
+    final Stream<void> stream = rootDirectory.rootDirectory
         .watch(events: fileSystemEvents)
         .map((_) => null)
         .mergeAll(
           allStoresNames
-              .map((name) => StoreDirectory(
-                  rootDirectory: rootDirectory!, storeName: name))
+              .map((name) =>
+                  StoreDirectory(rootDirectory: rootDirectory, storeName: name))
               .map(
                 (store) => MapCachingManager(storeDir: store)
                     .watchStoreChanges(enableDebounce)
@@ -165,12 +145,27 @@ class MapCachingManager {
 
   //! STATISTIC GETTERS !//
 
+  String _cachedStatisticGetter(
+      String statType, dynamic Function() calculation) {
+    final File f =
+        storeDirectory!.purposeDirectories[PurposeDirectory.stats]! >>>
+            '$statType.cache';
+
+    if (!forceRecalculation && f.existsSync()) {
+      return f.readAsStringSync();
+    } else {
+      final String calculated = calculation().toString();
+      f.writeAsStringSync(calculated, flush: true);
+      return calculated;
+    }
+  }
+
   /// Retrieve a list of all names of existing stores
   List<String> get allStoresNames {
     _rootRequired;
 
     List<String> returnable = [];
-    for (FileSystemEntity e in rootDirectory!.rootDirectory
+    for (FileSystemEntity e in rootDirectory.rootDirectory
         .listSync(followLinks: false, recursive: false)) {
       returnable.add(p.split(e.absolute.path).last);
     }
@@ -182,13 +177,18 @@ class MapCachingManager {
   double get storeSize {
     _storeRequired;
 
-    int totalSize = 0;
-    for (FileSystemEntity e
-        in storeDirectory!.storeDirectory.listSync(recursive: true)) {
-      totalSize += e is File ? e.lengthSync() : 0;
-    }
+    return double.parse(_cachedStatisticGetter(
+      'size',
+      () {
+        int totalSize = 0;
+        for (FileSystemEntity e
+            in storeDirectory!.storeDirectory.listSync(recursive: true)) {
+          totalSize += e is File ? e.lengthSync() : 0;
+        }
 
-    return totalSize / 1024;
+        return totalSize / 1024;
+      },
+    ));
   }
 
   /// Retrieve the size of all stores in kibibytes (KiB)
@@ -208,7 +208,13 @@ class MapCachingManager {
   /// Retrieve the number of stored tiles in a store
   int get storeLength {
     _storeRequired;
-    return storeDirectory!.storeDirectory.listSync().length;
+
+    return int.parse(_cachedStatisticGetter(
+      'length',
+      () => storeDirectory!.purposeDirectories[PurposeDirectory.tiles]!
+          .listSync()
+          .length,
+    ));
   }
 
   /// Retrieve the number of stored tiles in all stores
@@ -256,9 +262,9 @@ class MapCachingManager {
     final int? randInt = !random ? null : Random().nextInt(maxRange!);
     int i = 0;
 
-    for (FileSystemEntity evt in storeDirectory!.storeDirectory.listSync()) {
-      if (evt.path.split('/').last == 'fmtcDownload.recovery') continue;
-
+    for (FileSystemEntity evt in storeDirectory!
+        .purposeDirectories[PurposeDirectory.tiles]!
+        .listSync()) {
       if (i >= (randInt ?? 0)) {
         return Image.file(
           File(evt.absolute.path),
@@ -273,6 +279,16 @@ class MapCachingManager {
   }
 
   //! DEPRECATED !//
+
+  /// Deprecated in favour of now non-blocking normal constructor. Migrate your code before the next minor release.
+  @Deprecated(
+      'Deprecated in favour of now non-blocking normal constructor. Migrate your code before the next minor release.')
+  static Future<MapCachingManager> async({
+    RootDirectory? rootDir,
+    StoreDirectory? storeDir,
+  }) =>
+      Future.sync(
+          () => MapCachingManager(rootDir: rootDir, storeDir: storeDir));
 
   /// Deprecated in favour of direct construction through [RootDirectory.normalCache]. Migrate your code before the next minor release.
   @Deprecated(
@@ -294,12 +310,22 @@ class MapCachingManager {
     return storeDirectory!.ready;
   }
 
+  /// Deprecated in favour of [StoreDirectory.reset]. Migrate your code before the next minor release.
+  @Deprecated(
+      'Deprecated in favour of [StoreDirectory.reset]. Migrate your code before the next minor release.')
+  void emptyStore() {
+    _storeRequired;
+
+    storeDirectory!.delete();
+    storeDirectory!.create();
+  }
+
   /// Deprecated in favour of [RootDirectory.clean]. Migrate your code before the next minor release.
   @Deprecated(
       'Deprecated in favour of [RootDirectory.clean]. Migrate your code before the next minor release.')
   void deleteAllStores() {
     _rootRequired;
-    rootDirectory!.clean();
+    rootDirectory.clean();
   }
 
   /// Deprecated in favour of [StoreDirectory.rename]. Migrate your code before the next minor release.
@@ -336,9 +362,9 @@ class MapCachingManager {
   ///
   /// Subset of [_storeRequired].
   void get _rootRequired {
-    if (rootDirectory == null || !rootDirectory!.ready) {
+    if (!rootDirectory.ready) {
       throw ArgumentError(
-          '`storeDirectory` must be provided as an argument to use this method');
+          '`rootDirectory` or `storeDirectory` must be provided as an argument to use this method');
     }
   }
 

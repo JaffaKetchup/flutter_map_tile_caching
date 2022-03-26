@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:path/path.dart' as p show joinAll;
-
 import '../../regions/downloadable_region.dart';
 import '../../regions/recovered_region.dart';
+import '../../structure/store.dart';
+import '../exts.dart';
 import 'end.dart';
 import 'read.dart';
 import 'start.dart';
@@ -14,13 +14,17 @@ class Recovery {
   final File recoveryFile;
 
   /// Used internally to manage bulk download recovery
-  Recovery(Directory storeDirectory)
-      : recoveryFile = File(
-            p.joinAll([storeDirectory.absolute.path, 'fmtcDownload.recovery']));
+  Recovery(StoreDirectory storeDirectory)
+      : recoveryFile = storeDirectory
+                .purposeDirectories[PurposeDirectory.metadata]! >>>
+            '${DateTime.now().millisecondsSinceEpoch.toString()}.recovery.ini';
 
   /// Start the recovery - create and configure the file
-  Future<void> startRecovery(DownloadableRegion region) =>
-      start(recoveryFile, region);
+  ///
+  /// [identification] should be a human-readable description of the download that the recovery file is attached to
+  Future<void> startRecovery(
+          DownloadableRegion region, String identification) =>
+      start(recoveryFile, region, identification);
 
   /// End the recovery - delete the file
   Future<void> endRecovery() => end(recoveryFile);

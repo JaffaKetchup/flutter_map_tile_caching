@@ -1,10 +1,20 @@
 import 'dart:io';
 
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
+import '../internal/exts.dart';
 import '../misc/validate.dart';
 import '../storage_managers/storage_manager.dart';
 import 'root.dart';
+
+/// Every subfolder of [StoreDirectory] will have a purpose, defined here
+@internal
+enum PurposeDirectory {
+  tiles,
+  metadata,
+  stats,
+}
 
 /// Manages the basic structure of a store (aka. 'cache store')
 ///
@@ -17,14 +27,15 @@ class StoreDirectory {
   /// The container for all files used within this library
   final RootDirectory rootDirectory;
 
-  /// The real directory beneath which [tileStorage] and [metadataStorage] reside
+  /// The real directory beneath which [purposeDirectories] reside
   late final Directory storeDirectory;
 
-  /// The map tile storage directory (one per store)
-  late final Directory tileStorage;
-
-  /// The metadata/miscellaneous storage directory (one per store)
-  late final Directory metadataStorage;
+  /// Contains [Directory]s which purpose are dictated by their associated [PurposeDirectory] key
+  Map<PurposeDirectory, Directory> get purposeDirectories => {
+        PurposeDirectory.tiles: storeDirectory >> ('tiles'),
+        PurposeDirectory.metadata: storeDirectory >> ('metadata'),
+        PurposeDirectory.stats: storeDirectory >> ('stats'),
+      };
 
   /// Create a [StoreDirectory] set based on a [RootDirectory] and a valid/safe store name
   ///
@@ -36,23 +47,8 @@ class StoreDirectory {
     required String storeName,
     bool autoCreate = true,
   }) {
-    final String safe =
-        safeFilesystemString(inputString: storeName, throwIfInvalid: true);
-
-    storeDirectory = Directory(p.join(
-      rootDirectory.path,
-      safe,
-    ));
-
-    tileStorage = Directory(p.join(
-      storeDirectory.absolute.path,
-      'tileStorage',
-    ));
-
-    metadataStorage = Directory(p.join(
-      storeDirectory.absolute.path,
-      'metadataStorage',
-    ));
+    storeDirectory = rootDirectory.rootDirectory >>
+        (safeFilesystemString(inputString: storeName, throwIfInvalid: true));
 
     if (autoCreate) create();
   }
@@ -60,11 +56,12 @@ class StoreDirectory {
   //! READY CHECKERS !//
 
   /// Check whether all directories exist synchronously
-  bool get ready => tileStorage.existsSync() && metadataStorage.existsSync();
+  bool get ready =>
+      purposeDirectories.values.map((e) => e.existsSync()).every((e) => e);
 
   /// Check whether all directories exist asynchronously
   Future<bool> get readyAsync async =>
-      (await Future.wait([tileStorage.exists(), metadataStorage.exists()]))
+      (await Future.wait(purposeDirectories.values.map((e) => e.exists())))
           .every((e) => e);
 
   //! MANAGERS !//
@@ -72,16 +69,12 @@ class StoreDirectory {
   /// Create all of the directories synchronously
   void create() {
     storeDirectory.createSync();
-    tileStorage.createSync();
-    metadataStorage.createSync();
+    purposeDirectories.values.map((e) => e.createSync());
   }
 
   /// Create all of the directories asynchronously
-  Future<void> createAsync() async => await Future.wait([
-        storeDirectory.create(),
-        tileStorage.create(),
-        metadataStorage.create(),
-      ]);
+  Future<void> createAsync() async =>
+      await Future.wait(purposeDirectories.values.map((e) => e.create()));
 
   /// Delete all of the directories synchronously
   ///
@@ -92,6 +85,22 @@ class StoreDirectory {
   ///
   /// This will remove all traces of this library from the user's device. Use with caution!
   Future<void> deleteAsync() => storeDirectory.delete(recursive: true);
+
+  /// Empty/reset all of the directories synchronously
+  ///
+  /// This internally calls [delete] then [create] to achieve the same effect.
+  void reset() {
+    delete();
+    create();
+  }
+
+  /// Empty/reset all of the directories asynchronously
+  ///
+  /// This internally calls [deleteAsync] then [createAsync] to achieve the same effect.
+  Future<void> resetAsync() async {
+    await deleteAsync();
+    await createAsync();
+  }
 
   /// Rename the store directory synchronously
   ///
@@ -157,7 +166,7 @@ class StoreDirectory {
 
   @override
   String toString() {
-    return 'StoreDirectory(rootDirectory: $rootDirectory, storeDirectory: $storeDirectory, tileStorage: $tileStorage, metadataStorage: $metadataStorage)';
+    return 'StoreDirectory(rootDirectory: $rootDirectory, storeDirectory: $storeDirectory)';
   }
 
   @override
@@ -166,16 +175,11 @@ class StoreDirectory {
 
     return other is StoreDirectory &&
         other.rootDirectory == rootDirectory &&
-        other.storeDirectory == storeDirectory &&
-        other.tileStorage == tileStorage &&
-        other.metadataStorage == metadataStorage;
+        other.storeDirectory == storeDirectory;
   }
 
   @override
   int get hashCode {
-    return rootDirectory.hashCode ^
-        storeDirectory.hashCode ^
-        tileStorage.hashCode ^
-        metadataStorage.hashCode;
+    return rootDirectory.hashCode ^ storeDirectory.hashCode;
   }
 }

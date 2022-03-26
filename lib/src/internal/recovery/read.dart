@@ -12,8 +12,9 @@ Future<RecoveredRegion?> read(File file) async {
 
   final Config cfg = Config.fromStrings(await file.readAsLines());
 
+  final String identification = cfg.get('info', 'identification')!;
   final RegionType type =
-      RegionType.values.byName(cfg.get('type', 'regionType')!);
+      RegionType.values.byName(cfg.get('info', 'regionType')!);
 
   final int minZoom = int.parse(cfg.get('zoom', 'minZoom')!);
   final int maxZoom = int.parse(cfg.get('zoom', 'maxZoom')!);
@@ -60,6 +61,7 @@ Future<RecoveredRegion?> read(File file) async {
   }
 
   return RecoveredRegion.internal(
+    identification: identification,
     type: type,
     bounds: rectBounds,
     center: center,

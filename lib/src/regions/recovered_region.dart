@@ -15,6 +15,11 @@ import 'rectangle.dart';
 ///
 /// Should avoid manual construction. Use [toDownloadable] to restore a valid [DownloadableRegion].
 class RecoveredRegion {
+  /// A human-readable description of the download that the recovery file is attached to
+  ///
+  /// Not actually used when converting to [DownloadableRegion]
+  final String identification;
+
   /// The shape that this region conforms to
   final RegionType type;
 
@@ -62,6 +67,7 @@ class RecoveredRegion {
   /// Avoid construction using this method.
   @internal
   RecoveredRegion.internal({
+    required this.identification,
     required this.type,
     required this.bounds,
     required this.center,

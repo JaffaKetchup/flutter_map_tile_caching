@@ -9,7 +9,7 @@ export 'src/misc/validate.dart' hide safeFilesystemString;
 
 // Structure
 export 'src/structure/root.dart';
-export 'src/structure/store.dart';
+export 'src/structure/store.dart' hide PurposeDirectory;
 
 // Storage Managers & Download Progress
 export 'src/storage_managers/storage_manager.dart';
