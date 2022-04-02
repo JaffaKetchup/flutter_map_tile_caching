@@ -94,17 +94,13 @@ class MapCachingManager {
         .mergeAll(
           allStoresNames
               .map((name) =>
-                  StoreDirectory(rootDirectory: rootDirectory, storeName: name))
+                  StoreDirectory(rootDirectory: rootDirectory, name: name))
               .map(
                 (store) => MapCachingManager(storeDir: store)
                     .watchStoreChanges(enableDebounce)
                     .map((e) => null),
               ),
         );
-
-    //final Stream<void> stream = storeDirectory!.tileStorage
-    //    .watch(events: fileSystemEvents, recursive: true)
-    //   .map((_) => null);
 
     return enableDebounce ? stream.debounce(debounceDuration) : stream;
   }

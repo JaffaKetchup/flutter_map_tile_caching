@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:ini/ini.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:path/path.dart' as p;
 
 import '../../regions/circle.dart';
 import '../../regions/downloadable_region.dart';
@@ -14,17 +15,14 @@ Future<void> start(
   DownloadableRegion region,
   String identification,
 ) async {
-  if (await file.exists()) {
-    throw StateError(
-      'A download recovery file already exists. Only one download recovery per store is supported: use `cancelDownload()` if there is an ongoing download, or `recoverDownload()` to recover and delete the file if there is no download.',
-    );
-  }
   await file.create(recursive: true);
 
   final Config cfg = Config.fromStrings(await file.readAsLines());
 
   cfg.addSection('info');
   cfg.set('info', 'identification', identification);
+  cfg.set('info', 'time',
+      p.basenameWithoutExtension(file.absolute.path).split('.')[0]);
   cfg.set('info', 'regionType', region.type.name);
 
   cfg.addSection('zoom');

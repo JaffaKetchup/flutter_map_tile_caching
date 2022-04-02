@@ -2,6 +2,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
+import '../internal/recovery/recovery.dart';
 import 'circle.dart';
 import 'downloadable_region.dart';
 import 'line.dart';
@@ -19,6 +20,11 @@ class RecoveredRegion {
   ///
   /// Not actually used when converting to [DownloadableRegion]
   final String identification;
+
+  /// The time of the corresponding [Recovery] object's creation
+  ///
+  /// Not actually used when converting to [DownloadableRegion]
+  final DateTime time;
 
   /// The shape that this region conforms to
   final RegionType type;
@@ -68,6 +74,7 @@ class RecoveredRegion {
   @internal
   RecoveredRegion.internal({
     required this.identification,
+    required this.time,
     required this.type,
     required this.bounds,
     required this.center,

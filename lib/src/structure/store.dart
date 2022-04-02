@@ -30,11 +30,14 @@ class StoreDirectory {
   /// The real directory beneath which [purposeDirectories] reside
   late final Directory storeDirectory;
 
+  /// The user-friendly name of the store directory
+  final String name;
+
   /// Contains [Directory]s which purpose are dictated by their associated [PurposeDirectory] key
   Map<PurposeDirectory, Directory> get purposeDirectories => {
-        PurposeDirectory.tiles: storeDirectory >> ('tiles'),
-        PurposeDirectory.metadata: storeDirectory >> ('metadata'),
-        PurposeDirectory.stats: storeDirectory >> ('stats'),
+        PurposeDirectory.tiles: storeDirectory >> 'tiles',
+        PurposeDirectory.metadata: storeDirectory >> 'metadata',
+        PurposeDirectory.stats: storeDirectory >> 'stats',
       };
 
   /// Create a [StoreDirectory] set based on a [RootDirectory] and a valid/safe store name
@@ -44,11 +47,11 @@ class StoreDirectory {
   /// Construction via this method automatically calls [create] before returning (by default), so the caching directories will exist unless deleted using [delete]. Disable this initialisation by setting [autoCreate] to `false`.
   StoreDirectory({
     required this.rootDirectory,
-    required String storeName,
+    required this.name,
     bool autoCreate = true,
   }) {
     storeDirectory = rootDirectory.rootDirectory >>
-        (safeFilesystemString(inputString: storeName, throwIfInvalid: true));
+        (safeFilesystemString(inputString: name, throwIfInvalid: true));
 
     if (autoCreate) create();
   }
@@ -160,7 +163,7 @@ class StoreDirectory {
   }) {
     return StoreDirectory(
       rootDirectory: rootDir ?? rootDirectory,
-      storeName: storeName ?? p.basename(storeDirectory.absolute.path),
+      name: storeName ?? name,
     );
   }
 

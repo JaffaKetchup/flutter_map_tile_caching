@@ -56,17 +56,17 @@ enum CacheBehavior {
 ///
 /// See each property's individual documentation for more detail.
 class StorageCachingTileProvider extends TileProvider {
-  /// Container directory for stores (previously `parentDirectory`)
-  ///
-  /// Use [MapCachingManager.normalCache] wherever possible, or [MapCachingManager.temporaryCache] alternatively (see documentation). To use those [Future] values, you will need to wrap your [FlutterMap] widget in a [FutureBuilder] to await the returned directory or show a loading indicator; this shouldn't cause any interference. If creating a path manually, be sure it's the correct format, use the 'package:path' library if needed.
-  ///
-  /// Required.
-  late final RootDirectory rootDirectory;
+  // Container directory for stores (previously `parentDirectory`)
+  //
+  // Use [MapCachingManager.normalCache] wherever possible, or [MapCachingManager.temporaryCache] alternatively (see documentation). To use those [Future] values, you will need to wrap your [FlutterMap] widget in a [FutureBuilder] to await the returned directory or show a loading indicator; this shouldn't cause any interference. If creating a path manually, be sure it's the correct format, use the 'package:path' library if needed.
+  //
+  // Required.
+  //late final RootDirectory rootDirectory;
 
   /// Name of a store (to use for this instance), defaulting to 'mainStore'.
   ///
   /// Is validated through [safeFilesystemString] : an error will be thrown if the store name is given and invalid, see [validateStoreName] to validate names safely before construction.
-  late final StoreDirectory? storeDirectory;
+  final StoreDirectory storeDirectory;
 
   /// The behavior method to get and cache a tile. Also called `cacheBehaviour`.
   ///
@@ -110,25 +110,11 @@ class StorageCachingTileProvider extends TileProvider {
   ///
   /// See each property's individual documentation for more detail.
   StorageCachingTileProvider({
-    RootDirectory? rootDir,
-    StoreDirectory? storeDir,
-    //required this.rootDirectory,
-    //this.storeName = 'mainStore',
+    required this.storeDirectory,
     this.behavior = CacheBehavior.cacheFirst,
     this.cachedValidDuration = const Duration(days: 16),
     this.maxStoreLength = 20000,
-  }) {
-    //storeDirectory.createSync(recursive: true);
-
-    storeDirectory = storeDir;
-
-    if (rootDir == null && storeDir != null) rootDir = storeDir.rootDirectory;
-
-    if (rootDir == null && storeDir == null) {
-      throw ArgumentError(
-          'At least one of `rootDirectory` and/or `storeDirectory` must be provided as an argument');
-    }
-  }
+  });
 
   /// Converts a [MapCachingManager] to [StorageCachingTileProvider], using the same [parentDirectory] and [storeName] (which must be non-null).
   ///
@@ -138,8 +124,7 @@ class StorageCachingTileProvider extends TileProvider {
     this.behavior = CacheBehavior.cacheFirst,
     this.cachedValidDuration = const Duration(days: 16),
     this.maxStoreLength = 20000,
-  })  : rootDirectory = mapCachingManager.rootDirectory,
-        storeDirectory = mapCachingManager.storeDirectory;
+  }) : storeDirectory = mapCachingManager.storeDirectory!;
 
   /// Always call (if necessary) after finishing with caching, or in your widget's dispose methods
   ///
@@ -212,7 +197,10 @@ class StorageCachingTileProvider extends TileProvider {
     }
 
     if (!disableRecovery) {
-      await Recovery(storeDirectory).startRecovery(region);
+      await Recovery(storeDirectory).startRecovery(
+        region,
+        '${storeDirectory.name}: ${region.type.name[0].toUpperCase() + region.type.name.substring(1)} Type',
+      );
       _downloadOngoing = true;
     }
 
@@ -546,30 +534,6 @@ class StorageCachingTileProvider extends TileProvider {
 
     if (!applyRange) return tiles;
     return tiles.getRange(region.start, region.end ?? tiles.length).toList();
-  }
-
-  //! SHARED REQUIRERS !//
-
-  /// Functions that require [storeDirectory] should call to ensure they are usable
-  ///
-  /// If this doesn't throw, [rootDirectory] should also be available.
-  ///
-  /// Superset of [_rootRequired].
-  void get _storeRequired {
-    if (storeDirectory == null || !storeDirectory!.ready) {
-      throw ArgumentError(
-          '`storeDirectory` must be provided as an argument to use this method');
-    }
-  }
-
-  /// Functions that require [rootDirectory] should call to ensure they are usable
-  ///
-  /// Subset of [_storeRequired].
-  void get _rootRequired {
-    if (!rootDirectory.ready) {
-      throw ArgumentError(
-          '`rootDirectory` or `storeDirectory` must be provided as an argument to use this method');
-    }
   }
 }
 

@@ -5,9 +5,11 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map_tile_caching/src/structure/store.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as p show joinAll;
 import 'package:queue/queue.dart';
+
+import '../internal/exts.dart';
 
 import '../main.dart';
 import '../misc/validate.dart';
@@ -51,10 +53,9 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
   Future<Codec> _loadAsync(DecoderCallback decode) async {
     final String url = provider.getTileUrl(coords, options);
-    final File file = File(p.joinAll([
-      provider.storeDirectory.absolute.path,
-      safeFilesystemString(inputString: url, throwIfInvalid: false),
-    ]));
+    final File file =
+        provider.storeDirectory.purposeDirectories[PurposeDirectory.tiles]! >>>
+            safeFilesystemString(inputString: url, throwIfInvalid: false);
 
     // Logic to check whether the tile needs creating or updating
     final bool needsCreating = !(await file.exists());
@@ -115,7 +116,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
           File? currentOldestFile;
           DateTime? currentOldestDateTime;
 
-          await for (FileSystemEntity e in provider.storeDirectory.list()) {
+          await for (FileSystemEntity e in provider.storeDirectory.purposeDirectories[PurposeDirectory.tiles]!.list()) {
             if (e is! File) break;
 
             currentIteration++;

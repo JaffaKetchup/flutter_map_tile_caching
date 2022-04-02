@@ -5,11 +5,12 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as p show joinAll;
 import 'package:queue/queue.dart';
 
+import '../internal/exts.dart';
 import '../main.dart';
 import '../misc/validate.dart';
+import '../structure/store.dart';
 import 'tile_progress.dart';
 
 Stream<TileProgress> bulkDownloader({
@@ -62,13 +63,12 @@ Future<TileProgress> _getAndSaveTile({
   final Coords<double> coordDouble =
       Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
   final String url = provider.getTileUrl(coordDouble, options);
-  final String path = p.joinAll([
-    provider.storeDirectory.absolute.path,
-    safeFilesystemString(inputString: url, throwIfInvalid: false),
-  ]);
+  final File file =
+      provider.storeDirectory.purposeDirectories[PurposeDirectory.tiles]! >>>
+          safeFilesystemString(inputString: url, throwIfInvalid: false);
 
   try {
-    if (preventRedownload && await File(path).exists()) {
+    if (preventRedownload && await file.exists()) {
       return TileProgress(
         failedUrl: null,
         wasSeaTile: false,
@@ -77,15 +77,14 @@ Future<TileProgress> _getAndSaveTile({
       );
     }
 
-    File(path).writeAsBytesSync(
+    file.writeAsBytesSync(
       (await client.get(Uri.parse(url))).bodyBytes,
       flush: true,
     );
 
     if (seaTileBytes != null &&
-        const ListEquality()
-            .equals(await File(path).readAsBytes(), seaTileBytes)) {
-      await File(path).delete();
+        const ListEquality().equals(await file.readAsBytes(), seaTileBytes)) {
+      await file.delete();
       return TileProgress(
         failedUrl: null,
         wasSeaTile: true,

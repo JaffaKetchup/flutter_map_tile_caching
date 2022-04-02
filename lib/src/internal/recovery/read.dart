@@ -13,6 +13,8 @@ Future<RecoveredRegion?> read(File file) async {
   final Config cfg = Config.fromStrings(await file.readAsLines());
 
   final String identification = cfg.get('info', 'identification')!;
+  final DateTime time =
+      DateTime.fromMillisecondsSinceEpoch(int.parse(cfg.get('info', 'time')!));
   final RegionType type =
       RegionType.values.byName(cfg.get('info', 'regionType')!);
 
@@ -62,6 +64,7 @@ Future<RecoveredRegion?> read(File file) async {
 
   return RecoveredRegion.internal(
     identification: identification,
+    time: time,
     type: type,
     bounds: rectBounds,
     center: center,
