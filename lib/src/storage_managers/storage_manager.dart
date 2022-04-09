@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p show joinAll, split;
 import 'package:path_provider/path_provider.dart';
 import 'package:stream_transform/stream_transform.dart';
+import 'package:watcher/watcher.dart';
 
 import '../main.dart';
 import '../misc/validate.dart';
@@ -163,14 +164,7 @@ class MapCachingManager {
   }) {
     _cacheRequired;
 
-    if (!FileSystemEntity.isWatchSupported) {
-      throw UnsupportedError(
-          'Watching is not supported on the current platform');
-    }
-
-    final Stream<void> stream = parentDirectory
-        .watch(events: fileSystemEvents, recursive: true)
-        .map((_) => null);
+    final Stream<void> stream = DirectoryWatcher(parentDirectory.absolute.path).events.map((_) => null);
 
     return enableDebounce ? stream.debounce(debounceDuration) : stream;
   }
@@ -197,13 +191,8 @@ class MapCachingManager {
   }) {
     _storeRequired;
 
-    if (!FileSystemEntity.isWatchSupported) {
-      throw UnsupportedError(
-          'Watching is not supported on the current platform');
-    }
+    final Stream<void> stream = DirectoryWatcher(storeDirectory!.absolute.path).events.map((_) => null);
 
-    final Stream<void> stream =
-        storeDirectory!.watch(events: fileSystemEvents).map((event) => null);
 
     return enableDebounce ? stream.debounce(debounceDuration) : stream;
   }
