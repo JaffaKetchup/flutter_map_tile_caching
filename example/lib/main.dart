@@ -1,5 +1,6 @@
 import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
 import 'pages/bulk_downloader/bulk_downloader.dart';
@@ -10,7 +11,8 @@ import 'pages/store_manager/store_manager.dart';
 import 'state/bulk_download_provider.dart';
 import 'state/general_provider.dart';
 
-void main() {
+void main() async {
+  FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
   runApp(const MyApp());
 }
 

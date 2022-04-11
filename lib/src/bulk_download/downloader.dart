@@ -10,7 +10,6 @@ import 'package:queue/queue.dart';
 import '../internal/exts.dart';
 import '../main.dart';
 import '../misc/validate.dart';
-import '../structure/store.dart';
 import 'tile_progress.dart';
 
 Stream<TileProgress> bulkDownloader({
@@ -63,9 +62,8 @@ Future<TileProgress> _getAndSaveTile({
   final Coords<double> coordDouble =
       Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
   final String url = provider.getTileUrl(coordDouble, options);
-  final File file =
-      provider.storeDirectory.purposeDirectories[PurposeDirectory.tiles]! >>>
-          safeFilesystemString(inputString: url, throwIfInvalid: false);
+  final File file = provider.storeDirectory.access.tiles >>>
+      safeFilesystemString(inputString: url, throwIfInvalid: false);
 
   try {
     if (preventRedownload && await file.exists()) {

@@ -1,5 +1,7 @@
-import 'internal/store.dart';
-import 'structure/root.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+
+import '../internal/store/directory.dart';
+import '../structure/root.dart';
 
 /// Direct alias for easier development
 ///
@@ -10,6 +12,7 @@ typedef FMTC = FlutterMapTileCaching;
 ///
 /// Each key has an [Object] assigned, such as a [bool] or [String].
 enum FMTCSettings {
+  /*
   /// Whether to apply compression to tile stores when not in use (alpha - use with caution)
   ///
   /// Value/Default: [bool]/`false`
@@ -19,6 +22,8 @@ enum FMTCSettings {
   ///
   /// Value/Default: [bool]/`true`
   advancedCaching,
+  */
+  noSettings,
 }
 
 /// Main singleton access point for 'flutter_map_tile_caching'
@@ -75,10 +80,7 @@ class FlutterMapTileCaching {
   }
 
   /// The default global 'flutter_map_tile_caching' settings, used in [settings]
-  static const Map<FMTCSettings, Object> settingsDefault = {
-    FMTCSettings.compression: false,
-    FMTCSettings.advancedCaching: true,
-  };
+  static const Map<FMTCSettings, Object> settingsDefault = {};
 
   /// Get a [StoreDirectory] by store name
   StoreDirectory operator [](String storeName) =>
@@ -86,11 +88,7 @@ class FlutterMapTileCaching {
 }
 
 void main() async {
-  FlutterMapTileCaching.initialise(
-    await RootDirectory.normalCache,
-    settings: {
-      FMTCSettings.advancedCaching: false,
-    },
-  );
-  FMTC.instance['s'];
+  FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
+  FMTC.instance['s'].stats;
+  FMTC.instance.rootDirectory;
 }

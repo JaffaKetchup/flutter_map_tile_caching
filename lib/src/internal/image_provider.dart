@@ -114,9 +114,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
           File? currentOldestFile;
           DateTime? currentOldestDateTime;
 
-          await for (FileSystemEntity e in provider
-              .storeDirectory.access.tiles
-              .list()) {
+          await for (FileSystemEntity e
+              in provider.storeDirectory.access.tiles.list()) {
             if (e is! File) break;
 
             currentIteration++;

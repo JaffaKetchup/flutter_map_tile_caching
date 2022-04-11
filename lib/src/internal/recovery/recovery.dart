@@ -3,7 +3,7 @@ import 'dart:io';
 import '../../regions/downloadable_region.dart';
 import '../../regions/recovered_region.dart';
 import '../exts.dart';
-import '../store.dart';
+import '../store/directory.dart';
 import 'end.dart';
 import 'read.dart';
 import 'start.dart';

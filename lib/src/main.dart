@@ -27,7 +27,7 @@ import 'regions/downloadable_region.dart';
 import 'regions/recovered_region.dart';
 import 'storage_managers/storage_manager.dart';
 import 'structure/root.dart';
-import 'internal/store.dart';
+import 'internal/store/directory.dart';
 
 /// Multiple behaviors dictating how browse caching should be carried out
 ///
