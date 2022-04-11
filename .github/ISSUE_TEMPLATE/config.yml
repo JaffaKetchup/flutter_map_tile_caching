@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: flutter_map Issues
+    url: https://github.com/fleaflet/flutter_map/issues
+    about: If your issue is due to a problem in 'flutter_map', please post your issue there instead
