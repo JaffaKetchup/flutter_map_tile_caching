@@ -38,7 +38,7 @@ class _BackgroundDownloadState extends State<BackgroundDownload> {
     mapSource ??= context
         .read<GeneralProvider>()
         .persistent!
-        .getString('${widget.mcm.storeName}: sourceURL');
+        .getString('${widget.mcm._storeName}: sourceURL');
   }
 
   @override

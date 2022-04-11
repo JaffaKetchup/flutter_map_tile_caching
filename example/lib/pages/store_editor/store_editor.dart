@@ -59,30 +59,30 @@ class _StoreEditorState extends State<StoreEditor> {
 
     if (mcm != null) {
       options['storeName'] = [
-        mcm?.storeName ?? 'Default Store',
-        mcm?.storeName ?? 'Default Store'
+        mcm?._storeName ?? 'Default Store',
+        mcm?._storeName ?? 'Default Store'
       ];
 
       final String? _sourceURL =
-          provider.persistent!.getString('${mcm!.storeName}: sourceURL');
+          provider.persistent!.getString('${mcm!._storeName}: sourceURL');
       if (_sourceURL != null) {
         options['sourceURL'] = [_sourceURL, _sourceURL];
       }
 
       final String? _cacheBehaviour =
-          provider.persistent!.getString('${mcm!.storeName}: cacheBehaviour');
+          provider.persistent!.getString('${mcm!._storeName}: cacheBehaviour');
       if (_cacheBehaviour != null) {
         options['cacheBehaviour'] = [_cacheBehaviour, _cacheBehaviour];
       }
 
       final int? _validDuration =
-          provider.persistent!.getInt('${mcm!.storeName}: validDuration');
+          provider.persistent!.getInt('${mcm!._storeName}: validDuration');
       if (_validDuration != null) {
         options['validDuration'] = [_validDuration, _validDuration];
       }
 
       final int? _maxTiles =
-          provider.persistent!.getInt('${mcm!.storeName}: maxTiles');
+          provider.persistent!.getInt('${mcm!._storeName}: maxTiles');
       if (_maxTiles != null) options['maxTiles'] = [_maxTiles, _maxTiles];
     }
   }

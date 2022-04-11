@@ -41,7 +41,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
     final String? mapSource = context
         .read<GeneralProvider>()
         .persistent!
-        .getString('${mcm!.storeName}: sourceURL');
+        .getString('${mcm!._storeName}: sourceURL');
 
     final BulkDownloadProvider bdp = context.read<BulkDownloadProvider>();
 

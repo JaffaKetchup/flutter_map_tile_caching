@@ -61,7 +61,7 @@ void showRecoverySheet({
                   context.read<BulkDownloadProvider>();
 
               final RecoveredRegion region = (await StorageCachingTileProvider(
-                      parentDirectory: cacheDir, storeName: name)
+                      parentDirectory: cacheDir, _storeName: name)
                   .recoverDownload())!;
 
               final String mapSource = context
@@ -116,7 +116,7 @@ void showRecoverySheet({
                   ),
                   onPressed: () async {
                     await StorageCachingTileProvider(
-                            parentDirectory: cacheDir, storeName: name)
+                            parentDirectory: cacheDir, _storeName: name)
                         .recoverDownload();
                     Navigator.of(context).pop();
                     Navigator.of(context).popAndPushNamed('/');

@@ -19,7 +19,7 @@ import '../structure/store.dart';
 ///
 /// All operations have two versions (synchronous and asynchronous). The first provides decreases code complexity at the expense of worse performance; the latter is the opposite.
 ///
-/// Functions may throw errors if requirements aren't met: for example, [allStoresNames] requires the [parentDirectory] to exist, whilst [storeName] requires [storeDirectory] to exist, and therefore [storeName] not to be `null`.
+/// Functions may throw errors if requirements aren't met: for example, [allStoresNames] requires the [parentDirectory] to exist, whilst [_storeName] requires [storeDirectory] to exist, and therefore [_storeName] not to be `null`.
 class MapCachingManager {
   /// Set of directories, on the cache level
   ///
@@ -48,7 +48,7 @@ class MapCachingManager {
   }) {
     storeDirectory = storeDir;
 
-    if (rootDir == null && storeDir != null) rootDir = storeDir.rootDirectory;
+    if (rootDir == null && storeDir != null) rootDir = storeDir._rootDirectory;
 
     if (rootDir == null && storeDir == null) {
       throw ArgumentError(
@@ -93,8 +93,8 @@ class MapCachingManager {
         .map((_) => null)
         .mergeAll(
           allStoresNames
-              .map((name) =>
-                  StoreDirectory(rootDirectory: rootDirectory, name: name))
+              .map((name) => StoreDirectory(
+                  _rootDirectory: rootDirectory, _storeName: name))
               .map(
                 (store) => MapCachingManager(storeDir: store)
                     .watchStoreChanges(enableDebounce)
@@ -194,7 +194,7 @@ class MapCachingManager {
     double returnable = 0;
     for (String name in allStoresNames) {
       returnable +=
-          copyWith(storeDir: storeDirectory!.copyWith(storeName: name))
+          copyWith(storeDir: storeDirectory!.copyWith(_storeName: name))
               .storeSize;
     }
 
@@ -220,7 +220,7 @@ class MapCachingManager {
     int returnable = 0;
     for (String name in allStoresNames) {
       returnable +=
-          copyWith(storeDir: storeDirectory!.copyWith(storeName: name))
+          copyWith(storeDir: storeDirectory!.copyWith(_storeName: name))
               .storeLength;
     }
 

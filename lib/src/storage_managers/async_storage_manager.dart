@@ -14,11 +14,11 @@ import 'storage_manager.dart';
 ///
 /// See [StorageCachingTileProvider] for object that manages browse caching and bulk downloading
 ///
-/// On initialisation, automatically creates the cache & store, if applicable, if they do not exist. Store will not be created if not specified. To check whether a store exists, you should see the [existsAsync] method's documentation - calling that method with [storeName] specified here as well will always cause `true` to be returned.
+/// On initialisation, automatically creates the cache & store, if applicable, if they do not exist. Store will not be created if not specified. To check whether a store exists, you should see the [existsAsync] method's documentation - calling that method with [_storeName] specified here as well will always cause `true` to be returned.
 ///
 /// All operations have two versions (synchronous and asynchronous). The first provides decreases code complexity at the expense of worse performance; the latter is the opposite.
 ///
-/// Functions may throw errors if requirements aren't met: for example, [allStoresNames] requires the [parentDirectory] to exist, whilst [storeName] requires [storeDirectory] to exist, and therefore [storeName] not to be `null`.
+/// Functions may throw errors if requirements aren't met: for example, [allStoresNames] requires the [parentDirectory] to exist, whilst [_storeName] requires [storeDirectory] to exist, and therefore [_storeName] not to be `null`.
 extension AsyncMapCachingManager on MapCachingManager {
   /// Check if a store exists
   ///
@@ -197,7 +197,7 @@ extension AsyncMapCachingManager on MapCachingManager {
     throw FallThroughError();
   }
 
-  /// Functions that require [storeDirectory] or [storeName] should call to ensure they are usable
+  /// Functions that require [storeDirectory] or [_storeName] should call to ensure they are usable
   ///
   /// Superset of [_cacheRequired].
   Future<void> get _storeRequired async {

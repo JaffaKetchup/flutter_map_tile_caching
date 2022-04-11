@@ -88,16 +88,16 @@ class _StoreModalState extends State<StoreModal> {
             ListTile(
               title: Text(
                 'Delete Permanently',
-                style: provider.storeName == widget.currentMCM.storeName
+                style: provider.storeName == widget.currentMCM._storeName
                     ? null
                     : const TextStyle(color: Colors.red),
               ),
-              subtitle: provider.storeName != widget.currentMCM.storeName
+              subtitle: provider.storeName != widget.currentMCM._storeName
                   ? null
                   : const Text('Cannot delete store currently in use'),
               leading: Icon(
                 Icons.delete_forever,
-                color: provider.storeName == widget.currentMCM.storeName
+                color: provider.storeName == widget.currentMCM._storeName
                     ? null
                     : Colors.red,
               ),
@@ -107,12 +107,12 @@ class _StoreModalState extends State<StoreModal> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                        '${widget.currentMCM.storeName} deleted successfully'),
+                        '${widget.currentMCM._storeName} deleted successfully'),
                   ),
                 );
               },
               visualDensity: VisualDensity.compact,
-              enabled: provider.storeName != widget.currentMCM.storeName,
+              enabled: provider.storeName != widget.currentMCM._storeName,
             ),
           ],
         ),

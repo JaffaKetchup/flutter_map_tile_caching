@@ -1,7 +1,5 @@
 import 'package:meta/meta.dart';
 
-import '../structure/store.dart';
-
 /// Makes any store name string safe for storing in a filesystem structure, platform-universally
 ///
 /// Note that this is not 100% secure/guaranteed: eg. control characters (except NUL) and potential reserved names are not checked.

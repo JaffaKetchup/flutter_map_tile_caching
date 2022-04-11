@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
-import 'store.dart';
-
 /// Manages the directory beneath which 'flutter_map_tile_caching' places all data, such as multiple [StoreDirectory]s
 ///
 /// Usually only one of these should exist per application (representing one real directory), but multiple can be used if necessary

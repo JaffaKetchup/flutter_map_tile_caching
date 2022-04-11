@@ -27,7 +27,7 @@ import 'regions/downloadable_region.dart';
 import 'regions/recovered_region.dart';
 import 'storage_managers/storage_manager.dart';
 import 'structure/root.dart';
-import 'structure/store.dart';
+import 'internal/store.dart';
 
 /// Multiple behaviors dictating how browse caching should be carried out
 ///
@@ -47,7 +47,7 @@ enum CacheBehavior {
 
 /// A [TileProvider] to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
 ///
-/// Requires a valid cache directory: [parentDirectory]. [storeName] defaults to the default store, 'mainStore', but can be overriden to different stores. On initialisation, automatically creates the cache store if it does not exist.
+/// Requires a valid cache directory: [parentDirectory]. [_storeName] defaults to the default store, 'mainStore', but can be overriden to different stores. On initialisation, automatically creates the cache store if it does not exist.
 ///
 /// Optionally adjust:
 ///  - [maxStoreLength] - the number of tiles that can be stored at once in this cache store
@@ -101,7 +101,7 @@ class StorageCachingTileProvider extends TileProvider {
 
   /// Create a `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
   ///
-  /// Requires a valid cache directory: [parentDirectory]. [storeName] defaults to the default store, 'mainStore', but can be overriden to different stores. On initialisation, automatically creates the cache store if it does not exist.
+  /// Requires a valid cache directory: [parentDirectory]. [_storeName] defaults to the default store, 'mainStore', but can be overriden to different stores. On initialisation, automatically creates the cache store if it does not exist.
   ///
   /// Optionally adjust:
   ///  - [maxStoreLength] - the number of tiles that can be stored at once in this cache store
@@ -116,7 +116,7 @@ class StorageCachingTileProvider extends TileProvider {
     this.maxStoreLength = 20000,
   });
 
-  /// Converts a [MapCachingManager] to [StorageCachingTileProvider], using the same [parentDirectory] and [storeName] (which must be non-null).
+  /// Converts a [MapCachingManager] to [StorageCachingTileProvider], using the same [parentDirectory] and [_storeName] (which must be non-null).
   ///
   /// For more information about this constructor, see the main class [StorageCachingTileProvider].
   StorageCachingTileProvider.fromMapCachingManager(
@@ -199,7 +199,7 @@ class StorageCachingTileProvider extends TileProvider {
     if (!disableRecovery) {
       await Recovery(storeDirectory).startRecovery(
         region,
-        '${storeDirectory.name}: ${region.type.name[0].toUpperCase() + region.type.name.substring(1)} Type',
+        '${storeDirectory.storeName}: ${region.type.name[0].toUpperCase() + region.type.name.substring(1)} Type',
       );
       _downloadOngoing = true;
     }

@@ -38,7 +38,7 @@ AppBar buildAppBar(BuildContext context) {
                 return FutureBuilder<List<RecoveredRegion?>>(
                   future: Future.wait(names.data!.map((e) =>
                       StorageCachingTileProvider(
-                              parentDirectory: cacheDir.data!, storeName: e)
+                              parentDirectory: cacheDir.data!, _storeName: e)
                           .recoverDownload(deleteRecovery: false))),
                   builder: (context, rec) {
                     if (!rec.hasData) return checkingRecovery;

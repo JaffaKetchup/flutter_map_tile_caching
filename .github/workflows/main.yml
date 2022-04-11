@@ -1,18 +1,16 @@
-name: Run Dart Package Analyzer
+name: Analyse Package & Contents
 on: [push, workflow_dispatch]
 
 jobs:
   package-analysis:
+    name: "Analyse Package"
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
-
       - uses: axel-op/dart-package-analyzer@v3
         id: analysis
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Check Scores
         env:
           TOTAL: ${{ steps.analysis.outputs.total }}
@@ -23,3 +21,16 @@ jobs:
             echo Total score below expected minimum score. Improve the score!
             exit 1
           fi
+
+  content-analysis:
+    name: "Analyse Contents"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+      - run: flutter --version
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: dart analyze --fatal-infos --fatal-warnings

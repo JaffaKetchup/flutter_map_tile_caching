@@ -77,7 +77,7 @@ class _StoreManagerState extends State<StoreManager> {
                             builder: (context) {
                               return StoreModal(
                                 currentMCM: mcm.copyWith(
-                                    storeName: storeNames.data![0]),
+                                    _storeName: storeNames.data![0]),
                                 storeNames: storeNames.data!,
                               );
                             },
@@ -87,13 +87,13 @@ class _StoreManagerState extends State<StoreManager> {
                         child: ListView.separated(
                           itemBuilder: (context, i) {
                             final MapCachingManager currentMCM =
-                                mcm.copyWith(storeName: storeNames.data![i]);
+                                mcm.copyWith(_storeName: storeNames.data![i]);
 
                             return StreamBuilder<void>(
                                 stream: currentMCM.watchStoreChanges(true),
                                 builder: (context, _) {
                                   return ListTile(
-                                    title: Text(currentMCM.storeName!),
+                                    title: Text(currentMCM._storeName!),
                                     subtitle: FutureBuilder<List<num>>(
                                       future: Future.wait([
                                         currentMCM.storeLengthAsync,
@@ -113,12 +113,12 @@ class _StoreManagerState extends State<StoreManager> {
                                     ),
                                     leading: buildListTileImage(currentMCM),
                                     trailing: provider.storeName ==
-                                            currentMCM.storeName
+                                            currentMCM._storeName
                                         ? const Icon(Icons.done)
                                         : null,
                                     onTap: () async {
                                       provider.storeName =
-                                          currentMCM.storeName!;
+                                          currentMCM._storeName!;
                                       provider.persistent!.setString(
                                           'lastUsedStore', provider.storeName);
                                       PaintingBinding.instance?.imageCache

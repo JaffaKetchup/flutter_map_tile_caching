@@ -2,8 +2,8 @@ import 'dart:io';
 
 import '../../regions/downloadable_region.dart';
 import '../../regions/recovered_region.dart';
-import '../../structure/store.dart';
 import '../exts.dart';
+import '../store.dart';
 import 'end.dart';
 import 'read.dart';
 import 'start.dart';
@@ -15,8 +15,7 @@ class Recovery {
 
   /// Used internally to manage bulk download recovery
   Recovery(StoreDirectory storeDirectory)
-      : recoveryFile = storeDirectory
-                .purposeDirectories[PurposeDirectory.metadata]! >>>
+      : recoveryFile = storeDirectory.access.metadata >>>
             '${DateTime.now().millisecondsSinceEpoch.toString()}.recovery.ini';
 
   /// Start the recovery - create and configure the file

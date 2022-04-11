@@ -51,7 +51,7 @@ class _BulkDownloaderState extends State<BulkDownloader> {
     mapSource ??= context
             .read<GeneralProvider>()
             .persistent!
-            .getString('${mcm!.storeName}: sourceURL') ??
+            .getString('${mcm!._storeName}: sourceURL') ??
         'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   }
 
