@@ -1,15 +1,15 @@
 // This is 'flutter_map_tile_caching's' main file
 // You should never need to include anything other than this file from this library in your project
 
-export 'src/fmtc/fmtc.dart';
+export 'src/fmtc.dart';
 export 'src/main.dart';
 
 // Misc
-export 'src/misc/typedefs_and_exts.dart';
+export 'src/misc/typedefs.dart';
 export 'src/misc/validate.dart' hide safeFilesystemString;
 
 // Structure
-export 'src/structure/root.dart';
+export 'src/root/directory.dart';
 
 // Storage Managers & Download Progress
 export 'src/storage_managers/storage_manager.dart';

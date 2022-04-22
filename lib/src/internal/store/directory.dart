@@ -1,7 +1,5 @@
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-
 import '../../misc/validate.dart';
-import '../../structure/root.dart';
+import '../../root/directory.dart';
 import 'access.dart';
 import 'manage.dart';
 import 'statistics.dart';
@@ -13,7 +11,7 @@ import 'statistics.dart';
 /// * Management
 /// * Low-Level Access (advanced)
 ///
-/// A store is identified by it's validated store name, and represents a directory that resides within a [RootDirectory]. Each store contains multiple sub-directories.
+/// A store is identified by it's validated store name (see [safeFilesystemString] - an error is throw if the name is invalid), and represents a directory that resides within a [RootDirectory]. Each store contains multiple sub-directories.
 class StoreDirectory {
   /// The container for all files used within this library
   final RootDirectory rootDirectory;
@@ -73,15 +71,6 @@ class StoreDirectory {
   /// Does not statistics about the root/all stores
   StoreStats get stats => StoreStats(this);
 
-  StoreDirectory copyWith({
-    RootDirectory? rootDirectory,
-    String? storeName,
-  }) =>
-      StoreDirectory(
-        rootDirectory ?? this.rootDirectory,
-        storeName ?? this.storeName,
-      );
-
   @override
   String toString() {
     return 'StoreDirectory(rootDirectory: $rootDirectory, storeName: $storeName)';
@@ -100,4 +89,13 @@ class StoreDirectory {
   int get hashCode {
     return rootDirectory.hashCode ^ storeName.hashCode;
   }
+
+  StoreDirectory copyWith({
+    RootDirectory? rootDirectory,
+    String? storeName,
+  }) =>
+      StoreDirectory(
+        rootDirectory ?? this.rootDirectory,
+        storeName ?? this.storeName,
+      );
 }

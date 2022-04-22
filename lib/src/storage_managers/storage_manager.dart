@@ -88,7 +88,7 @@ class MapCachingManager {
           'Watching is not supported on the current platform');
     }
 
-    final Stream<void> stream = rootDirectory.rootDirectory
+    final Stream<void> stream = rootDirectory._rootDirectory
         .watch(events: fileSystemEvents)
         .map((_) => null)
         .mergeAll(
@@ -161,7 +161,7 @@ class MapCachingManager {
     _rootRequired;
 
     List<String> returnable = [];
-    for (FileSystemEntity e in rootDirectory.rootDirectory
+    for (FileSystemEntity e in rootDirectory._rootDirectory
         .listSync(followLinks: false, recursive: false)) {
       returnable.add(p.split(e.absolute.path).last);
     }
@@ -207,7 +207,7 @@ class MapCachingManager {
 
     return int.parse(_cachedStatisticGetter(
       'length',
-      () => storeDirectory!.purposeDirectories[PurposeDirectory.tiles]!
+      () => storeDirectory!.purposeDirectories[PurposeDirectory.stores]!
           .listSync()
           .length,
     ));
@@ -259,7 +259,7 @@ class MapCachingManager {
     int i = 0;
 
     for (FileSystemEntity evt in storeDirectory!
-        .purposeDirectories[PurposeDirectory.tiles]!
+        .purposeDirectories[PurposeDirectory.stores]!
         .listSync()) {
       if (i >= (randInt ?? 0)) {
         return Image.file(
@@ -290,13 +290,13 @@ class MapCachingManager {
   @Deprecated(
       'Deprecated in favour of direct construction through [CacheDirectory.normalCache]. Migrate your code before the next minor release.')
   static Future<Directory> get normalCache async =>
-      (await RootDirectory.normalCache).rootDirectory;
+      (await RootDirectory.normalCache)._rootDirectory;
 
   /// Deprecated in favour of direct construction through [RootDirectory.temporaryCache]. Migrate your code before the next minor release.
   @Deprecated(
       'Deprecated in favour of direct construction through [CacheDirectory.temporaryCache]. Migrate your code before the next minor release.')
   static Future<Directory> get temporaryCache async =>
-      (await RootDirectory.temporaryCache).rootDirectory;
+      (await RootDirectory.temporaryCache)._rootDirectory;
 
   /// Deprecated in favour of [StoreDirectory.ready]. Migrate your code before the next minor release.
   @Deprecated(

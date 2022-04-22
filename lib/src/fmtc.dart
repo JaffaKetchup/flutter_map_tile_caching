@@ -1,11 +1,9 @@
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'root/directory.dart';
+import 'internal/store/directory.dart';
 
-import '../internal/store/directory.dart';
-import '../structure/root.dart';
-
-/// Direct alias for easier development
+/// Direct alias of [FlutterMapTileCaching] for easier development
 ///
-/// Prefer use of full [FlutterMapTileCaching] when initialising to ensure readability.
+/// Prefer use of full 'FlutterMapTileCaching' when initialising to ensure readability and understanding in other code.
 typedef FMTC = FlutterMapTileCaching;
 
 /// Keys for global 'flutter_map_tile_caching' settings
@@ -35,7 +33,7 @@ class FlutterMapTileCaching {
   /// The cache's root
   ///
   /// Recommended setup is `await RootDirectory.normalCache`, but any [RootDirectory] is accepted. [FlutterMapTileCaching] checks that [RootDirectory.ready] is 'true', otherwise a [StateError] is thrown.
-  late final RootDirectory rootDirectory;
+  late final RootDirectory _rootDirectory;
 
   /// Change global 'flutter_map_tile_caching' settings
   ///
@@ -55,10 +53,10 @@ class FlutterMapTileCaching {
   }) {
     if (!rootDir.ready) {
       throw StateError(
-        'Ensure supplied root directory exists. Try constructing it again.',
+        'Ensure supplied root directory exists. Try constructing it again, or using `rootDirectory.manage.create()`.',
       );
     }
-    rootDirectory = rootDir;
+    _rootDirectory = rootDir;
 
     _instance = this;
   }
@@ -84,11 +82,14 @@ class FlutterMapTileCaching {
 
   /// Get a [StoreDirectory] by store name
   StoreDirectory operator [](String storeName) =>
-      StoreDirectory(rootDirectory, storeName);
+      StoreDirectory(_rootDirectory, storeName);
+
+  /// Safely get the [RootDirectory] - ensures custom error is thrown instead of [LateInitializationError] if not initialized
+  RootDirectory get rootDirectory => instance._rootDirectory;
 }
 
 void main() async {
   FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
-  FMTC.instance['s'].stats;
-  FMTC.instance.rootDirectory;
+  FMTC.instance['s'].manage.deleteAsync();
+  FMTC.instance.rootDirectory.manage.deleteAsync();
 }

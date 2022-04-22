@@ -21,12 +21,11 @@ import 'bulk_download/tile_loops.dart';
 import 'bulk_download/tile_progress.dart';
 import 'internal/image_provider.dart';
 import 'internal/recovery/recovery.dart';
-import 'misc/typedefs_and_exts.dart';
+import 'misc/typedefs.dart';
 import 'misc/validate.dart';
 import 'regions/downloadable_region.dart';
 import 'regions/recovered_region.dart';
 import 'storage_managers/storage_manager.dart';
-import 'structure/root.dart';
 import 'internal/store/directory.dart';
 
 /// Multiple behaviors dictating how browse caching should be carried out

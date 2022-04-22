@@ -39,12 +39,12 @@ class StoreManagement {
 
   /// Delete all of the directories synchronously
   ///
-  /// This will remove all traces of this library from the user's device. Use with caution!
+  /// This will remove all traces of this store from the user's device. Use with caution!
   void delete() => _access.real.deleteSync(recursive: true);
 
   /// Delete all of the directories asynchronously
   ///
-  /// This will remove all traces of this library from the user's device. Use with caution!
+  /// This will remove all traces of this store from the user's device. Use with caution!
   Future<void> deleteAsync() => _access.real.delete(recursive: true);
 
   /// Empty/reset all of the directories synchronously
@@ -70,8 +70,8 @@ class StoreManagement {
     final String safe =
         safeFilesystemString(inputString: storeName, throwIfInvalid: true);
 
-    _access.real
-        .renameSync(p.joinAll([_storeDirectory.rootDirectory.path, safe]));
+    _access.real.renameSync(
+        p.joinAll([_storeDirectory.rootDirectory.access.real.path, safe]));
 
     return _storeDirectory.copyWith(storeName: safe);
   }
@@ -83,8 +83,8 @@ class StoreManagement {
     final String safe =
         safeFilesystemString(inputString: storeName, throwIfInvalid: true);
 
-    await _access.real
-        .rename(p.joinAll([_storeDirectory.rootDirectory.path, safe]));
+    await _access.real.rename(
+        p.joinAll([_storeDirectory.rootDirectory.access.real.path, safe]));
 
     return _storeDirectory.copyWith(storeName: safe);
   }
