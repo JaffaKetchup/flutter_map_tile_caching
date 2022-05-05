@@ -33,7 +33,7 @@ class FlutterMapTileCaching {
   /// The cache's root
   ///
   /// Recommended setup is `await RootDirectory.normalCache`, but any [RootDirectory] is accepted. [FlutterMapTileCaching] checks that [RootDirectory.ready] is 'true', otherwise a [StateError] is thrown.
-  late final RootDirectory _rootDirectory;
+  late final RootDirectory rootDirectory;
 
   /// Change global 'flutter_map_tile_caching' settings
   ///
@@ -56,8 +56,7 @@ class FlutterMapTileCaching {
         'Ensure supplied root directory exists. Try constructing it again, or using `rootDirectory.manage.create()`.',
       );
     }
-    _rootDirectory = rootDir;
-
+    rootDirectory = rootDir;
     _instance = this;
   }
 
@@ -82,14 +81,12 @@ class FlutterMapTileCaching {
 
   /// Get a [StoreDirectory] by store name
   StoreDirectory operator [](String storeName) =>
-      StoreDirectory(_rootDirectory, storeName);
-
-  /// Safely get the [RootDirectory] - ensures custom error is thrown instead of [LateInitializationError] if not initialized
-  RootDirectory get rootDirectory => instance._rootDirectory;
+      StoreDirectory(rootDirectory, storeName);
 }
 
 void main() async {
   FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
   FMTC.instance['s'].manage.deleteAsync();
   FMTC.instance.rootDirectory.manage.deleteAsync();
+  FMTC.instance.rootDirectory.stats.noCache.rootLength;
 }

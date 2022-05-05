@@ -17,3 +17,7 @@ extension DirectoryExtensions on Directory {
         name,
       ));
 }
+
+extension IterableNumExts on Iterable<num> {
+  num get sum => reduce((v, e) => v + e);
+}

@@ -1,6 +1,7 @@
 import 'dart:io';
+import 'dart:math';
 
-import 'package:collection/collection.dart';
+import 'package:flutter/widgets.dart';
 
 import '../exts.dart';
 import 'access.dart';
@@ -64,14 +65,10 @@ class StoreStats {
   /// Includes all files beneath the store, not necessarily just tiles.
   double get storeSize => double.parse(_csgSync(
         'size',
-        () {
-          int totalSize = 0;
-          for (FileSystemEntity e in _access.real.listSync(recursive: true)) {
-            totalSize += e is File ? e.lengthSync() : 0;
-          }
-
-          return totalSize / 1024;
-        },
+        () => _access.real
+            .listSync(recursive: true)
+            .map((e) => e is File ? e.lengthSync() / 1024 : 0)
+            .sum,
       ));
 
   /// Retrieve the size of the store in kibibytes (KiB)
@@ -81,19 +78,11 @@ class StoreStats {
   /// Includes all files beneath the store, not necessarily just tiles.
   Future<double> get storeSizeAsync async => double.parse(await _csgAsync(
         'size',
-        () async {
-          return (await _access.real.list(recursive: true).asyncMap((e) async {
-                if (e is! File) return 0;
-
-                try {
-                  return await e.length();
-                } catch (e) {
-                  return 0;
-                }
-              }).toList())
-                  .sum /
-              1024;
-        },
+        () async => (await _access.real
+                .list(recursive: true)
+                .asyncMap((e) async => e is File ? await e.length() / 1024 : 0)
+                .toList())
+            .sum,
       ));
 
   /// Retrieve the number of stored tiles in a store
@@ -115,4 +104,91 @@ class StoreStats {
         'length',
         () async => await _access.tiles.list().length,
       ));
+
+  /// Retrieves a (potentially random) tile from the store and uses it to create a cover [Image]
+  ///
+  /// [random] controls whether the chosen tile is chosen at random or whether the chosen tile is the 'first' tile in the store. Note that 'first' means alphabetically, not chronologically.
+  ///
+  /// Using random mode may take a while to generate if the random number is large.
+  ///
+  /// If using random mode, optionally set [maxRange] to an integer (1 <= [maxRange] <= [storeLength]) to only generate a random number between 0 and the specified number. Useful to reduce waiting times or enforce consistency.
+  ///
+  /// Returns `null` if there are no cached tiles.
+  Image? coverImage({
+    required bool random,
+    int? maxRange,
+    double? size,
+  }) {
+    final int storeLen = storeLength;
+    if (storeLen == 0) return null;
+
+    if (!random && maxRange != null) {
+      throw ArgumentError(
+          'If not in random mode, `maxRange` must be left as `null`');
+    }
+    if (maxRange != null && (maxRange < 1 || maxRange > storeLen)) {
+      throw ArgumentError(
+          'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`');
+    }
+
+    final int? randInt = !random ? null : Random().nextInt(maxRange!);
+    int i = 0;
+
+    for (FileSystemEntity e in _access.tiles.listSync()) {
+      if (i >= (randInt ?? 0)) {
+        return Image.file(
+          File(e.absolute.path),
+          width: size,
+          height: size,
+        );
+      }
+      i++;
+    }
+
+    throw FallThroughError();
+  }
+
+  /// Retrieves a (potentially random) tile from the store and uses it to create a cover [Image]
+  ///
+  /// [random] controls whether the chosen tile is chosen at random or whether the chosen tile is the 'first' tile in the store. Note that 'first' means alphabetically, not chronologically.
+  ///
+  /// Using random mode may take a while to generate if the random number is large.
+  ///
+  /// If using random mode, optionally set [maxRange] to an integer (1 <= [maxRange] <= [storeLength]) to only generate a random number between 0 and the specified number. Useful to reduce waiting times or enforce consistency.
+  ///
+  /// Returns `null` if there are no cached tiles.
+  Future<Image?> coverImageAsync({
+    required bool random,
+    int? maxRange,
+    double? size,
+  }) async {
+    final int storeLen = await storeLengthAsync;
+    if (storeLen == 0) return null;
+
+    if (!random && maxRange != null) {
+      throw ArgumentError(
+          'If not in random mode, `maxRange` must be left as `null`');
+    }
+    if (maxRange != null && (maxRange < 1 || maxRange > storeLen)) {
+      throw ArgumentError(
+          'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`');
+    }
+
+    final int? randInt = !random ? null : Random().nextInt(maxRange!);
+
+    int i = 0;
+
+    await for (FileSystemEntity e in _access.tiles.list()) {
+      if (i >= (randInt ?? 0)) {
+        return Image.file(
+          File(e.absolute.path),
+          width: size,
+          height: size,
+        );
+      }
+      i++;
+    }
+
+    throw FallThroughError();
+  }
 }

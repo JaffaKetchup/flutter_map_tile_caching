@@ -1,6 +1,9 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 import '../internal/exts.dart';
+import '../internal/store/directory.dart';
 import 'access.dart';
 import 'directory.dart';
 
@@ -55,25 +58,54 @@ class RootStats {
     }
   }
 
+  /// Retrieve all the available [StoreDirectory]s
+  ///
+  /// For asynchronous version, see [storesAvailableAsync]. Note that this statstic is not cached for performance, as the effect would be negligible.
+  List<StoreDirectory> get storesAvailable => _access.stores
+      .listSync()
+      .map((e) => e is Directory
+          ? StoreDirectory(_rootDirectory, p.split(e.absolute.path).last)
+          : null)
+      .whereType<StoreDirectory>()
+      .toList();
+
+  /// Retrieve all the available [StoreDirectory]s
+  ///
+  /// For synchronous version, see [storesAvailable]. Note that this statstic is not cached for performance, as the effect would be negligible.
+  Future<List<StoreDirectory>> get storesAvailableAsync async => (await _access
+          .stores
+          .list()
+          .map((e) => e is Directory
+              ? StoreDirectory(_rootDirectory, p.split(e.absolute.path).last)
+              : null)
+          .toList())
+      .whereType<StoreDirectory>()
+      .toList();
+
   /// Retrieve the size of the root in kibibytes (KiB)
   ///
   /// For asynchronous version, see [rootSizeAsync].
   ///
-  /// Includes all files beneath the root, not necessarily just tiles.
+  /// Technically just sums up the size of all sub-stores, thus ignoring any cached root statistics, etc.
+  ///
+  /// Includes all files in all stores, not necessarily just tiles.
   double get rootSize => double.parse(_csgSync(
         'size',
-        () {},
+        () => storesAvailable.map((e) => e.stats.storeSize).sum,
       ));
 
   /// Retrieve the size of the root in kibibytes (KiB)
   ///
-  /// For asynchronous version, see [rootSize].
+  /// For synchronous version, see [rootSize].
   ///
-  /// Includes all files beneath the root, not necessarily just tiles.
+  /// Technically just sums up the size of all sub-stores, thus ignoring any cached root statistics, etc.
+  ///
+  /// Includes all files in all stores, not necessarily just tiles.
   Future<double> get rootSizeAsync async => double.parse(await _csgAsync(
-        'size',
-        () async {},
-      ));
+      'size',
+      () async => (await Future.wait(
+              (await storesAvailableAsync).map((e) => e.stats.storeSizeAsync)))
+          .sum));
 
   /// Retrieve the number of stored tiles in all sub-stores.
   ///
@@ -82,7 +114,7 @@ class RootStats {
   /// Only includes tiles stored, not necessarily all files.
   int get rootLength => int.parse(_csgSync(
         'length',
-        () {},
+        () => storesAvailable.map((e) => e.stats.storeLength).sum,
       ));
 
   /// Retrieve the number of stored tiles in all sub-stores.
@@ -92,6 +124,8 @@ class RootStats {
   /// Only includes tiles stored, not necessarily all files.
   Future<int> get rootLengthAsync async => int.parse(await _csgAsync(
         'length',
-        () async {},
+        () async => (await Future.wait((await storesAvailableAsync)
+                .map((e) => e.stats.storeLengthAsync)))
+            .sum,
       ));
 }

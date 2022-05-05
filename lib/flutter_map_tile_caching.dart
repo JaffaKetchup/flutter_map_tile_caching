@@ -12,8 +12,8 @@ export 'src/misc/validate.dart' hide safeFilesystemString;
 export 'src/root/directory.dart';
 
 // Storage Managers & Download Progress
-export 'src/storage_managers/storage_manager.dart';
-export 'src/storage_managers/async_storage_manager.dart';
+//export 'src/storage_managers/storage_manager.dart';
+//export 'src/storage_managers/async_storage_manager.dart';
 export 'src/bulk_download/download_progress.dart';
 
 // Regions
