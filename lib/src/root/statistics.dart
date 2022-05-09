@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:stream_transform/stream_transform.dart';
 
 import '../internal/exts.dart';
 import '../internal/store/directory.dart';
@@ -107,7 +108,7 @@ class RootStats {
               (await storesAvailableAsync).map((e) => e.stats.storeSizeAsync)))
           .sum));
 
-  /// Retrieve the number of stored tiles in all sub-stores.
+  /// Retrieve the number of stored tiles in all sub-stores
   ///
   /// For asynchronous version, see [rootLengthAsync].
   ///
@@ -117,7 +118,7 @@ class RootStats {
         () => storesAvailable.map((e) => e.stats.storeLength).sum,
       ));
 
-  /// Retrieve the number of stored tiles in all sub-stores.
+  /// Retrieve the number of stored tiles in all sub-stores
   ///
   /// For synchronous version, see [rootLength].
   ///
@@ -128,4 +129,44 @@ class RootStats {
                 .map((e) => e.stats.storeLengthAsync)))
             .sum,
       ));
+
+  /// Watch for changes in the current cache
+  ///
+  /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
+  ///
+  /// By default, [recursive] is set to `false`, meaning only top level changes (those to do with each store) will be caught. Enable recursivity to also include events from all sub-directories.
+  ///
+  /// Only supported on some platforms. Will throw [UnsupportedError] if platform has no internal support (eg. OS X 10.6 and below). Note that recursive watching is not supported on some other platforms, but handling for this is unspecified.
+  ///
+  /// Control which changes are caught through the [fileSystemEvents] property, which takes [FileSystemEvent]s.
+  ///
+  /// Enable debouncing to prevent unnecessary events for small changes in detail using [debounce]. Defaults to 200ms, or set to null to disable debouncing.
+  ///
+  /// Debouncing example (dash roughly represents [debounce]):
+  /// ```dart
+  /// input:  1-2-3---4---5-6-|
+  /// output: ------3---4-----6|
+  /// ```
+  Stream<void> watchChanges({
+    bool recursive = false,
+    Duration? debounce = const Duration(milliseconds: 200),
+    int fileSystemEvents = FileSystemEvent.all,
+  }) {
+    if (!FileSystemEntity.isWatchSupported) {
+      throw UnsupportedError(
+          'Watching is not supported on the current platform');
+    }
+
+    final stream = _access.real
+        .watch(events: fileSystemEvents, recursive: false)
+        .map((e) => null)
+        .mergeAll(
+          !recursive
+              ? []
+              : storesAvailable.map((e) =>
+                  e.stats.watchChanges(debounce: debounce).map((e) => null)),
+        );
+
+    return debounce == null ? stream : stream.debounce(debounce);
+  }
 }

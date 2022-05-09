@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/widgets.dart';
+import 'package:stream_transform/stream_transform.dart';
 
 import '../exts.dart';
 import 'access.dart';
@@ -190,5 +191,36 @@ class StoreStats {
     }
 
     throw FallThroughError();
+  }
+
+  /// Watch for changes in the current store
+  ///
+  /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
+  ///
+  /// Only supported on some platforms. Will throw [UnsupportedError] if platform has no internal support (eg. OS X 10.6 and below).
+  ///
+  /// Control which changes are caught through the [fileSystemEvents] property, which takes [FileSystemEvent]s, and by default ignores modifications (ie. renaming).
+  ///
+  /// Enable debouncing to prevent unnecessary events for small changes in detail using [debounce]. Defaults to 200ms, or set to null to disable debouncing.
+  ///
+  /// Debouncing example (dash roughly represents [debounce]):
+  /// ```dart
+  /// input:  1-2-3---4---5-6-|
+  /// output: ------3---4-----6|
+  /// ```
+  Stream<void> watchChanges({
+    Duration? debounce = const Duration(milliseconds: 200),
+    int fileSystemEvents = ~FileSystemEvent.modify,
+  }) {
+    if (!FileSystemEntity.isWatchSupported) {
+      throw UnsupportedError(
+          'Watching is not supported on the current platform');
+    }
+
+    final stream = _access.real
+        .watch(events: fileSystemEvents, recursive: false)
+        .map((e) => null);
+
+    return debounce == null ? stream : stream.debounce(debounce);
   }
 }
