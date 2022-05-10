@@ -9,14 +9,14 @@ import 'package:http/http.dart' as http;
 import 'package:queue/queue.dart';
 
 import '../internal/exts.dart';
-
-import '../main.dart';
+import '../misc/cache_behavior.dart';
 import '../misc/validate.dart';
+import 'store/tile_provider.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
 class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
-  /// An instance of the [StorageCachingTileProvider] in use
-  final StorageCachingTileProvider provider;
+  /// An instance of the [FMTCTileProvider] in use
+  final FMTCTileProvider provider;
 
   /// An instance of the [TileLayerOptions] in use
   final TileLayerOptions options;
@@ -27,8 +27,12 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// A HTTP client used to send requests
   final http.Client httpClient;
 
+  /// Used internally to safely and efficiently enforce the `settings.maxStoreLength`
   static final Queue removeOldestQueue =
       Queue(timeout: const Duration(seconds: 1));
+
+  /// Shorthand for `provider.settings`
+  late final FMTCTileProviderSettings settings;
 
   /// Create a specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
   FMTCImageProvider({
@@ -36,7 +40,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required this.options,
     required this.coords,
     required this.httpClient,
-  });
+  }) : settings = provider.settings;
 
   @override
   ImageStreamCompleter load(FMTCImageProvider key, DecoderCallback decode) {
@@ -59,18 +63,18 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     final bool needsCreating = !(await file.exists());
     final bool needsUpdating = needsCreating
         ? false
-        : provider.behavior == CacheBehavior.onlineFirst ||
-            (provider.cachedValidDuration != Duration.zero &&
+        : settings.behavior == CacheBehavior.onlineFirst ||
+            (settings.cachedValidDuration != Duration.zero &&
                 DateTime.now().millisecondsSinceEpoch -
                         (await file.lastModified()).millisecondsSinceEpoch >
-                    provider.cachedValidDuration.inMilliseconds);
+                    settings.cachedValidDuration.inMilliseconds);
 
     // Read the tile file if it exists
     Uint8List? bytes;
     if (!needsCreating) bytes = await file.readAsBytes();
 
     // IF network is disabled & the tile does not exist THEN throw an error
-    if (provider.behavior == CacheBehavior.cacheOnly && needsCreating) {
+    if (settings.behavior == CacheBehavior.cacheOnly && needsCreating) {
       PaintingBinding.instance?.imageCache?.evict(this);
       throw 'FMTCBrowsingError: Failed to load the tile from the cache because it was missing.';
     }
@@ -106,7 +110,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       file.create().then((_) => file.writeAsBytes(bytes as Uint8List));
 
       // If an new tile was created over the tile limit, delete the oldest tile
-      if (needsCreating && provider.maxStoreLength != 0) {
+      if (needsCreating && settings.maxStoreLength != 0) {
         removeOldestQueue.add(() async {
           int currentIteration = 0;
           bool needToDelete = false;
@@ -119,7 +123,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
             if (e is! File) break;
 
             currentIteration++;
-            if (currentIteration >= provider.maxStoreLength) {
+            if (currentIteration >= settings.maxStoreLength) {
               needToDelete = true;
               continue;
             }

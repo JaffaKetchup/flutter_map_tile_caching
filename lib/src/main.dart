@@ -28,22 +28,6 @@ import 'regions/recovered_region.dart';
 import 'storage_managers/storage_manager.dart';
 import 'internal/store/directory.dart';
 
-/// Multiple behaviors dictating how browse caching should be carried out
-///
-/// Check documentation on each value for more information.
-enum CacheBehavior {
-  /// Only get tiles from the local cache
-  ///
-  /// Useful for applications with dedicated 'Offline Mode'.
-  cacheOnly,
-
-  /// Get tiles from the local cache, going on the Internet to update the cached tile if it has expired (`cachedValidDuration` has passed)
-  cacheFirst,
-
-  /// Get tiles from the Internet and update the cache for every tile
-  onlineFirst,
-}
-
 /// A [TileProvider] to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
 ///
 /// Requires a valid cache directory: [parentDirectory]. [_storeName] defaults to the default store, 'mainStore', but can be overriden to different stores. On initialisation, automatically creates the cache store if it does not exist.

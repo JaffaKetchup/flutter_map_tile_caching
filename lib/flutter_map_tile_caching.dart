@@ -7,6 +7,7 @@ export 'src/main.dart';
 // Misc
 export 'src/misc/typedefs.dart';
 export 'src/misc/validate.dart' hide safeFilesystemString;
+export 'src/misc/cache_behavior.dart';
 
 // Structure
 export 'src/root/directory.dart';

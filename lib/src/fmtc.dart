@@ -1,3 +1,5 @@
+import 'package:flutter_map_tile_caching/src/internal/store/tile_provider.dart';
+
 import 'root/directory.dart';
 import 'internal/store/directory.dart';
 
@@ -6,22 +8,17 @@ import 'internal/store/directory.dart';
 /// Prefer use of full 'FlutterMapTileCaching' when initialising to ensure readability and understanding in other code.
 typedef FMTC = FlutterMapTileCaching;
 
-/// Keys for global 'flutter_map_tile_caching' settings
-///
-/// Each key has an [Object] assigned, such as a [bool] or [String].
-enum FMTCSettings {
-  /*
-  /// Whether to apply compression to tile stores when not in use (alpha - use with caution)
+/// Global 'flutter_map_tile_caching' settings
+class FMTCSettings {
+  /// Default settings used when creating an [FMTCTileProvider]
   ///
-  /// Value/Default: [bool]/`false`
-  compression,
+  /// Can be overriden on a case-to-case basis when actually creating the tile provider.
+  final FMTCTileProviderSettings defaultTileProviderSettings;
 
-  /// Whether to also cache statistics
-  ///
-  /// Value/Default: [bool]/`true`
-  advancedCaching,
-  */
-  noSettings,
+  /// Create custom global 'flutter_map_tile_caching' settings
+  FMTCSettings({FMTCTileProviderSettings? defaultTileProviderSettings})
+      : defaultTileProviderSettings =
+            defaultTileProviderSettings ?? FMTCTileProviderSettings();
 }
 
 /// Main singleton access point for 'flutter_map_tile_caching'
@@ -35,12 +32,10 @@ class FlutterMapTileCaching {
   /// Recommended setup is `await RootDirectory.normalCache`, but any [RootDirectory] is accepted. [FlutterMapTileCaching] checks that [RootDirectory.ready] is 'true', otherwise a [StateError] is thrown.
   late final RootDirectory rootDirectory;
 
-  /// Change global 'flutter_map_tile_caching' settings
+  /// Custom global 'flutter_map_tile_caching' settings
   ///
-  /// Use [FMTCSettings] as keys, and override keys with their respective [Object] - see documentation on each key.
-  ///
-  /// Default is [settingsDefault].
-  final Map<FMTCSettings, Object> settings;
+  /// See [FMTCSettings]' properties for more information
+  final FMTCSettings settings;
 
   /// Initialise the main singleton access point for 'flutter_map_tile_caching'
   ///
@@ -49,8 +44,8 @@ class FlutterMapTileCaching {
   /// This returns the same object as [FlutterMapTileCaching.instance] will afterward. [FMTC] is an alias for this object.
   FlutterMapTileCaching.initialise(
     RootDirectory rootDir, {
-    this.settings = settingsDefault,
-  }) {
+    FMTCSettings? settings,
+  }) : settings = settings ?? FMTCSettings() {
     if (!rootDir.ready) {
       throw StateError(
         'Ensure supplied root directory exists. Try constructing it again, or using `rootDirectory.manage.create()`.',
@@ -76,9 +71,6 @@ class FlutterMapTileCaching {
     return _instance!;
   }
 
-  /// The default global 'flutter_map_tile_caching' settings, used in [settings]
-  static const Map<FMTCSettings, Object> settingsDefault = {};
-
   /// Get a [StoreDirectory] by store name
   StoreDirectory operator [](String storeName) =>
       StoreDirectory(rootDirectory, storeName);
@@ -89,4 +81,5 @@ void main() async {
   FMTC.instance['s'].manage.deleteAsync();
   FMTC.instance.rootDirectory.manage.deleteAsync();
   FMTC.instance.rootDirectory.stats.noCache.rootLength;
+  FMTC.instance['s'].getTileProvider();
 }

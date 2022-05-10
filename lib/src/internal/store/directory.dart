@@ -1,8 +1,11 @@
+import 'package:flutter_map/flutter_map.dart';
+
 import '../../misc/validate.dart';
 import '../../root/directory.dart';
 import 'access.dart';
 import 'manage.dart';
 import 'statistics.dart';
+import 'tile_provider.dart';
 
 /// Access point to a store
 ///
@@ -70,6 +73,10 @@ class StoreDirectory {
   ///
   /// Does not statistics about the root/all stores
   StoreStats get stats => StoreStats(this);
+
+  /// Get 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayerOptions], specific to this store
+  FMTCTileProvider getTileProvider({FMTCTileProviderSettings? settings}) =>
+      FMTCTileProvider(storeDirectory: this, settings: settings);
 
   @override
   String toString() {
