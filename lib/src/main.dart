@@ -25,7 +25,6 @@ import 'misc/typedefs.dart';
 import 'misc/validate.dart';
 import 'regions/downloadable_region.dart';
 import 'regions/recovered_region.dart';
-import 'storage_managers/storage_manager.dart';
 import 'internal/store/directory.dart';
 
 /// A [TileProvider] to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.

@@ -1,30 +1,29 @@
-// This is 'flutter_map_tile_caching's' main file
-// You should never need to include anything other than this file from this library in your project
+/// Main import point for 'flutter_map_tile_caching'
+///
+/// Checkout the README for more documentation.
+///
+/// Exports all objects that you should need in normal use, including from dependencies.
+///
+/// If you require access to full API, import `package:flutter_map_tile_caching/fmtc_advanced.dart` instead.
+library flutter_map_tile_caching;
 
 export 'src/fmtc.dart';
 export 'src/main.dart';
 
-// Misc
 export 'src/misc/typedefs.dart';
 export 'src/misc/validate.dart' hide safeFilesystemString;
 export 'src/misc/cache_behavior.dart';
 
-// Structure
 export 'src/root/directory.dart';
 
-// Storage Managers & Download Progress
-//export 'src/storage_managers/storage_manager.dart';
-//export 'src/storage_managers/async_storage_manager.dart';
 export 'src/bulk_download/download_progress.dart';
 
-// Regions
 export 'src/regions/downloadable_region.dart';
 export 'src/regions/recovered_region.dart';
 export 'src/regions/rectangle.dart';
 export 'src/regions/circle.dart';
 export 'src/regions/line.dart';
 
-// Other Libraries
 export 'package:connectivity_plus/connectivity_plus.dart'
     show ConnectivityResult;
 export 'package:battery_info/enums/charging_status.dart';

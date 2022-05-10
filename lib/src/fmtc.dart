@@ -1,5 +1,8 @@
-import 'package:flutter_map_tile_caching/src/internal/store/tile_provider.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_tile_caching/src/internal/tile_provider.dart';
+import 'package:latlong2/latlong.dart';
 
+import 'regions/rectangle.dart';
 import 'root/directory.dart';
 import 'internal/store/directory.dart';
 

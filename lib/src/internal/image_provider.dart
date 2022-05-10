@@ -11,7 +11,7 @@ import 'package:queue/queue.dart';
 import '../internal/exts.dart';
 import '../misc/cache_behavior.dart';
 import '../misc/validate.dart';
-import 'store/tile_provider.dart';
+import 'tile_provider.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
 class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {

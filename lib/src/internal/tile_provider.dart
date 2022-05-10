@@ -2,10 +2,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart';
 
-import '../../fmtc.dart';
-import '../../misc/cache_behavior.dart';
-import '../image_provider.dart';
-import 'directory.dart';
+import '../fmtc.dart';
+import '../misc/cache_behavior.dart';
+import 'image_provider.dart';
+import 'store/directory.dart';
 
 /// Settings for an [FMTCTileProvider]
 class FMTCTileProviderSettings {

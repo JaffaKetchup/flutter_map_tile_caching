@@ -1,5 +1,3 @@
-import 'package:meta/meta.dart';
-
 /// Makes any store name string safe for storing in a filesystem structure, platform-universally
 ///
 /// Note that this is not 100% secure/guaranteed: eg. control characters (except NUL) and potential reserved names are not checked.
@@ -15,7 +13,6 @@ import 'package:meta/meta.dart';
 /// [enforce255MaxLength] will take the last 255 chars of the [inputString]. This is useful on iOS systems.
 ///
 /// See [StoreDirectory.validateFilesystemString] for a public facing validator.
-@internal
 String safeFilesystemString({
   required String inputString,
   required bool throwIfInvalid,

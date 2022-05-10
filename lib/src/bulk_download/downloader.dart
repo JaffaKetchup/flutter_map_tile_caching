@@ -8,13 +8,14 @@ import 'package:http/http.dart' as http;
 import 'package:queue/queue.dart';
 
 import '../internal/exts.dart';
+import '../internal/tile_provider.dart';
 import '../main.dart';
 import '../misc/validate.dart';
 import 'tile_progress.dart';
 
 Stream<TileProgress> bulkDownloader({
   required List<Coords<num>> tiles,
-  required StorageCachingTileProvider provider,
+  required FMTCTileProvider provider,
   required TileLayerOptions options,
   required http.Client client,
   required Function(dynamic)? errorHandler,
@@ -48,7 +49,7 @@ Stream<TileProgress> bulkDownloader({
 }
 
 Future<TileProgress> _getAndSaveTile({
-  required StorageCachingTileProvider provider,
+  required FMTCTileProvider provider,
   required Coords<num> coord,
   required TileLayerOptions options,
   required http.Client client,

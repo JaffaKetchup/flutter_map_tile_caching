@@ -3,9 +3,10 @@ import 'package:flutter_map/flutter_map.dart';
 import '../../misc/validate.dart';
 import '../../root/directory.dart';
 import 'access.dart';
+import 'download.dart';
 import 'manage.dart';
 import 'statistics.dart';
-import 'tile_provider.dart';
+import '../tile_provider.dart';
 
 /// Access point to a store
 ///
@@ -75,13 +76,15 @@ class StoreDirectory {
   StoreStats get stats => StoreStats(this);
 
   /// Get 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayerOptions], specific to this store
-  FMTCTileProvider getTileProvider({FMTCTileProviderSettings? settings}) =>
+  FMTCTileProvider getTileProvider([FMTCTileProviderSettings? settings]) =>
       FMTCTileProvider(storeDirectory: this, settings: settings);
 
+  /// Get tools to manage bulk downloading to this store
+  DownloadManagement get download => DownloadManagement(this);
+
   @override
-  String toString() {
-    return 'StoreDirectory(rootDirectory: $rootDirectory, storeName: $storeName)';
-  }
+  String toString() =>
+      'StoreDirectory(rootDirectory: $rootDirectory, storeName: $storeName)';
 
   @override
   bool operator ==(Object other) {
@@ -93,9 +96,7 @@ class StoreDirectory {
   }
 
   @override
-  int get hashCode {
-    return rootDirectory.hashCode ^ storeName.hashCode;
-  }
+  int get hashCode => rootDirectory.hashCode ^ storeName.hashCode;
 
   StoreDirectory copyWith({
     RootDirectory? rootDirectory,
