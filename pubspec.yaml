@@ -7,7 +7,7 @@ issue_tracker: https://github.com/JaffaKetchup/flutter_map_tile_caching/issues
 
 environment:
   sdk: ">=2.15.0 <3.0.0"
-  flutter: ">=2.10.0"
+  flutter: ">=3.0.0"
 
 dependencies:
   flutter:
@@ -29,9 +29,10 @@ dependencies:
   queue: ^3.1.0+1
   stream_transform: ^2.0.0
   vector_math: ^2.1.1
+  collection: ^1.16.0
 
 dev_dependencies:
-  flutter_lints: ^1.0.4
+  flutter_lints: ^2.0.1
   flutter_test:
     sdk: flutter
 

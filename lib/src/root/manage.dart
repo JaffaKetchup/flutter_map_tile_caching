@@ -6,8 +6,8 @@ import 'directory.dart';
 /// Manages a [RootDirectory]'s representation on the filesystem, such as creation and deletion
 class RootManagement {
   /// Manages a [RootDirectory]'s representation on the filesystem, such as creation and deletion
-  RootManagement(RootDirectory _rootDirectory)
-      : _access = RootAccess(_rootDirectory);
+  RootManagement(RootDirectory rootDirectory)
+      : _access = RootAccess(rootDirectory);
 
   /// Shorthand for [RootDirectory.access], used commonly throughout
   final RootAccess _access;

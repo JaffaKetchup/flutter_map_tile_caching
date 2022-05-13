@@ -59,8 +59,8 @@ Future<void> start(
     int i = 0;
     for (LatLng point in reg.line) {
       cfg.set('area', 'length', i.toString());
-      cfg.set('area', i.toString() + 'Lat', point.latitude.toString());
-      cfg.set('area', i.toString() + 'Lng', point.longitude.toString());
+      cfg.set('area', '$i Lat', point.latitude.toString());
+      cfg.set('area', '$i Lng', point.longitude.toString());
 
       i++;
     }

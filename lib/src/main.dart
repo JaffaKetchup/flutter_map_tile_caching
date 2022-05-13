@@ -154,13 +154,13 @@ class StorageCachingTileProvider extends TileProvider {
       late final int? batteryLevel;
       late final ChargingStatus? chargingStatus;
       if (Platform.isAndroid) {
-        final _info = await BatteryInfoPlugin().androidBatteryInfo;
-        batteryLevel = _info?.batteryLevel;
-        chargingStatus = _info?.chargingStatus;
+        final info = await BatteryInfoPlugin().androidBatteryInfo;
+        batteryLevel = info?.batteryLevel;
+        chargingStatus = info?.chargingStatus;
       } else if (Platform.isIOS) {
-        final _info = await BatteryInfoPlugin().iosBatteryInfo;
-        batteryLevel = _info?.batteryLevel;
-        chargingStatus = _info?.chargingStatus;
+        final info = await BatteryInfoPlugin().iosBatteryInfo;
+        batteryLevel = info?.batteryLevel;
+        chargingStatus = info?.chargingStatus;
       } else {
         throw FallThroughError();
       }

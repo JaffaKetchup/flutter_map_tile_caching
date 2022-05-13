@@ -121,8 +121,8 @@ class _StoreManagerState extends State<StoreManager> {
                                           currentMCM._storeName!;
                                       provider.persistent!.setString(
                                           'lastUsedStore', provider.storeName);
-                                      PaintingBinding.instance?.imageCache
-                                          ?.clear();
+                                      PaintingBinding.instance.imageCache
+                                          .clear();
                                       provider.resetMap();
                                     },
                                     onLongPress: () {

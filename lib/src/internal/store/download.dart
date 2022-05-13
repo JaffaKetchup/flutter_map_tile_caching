@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:battery_info/battery_info_plugin.dart';
 import 'package:battery_info/enums/charging_status.dart';
+import 'package:battery_info/model/android_battery_info.dart';
+import 'package:battery_info/model/iso_battery_info.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -62,13 +64,14 @@ class DownloadManagement {
       late final int? batteryLevel;
       late final ChargingStatus? chargingStatus;
       if (Platform.isAndroid) {
-        final _info = await BatteryInfoPlugin().androidBatteryInfo;
-        batteryLevel = _info?.batteryLevel;
-        chargingStatus = _info?.chargingStatus;
+        final AndroidBatteryInfo? info =
+            await BatteryInfoPlugin().androidBatteryInfo;
+        batteryLevel = info?.batteryLevel;
+        chargingStatus = info?.chargingStatus;
       } else if (Platform.isIOS) {
-        final _info = await BatteryInfoPlugin().iosBatteryInfo;
-        batteryLevel = _info?.batteryLevel;
-        chargingStatus = _info?.chargingStatus;
+        final IosBatteryInfo? info = await BatteryInfoPlugin().iosBatteryInfo;
+        batteryLevel = info?.batteryLevel;
+        chargingStatus = info?.chargingStatus;
       } else {
         throw FallThroughError();
       }

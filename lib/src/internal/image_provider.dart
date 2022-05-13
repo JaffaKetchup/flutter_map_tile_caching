@@ -75,7 +75,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     // IF network is disabled & the tile does not exist THEN throw an error
     if (settings.behavior == CacheBehavior.cacheOnly && needsCreating) {
-      PaintingBinding.instance?.imageCache?.evict(this);
+      PaintingBinding.instance.imageCache.evict(this);
       throw 'FMTCBrowsingError: Failed to load the tile from the cache because it was missing.';
     }
 
@@ -88,7 +88,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         serverData = await httpClient.get(Uri.parse(url));
       } catch (err) {
         if (needsCreating) {
-          PaintingBinding.instance?.imageCache?.evict(this);
+          PaintingBinding.instance.imageCache.evict(this);
           throw 'FMTCBrowsingError: Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.';
         } else {
           return await decode(bytes!);
@@ -98,7 +98,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       // Check for an OK HTTP status code, throwing an error if not possible & the tile does not exist
       if (serverData.statusCode != 200) {
         if (needsCreating) {
-          PaintingBinding.instance?.imageCache?.evict(this);
+          PaintingBinding.instance.imageCache.evict(this);
           throw 'FMTCBrowsingError: Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.';
         } else {
           return await decode(bytes!);
@@ -141,7 +141,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         });
       }
 
-      PaintingBinding.instance?.imageCache?.evict(this);
+      PaintingBinding.instance.imageCache.evict(this);
       return await decode(bytes);
     }
 

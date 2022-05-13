@@ -56,8 +56,8 @@ Future<RecoveredRegion?> read(File file) async {
     line = [];
     for (int i = 0; i <= int.parse(cfg.get('area', 'length')!); i++) {
       line.add(LatLng(
-        double.parse(cfg.get('area', i.toString() + 'Lat')!),
-        double.parse(cfg.get('area', i.toString() + 'Lng')!),
+        double.parse(cfg.get('area', '$i Lat')!),
+        double.parse(cfg.get('area', '$i Lng')!),
       ));
     }
   }
