@@ -2,11 +2,11 @@ import 'package:flutter_map/flutter_map.dart';
 
 import '../../misc/validate.dart';
 import '../../root/directory.dart';
+import '../tile_provider.dart';
 import 'access.dart';
 import 'download.dart';
 import 'manage.dart';
 import 'statistics.dart';
-import '../tile_provider.dart';
 
 /// Access point to a store
 ///

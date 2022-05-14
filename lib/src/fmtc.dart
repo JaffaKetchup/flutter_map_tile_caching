@@ -1,10 +1,6 @@
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_tile_caching/src/internal/tile_provider.dart';
-import 'package:latlong2/latlong.dart';
-
-import 'regions/rectangle.dart';
-import 'root/directory.dart';
 import 'internal/store/directory.dart';
+import 'internal/tile_provider.dart';
+import 'root/directory.dart';
 
 /// Direct alias of [FlutterMapTileCaching] for easier development
 ///
@@ -81,8 +77,8 @@ class FlutterMapTileCaching {
 
 void main() async {
   FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
-  FMTC.instance['s'].manage.deleteAsync();
-  FMTC.instance.rootDirectory.manage.deleteAsync();
+  await FMTC.instance['s'].manage.deleteAsync();
+  await FMTC.instance.rootDirectory.manage.deleteAsync();
   FMTC.instance.rootDirectory.stats.noCache.rootLength;
   FMTC.instance['s'].getTileProvider();
 }

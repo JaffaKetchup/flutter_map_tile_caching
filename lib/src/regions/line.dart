@@ -78,7 +78,7 @@ class LineRegion implements BaseRegion {
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),
-    Function(dynamic)? errorHandler,
+    Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion.internal(
         points: toOutlines(1).expand((x) => x).toList(),
@@ -125,7 +125,8 @@ class LineRegion implements BaseRegion {
     }
     if (prettyPaint ? overlap == 0 || overlap == -1 : true) {
       throw ArgumentError(
-          '`overlap` must be either -1 or 0 when `prettyPaint` is enabled');
+        '`overlap` must be either -1 or 0 when `prettyPaint` is enabled',
+      );
     }
 
     final List<List<LatLng>> rects = toOutlines(prettyPaint ? -1 : overlap);
@@ -172,7 +173,8 @@ class LineRegion implements BaseRegion {
 
         if (intersectionA == null || intersectionB == null) {
           throw StateError(
-              'Well done! You seemed to have create a rectangle exactly parallel to your previous one. Needless to say, this is extremely unlikely, and I haven\'t handled this. If this happened honestly, please report an error.');
+            "Well done! You seemed to have create a rectangle exactly parallel to your previous one. Needless to say, this is extremely unlikely, and I haven't handled this. If this happened honestly, please report an error.",
+          );
         }
 
         const Distance distance = Distance();
@@ -215,8 +217,12 @@ class LineRegion implements BaseRegion {
           curves.add([]);
 
           for (var ii = 0; ii <= curveSmoothening; ii++) {
-            curves[i].add(LatLng(curve.pointAt(ii / curveSmoothening).y,
-                curve.pointAt(ii / curveSmoothening).x));
+            curves[i].add(
+              LatLng(
+                curve.pointAt(ii / curveSmoothening).y,
+                curve.pointAt(ii / curveSmoothening).x,
+              ),
+            );
           }
 
           curves[i].add(aCurve ? intersectionB : intersectionA);
@@ -258,6 +264,7 @@ class LineRegion implements BaseRegion {
   @override
   List<LatLng> toList() {
     throw UnsupportedError(
-        '`toList` is invalid for this region type: use `toOutlines()` instead');
+      '`toList` is invalid for this region type: use `toOutlines()` instead',
+    );
   }
 }

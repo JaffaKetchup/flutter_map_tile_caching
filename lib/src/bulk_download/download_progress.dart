@@ -116,7 +116,7 @@ class DownloadProgress {
         seaTiles = 0,
         existingTiles = 0,
         durationPerTile = [],
-        duration = const Duration();
+        duration = Duration.zero;
 
   //! GENERAL OBJECT STUFF !//
 

@@ -17,14 +17,15 @@ class RootStats {
   final bool _forceRecalculation;
 
   /// Provides statistics about a [RootDirectory]
-  RootStats(this._rootDirectory, [this._forceRecalculation = false])
-      : _access = RootAccess(_rootDirectory);
+  RootStats(this._rootDirectory, {bool forceRecalculation = false})
+      : _forceRecalculation = forceRecalculation,
+        _access = RootAccess(_rootDirectory);
 
   /// Shorthand for [RootDirectory.access], used commonly throughout
   final RootAccess _access;
 
   /// Force re-calculation for all statistics instead of retrieving from stats cache
-  RootStats get noCache => RootStats(_rootDirectory, true);
+  RootStats get noCache => RootStats(_rootDirectory, forceRecalculation: true);
 
   /// Get a cached statistic or fallback to a calculation synchronously
   ///
@@ -64,24 +65,31 @@ class RootStats {
   /// For asynchronous version, see [storesAvailableAsync]. Note that this statstic is not cached for performance, as the effect would be negligible.
   List<StoreDirectory> get storesAvailable => _access.stores
       .listSync()
-      .map((e) => e is Directory
-          ? StoreDirectory(_rootDirectory, p.split(e.absolute.path).last)
-          : null)
+      .map(
+        (e) => e is Directory
+            ? StoreDirectory(_rootDirectory, p.split(e.absolute.path).last)
+            : null,
+      )
       .whereType<StoreDirectory>()
       .toList();
 
   /// Retrieve all the available [StoreDirectory]s
   ///
   /// For synchronous version, see [storesAvailable]. Note that this statstic is not cached for performance, as the effect would be negligible.
-  Future<List<StoreDirectory>> get storesAvailableAsync async => (await _access
-          .stores
-          .list()
-          .map((e) => e is Directory
-              ? StoreDirectory(_rootDirectory, p.split(e.absolute.path).last)
-              : null)
-          .toList())
-      .whereType<StoreDirectory>()
-      .toList();
+  Future<List<StoreDirectory>> get storesAvailableAsync async =>
+      (await _access.stores
+              .list()
+              .map(
+                (e) => e is Directory
+                    ? StoreDirectory(
+                        _rootDirectory,
+                        p.split(e.absolute.path).last,
+                      )
+                    : null,
+              )
+              .toList())
+          .whereType<StoreDirectory>()
+          .toList();
 
   /// Retrieve the size of the root in kibibytes (KiB)
   ///
@@ -90,10 +98,12 @@ class RootStats {
   /// Technically just sums up the size of all sub-stores, thus ignoring any cached root statistics, etc.
   ///
   /// Includes all files in all stores, not necessarily just tiles.
-  double get rootSize => double.parse(_csgSync(
-        'size',
-        () => storesAvailable.map((e) => e.stats.storeSize).sum,
-      ));
+  double get rootSize => double.parse(
+        _csgSync(
+          'size',
+          () => storesAvailable.map((e) => e.stats.storeSize).sum,
+        ),
+      );
 
   /// Retrieve the size of the root in kibibytes (KiB)
   ///
@@ -102,33 +112,42 @@ class RootStats {
   /// Technically just sums up the size of all sub-stores, thus ignoring any cached root statistics, etc.
   ///
   /// Includes all files in all stores, not necessarily just tiles.
-  Future<double> get rootSizeAsync async => double.parse(await _csgAsync(
-      'size',
-      () async => (await Future.wait(
-              (await storesAvailableAsync).map((e) => e.stats.storeSizeAsync)))
-          .sum));
+  Future<double> get rootSizeAsync async => double.parse(
+        await _csgAsync(
+          'size',
+          () async => (await Future.wait(
+            (await storesAvailableAsync).map((e) => e.stats.storeSizeAsync),
+          ))
+              .sum,
+        ),
+      );
 
   /// Retrieve the number of stored tiles in all sub-stores
   ///
   /// For asynchronous version, see [rootLengthAsync].
   ///
   /// Only includes tiles stored, not necessarily all files.
-  int get rootLength => int.parse(_csgSync(
-        'length',
-        () => storesAvailable.map((e) => e.stats.storeLength).sum,
-      ));
+  int get rootLength => int.parse(
+        _csgSync(
+          'length',
+          () => storesAvailable.map((e) => e.stats.storeLength).sum,
+        ),
+      );
 
   /// Retrieve the number of stored tiles in all sub-stores
   ///
   /// For synchronous version, see [rootLength].
   ///
   /// Only includes tiles stored, not necessarily all files.
-  Future<int> get rootLengthAsync async => int.parse(await _csgAsync(
-        'length',
-        () async => (await Future.wait((await storesAvailableAsync)
-                .map((e) => e.stats.storeLengthAsync)))
-            .sum,
-      ));
+  Future<int> get rootLengthAsync async => int.parse(
+        await _csgAsync(
+          'length',
+          () async => (await Future.wait(
+            (await storesAvailableAsync).map((e) => e.stats.storeLengthAsync),
+          ))
+              .sum,
+        ),
+      );
 
   /// Watch for changes in the current cache
   ///
@@ -154,17 +173,20 @@ class RootStats {
   }) {
     if (!FileSystemEntity.isWatchSupported) {
       throw UnsupportedError(
-          'Watching is not supported on the current platform');
+        'Watching is not supported on the current platform',
+      );
     }
 
     final stream = _access.real
-        .watch(events: fileSystemEvents, recursive: false)
+        .watch(events: fileSystemEvents)
         .map((e) => null)
         .mergeAll(
           !recursive
               ? []
-              : storesAvailable.map((e) =>
-                  e.stats.watchChanges(debounce: debounce).map((e) => null)),
+              : storesAvailable.map(
+                  (e) =>
+                      e.stats.watchChanges(debounce: debounce).map((e) => null),
+                ),
         );
 
     return debounce == null ? stream : stream.debounce(debounce);

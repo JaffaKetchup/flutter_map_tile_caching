@@ -22,7 +22,9 @@ class Recovery {
   ///
   /// [identification] should be a human-readable description of the download that the recovery file is attached to
   Future<void> startRecovery(
-          DownloadableRegion region, String identification) =>
+    DownloadableRegion region,
+    String identification,
+  ) =>
       start(recoveryFile, region, identification);
 
   /// End the recovery - delete the file

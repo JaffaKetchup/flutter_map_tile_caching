@@ -23,7 +23,7 @@ String safeFilesystemString({
   // Ensure is not empty
   if (alteredString.isEmpty) {
     if (throwIfInvalid) {
-      throw 'The name cannot be empty';
+      throw _InvalidFilesystemString('The name cannot be empty');
     }
     alteredString = '_';
   }
@@ -31,13 +31,17 @@ String safeFilesystemString({
   // Trim
   alteredString = inputString.trim();
   if (alteredString != inputString && throwIfInvalid) {
-    throw 'The name cannot contain leading and/or trailing spaces';
+    throw _InvalidFilesystemString(
+      'The name cannot contain leading and/or trailing spaces',
+    );
   }
 
   // Ensure is not just '.'
   if (alteredString.replaceAll('.', '').isEmpty) {
     if (throwIfInvalid) {
-      throw 'The name cannot consist of only periods (.)';
+      throw _InvalidFilesystemString(
+        'The name cannot consist of only periods (.)',
+      );
     }
     alteredString = alteredString.replaceAll('.', '_');
   }
@@ -46,14 +50,18 @@ String safeFilesystemString({
   alteredString =
       alteredString.replaceAll(RegExp(r'[\\\\/\:\*\?\"\<\>\|]'), '_');
   if (alteredString != inputString && throwIfInvalid) {
-    throw 'The name cannot contain invalid characters: \'[NUL]\\/:*?"<>|\'';
+    throw _InvalidFilesystemString(
+      'The name cannot contain invalid characters: \'[NUL]\\/:*?"<>|\'',
+    );
   }
 
   // Reduce string to under 255 chars (keeps end)
   if (enforce255MaxLength && alteredString.length > 255) {
     alteredString = alteredString.substring(alteredString.length - 255);
     if (alteredString != inputString && throwIfInvalid) {
-      throw 'The name cannot contain more than 255 characters';
+      throw _InvalidFilesystemString(
+        'The name cannot contain more than 255 characters',
+      );
     }
   }
 
@@ -82,4 +90,19 @@ String? validateFilesystemString(String? storeName) {
   } catch (e) {
     return e as String;
   }
+}
+
+/// An [Exception] thrown by [safeFilesystemString] indicating that the supplied string was invalid
+///
+/// The [message] gives a reason and more information.
+class _InvalidFilesystemString implements Exception {
+  final String message;
+
+  /// An [Exception] thrown by [safeFilesystemString] indicating that the supplied string was invalid
+  ///
+  /// The [message] gives a reason and more information.
+  _InvalidFilesystemString(this.message);
+
+  @override
+  String toString() => 'InvalidFilesystemString: $message';
 }

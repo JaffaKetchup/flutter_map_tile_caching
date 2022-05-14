@@ -23,7 +23,7 @@ class RectangleRegion implements BaseRegion {
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),
-    Function(dynamic)? errorHandler,
+    Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion.internal(
         points: [bounds.northWest, bounds.southEast],
@@ -47,38 +47,35 @@ class RectangleRegion implements BaseRegion {
     Color borderColor, {
     double borderStrokeWidth = 3.0,
     bool isDotted = false,
-  }) {
-    return PolygonLayerOptions(
-      polygons: [
-        Polygon(
-          color: fillColor,
-          borderColor: borderColor,
-          borderStrokeWidth: borderStrokeWidth,
-          isDotted: isDotted,
-          points: [
-            LatLng(
-              bounds.southEast.latitude,
-              bounds.northWest.longitude,
-            ),
-            bounds.southEast,
-            LatLng(
-              bounds.northWest.latitude,
-              bounds.southEast.longitude,
-            ),
-            bounds.northWest,
-          ],
-        )
-      ],
-    );
-  }
+  }) =>
+      PolygonLayerOptions(
+        polygons: [
+          Polygon(
+            color: fillColor,
+            borderColor: borderColor,
+            borderStrokeWidth: borderStrokeWidth,
+            isDotted: isDotted,
+            points: [
+              LatLng(
+                bounds.southEast.latitude,
+                bounds.northWest.longitude,
+              ),
+              bounds.southEast,
+              LatLng(
+                bounds.northWest.latitude,
+                bounds.southEast.longitude,
+              ),
+              bounds.northWest,
+            ],
+          )
+        ],
+      );
 
   @override
-  List<LatLng> toList() {
-    return [
-      LatLng(bounds.southEast.latitude, bounds.northWest.longitude),
-      bounds.southEast,
-      LatLng(bounds.northWest.latitude, bounds.southEast.longitude),
-      bounds.northWest,
-    ];
-  }
+  List<LatLng> toList() => [
+        LatLng(bounds.southEast.latitude, bounds.northWest.longitude),
+        bounds.southEast,
+        LatLng(bounds.northWest.latitude, bounds.southEast.longitude),
+        bounds.northWest,
+      ];
 }

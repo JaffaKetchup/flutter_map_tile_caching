@@ -28,7 +28,7 @@ class CircleRegion implements BaseRegion {
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),
-    Function(dynamic)? errorHandler,
+    Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion.internal(
         points: toList(),
@@ -52,19 +52,18 @@ class CircleRegion implements BaseRegion {
     Color borderColor, {
     double borderStrokeWidth = 3.0,
     bool isDotted = false,
-  }) {
-    return PolygonLayerOptions(
-      polygons: [
-        Polygon(
-          color: fillColor,
-          borderColor: borderColor,
-          borderStrokeWidth: borderStrokeWidth,
-          isDotted: isDotted,
-          points: toList(),
-        )
-      ],
-    );
-  }
+  }) =>
+      PolygonLayerOptions(
+        polygons: [
+          Polygon(
+            color: fillColor,
+            borderColor: borderColor,
+            borderStrokeWidth: borderStrokeWidth,
+            isDotted: isDotted,
+            points: toList(),
+          )
+        ],
+      );
 
   @override
   List<LatLng> toList() {

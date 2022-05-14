@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -43,16 +44,15 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   }) : settings = provider.settings;
 
   @override
-  ImageStreamCompleter load(FMTCImageProvider key, DecoderCallback decode) {
-    return MultiFrameImageStreamCompleter(
-      codec: _loadAsync(decode),
-      scale: 1.0,
-      debugLabel: coords.toString(),
-      informationCollector: () sync* {
-        yield ErrorDescription('Coordinates: $coords');
-      },
-    );
-  }
+  ImageStreamCompleter load(FMTCImageProvider key, DecoderCallback decode) =>
+      MultiFrameImageStreamCompleter(
+        codec: _loadAsync(decode),
+        scale: 1,
+        debugLabel: coords.toString(),
+        informationCollector: () sync* {
+          yield ErrorDescription('Coordinates: $coords');
+        },
+      );
 
   Future<Codec> _loadAsync(DecoderCallback decode) async {
     final String url = provider.getTileUrl(coords, options);
@@ -76,7 +76,9 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     // IF network is disabled & the tile does not exist THEN throw an error
     if (settings.behavior == CacheBehavior.cacheOnly && needsCreating) {
       PaintingBinding.instance.imageCache.evict(this);
-      throw 'FMTCBrowsingError: Failed to load the tile from the cache because it was missing.';
+      throw _FMTCBrowsingError(
+        'Failed to load the tile from the cache because it was missing.',
+      );
     }
 
     // IF network is enabled & (the tile does not exist | needs updating) THEN download the tile | throw an error
@@ -89,9 +91,11 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       } catch (err) {
         if (needsCreating) {
           PaintingBinding.instance.imageCache.evict(this);
-          throw 'FMTCBrowsingError: Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.';
+          throw _FMTCBrowsingError(
+            'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.',
+          );
         } else {
-          return await decode(bytes!);
+          return decode(bytes!);
         }
       }
 
@@ -99,68 +103,85 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       if (serverData.statusCode != 200) {
         if (needsCreating) {
           PaintingBinding.instance.imageCache.evict(this);
-          throw 'FMTCBrowsingError: Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.';
+          throw _FMTCBrowsingError(
+            'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.',
+          );
         } else {
-          return await decode(bytes!);
+          return decode(bytes!);
         }
       }
 
       // Cache the tile in a seperate isolate
       bytes = serverData.bodyBytes;
-      file.create().then((_) => file.writeAsBytes(bytes as Uint8List));
+      unawaited(file.create().then((_) => file.writeAsBytes(bytes!)));
 
       // If an new tile was created over the tile limit, delete the oldest tile
       if (needsCreating && settings.maxStoreLength != 0) {
-        removeOldestQueue.add(() async {
-          int currentIteration = 0;
-          bool needToDelete = false;
+        unawaited(
+          removeOldestQueue.add(() async {
+            int currentIteration = 0;
+            bool needToDelete = false;
 
-          File? currentOldestFile;
-          DateTime? currentOldestDateTime;
+            File? currentOldestFile;
+            DateTime? currentOldestDateTime;
 
-          await for (FileSystemEntity e
-              in provider.storeDirectory.access.tiles.list()) {
-            if (e is! File) break;
+            await for (final FileSystemEntity e
+                in provider.storeDirectory.access.tiles.list()) {
+              if (e is! File) break;
 
-            currentIteration++;
-            if (currentIteration >= settings.maxStoreLength) {
-              needToDelete = true;
-              continue;
+              currentIteration++;
+              if (currentIteration >= settings.maxStoreLength) {
+                needToDelete = true;
+                continue;
+              }
+
+              final DateTime modified = (await e.stat()).modified;
+
+              if (modified.isBefore(currentOldestDateTime ?? DateTime.now())) {
+                currentOldestFile = e;
+                currentOldestDateTime = modified;
+              }
             }
 
-            final DateTime modified = (await e.stat()).modified;
-
-            if (modified.isBefore(currentOldestDateTime ?? DateTime.now())) {
-              currentOldestFile = e;
-              currentOldestDateTime = modified;
-            }
-          }
-
-          if (!needToDelete) return;
-          await currentOldestFile?.delete();
-        });
+            if (!needToDelete) return;
+            await currentOldestFile?.delete();
+          }),
+        );
       }
 
       PaintingBinding.instance.imageCache.evict(this);
-      return await decode(bytes);
+      return decode(bytes);
     }
 
     // IF tile exists & does not need updating THEN return the existing tile
-    return await decode(bytes!);
+    return decode(bytes!);
   }
 
   @override
-  Future<FMTCImageProvider> obtainKey(ImageConfiguration configuration) {
-    return SynchronousFuture<FMTCImageProvider>(this);
-  }
+  Future<FMTCImageProvider> obtainKey(ImageConfiguration configuration) =>
+      SynchronousFuture<FMTCImageProvider>(this);
 
   @override
   bool operator ==(Object other) {
     if (other.runtimeType != runtimeType) return false;
-    bool res = other is FMTCImageProvider && other.coords == coords;
-    return res;
+    return other is FMTCImageProvider && other.coords == coords;
   }
 
   @override
   int get hashCode => coords.hashCode;
+}
+
+/// An [Exception] indicating that there was an error retrieving tiles to be displayed on the map
+///
+/// Always thrown from within [FMTCImageProvider] generated from [FMTCTileProvider]. The [message] further indicates the reason, and may depend on the current caching behaviour.
+class _FMTCBrowsingError implements Exception {
+  final String message;
+
+  /// An [Exception] indicating that there was an error retrieving tiles to be displayed on the map
+  ///
+  /// Always thrown from within [FMTCImageProvider] generated from [FMTCTileProvider]. The [message] further indicates the reason, and may depend on the current caching behaviour.
+  _FMTCBrowsingError(this.message);
+
+  @override
+  String toString() => 'FMTCBrowsingError: $message';
 }

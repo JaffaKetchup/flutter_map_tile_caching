@@ -21,11 +21,11 @@ import 'bulk_download/tile_loops.dart';
 import 'bulk_download/tile_progress.dart';
 import 'internal/image_provider.dart';
 import 'internal/recovery/recovery.dart';
+import 'internal/store/directory.dart';
 import 'misc/typedefs.dart';
 import 'misc/validate.dart';
 import 'regions/downloadable_region.dart';
 import 'regions/recovered_region.dart';
-import 'internal/store/directory.dart';
 
 /// A [TileProvider] to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
 ///

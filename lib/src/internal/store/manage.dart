@@ -71,7 +71,8 @@ class StoreManagement {
         safeFilesystemString(inputString: storeName, throwIfInvalid: true);
 
     _access.real.renameSync(
-        p.joinAll([_storeDirectory.rootDirectory.access.real.path, safe]));
+      p.joinAll([_storeDirectory.rootDirectory.access.real.path, safe]),
+    );
 
     return _storeDirectory.copyWith(storeName: safe);
   }
@@ -84,7 +85,8 @@ class StoreManagement {
         safeFilesystemString(inputString: storeName, throwIfInvalid: true);
 
     await _access.real.rename(
-        p.joinAll([_storeDirectory.rootDirectory.access.real.path, safe]));
+      p.joinAll([_storeDirectory.rootDirectory.access.real.path, safe]),
+    );
 
     return _storeDirectory.copyWith(storeName: safe);
   }

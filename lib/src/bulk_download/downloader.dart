@@ -18,14 +18,14 @@ Stream<TileProgress> bulkDownloader({
   required FMTCTileProvider provider,
   required TileLayerOptions options,
   required http.Client client,
-  required Function(dynamic)? errorHandler,
+  required Function(Object?)? errorHandler,
   required int parallelThreads,
   required bool preventRedownload,
   required Uint8List? seaTileBytes,
   required Queue queue,
   required StreamController<TileProgress> streamController,
 }) {
-  for (Coords<num> coord in tiles) {
+  for (final Coords<num> coord in tiles) {
     queue
         .add(
       () => _getAndSaveTile(
@@ -53,7 +53,7 @@ Future<TileProgress> _getAndSaveTile({
   required Coords<num> coord,
   required TileLayerOptions options,
   required http.Client client,
-  required Function(dynamic)? errorHandler,
+  required Function(Object)? errorHandler,
   required bool preventRedownload,
   required Uint8List? seaTileBytes,
 }) async {

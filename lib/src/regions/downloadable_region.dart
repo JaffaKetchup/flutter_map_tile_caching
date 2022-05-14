@@ -30,7 +30,7 @@ abstract class BaseRegion {
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),
-    Function(dynamic)? errorHandler,
+    Function(Object?)? errorHandler,
   });
 
   /// Create a drawable area for a [FlutterMap] out of this region
@@ -112,7 +112,7 @@ class DownloadableRegion {
   final Crs crs;
 
   /// A function that takes any type of error as an argument to be called in the event a tile fetch fails
-  final Function(dynamic)? errorHandler;
+  final Function(Object?)? errorHandler;
 
   /// Avoid construction using this method. Use [BaseRegion.toDownloadable] to generate [DownloadableRegion]s from other regions.
   @internal
@@ -133,11 +133,13 @@ class DownloadableRegion {
   }) {
     if (minZoom > maxZoom) {
       throw ArgumentError(
-          '`minZoom` should be less than or equal to `maxZoom`');
+        '`minZoom` should be less than or equal to `maxZoom`',
+      );
     }
     if (parallelThreads < 1) {
       throw ArgumentError(
-          '`parallelThreads` should be more than or equal to 1. Set to 1 to disable multithreading');
+        '`parallelThreads` should be more than or equal to 1. Set to 1 to disable multithreading',
+      );
     }
   }
 }

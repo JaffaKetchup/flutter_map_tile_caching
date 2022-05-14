@@ -17,14 +17,16 @@ class StoreStats {
   final bool _forceRecalculation;
 
   /// Provides statistics about a [StoreDirectory]
-  StoreStats(this._storeDirectory, [this._forceRecalculation = false])
-      : _access = StoreAccess(_storeDirectory);
+  StoreStats(this._storeDirectory, {bool forceRecalculation = false})
+      : _forceRecalculation = forceRecalculation,
+        _access = StoreAccess(_storeDirectory);
 
   /// Shorthand for [StoreDirectory.access], used commonly throughout
   final StoreAccess _access;
 
   /// Force re-calculation for all statistics instead of retrieving from stats cache
-  StoreStats get noCache => StoreStats(_storeDirectory, true);
+  StoreStats get noCache =>
+      StoreStats(_storeDirectory, forceRecalculation: true);
 
   /// Get a cached statistic or fallback to a calculation synchronously
   ///
@@ -64,47 +66,57 @@ class StoreStats {
   /// For asynchronous version, see [storeSizeAsync].
   ///
   /// Includes all files beneath the store, not necessarily just tiles.
-  double get storeSize => double.parse(_csgSync(
-        'size',
-        () => _access.real
-            .listSync(recursive: true)
-            .map((e) => e is File ? e.lengthSync() / 1024 : 0)
-            .sum,
-      ));
+  double get storeSize => double.parse(
+        _csgSync(
+          'size',
+          () => _access.real
+              .listSync(recursive: true)
+              .map((e) => e is File ? e.lengthSync() / 1024 : 0)
+              .sum,
+        ),
+      );
 
   /// Retrieve the size of the store in kibibytes (KiB)
   ///
   /// For asynchronous version, see [storeSize].
   ///
   /// Includes all files beneath the store, not necessarily just tiles.
-  Future<double> get storeSizeAsync async => double.parse(await _csgAsync(
-        'size',
-        () async => (await _access.real
-                .list(recursive: true)
-                .asyncMap((e) async => e is File ? await e.length() / 1024 : 0)
-                .toList())
-            .sum,
-      ));
+  Future<double> get storeSizeAsync async => double.parse(
+        await _csgAsync(
+          'size',
+          () async => (await _access.real
+                  .list(recursive: true)
+                  .asyncMap(
+                    (e) async => e is File ? await e.length() / 1024 : 0,
+                  )
+                  .toList())
+              .sum,
+        ),
+      );
 
   /// Retrieve the number of stored tiles in a store
   ///
   /// For asynchronous version, see [storeLengthAsync].
   ///
   /// Only includes tiles stored, not necessarily all files.
-  int get storeLength => int.parse(_csgSync(
-        'length',
-        () => _access.tiles.listSync().length,
-      ));
+  int get storeLength => int.parse(
+        _csgSync(
+          'length',
+          () => _access.tiles.listSync().length,
+        ),
+      );
 
   /// Retrieve the number of stored tiles in a store
   ///
   /// For synchronous version, see [storeLength].
   ///
   /// Only includes tiles stored, not necessarily all files.
-  Future<int> get storeLengthAsync async => int.parse(await _csgAsync(
-        'length',
-        () async => await _access.tiles.list().length,
-      ));
+  Future<int> get storeLengthAsync async => int.parse(
+        await _csgAsync(
+          'length',
+          () => _access.tiles.list().length,
+        ),
+      );
 
   /// Retrieves a (potentially random) tile from the store and uses it to create a cover [Image]
   ///
@@ -125,17 +137,19 @@ class StoreStats {
 
     if (!random && maxRange != null) {
       throw ArgumentError(
-          'If not in random mode, `maxRange` must be left as `null`');
+        'If not in random mode, `maxRange` must be left as `null`',
+      );
     }
     if (maxRange != null && (maxRange < 1 || maxRange > storeLen)) {
       throw ArgumentError(
-          'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`');
+        'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`',
+      );
     }
 
     final int? randInt = !random ? null : Random().nextInt(maxRange!);
     int i = 0;
 
-    for (FileSystemEntity e in _access.tiles.listSync()) {
+    for (final FileSystemEntity e in _access.tiles.listSync()) {
       if (i >= (randInt ?? 0)) {
         return Image.file(
           File(e.absolute.path),
@@ -168,18 +182,20 @@ class StoreStats {
 
     if (!random && maxRange != null) {
       throw ArgumentError(
-          'If not in random mode, `maxRange` must be left as `null`');
+        'If not in random mode, `maxRange` must be left as `null`',
+      );
     }
     if (maxRange != null && (maxRange < 1 || maxRange > storeLen)) {
       throw ArgumentError(
-          'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`');
+        'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`',
+      );
     }
 
     final int? randInt = !random ? null : Random().nextInt(maxRange!);
 
     int i = 0;
 
-    await for (FileSystemEntity e in _access.tiles.list()) {
+    await for (final FileSystemEntity e in _access.tiles.list()) {
       if (i >= (randInt ?? 0)) {
         return Image.file(
           File(e.absolute.path),
@@ -214,12 +230,12 @@ class StoreStats {
   }) {
     if (!FileSystemEntity.isWatchSupported) {
       throw UnsupportedError(
-          'Watching is not supported on the current platform');
+        'Watching is not supported on the current platform',
+      );
     }
 
-    final stream = _access.real
-        .watch(events: fileSystemEvents, recursive: false)
-        .map((e) => null);
+    final stream =
+        _access.real.watch(events: fileSystemEvents).map((e) => null);
 
     return debounce == null ? stream : stream.debounce(debounce);
   }

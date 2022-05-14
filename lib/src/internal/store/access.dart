@@ -14,7 +14,9 @@ class StoreAccess {
   StoreAccess(this._storeDirectory) {
     real = _storeDirectory.rootDirectory.rootDirectory >>
         (safeFilesystemString(
-            inputString: _storeDirectory.storeName, throwIfInvalid: true));
+          inputString: _storeDirectory.storeName,
+          throwIfInvalid: true,
+        ));
 
     tiles = real >> 'tiles';
     stats = real >> 'stats';

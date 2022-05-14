@@ -113,10 +113,9 @@ class RootDirectory {
   RootDirectory copyWith({
     Directory? rootDirectory,
     bool autoCreate = true,
-  }) {
-    return RootDirectory.custom(
-      rootDirectory ?? this.rootDirectory,
-      autoCreate: autoCreate,
-    );
-  }
+  }) =>
+      RootDirectory.custom(
+        rootDirectory ?? this.rootDirectory,
+        autoCreate: autoCreate,
+      );
 }

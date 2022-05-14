@@ -77,7 +77,10 @@ class DownloadManagement {
       }
 
       final bool? result = await preDownloadChecksCallback(
-          connectivity, batteryLevel, chargingStatus);
+        connectivity,
+        batteryLevel,
+        chargingStatus,
+      );
 
       if ((result == null &&
               (connectivity == ConnectivityResult.mobile ||
@@ -120,7 +123,7 @@ class DownloadManagement {
   /// Do not use to cancel background downloads, return `true` from the background download callback to cancel a background download. Background download cancellations require a few more 'shut-down' steps that can create unexpected issues and memory leaks if not carried out.
   Future<void> cancel() async {
     _queue?.dispose();
-    _streamController?.close();
+    await _streamController?.close();
     await Recovery(_storeDirectory).endRecovery();
     _downloadOngoing = false;
   }
@@ -139,7 +142,8 @@ class DownloadManagement {
       try {
         seaTileBytes = (await client.get(
           Uri.parse(
-              tileProvider.getTileUrl(Coords(0, 0)..z = 19, region.options)),
+            tileProvider.getTileUrl(Coords(0, 0)..z = 19, region.options),
+          ),
         ))
             .bodyBytes;
       } catch (e) {
@@ -167,7 +171,7 @@ class DownloadManagement {
       streamController: _streamController!,
     );
 
-    await for (TileProgress evt in downloadStream) {
+    await for (final TileProgress evt in downloadStream) {
       if (evt.failedUrl == null) {
         successfulTiles++;
       } else {
@@ -190,7 +194,7 @@ class DownloadManagement {
       );
 
       yield prog;
-      if (prog.percentageProgress >= 100) cancel();
+      if (prog.percentageProgress >= 100) await cancel();
     }
 
     client.close();
@@ -225,7 +229,7 @@ class DownloadManagement {
 
 extension _ListExtensionsE<E> on List<E> {
   List<List<E>> chunked(int size) {
-    List<List<E>> chunks = [];
+    final List<List<E>> chunks = [];
 
     for (var i = 0; i < length; i += size) {
       chunks.add(sublist(i, (i + size < length) ? i + size : length));

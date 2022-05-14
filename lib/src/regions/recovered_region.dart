@@ -92,7 +92,7 @@ class RecoveredRegion {
   DownloadableRegion toDownloadable(
     TileLayerOptions options, {
     Crs crs = const Epsg3857(),
-    Function(dynamic)? errorHandler,
+    Function(Object?)? errorHandler,
   }) {
     final BaseRegion region = type == RegionType.rectangle
         ? RectangleRegion(bounds!)
