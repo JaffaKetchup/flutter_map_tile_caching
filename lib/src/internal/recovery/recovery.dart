@@ -13,6 +13,9 @@ class Recovery {
   /// The file used to store information used when recovering a download
   final File recoveryFile;
 
+  /// Flag to set whether the download is ongoing or needs to be recovered
+  bool downloadOngoing = false;
+
   /// Used internally to manage bulk download recovery
   Recovery(StoreDirectory storeDirectory)
       : recoveryFile = storeDirectory.access.metadata >>>
@@ -24,11 +27,16 @@ class Recovery {
   Future<void> startRecovery(
     DownloadableRegion region,
     String identification,
-  ) =>
-      start(recoveryFile, region, identification);
+  ) {
+    downloadOngoing = true;
+    return start(recoveryFile, region, identification);
+  }
 
   /// End the recovery - delete the file
-  Future<void> endRecovery() => end(recoveryFile);
+  Future<void> endRecovery() {
+    downloadOngoing = false;
+    return end(recoveryFile);
+  }
 
   /// Recover the information - read the file
   Future<RecoveredRegion?> readRecovery() => read(recoveryFile);

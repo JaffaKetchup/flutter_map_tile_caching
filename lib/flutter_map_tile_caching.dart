@@ -18,7 +18,7 @@ export 'src/fmtc.dart';
 export 'src/main.dart';
 export 'src/misc/cache_behavior.dart';
 export 'src/misc/typedefs.dart';
-export 'src/misc/validate.dart' hide safeFilesystemString;
+export 'src/misc/validate.dart';
 export 'src/regions/circle.dart';
 export 'src/regions/downloadable_region.dart';
 export 'src/regions/line.dart';

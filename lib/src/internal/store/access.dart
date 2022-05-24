@@ -13,10 +13,10 @@ class StoreAccess {
   /// Provides direct filesystem access paths to a [StoreDirectory] - use with caution
   StoreAccess(this._storeDirectory) {
     real = _storeDirectory.rootDirectory.rootDirectory >>
-        (safeFilesystemString(
+        FMTCSafeFilesystemString.sanitiser(
           inputString: _storeDirectory.storeName,
           throwIfInvalid: true,
-        ));
+        );
 
     tiles = real >> 'tiles';
     stats = real >> 'stats';

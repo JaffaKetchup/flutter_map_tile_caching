@@ -27,14 +27,11 @@ class DownloadManagement {
   /// The store directory to provide access paths to
   final StoreDirectory _storeDirectory;
 
-  /// Used internally for recovery purposes
-  bool _downloadOngoing = false;
-
-  /// Used internally for browsing-caused tile requests
-  final http.Client _httpClient = http.Client();
-
   /// Used internally to queue download tiles to process in bulk
   Queue? _queue;
+
+  /// Used internally to store the state of recovery
+  Recovery? _recovery;
 
   /// Used internally to control bulk downloading
   StreamController<TileProgress>? _streamController;
@@ -93,11 +90,11 @@ class DownloadManagement {
     }
 
     if (!disableRecovery) {
-      await Recovery(_storeDirectory).startRecovery(
+      _recovery = Recovery(_storeDirectory);
+      await _recovery!.startRecovery(
         region,
         '${_storeDirectory.storeName}: ${region.type.name[0].toUpperCase() + region.type.name.substring(1)} Type',
       );
-      _downloadOngoing = true;
     }
 
     _queue = Queue(parallel: region.parallelThreads);
@@ -124,8 +121,7 @@ class DownloadManagement {
   Future<void> cancel() async {
     _queue?.dispose();
     await _streamController?.close();
-    await Recovery(_storeDirectory).endRecovery();
-    _downloadOngoing = false;
+    await _recovery?.endRecovery();
   }
 
   Stream<DownloadProgress> _startDownload({
@@ -213,7 +209,7 @@ class DownloadManagement {
       {
         'bounds': LatLngBounds.fromPoints(region.points),
         'circleOutline': region.points,
-        'lineOutline': region.points.chunked(4),
+        'lineOutline': region.points.chunked(4).toList(),
         'minZoom': region.minZoom,
         'maxZoom': region.maxZoom,
         'crs': region.crs,
@@ -228,13 +224,9 @@ class DownloadManagement {
 }
 
 extension _ListExtensionsE<E> on List<E> {
-  List<List<E>> chunked(int size) {
-    final List<List<E>> chunks = [];
-
+  Iterable<List<E>> chunked(int size) sync* {
     for (var i = 0; i < length; i += size) {
-      chunks.add(sublist(i, (i + size < length) ? i + size : length));
+      yield sublist(i, (i + size < length) ? i + size : length);
     }
-
-    return chunks;
   }
 }

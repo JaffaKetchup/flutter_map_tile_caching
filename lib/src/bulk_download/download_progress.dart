@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 
 /// Represents the progress of an ongoing or finished (if [percentageProgress] is 100%) bulk download

@@ -57,7 +57,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   Future<Codec> _loadAsync(DecoderCallback decode) async {
     final String url = provider.getTileUrl(coords, options);
     final File file = provider.storeDirectory.access.tiles >>>
-        safeFilesystemString(inputString: url, throwIfInvalid: false);
+        FMTCSafeFilesystemString.sanitiser(
+          inputString: url,
+          throwIfInvalid: false,
+        );
 
     // Logic to check whether the tile needs creating or updating
     final bool needsCreating = !(await file.exists());

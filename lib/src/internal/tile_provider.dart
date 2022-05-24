@@ -56,7 +56,7 @@ class FMTCTileProvider extends TileProvider {
   /// This contains the logic for the tile provider, such as browse caching and using bulk downloaded tiles.
   FMTCTileProvider({
     required this.storeDirectory,
-    FMTCTileProviderSettings? settings,
+    required FMTCTileProviderSettings? settings,
   }) : settings =
             settings ?? FMTC.instance.settings.defaultTileProviderSettings;
 

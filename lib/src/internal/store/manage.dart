@@ -67,8 +67,10 @@ class StoreManagement {
   ///
   /// The old [StoreDirectory] will still retain it's link to the old store, so always use the new returned value instead: returns a new [StoreDirectory] after a successful renaming operation.
   StoreDirectory rename(String storeName) {
-    final String safe =
-        safeFilesystemString(inputString: storeName, throwIfInvalid: true);
+    final String safe = FMTCSafeFilesystemString.sanitiser(
+      inputString: storeName,
+      throwIfInvalid: true,
+    );
 
     _access.real.renameSync(
       p.joinAll([_storeDirectory.rootDirectory.access.real.path, safe]),
@@ -81,8 +83,10 @@ class StoreManagement {
   ///
   /// The old [StoreDirectory] will still retain it's link to the old store, so always use the new returned value instead: returns a new [StoreDirectory] after a successful renaming operation.
   Future<StoreDirectory> renameAsync(String storeName) async {
-    final String safe =
-        safeFilesystemString(inputString: storeName, throwIfInvalid: true);
+    final String safe = FMTCSafeFilesystemString.sanitiser(
+      inputString: storeName,
+      throwIfInvalid: true,
+    );
 
     await _access.real.rename(
       p.joinAll([_storeDirectory.rootDirectory.access.real.path, safe]),

@@ -47,7 +47,7 @@ class StorageCachingTileProvider extends TileProvider {
 
   /// Name of a store (to use for this instance), defaulting to 'mainStore'.
   ///
-  /// Is validated through [safeFilesystemString] : an error will be thrown if the store name is given and invalid, see [validateStoreName] to validate names safely before construction.
+  /// Is validated through [sanitiser] : an error will be thrown if the store name is given and invalid, see [validateStoreName] to validate names safely before construction.
   final StoreDirectory storeDirectory;
 
   /// The behavior method to get and cache a tile. Also called `cacheBehaviour`.

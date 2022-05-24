@@ -9,7 +9,6 @@ import 'package:queue/queue.dart';
 
 import '../internal/exts.dart';
 import '../internal/tile_provider.dart';
-import '../main.dart';
 import '../misc/validate.dart';
 import 'tile_progress.dart';
 
@@ -64,7 +63,10 @@ Future<TileProgress> _getAndSaveTile({
       Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
   final String url = provider.getTileUrl(coordDouble, options);
   final File file = provider.storeDirectory.access.tiles >>>
-      safeFilesystemString(inputString: url, throwIfInvalid: false);
+      FMTCSafeFilesystemString.sanitiser(
+        inputString: url,
+        throwIfInvalid: false,
+      );
 
   try {
     if (preventRedownload && await file.exists()) {

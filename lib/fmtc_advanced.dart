@@ -18,7 +18,6 @@ export 'src/internal/store/download.dart';
 export 'src/internal/store/manage.dart';
 export 'src/internal/store/statistics.dart';
 export 'src/internal/tile_provider.dart';
-export 'src/misc/validate.dart' show safeFilesystemString;
 export 'src/root/access.dart';
 export 'src/root/manage.dart';
 export 'src/root/statistics.dart';
