@@ -8,6 +8,11 @@ import 'package:meta/meta.dart';
 ///
 /// Is yielded from `StorageCachingTileProvider().downloadRegion()`, and returned in a callback from `StorageCachingTileProvider().downloadRegionBackground()`.
 class DownloadProgress {
+  /// Identification number of the corresponding download
+  ///
+  /// A zero identification denotes that there is no corresponding download yet, usually due to the initialisation with [DownloadProgress.empty].
+  final int downloadID;
+
   /// Number of successful tile downloads
   final int successfulTiles;
 
@@ -100,6 +105,7 @@ class DownloadProgress {
   /// Avoid construction using this method. Use [DownloadProgress.empty] to generate empty placeholders where necessary.
   @internal
   DownloadProgress.internal({
+    required this.downloadID,
     required this.successfulTiles,
     required this.failedTiles,
     required this.maxTiles,
@@ -111,7 +117,8 @@ class DownloadProgress {
 
   /// Create an empty placeholder (all values set to 0 or empty) [DownloadProgress], useful for `initalData` in a [StreamBuilder]
   DownloadProgress.empty()
-      : successfulTiles = 0,
+      : downloadID = 0,
+        successfulTiles = 0,
         failedTiles = [],
         maxTiles = 0,
         seaTiles = 0,

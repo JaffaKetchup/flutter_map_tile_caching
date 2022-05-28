@@ -15,7 +15,6 @@ export 'package:connectivity_plus/connectivity_plus.dart'
 
 export 'src/bulk_download/download_progress.dart';
 export 'src/fmtc.dart';
-export 'src/main.dart';
 export 'src/misc/cache_behavior.dart';
 export 'src/misc/typedefs.dart';
 export 'src/misc/validate.dart';

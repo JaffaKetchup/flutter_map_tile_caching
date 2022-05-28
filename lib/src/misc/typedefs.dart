@@ -1,4 +1,4 @@
-import '../../flutter_map_tile_caching.dart';
+import '../../fmtc_advanced.dart';
 
 /// Use in `preDownloadChecksCallback` in the bulk downloaders to ensure the download is OK to start by considering the device's status.
 ///
@@ -30,7 +30,7 @@ import '../../flutter_map_tile_caching.dart';
 ///
 /// To check if the tests have failed (if tests do fail, the download will be cancelled for you):
 ///
-/// - In the foreground bulk downloader [StorageCachingTileProvider.downloadRegion] :
+/// - In the foreground bulk downloader [DownloadManagement.startForeground] :
 /// ```dart
 /// final Stream<DownloadProgress> downloadStream = provider.downloadRegion(...).asBroadcastStream();
 /// if (await downloadStream.isEmpty) {
@@ -43,7 +43,7 @@ import '../../flutter_map_tile_caching.dart';
 /// }
 /// ```
 ///
-/// - In the background bulk downloader [StorageCachingTileProvider.downloadRegionBackground] :
+/// - In the background bulk downloader [DownloadManagement.startBackground] :
 /// ```dart
 /// // Called if the checks fail, otherwise download continues as normal (`callback()`)
 /// preDownloadChecksFailedCallback: () {}

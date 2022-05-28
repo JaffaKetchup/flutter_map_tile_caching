@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
@@ -142,4 +143,40 @@ class DownloadableRegion {
       );
     }
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is DownloadableRegion &&
+        other.type == type &&
+        other.originalRegion == originalRegion &&
+        listEquals(other.points, points) &&
+        other.minZoom == minZoom &&
+        other.maxZoom == maxZoom &&
+        other.options == options &&
+        other.parallelThreads == parallelThreads &&
+        other.preventRedownload == preventRedownload &&
+        other.seaTileRemoval == seaTileRemoval &&
+        other.start == start &&
+        other.end == end &&
+        other.crs == crs &&
+        other.errorHandler == errorHandler;
+  }
+
+  @override
+  int get hashCode =>
+      type.hashCode ^
+      originalRegion.hashCode ^
+      points.hashCode ^
+      minZoom.hashCode ^
+      maxZoom.hashCode ^
+      options.hashCode ^
+      parallelThreads.hashCode ^
+      preventRedownload.hashCode ^
+      seaTileRemoval.hashCode ^
+      start.hashCode ^
+      end.hashCode ^
+      crs.hashCode ^
+      errorHandler.hashCode;
 }

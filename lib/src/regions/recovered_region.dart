@@ -1,8 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
-import '../internal/recovery/recovery.dart';
 import 'circle.dart';
 import 'downloadable_region.dart';
 import 'line.dart';
@@ -16,14 +17,24 @@ import 'rectangle.dart';
 ///
 /// Should avoid manual construction. Use [toDownloadable] to restore a valid [DownloadableRegion].
 class RecoveredRegion {
-  /// A human-readable description of the download that the recovery file is attached to
+  /// The file that this region was contained in
   ///
-  /// Not actually used when converting to [DownloadableRegion]
-  final String identification;
+  /// Not actually used when converting to [DownloadableRegion].
+  final File file;
 
-  /// The time of the corresponding [Recovery] object's creation
+  /// A unique ID created for every bulk download operation
   ///
-  /// Not actually used when converting to [DownloadableRegion]
+  /// Not actually used when converting to [DownloadableRegion].
+  final int id;
+
+  /// A human-readable description of the region of the recovery
+  ///
+  /// Not actually used when converting to [DownloadableRegion].
+  final String description;
+
+  /// The time at which this recovery was started
+  ///
+  /// Not actually used when converting to [DownloadableRegion].
   final DateTime time;
 
   /// The shape that this region conforms to
@@ -70,10 +81,12 @@ class RecoveredRegion {
   /// This is a storage saving feature, not a time saving or data saving feature: tiles still have to be fully downloaded before they can be checked.
   final bool seaTileRemoval;
 
-  /// Avoid construction using this method.
+  /// Avoid construction using this method
   @internal
   RecoveredRegion.internal({
-    required this.identification,
+    required this.file,
+    required this.id,
+    required this.description,
     required this.time,
     required this.type,
     required this.bounds,
@@ -89,6 +102,7 @@ class RecoveredRegion {
     required this.seaTileRemoval,
   });
 
+  /// Convert this region into a downloadable region
   DownloadableRegion toDownloadable(
     TileLayerOptions options, {
     Crs crs = const Epsg3857(),

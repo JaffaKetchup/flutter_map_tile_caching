@@ -6,6 +6,7 @@ import '../internal/exts.dart';
 import '../internal/store/directory.dart';
 import 'access.dart';
 import 'manage.dart';
+import 'recovery.dart';
 import 'statistics.dart';
 
 /// Access point to a root
@@ -96,6 +97,9 @@ class RootDirectory {
 
   /// Get statistics about this root (and all sub-stores)
   RootStats get stats => RootStats(this);
+
+  /// Manage the download recovery of all sub-stores
+  RootRecovery get recovery => RootRecovery.instance ?? RootRecovery(this);
 
   @override
   String toString() => 'RootDirectory(_rootDirectory: $rootDirectory)';

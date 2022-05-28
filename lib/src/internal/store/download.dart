@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:background_fetch/background_fetch.dart';
 import 'package:battery_info/battery_info_plugin.dart';
 import 'package:battery_info/enums/charging_status.dart';
 import 'package:battery_info/model/android_battery_info.dart';
 import 'package:battery_info/model/iso_battery_info.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:queue/queue.dart';
@@ -16,9 +19,9 @@ import '../../bulk_download/download_progress.dart';
 import '../../bulk_download/downloader.dart';
 import '../../bulk_download/tile_loops.dart';
 import '../../bulk_download/tile_progress.dart';
+import '../../fmtc.dart';
 import '../../misc/typedefs.dart';
 import '../../regions/downloadable_region.dart';
-import '../recovery/recovery.dart';
 import '../tile_provider.dart';
 import 'directory.dart';
 
@@ -30,8 +33,8 @@ class DownloadManagement {
   /// Used internally to queue download tiles to process in bulk
   Queue? _queue;
 
-  /// Used internally to store the state of recovery
-  Recovery? _recovery;
+  /// Used internally to keep track of the recovery file
+  int? _recoveryId;
 
   /// Used internally to control bulk downloading
   StreamController<TileProgress>? _streamController;
@@ -47,8 +50,8 @@ class DownloadManagement {
   ///
   /// For more information on [preDownloadChecksCallback], see documentation on [PreDownloadChecksCallback]. In a few words, use this callback to check the devices information/status before starting a download. By default, no checks are made (null), but this is not recommended.
   ///
-  /// Streams a [DownloadProgress] object containing lots of handy information about the download's progression status; unless the pre-download checks fail, in which case the stream's `.isEmpty` will be `true` and no new events will be emitted. If you get messages about 'Bad State' after dealing with the checks, just add `.asBroadcastStream()` on the end of [start].
-  Stream<DownloadProgress> start({
+  /// Streams a [DownloadProgress] object containing lots of handy information about the download's progression status; unless the pre-download checks fail, in which case the stream's `.isEmpty` will be `true` and no new events will be emitted. If you get messages about 'Bad State' after dealing with the checks, just add `.asBroadcastStream()` on the end of [startForeground].
+  Stream<DownloadProgress> startForeground({
     required DownloadableRegion region,
     FMTCTileProviderSettings? tileProviderSettings,
     bool disableRecovery = false,
@@ -89,11 +92,20 @@ class DownloadManagement {
       }
     }
 
+    _recoveryId = hashValues(
+          region,
+          tileProviderSettings,
+          _storeDirectory.getTileProvider(tileProviderSettings),
+        ) *
+        DateTime.now().millisecondsSinceEpoch;
+
     if (!disableRecovery) {
-      _recovery = Recovery(_storeDirectory);
-      await _recovery!.startRecovery(
-        region,
-        '${_storeDirectory.storeName}: ${region.type.name[0].toUpperCase() + region.type.name.substring(1)} Type',
+      await _storeDirectory.rootDirectory.recovery.start(
+        id: _recoveryId!,
+        description:
+            '${_storeDirectory.storeName}: ${region.type.name[0].toUpperCase() + region.type.name.substring(1)} Type',
+        region: region,
+        storeDirectory: _storeDirectory,
       );
     }
 
@@ -105,6 +117,163 @@ class DownloadManagement {
       region: region,
       tiles: await _generateTilesComputer(region),
     );
+  }
+
+  /// Download a specified [DownloadableRegion] in the background, and show a notification progress bar (by default)
+  ///
+  /// Only available on Android devices, due to limitations with other operating systems.
+  /// To check the number of tiles that need to be downloaded before using this function, use [check].
+  ///
+  /// Background downloading is complicated: see the main README for more information.
+  ///
+  /// You may want to call [FlutterMapTileCaching.requestIgnoreBatteryOptimizations] beforehand, depending on how/where/why this background download will be used. See documentation on that method for more information.
+  ///
+  /// Optionally specify [showNotification] as `false` to disable the built-in notification system.
+  ///
+  /// Optionally specify a [callback] that gets fired every time another tile is downloaded/failed, takes one [DownloadProgress] argument, and returns a boolean. Download can be cancelled by returning `true` from [callback] function.
+  ///
+  /// If the download doesn't seem to start on a device, try changing [useAltMethod] to `true`. This will switch to an older Android API, so should only be used if it is the most stable on a device. You may be able to programatically detect if the download hasn't started by using the callback, therefore allowing you to call this method again with [useAltMethod], but this isn't guranteed.
+  ///
+  /// For more information on [preDownloadChecksCallback], see documentation on [PreDownloadChecksCallback]. In a few words, use this callback to check the devices information/status before starting a download. By default, no checks are made (null), but this is not recommended. [preDownloadChecksFailedCallback] is optional and will be called if the checks do fail, after cancelling the download.
+  ///
+  /// Returns nothing.
+  Future<void> startBackground({
+    required DownloadableRegion region,
+    FMTCTileProviderSettings? tileProviderSettings,
+    bool disableRecovery = false,
+    PreDownloadChecksCallback preDownloadChecksCallback,
+    bool Function(DownloadProgress)? callback,
+    void Function()? preDownloadChecksFailedCallback,
+    bool useAltMethod = false,
+    bool showNotification = true,
+    String notificationChannelName = 'Map Background Downloader',
+    String notificationChannelDescription =
+        'Displays progress notifications to inform the user about the progress of their map download.',
+    String notificationIcon = '@mipmap/ic_launcher',
+    String subText = 'Map Downloader',
+    String ongoingTitle = 'Map Downloading...',
+    String Function(DownloadProgress)? ongoingBodyBuilder,
+    String cancelledTitle = 'Map Download Cancelled',
+    String Function(DownloadProgress)? cancelledBodyBuilder,
+    String completeTitle = 'Map Downloaded',
+    String Function(DownloadProgress)? completeBodyBuilder,
+  }) async {
+    if (Platform.isAndroid) {
+      FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
+      flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+      final AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings(notificationIcon);
+      final InitializationSettings initializationSettings =
+          InitializationSettings(android: initializationSettingsAndroid);
+      await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+      await BackgroundFetch.configure(
+        BackgroundFetchConfig(
+          minimumFetchInterval: 15,
+        ),
+        (String taskId) async {
+          if (taskId == 'backgroundTileDownload') {
+            // ignore: cancel_subscriptions
+            StreamSubscription<DownloadProgress>? sub;
+            final download = startForeground(
+              region: region,
+              tileProviderSettings: tileProviderSettings,
+              disableRecovery: disableRecovery,
+              preDownloadChecksCallback: preDownloadChecksCallback,
+            ).asBroadcastStream();
+            if (await download.isEmpty) {
+              await cancel();
+              if (preDownloadChecksFailedCallback != null) {
+                preDownloadChecksFailedCallback();
+              }
+              BackgroundFetch.finish(taskId);
+              return;
+            }
+
+            sub = download.listen((event) async {
+              final AndroidNotificationDetails androidPlatformChannelSpecifics =
+                  AndroidNotificationDetails(
+                'MapDownloading',
+                notificationChannelName,
+                channelDescription: notificationChannelDescription,
+                showProgress: true,
+                maxProgress: event.maxTiles,
+                progress: event.attemptedTiles,
+                visibility: NotificationVisibility.public,
+                subText: subText,
+                importance: Importance.low,
+                priority: Priority.low,
+                showWhen: false,
+                playSound: false,
+                enableVibration: false,
+                onlyAlertOnce: true,
+                autoCancel: false,
+              );
+              final NotificationDetails platformChannelSpecifics =
+                  NotificationDetails(android: androidPlatformChannelSpecifics);
+              if (showNotification) {
+                await flutterLocalNotificationsPlugin!.show(
+                  0,
+                  ongoingTitle,
+                  ongoingBodyBuilder == null
+                      ? '${event.attemptedTiles}/${event.maxTiles} (${event.percentageProgress.round().toString()}%)'
+                      : ongoingBodyBuilder(event),
+                  platformChannelSpecifics,
+                );
+              }
+
+              if (callback != null && callback(event)) {
+                await sub!.cancel();
+                await cancel();
+                if (showNotification) {
+                  await flutterLocalNotificationsPlugin!.cancel(0);
+                  await flutterLocalNotificationsPlugin.show(
+                    0,
+                    cancelledTitle,
+                    cancelledBodyBuilder == null
+                        ? '${event.remainingTiles} tiles remained'
+                        : cancelledBodyBuilder(event),
+                    platformChannelSpecifics,
+                  );
+                }
+                BackgroundFetch.finish(taskId);
+              }
+
+              if (event.percentageProgress == 100) {
+                await sub!.cancel();
+                await cancel();
+                if (showNotification) {
+                  await flutterLocalNotificationsPlugin!.cancel(0);
+                  await flutterLocalNotificationsPlugin.show(
+                    0,
+                    completeTitle,
+                    completeBodyBuilder == null
+                        ? '${event.failedTiles.length} failed tiles'
+                        : completeBodyBuilder(event),
+                    platformChannelSpecifics,
+                  );
+                }
+                BackgroundFetch.finish(taskId);
+              }
+            });
+          } else {
+            BackgroundFetch.finish(taskId);
+          }
+        },
+        (String taskId) async => BackgroundFetch.finish(taskId),
+      );
+      await BackgroundFetch.scheduleTask(
+        TaskConfig(
+          taskId: 'backgroundTileDownload',
+          delay: 0,
+          forceAlarmManager: useAltMethod,
+        ),
+      );
+    } else {
+      throw UnsupportedError(
+        'The background download feature is only available on Android due to limitations with other operating systems.',
+      );
+    }
   }
 
   /// Check approximately how many downloadable tiles are within a specified [DownloadableRegion]
@@ -121,7 +290,9 @@ class DownloadManagement {
   Future<void> cancel() async {
     _queue?.dispose();
     await _streamController?.close();
-    await _recovery?.endRecovery();
+    if (_recoveryId != null) {
+      await _storeDirectory.rootDirectory.recovery.cancel(_recoveryId!);
+    }
   }
 
   Stream<DownloadProgress> _startDownload({
@@ -180,6 +351,7 @@ class DownloadManagement {
       durationPerTile.add(evt.duration);
 
       final DownloadProgress prog = DownloadProgress.internal(
+        downloadID: _recoveryId!,
         maxTiles: tiles.length,
         successfulTiles: successfulTiles,
         failedTiles: failedTiles,

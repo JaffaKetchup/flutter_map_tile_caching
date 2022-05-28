@@ -3,28 +3,28 @@ import 'dart:io';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:ini/ini.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:path/path.dart' as p;
 
 import '../../regions/circle.dart';
 import '../../regions/downloadable_region.dart';
 import '../../regions/line.dart';
 import '../../regions/rectangle.dart';
+import '../exts.dart';
+import '../store/directory.dart';
 
-Future<void> start(
-  File file,
-  DownloadableRegion region,
-  String identification,
-) async {
+Future<void> encode({
+  required int id,
+  required String description,
+  required DownloadableRegion region,
+  required StoreDirectory storeDirectory,
+}) async {
+  final File file = storeDirectory.access.metadata >>> '$id.recovery.ini';
   await file.create(recursive: true);
 
   final Config cfg = Config.fromStrings(await file.readAsLines())
     ..addSection('info')
-    ..set('info', 'identification', identification)
-    ..set(
-      'info',
-      'time',
-      p.basenameWithoutExtension(file.absolute.path).split('.')[0],
-    )
+    ..set('info', 'id', id.toString())
+    ..set('info', 'description', description)
+    ..set('info', 'time', DateTime.now().millisecondsSinceEpoch.toString())
     ..set('info', 'regionType', region.type.name)
     ..addSection('zoom')
     ..set('zoom', 'minZoom', region.minZoom.toString())

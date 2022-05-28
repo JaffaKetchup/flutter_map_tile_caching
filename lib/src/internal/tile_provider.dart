@@ -34,6 +34,22 @@ class FMTCTileProviderSettings {
     this.cachedValidDuration = const Duration(days: 16),
     this.maxStoreLength = 0,
   });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is FMTCTileProviderSettings &&
+        other.behavior == behavior &&
+        other.cachedValidDuration == cachedValidDuration &&
+        other.maxStoreLength == maxStoreLength;
+  }
+
+  @override
+  int get hashCode =>
+      behavior.hashCode ^
+      cachedValidDuration.hashCode ^
+      maxStoreLength.hashCode;
 }
 
 /// 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayerOptions]

@@ -7,12 +7,13 @@ import 'package:latlong2/latlong.dart';
 import '../../regions/downloadable_region.dart';
 import '../../regions/recovered_region.dart';
 
-Future<RecoveredRegion?> read(File file) async {
-  if (!await file.exists()) return null;
+Future<RecoveredRegion> decode(File file) async {
+  if (!await file.exists()) throw StateError('');
 
   final Config cfg = Config.fromStrings(await file.readAsLines());
 
-  final String identification = cfg.get('info', 'identification')!;
+  final int id = int.parse(cfg.get('info', 'id')!);
+  final String description = cfg.get('info', 'description')!;
   final DateTime time =
       DateTime.fromMillisecondsSinceEpoch(int.parse(cfg.get('info', 'time')!));
   final RegionType type =
@@ -65,7 +66,9 @@ Future<RecoveredRegion?> read(File file) async {
   }
 
   return RecoveredRegion.internal(
-    identification: identification,
+    file: file,
+    id: id,
+    description: description,
     time: time,
     type: type,
     bounds: rectBounds,

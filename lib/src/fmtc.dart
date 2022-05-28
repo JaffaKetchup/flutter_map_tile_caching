@@ -1,3 +1,8 @@
+import 'dart:io';
+
+import 'package:flutter/widgets.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 import 'internal/store/directory.dart';
 import 'internal/tile_provider.dart';
 import 'root/directory.dart';
@@ -47,7 +52,7 @@ class FlutterMapTileCaching {
   }) : settings = settings ?? FMTCSettings() {
     if (!rootDir.ready) {
       throw StateError(
-        'Ensure supplied root directory exists. Try constructing it again, or using `rootDirectory.manage.create()`.',
+        'Supplied root directory does not exist. Try constructing it again, or using `rootDirectory.manage.create()`.',
       );
     }
     rootDirectory = rootDir;
@@ -70,6 +75,41 @@ class FlutterMapTileCaching {
     return _instance!;
   }
 
+  /// Requests for app to be excluded from battery optimizations to aid running a background process
+  ///
+  /// Only available on Android devices, due to limitations with other operating systems.
+  ///
+  /// Background downloading is complicated: see the main README for more information.
+  ///
+  /// If [requestIfDenied] is `true` (default), and the permission has not been granted, an intrusive system dialog will be displayed. If `false`, this method will only check whether it has been granted or not.
+  ///
+  /// If the dialog does appear it contains is no explanation for the user, except that the app will be allowed to run in the background all the time, so less technical users may be put off. It is up to you to decide (and program accordingly) if you want to show a reason first, then request the permission.
+  ///
+  /// Will return ([Future]) `true` if permission was granted, `false` if the permission was denied.
+  static Future<bool> requestIgnoreBatteryOptimizations(
+    BuildContext context, {
+    bool requestIfDenied = true,
+  }) async {
+    if (Platform.isAndroid) {
+      final PermissionStatus status =
+          await Permission.ignoreBatteryOptimizations.status;
+      if ((status.isDenied || status.isLimited) && requestIfDenied) {
+        final PermissionStatus statusAfter =
+            await Permission.ignoreBatteryOptimizations.request();
+        if (statusAfter.isGranted) return true;
+        return false;
+      } else if (status.isGranted) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      throw UnsupportedError(
+        'The background download feature is only available on Android due to limitations with other operating systems.',
+      );
+    }
+  }
+
   /// Get a [StoreDirectory] by store name
   StoreDirectory operator [](String storeName) =>
       StoreDirectory(rootDirectory, storeName);
@@ -81,4 +121,5 @@ void main() async {
   await FMTC.instance.rootDirectory.manage.deleteAsync();
   FMTC.instance.rootDirectory.stats.noCache.rootLength;
   FMTC.instance['s'].getTileProvider();
+  await FMTC.instance.rootDirectory.recovery.cancel(0);
 }
