@@ -4,6 +4,16 @@
 2. Minor version releases change the second digit and signify minor (breaking or non-breaking) API changes or internal refactoring
 3. Revision version releases change the third digit and signify bug fixes or documentation changes
 
+## [5.0.0-dev.1] - 2022/06/01
+
+* Widespread syntax changes
+* Added custom metadata storage functionality
+* Added statistic caching to improve performance somewhat
+* Start of new example application for better performance and Material 3 support
+* Documentation improvements
+* Specification of platform support
+* Internal refactoring and reorganization
+
 ## [4.0.1] - 2022/02/28
 
 * Fix bug #45 (on GitHub)

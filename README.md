@@ -25,7 +25,8 @@ If you urgently need the most recent version of this package that hasn't been pu
 After installing the package, import it into the necessary files in your project:
 
 ```dart
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart'; // Suitable for most situations
+import 'package:flutter_map_tile_caching/fmtc_advanced.dart'; // Only import if required functionality is not exposed by 'flutter_map_tile_caching.dart'
 ```
 
 Before using any functionality, in particular the bulk downloading functionality, make sure you comply with the appropriate rules and ToS for your server. Some servers ban bulk downloading.
@@ -54,6 +55,10 @@ You should not need to follow the instructions for `BackgroundFetch.scheduleTask
 - [`permission_handler` Installation Instructions](https://pub.dev/packages/permission_handler#setup)
 
 Please note that this library has not been tested on iOS devices, so issues may arise. Please leave an issue if they do, and I'll try my best to debug and solve them.
+
+### Windows, MacOS, Linux
+
+This package declares support for these platforms, but no testing has been conducted, and you will need to make appropriate configurations yourself. Avoid using methods that interact with permissions or background processes
 
 ## Example
 
@@ -168,36 +173,16 @@ The background download functionality has been disabled on iOS, because of the e
 
 ## [API Details](https://pub.dev/documentation/flutter_map_tile_caching/latest/flutter_map_tile_caching/flutter_map_tile_caching-library.html)
 
-Because of the many parts to this package and the small number of maintainers (only me), there is no 'full documentation' for everything in this README or in any wiki.
+--- Rewriting as of v5 ---
 
-Documentation has been written into the source code: you can see every public API element (and some 'private' ones) in the [auto generated docs (dartdoc)](https://pub.dev/documentation/flutter_map_tile_caching/latest/flutter_map_tile_caching/flutter_map_tile_caching-library.html). This contains all of the information for each element and suggested uses for your application.  
-Content visible there is also visible whilst writing code (in most editors/IDEs), so you should rarely need to leave the comfort of your editor. This results in creativity, as it's easy to progressively browse through the API to find new functionality.
+## Migrate to v5 from v4
 
-Some documentation can be seen for some 'private'/internal elements, marked with `@internal`. Whilst it is possible to use these in your code, you should never need to. Using one will cause a warning to appear in your IDE.
-
-Having said all of that, below is a brief overview of the top-level elements to get you started:
-
-### `StorageCachingTileProvider()`
-
-The tile provider and the 'frontend' of the operation.
-
-Integrates with `flutter_map` by registering as a tile provider that also caches tiles as users browse over them. Also contains all of the functionality needed to start, manage, and stop bulk downloads.
-
-### `MapCachingManager()`
-
-The 'backend' of the operation.
-
-Handles the filesystem interactions, allowing you to easily find all the possible information you could ever want about a cache or store.
-
-## Migrate to v4 from v3
-
-Unfortunately, because so much has changed, the best way to migrate is to rewrite the appropriate areas of your project with the new features.
-I've tried to make v4 even easier to understand and use, even with all the new functionality, so I hope you don't find this too time consuming.
+--- Rewriting as of v5 ---
 
 ## Limitations, Known Bugs & Testing
 
 - This package does not support the web platform. A fix for this is unlikely to appear because the web platform is ill-suited for caching anyway.
-- This package has not been tested on the iOS platform, and as a result, bugs may appear more frequently than on Android. I am currently looking into options to test on iOS.
+- This package has not been tested on the iOS, Windows, MacOS, or Linux platforms, and as a result, bugs may appear more frequently than on Android. I am currently looking into options to test on these other platforms.
 - It is unspecified and untested how tile selection code will behave when regions stretch due to latitude and longitude changes in projection. Similarly, code may behave strangely around extremities such as (-)180°. To prevent errors, the values of the calculation have been clamped to a valid minimum and maximum, but this causes other side effects. To prevent unwanted results, try to use small regions, no larger than the size of Europe, and keep them away from the extremities.
 
 Due to the large amounts of functionality, each with many different variations, it is nearly impossible to find many bugs. Therefore, if you find a bug, please do file an issue on GitHub, and I will do my very best to get it fixed quickly.
