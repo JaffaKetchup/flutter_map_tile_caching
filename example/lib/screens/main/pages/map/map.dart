@@ -13,12 +13,12 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage>
     with AutomaticKeepAliveClientMixin<MapPage> {
   final MapController _mapController = MapController();
-  late final MapView view = MapView(mapController: _mapController);
+  late final MapView _view = MapView(mapController: _mapController);
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return view;
+    return _view;
   }
 
   @override

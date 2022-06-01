@@ -115,6 +115,7 @@ class _StoreTileState extends State<StoreTile> {
                               setState(() => _deletingProgress = true);
                               await _store.manage.resetAsync();
                               setState(() => _deletingProgress = false);
+                              _loadStatistics();
                             },
                           ),
                           IconButton(

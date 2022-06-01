@@ -50,7 +50,7 @@ class _MapViewState extends State<MapView> {
                       )
                   : const NonCachingNetworkTileProvider(),
               maxZoom: 20,
-              reset: provider.resetController.stream.map((_) => null),
+              reset: provider.resetController.stream,
             ),
           ],
         ),

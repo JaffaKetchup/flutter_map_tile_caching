@@ -8,6 +8,7 @@ import '../tile_provider.dart';
 import 'access.dart';
 import 'download.dart';
 import 'manage.dart';
+import 'metadata.dart';
 import 'statistics.dart';
 
 /// Access point to a store
@@ -76,6 +77,13 @@ class StoreDirectory {
   ///
   /// Does not statistics about the root/all stores
   StoreStats get stats => StoreStats(this);
+
+  /// Manage custom miscellaneous information tied to a [StoreDirectory]
+  ///
+  /// Uses a key-value format where both key and value must be [String]. There is no validation or sanitisation on any keys or values; note that keys form part of filenames.
+  ///
+  /// Also used internally to store bulk download recovery files ending in '.recovery.ini'.
+  StoreMetadata get metadata => StoreMetadata(this);
 
   /// Get 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayerOptions], specific to this store
   ///

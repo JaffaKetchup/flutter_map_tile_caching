@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
+import '../../../new_store/new_store.dart';
 import 'components/empty_indicator.dart';
 import 'components/header.dart';
 import 'components/loading_indicator.dart';
@@ -65,7 +66,12 @@ class _StoresPageState extends State<StoresPage> {
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<String>(
+              builder: (BuildContext context) => const NewStorePopup(),
+              fullscreenDialog: true,
+            ),
+          ),
           child: const Icon(Icons.create_new_folder),
         ),
       );

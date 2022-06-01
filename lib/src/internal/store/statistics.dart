@@ -65,12 +65,15 @@ class StoreStats {
   ///
   /// If [statType] is `null`, all statistic caches are deleted, otherwise only the specified cache is deleted.
   Future<void> invalidateCachedStatistics(String? statType) async {
-    if (statType != null) {
-      await (_access.stats >>> '$statType.cache').delete();
-    } else {
-      await (_access.stats >>> 'length.cache').delete();
-      await (_access.stats >>> 'size.cache').delete();
-    }
+    try {
+      if (statType != null) {
+        await (_access.stats >>> '$statType.cache').delete();
+      } else {
+        await (_access.stats >>> 'length.cache').delete();
+        await (_access.stats >>> 'size.cache').delete();
+      }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   /// Retrieve the size of the store in kibibytes (KiB)
