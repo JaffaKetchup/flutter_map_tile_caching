@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+import '../../internal/exts.dart';
 import '../../misc/validate.dart';
 import 'access.dart';
 import 'directory.dart';
@@ -20,19 +21,17 @@ class StoreManagement {
 
   /// Create all of the directories synchronously
   void create() {
-    _access.real.createSync();
-    _access.tiles.createSync();
-    _access.stats.createSync();
-    _access.metadata.createSync();
+    (_access.real > _access.tiles).createSync(recursive: true);
+    (_access.real > _access.stats).createSync(recursive: true);
+    (_access.real > _access.metadata).createSync(recursive: true);
   }
 
   /// Create all of the directories asynchronously
   Future<void> createAsync() async {
     final List<Future<Directory>> jobs = [
-      _access.real.create(),
-      _access.tiles.create(),
-      _access.stats.create(),
-      _access.metadata.create(),
+      (_access.real > _access.tiles).create(recursive: true),
+      (_access.real > _access.stats).create(recursive: true),
+      (_access.real > _access.metadata).create(recursive: true),
     ];
     await Future.wait(jobs);
   }

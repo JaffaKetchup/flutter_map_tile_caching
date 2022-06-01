@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import '../../fmtc.dart';
 import '../../misc/validate.dart';
 import '../../root/directory.dart';
+import '../../settings/tile_provider_settings.dart';
 import '../tile_provider.dart';
 import 'access.dart';
 import 'download.dart';
@@ -39,7 +40,7 @@ class StoreDirectory {
     this.storeName, {
     bool autoCreate = true,
   }) {
-    if (autoCreate) manage.create();
+    if (autoCreate && !ready) manage.create();
   }
 
   /// Check whether all directories exist synchronously

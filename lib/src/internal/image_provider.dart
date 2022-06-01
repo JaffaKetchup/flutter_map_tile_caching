@@ -12,6 +12,7 @@ import 'package:queue/queue.dart';
 import '../internal/exts.dart';
 import '../misc/cache_behavior.dart';
 import '../misc/validate.dart';
+import '../settings/tile_provider_settings.dart';
 import 'tile_provider.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
@@ -117,6 +118,11 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       // Cache the tile in a seperate isolate
       bytes = serverData.bodyBytes;
       unawaited(file.create().then((_) => file.writeAsBytes(bytes!)));
+      if (needsCreating) {
+        unawaited(
+          provider.storeDirectory.stats.invalidateCachedStatistics(null),
+        );
+      }
 
       // If an new tile was created over the tile limit, delete the oldest tile
       if (needsCreating && settings.maxStoreLength != 0) {
@@ -148,6 +154,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
             if (!needToDelete) return;
             await currentOldestFile?.delete();
+            await provider.storeDirectory.stats
+                .invalidateCachedStatistics(null);
           }),
         );
       }

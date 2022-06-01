@@ -3,29 +3,25 @@ description: The example application for 'flutter_map_tile_caching', showcasing
   it's functionality and use-cases.
 publish_to: "none"
 
-version: 4.0.1
+version: 5.0.0
 
 environment:
   sdk: ">=2.15.0 <3.0.0"
-  flutter: ">=2.10.0"
+  flutter: ">=3.0.0"
 
 dependencies:
-  backdrop: ^0.7.1
   badges: ^2.0.2
-  feature_discovery: ^0.14.1
   flutter:
     sdk: flutter
   flutter_map: ^0.14.0
   flutter_map_tile_caching:
     path: ../
-  flutter_speed_dial: ^5.0.0+1
-  numberpicker: ^2.1.1
-  provider: ^6.0.2
-  shared_preferences: ^2.0.12
+  google_fonts: ^3.0.1
+  latlong2: ^0.8.1
+  provider: ^6.0.3
 
 dev_dependencies:
   flutter_app_name: ^0.1.0
-  flutter_lints: ^1.0.4
   flutter_test:
     sdk: flutter
 

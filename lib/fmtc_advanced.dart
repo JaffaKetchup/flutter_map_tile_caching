@@ -5,7 +5,7 @@
 /// Exports full API, including from internal files not exported by the recommended import `package:flutter_map_tile_caching/flutter_map_tile_caching.dart`
 library fmtc_advanced;
 
-export 'flutter_map_tile_caching.dart';
+export 'flutter_map_tile_caching.dart' hide StoreDirectory;
 export 'src/internal/exts.dart';
 export 'src/internal/image_provider.dart';
 export 'src/internal/recovery/decode.dart';

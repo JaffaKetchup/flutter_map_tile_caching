@@ -61,6 +61,18 @@ class RootStats {
     }
   }
 
+  /// Remove the cached statistics
+  ///
+  /// If [statType] is `null`, all statistic caches are deleted, otherwise only the specified cache is deleted.
+  Future<void> invalidateCachedStatistics(String? statType) async {
+    if (statType != null) {
+      await (_access.stats >>> '$statType.cache').delete();
+    } else {
+      await (_access.stats >>> 'length.cache').delete();
+      await (_access.stats >>> 'size.cache').delete();
+    }
+  }
+
   /// Retrieve all the available [StoreDirectory]s
   ///
   /// For asynchronous version, see [storesAvailableAsync]. Note that this statstic is not cached for performance, as the effect would be negligible.
@@ -188,7 +200,12 @@ class RootStats {
                   (e) =>
                       e.stats.watchChanges(debounce: debounce).map((e) => null),
                 ),
-        );
+        )
+        .mergeAll([
+      _access.metadata.watch(events: fileSystemEvents).map((e) => null),
+      _access.stats.watch(events: fileSystemEvents).map((e) => null),
+      _access.stores.watch(events: fileSystemEvents).map((e) => null)
+    ]);
 
     return debounce == null ? stream : stream.debounce(debounce);
   }

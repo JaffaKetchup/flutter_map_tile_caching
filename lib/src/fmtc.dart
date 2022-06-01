@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'internal/store/directory.dart';
 import 'internal/tile_provider.dart';
 import 'root/directory.dart';
+import 'settings/tile_provider_settings.dart';
 
 /// Direct alias of [FlutterMapTileCaching] for easier development
 ///
@@ -111,15 +112,22 @@ class FlutterMapTileCaching {
   }
 
   /// Get a [StoreDirectory] by store name
+  ///
+  /// Automatically creates the appropriate store synchronously, unlike `()`.
   StoreDirectory operator [](String storeName) =>
       StoreDirectory(rootDirectory, storeName);
-}
 
-void main() async {
+  /// Get a [StoreDirectory] by store name
+  ///
+  /// Does not automatically create the appropriate store, unlike `[]`. Therefore, use `.manage.create()` or `.manage.createAsync()` afterward if necessary.
+  StoreDirectory call(String storeName) =>
+      StoreDirectory(rootDirectory, storeName, autoCreate: false);
+}
+/*void main() async {
   FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
   await FMTC.instance['s'].manage.deleteAsync();
   await FMTC.instance.rootDirectory.manage.deleteAsync();
   FMTC.instance.rootDirectory.stats.noCache.rootLength;
   FMTC.instance['s'].getTileProvider();
   await FMTC.instance.rootDirectory.recovery.cancel(0);
-}
+}*/

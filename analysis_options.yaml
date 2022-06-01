@@ -1,9 +1,10 @@
-#include: package:flutter_lints/flutter.yaml
 include: jaffa_lints.yaml
 
-analyzer:
+analyzer: # TEMPORARY
   exclude:
-    - example/** # TEMPORARY
+    - example/old_lib/pages/**
+    - example/old_lib/state/**
+    - example/old_lib/main.dart
 
 linter:
   rules:

@@ -22,6 +22,7 @@ import '../../bulk_download/tile_progress.dart';
 import '../../fmtc.dart';
 import '../../misc/typedefs.dart';
 import '../../regions/downloadable_region.dart';
+import '../../settings/tile_provider_settings.dart';
 import '../tile_provider.dart';
 import 'directory.dart';
 
@@ -290,6 +291,7 @@ class DownloadManagement {
   Future<void> cancel() async {
     _queue?.dispose();
     await _streamController?.close();
+    await _storeDirectory.stats.invalidateCachedStatistics(null);
     if (_recoveryId != null) {
       await _storeDirectory.rootDirectory.recovery.cancel(_recoveryId!);
     }
