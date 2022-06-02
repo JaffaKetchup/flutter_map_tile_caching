@@ -28,6 +28,8 @@ class StoreMetadata {
   final Directory _access;
 
   /// Add a new key-value pair to the store asynchronously
+  ///
+  /// Overwrites the value if the key already exists.
   Future<void> addAsync({
     required String key,
     required String value,
@@ -38,6 +40,8 @@ class StoreMetadata {
   }
 
   /// Add a new key-value pair to the store synchronously
+  ///
+  /// Overwrites the value if the key already exists.
   void add({
     required String key,
     required String value,

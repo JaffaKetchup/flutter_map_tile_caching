@@ -1,6 +1,7 @@
 import 'package:badges/badges.dart';
 import 'package:flutter/material.dart';
 
+import 'pages/downloader/downloader.dart';
 import 'pages/map/map.dart';
 import 'pages/stores/stores.dart';
 
@@ -24,25 +25,30 @@ class _MainScreenState extends State<MainScreen> {
           icon: Icon(Icons.folder),
           label: 'Stores',
         ),
+        const NavigationDestination(
+          icon: Icon(Icons.download),
+          label: 'Download',
+        ),
         NavigationDestination(
           icon: Badge(
             position: BadgePosition.topEnd(top: -5, end: -6),
             animationDuration: const Duration(milliseconds: 100),
-            showBadge: _currentPageIndex != 2,
-            child: const Icon(Icons.download),
+            showBadge: _currentPageIndex != 3,
+            child: const Icon(Icons.history),
           ),
-          label: 'Downloader',
+          label: 'Recover',
         ),
       ];
 
   static final _pages = <Widget>[
     const MapPage(),
     const StoresPage(),
+    const DownloaderPage(),
     Container(
-      color: Colors.blue,
+      color: Colors.red,
       alignment: Alignment.center,
       key: UniqueKey(),
-      child: const Text('Page 3'),
+      child: const Text('Page 4'),
     ),
   ];
 

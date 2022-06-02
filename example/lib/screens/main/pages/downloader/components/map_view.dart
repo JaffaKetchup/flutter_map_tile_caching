@@ -44,24 +44,6 @@ class _MapViewState extends State<MapView> {
                       provider.currentStore != null && metadata.data != null
                           ? metadata.data!['sourceURL']!
                           : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  tileProvider: provider.currentStore != null
-                      ? FMTC.instance(provider.currentStore!).getTileProvider(
-                            FMTCTileProviderSettings(
-                              behavior: CacheBehavior.values
-                                  .byName(metadata.data!['behaviour']!),
-                              cachedValidDuration: int.parse(
-                                        metadata.data!['validDuration']!,
-                                      ) ==
-                                      0
-                                  ? Duration.zero
-                                  : Duration(
-                                      days: int.parse(
-                                        metadata.data!['validDuration']!,
-                                      ),
-                                    ),
-                            ),
-                          )
-                      : const NonCachingNetworkTileProvider(),
                   maxZoom: 20,
                   reset: provider.resetController.stream,
                   keepBuffer: 5,

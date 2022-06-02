@@ -13,10 +13,11 @@ class Header extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         children: [
           Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Stores',
+                'Downloader',
                 style: GoogleFonts.openSans(
                   fontWeight: FontWeight.bold,
                   fontSize: 24,
@@ -24,25 +25,15 @@ class Header extends StatelessWidget {
               ),
               Consumer<GeneralProvider>(
                 builder: (context, provider, _) => provider.currentStore == null
-                    ? const Text('Caching Disabled')
-                    : Text('Current Store: ${provider.currentStore}'),
+                    ? const Text('No store selected')
+                    : Text('Downloading to ${provider.currentStore}'),
               ),
             ],
           ),
           const Spacer(),
-          Consumer<GeneralProvider>(
-            child: const Icon(Icons.cancel),
-            builder: (context, provider, icon) => IconButton(
-              icon: icon!,
-              tooltip: 'Disable Caching',
-              onPressed: provider.currentStore == null
-                  ? null
-                  : () {
-                      provider
-                        ..currentStore = null
-                        ..resetMap();
-                    },
-            ),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.select_all),
           ),
         ],
       );

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../../shared/components/stat.dart';
 import '../../../../../shared/state/general_provider.dart';
+import '../../../../store_editor/store_editor.dart';
 
 class StoreTile extends StatefulWidget {
   const StoreTile({
@@ -121,7 +122,16 @@ class _StoreTileState extends State<StoreTile> {
                           IconButton(
                             icon: const Icon(Icons.edit),
                             tooltip: 'Edit Store',
-                            onPressed: () {},
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute<String>(
+                                builder: (BuildContext context) =>
+                                    StoreEditorPopup(
+                                  existingStoreName: widget.storeName,
+                                  isStoreInUse: isCurrentStore,
+                                ),
+                                fullscreenDialog: true,
+                              ),
+                            ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.refresh),
@@ -137,7 +147,9 @@ class _StoreTileState extends State<StoreTile> {
                             onPressed: isCurrentStore
                                 ? null
                                 : () {
-                                    provider.currentStore = widget.storeName;
+                                    provider
+                                      ..currentStore = widget.storeName
+                                      ..resetMap();
                                   },
                           ),
                         ],

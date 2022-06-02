@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
-import '../../../new_store/new_store.dart';
+import '../../../../shared/components/loading_indicator.dart';
+import '../../../store_editor/store_editor.dart';
 import 'components/empty_indicator.dart';
 import 'components/header.dart';
-import 'components/loading_indicator.dart';
 import 'components/store_tile.dart';
 
 class StoresPage extends StatefulWidget {
@@ -59,7 +59,11 @@ class _StoresPageState extends State<StoresPage> {
                                 ),
                               ),
                             )
-                      : const LoadingIndicator(),
+                      : const Expanded(
+                          child: LoadingIndicator(
+                            message: 'Loading Stores...',
+                          ),
+                        ),
                 ),
               ],
             ),
@@ -68,7 +72,10 @@ class _StoresPageState extends State<StoresPage> {
         floatingActionButton: FloatingActionButton(
           onPressed: () => Navigator.of(context).push(
             MaterialPageRoute<String>(
-              builder: (BuildContext context) => const NewStorePopup(),
+              builder: (BuildContext context) => const StoreEditorPopup(
+                existingStoreName: null,
+                isStoreInUse: false,
+              ),
               fullscreenDialog: true,
             ),
           ),

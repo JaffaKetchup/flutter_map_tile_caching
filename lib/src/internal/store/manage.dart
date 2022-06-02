@@ -88,7 +88,7 @@ class StoreManagement {
     );
 
     await _access.real.rename(
-      p.joinAll([_storeDirectory.rootDirectory.access.real.path, safe]),
+      p.joinAll([_storeDirectory.rootDirectory.access.stores.path, safe]),
     );
 
     return _storeDirectory.copyWith(storeName: safe);

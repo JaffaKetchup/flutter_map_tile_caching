@@ -10,16 +10,44 @@ import 'shared/state/general_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ),
   );
 
   FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
   await FMTC.instance.rootDirectory.manage.resetAsync();
 
-  await FMTC.instance('Store Alpha').manage.createAsync();
-  await FMTC.instance('Store Beta').manage.createAsync();
-  await FMTC.instance('Store Theta').manage.createAsync();
-  await FMTC.instance('Store Gamma').manage.createAsync();
+  final StoreDirectory instanceA = FMTC.instance('Store Alpha');
+  await instanceA.manage.createAsync();
+  await instanceA.metadata.addAsync(
+    key: 'sourceURL',
+    value: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  );
+  await instanceA.metadata.addAsync(
+    key: 'validDuration',
+    value: '14',
+  );
+  await instanceA.metadata.addAsync(
+    key: 'behaviour',
+    value: 'cacheFirst',
+  );
+
+  final StoreDirectory instanceB = FMTC.instance('Store Beta');
+  await instanceB.manage.createAsync();
+  await instanceB.metadata.addAsync(
+    key: 'sourceURL',
+    value: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  );
+  await instanceB.metadata.addAsync(
+    key: 'validDuration',
+    value: '14',
+  );
+  await instanceB.metadata.addAsync(
+    key: 'behaviour',
+    value: 'cacheFirst',
+  );
 
   runApp(const AppContainer());
 }
