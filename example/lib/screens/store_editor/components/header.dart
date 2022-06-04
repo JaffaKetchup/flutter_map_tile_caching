@@ -10,7 +10,8 @@ AppBar buildHeader({
   required bool mounted,
   required GlobalKey<FormState> formKey,
   required Map<String, String> newValues,
-  required String cacheModeValue,
+  required bool useNewCacheModeValue,
+  required String? cacheModeValue,
   required BuildContext context,
 }) =>
     AppBar(
@@ -26,11 +27,14 @@ AppBar buildHeader({
           ),
           onPressed: () async {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Saving...')),
+              const SnackBar(
+                content: Text('Saving...'),
+                duration: Duration(milliseconds: 1500),
+              ),
             );
 
             // Give the asynchronus validation a chance
-            await Future.delayed(const Duration(milliseconds: 500));
+            await Future.delayed(const Duration(seconds: 1));
             if (!mounted) return;
 
             if (formKey.currentState!.validate()) {
@@ -54,10 +58,13 @@ AppBar buildHeader({
                 key: 'validDuration',
                 value: newValues['validDuration']!,
               );
-              await instance.metadata.addAsync(
-                key: 'behaviour',
-                value: cacheModeValue,
-              );
+
+              if (useNewCacheModeValue) {
+                await instance.metadata.addAsync(
+                  key: 'behaviour',
+                  value: cacheModeValue!,
+                );
+              }
 
               if (!mounted) return;
               if (widget.isStoreInUse && widget.existingStoreName != null) {

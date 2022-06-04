@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'screens/main/main.dart';
+import 'shared/state/download_provider.dart';
 import 'shared/state/general_provider.dart';
 
 void main() async {
@@ -61,11 +62,17 @@ class AppContainer extends StatelessWidget {
           ChangeNotifierProvider<GeneralProvider>(
             create: (context) => GeneralProvider(),
           ),
+          ChangeNotifierProvider<DownloadProvider>(
+            create: (context) => DownloadProvider(),
+          ),
         ],
         child: MaterialApp(
           title: 'FMTC Example',
           theme: ThemeData(
-            primarySwatch: Colors.purple,
+            colorScheme: ColorScheme.fromSwatch(
+              primarySwatch: Colors.purple,
+              accentColor: Colors.deepOrange,
+            ),
             useMaterial3: true,
             textTheme: GoogleFonts.openSansTextTheme(),
           ),

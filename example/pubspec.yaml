@@ -21,6 +21,7 @@ dependencies:
   latlong2: ^0.8.1
   provider: ^6.0.3
   shared_preferences: ^2.0.15
+  stream_transform: ^2.0.0
   validators: ^3.0.0
 
 dependency_overrides:

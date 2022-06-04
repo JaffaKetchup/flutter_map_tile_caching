@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../shared/state/download_provider.dart';
 import '../../../../shared/state/general_provider.dart';
 import 'components/header.dart';
 import 'components/map_view.dart';
@@ -39,9 +40,32 @@ class _DownloaderPageState extends State<DownloaderPage> {
         floatingActionButton:
             Provider.of<GeneralProvider>(context).currentStore == null
                 ? null
-                : FloatingActionButton(
-                    onPressed: () {},
-                    child: const Icon(Icons.arrow_forward),
+                : Consumer<DownloadProvider>(
+                    builder: (context, provider, _) =>
+                        FloatingActionButton.extended(
+                      onPressed: () {},
+                      icon: const Icon(Icons.arrow_forward),
+                      label: Padding(
+                        padding: const EdgeInsets.only(left: 10),
+                        child: provider.regionTiles == null
+                            ? SizedBox(
+                                height: 36,
+                                width: 36,
+                                child: Center(
+                                  child: SizedBox(
+                                    height: 28,
+                                    width: 28,
+                                    child: CircularProgressIndicator(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Text('~${provider.regionTiles} tiles'),
+                      ),
+                    ),
                   ),
       );
 }
