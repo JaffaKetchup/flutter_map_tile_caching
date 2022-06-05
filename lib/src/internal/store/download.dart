@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
@@ -49,14 +51,17 @@ class DownloadManagement {
   ///
   /// Unless otherwise specified, also starts a recovery session.
   ///
-  /// For more information on [preDownloadChecksCallback], see documentation on [PreDownloadChecksCallback]. In a few words, use this callback to check the devices information/status before starting a download. By default, no checks are made (null), but this is not recommended.
+  /// _[preDownloadChecksCallback] has been deprecated without replacement or alternative. Usage will continue to function until the next minor release, at which time this functionality will be removed._
   ///
   /// Streams a [DownloadProgress] object containing lots of handy information about the download's progression status; unless the pre-download checks fail, in which case the stream's `.isEmpty` will be `true` and no new events will be emitted. If you get messages about 'Bad State' after dealing with the checks, just add `.asBroadcastStream()` on the end of [startForeground].
   Stream<DownloadProgress> startForeground({
     required DownloadableRegion region,
     FMTCTileProviderSettings? tileProviderSettings,
     bool disableRecovery = false,
-    PreDownloadChecksCallback preDownloadChecksCallback,
+    @Deprecated(
+      '`preDownloadChecksCallback` has been deprecated without replacement or alternative. Usage will continue to function until the next minor release, at which time this functionality will be removed.',
+    )
+        PreDownloadChecksCallback preDownloadChecksCallback,
   }) async* {
     if (preDownloadChecksCallback != null) {
       final ConnectivityResult connectivity =
@@ -135,14 +140,17 @@ class DownloadManagement {
   ///
   /// If the download doesn't seem to start on a device, try changing [useAltMethod] to `true`. This will switch to an older Android API, so should only be used if it is the most stable on a device. You may be able to programatically detect if the download hasn't started by using the callback, therefore allowing you to call this method again with [useAltMethod], but this isn't guranteed.
   ///
-  /// For more information on [preDownloadChecksCallback], see documentation on [PreDownloadChecksCallback]. In a few words, use this callback to check the devices information/status before starting a download. By default, no checks are made (null), but this is not recommended. [preDownloadChecksFailedCallback] is optional and will be called if the checks do fail, after cancelling the download.
+  /// _[preDownloadChecksCallback] has been deprecated without replacement or alternative. Usage will continue to function until the next minor release, at which time this functionality will be removed._
   ///
   /// Returns nothing.
   Future<void> startBackground({
     required DownloadableRegion region,
     FMTCTileProviderSettings? tileProviderSettings,
     bool disableRecovery = false,
-    PreDownloadChecksCallback preDownloadChecksCallback,
+    @Deprecated(
+      '`preDownloadChecksCallback` has been deprecated without replacement or alternative. Usage will continue to function until the next minor release, at which time this functionality will be removed.',
+    )
+        PreDownloadChecksCallback preDownloadChecksCallback,
     bool Function(DownloadProgress)? callback,
     void Function()? preDownloadChecksFailedCallback,
     bool useAltMethod = false,

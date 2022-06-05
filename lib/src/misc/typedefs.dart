@@ -1,5 +1,9 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import '../../fmtc_advanced.dart';
 
+/// _[PreDownloadChecksCallback] (and it's related argument) have been deprecated without replacement or alternative. Usage will continue to function until the next minor release, at which time this functionality will be removed._
+///
 /// Use in `preDownloadChecksCallback` in the bulk downloaders to ensure the download is OK to start by considering the device's status.
 ///
 /// Setting the parameter to `null` will skip all tests and allow under any circumstances - this is the default, but not recommended. However, returning `null` from the function will use the default rules: cancel the download if the user is on cellular data or disconnected from the network (not necessarily Internet), or under 15% charge and not connected to a power source.
@@ -48,6 +52,9 @@ import '../../fmtc_advanced.dart';
 /// // Called if the checks fail, otherwise download continues as normal (`callback()`)
 /// preDownloadChecksFailedCallback: () {}
 /// ```
+@Deprecated(
+  "`PreDownloadChecksCallback` (and it's related argument) have been deprecated without replacement or alternative. Usage will continue to function until the next minor release, at which time this functionality will be removed.",
+)
 typedef PreDownloadChecksCallback = Future<bool?> Function(
   ConnectivityResult,
   int?,

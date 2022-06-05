@@ -32,8 +32,8 @@ class Header extends StatelessWidget {
           const Spacer(),
           Consumer<GeneralProvider>(
             child: const Icon(Icons.cancel),
-            builder: (context, provider, icon) => IconButton(
-              icon: icon!,
+            builder: (context, provider, child) => IconButton(
+              icon: child!,
               tooltip: 'Disable Caching',
               onPressed: provider.currentStore == null
                   ? null

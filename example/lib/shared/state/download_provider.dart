@@ -1,6 +1,15 @@
 import 'package:flutter/foundation.dart';
 
+import '../vars/region_mode.dart';
+
 class DownloadProvider extends ChangeNotifier {
+  RegionMode _regionMode = RegionMode.square;
+  RegionMode get regionMode => _regionMode;
+  set regionMode(RegionMode newMode) {
+    _regionMode = newMode;
+    notifyListeners();
+  }
+
   int? _regionTiles;
   int? get regionTiles => _regionTiles;
   set regionTiles(int? newNum) {

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../../shared/state/general_provider.dart';
 import 'min_max_zoom_controller_popup.dart';
+import 'shape_controller_popup.dart';
 
 class Header extends StatelessWidget {
   const Header({
@@ -44,7 +45,14 @@ class Header extends StatelessWidget {
             icon: const Icon(Icons.zoom_in),
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                useRootNavigator: true,
+                isScrollControlled: true,
+                builder: (_) => const ShapeControllerPopup(),
+              );
+            },
             icon: const Icon(Icons.select_all),
           ),
         ],
