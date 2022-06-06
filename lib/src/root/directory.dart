@@ -63,25 +63,6 @@ class RootDirectory {
     return returnable;
   }
 
-  /// Check whether all directories exist synchronously
-  ///
-  /// Does not check any sub-stores.
-  bool get ready => [
-        access.stores.existsSync(),
-        access.stats.existsSync(),
-        access.metadata.existsSync(),
-      ].every((e) => e);
-
-  /// Check whether all directories exist asynchronously
-  ///
-  /// Does not check any sub-stores.
-  Future<bool> get readyAsync async => (await Future.wait<bool>([
-        access.stores.exists(),
-        access.stats.exists(),
-        access.metadata.exists(),
-      ]))
-          .every((e) => e);
-
   /// Get direct filesystem access paths
   ///
   /// This should only be used in special cases, when modifying the root manually for example.

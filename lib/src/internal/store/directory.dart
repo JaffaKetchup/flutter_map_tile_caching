@@ -41,23 +41,8 @@ class StoreDirectory {
     this.storeName, {
     bool autoCreate = true,
   }) {
-    if (autoCreate && !ready) manage.create();
+    if (autoCreate && !manage.ready) manage.create();
   }
-
-  /// Check whether all directories exist synchronously
-  bool get ready => [
-        access.tiles.existsSync(),
-        access.stats.existsSync(),
-        access.metadata.existsSync(),
-      ].every((e) => e);
-
-  /// Check whether all directories exist asynchronously
-  Future<bool> get readyAsync async => (await Future.wait<bool>([
-        access.tiles.exists(),
-        access.stats.exists(),
-        access.metadata.exists(),
-      ]))
-          .every((e) => e);
 
   /// Get direct filesystem access paths
   ///

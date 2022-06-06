@@ -24,10 +24,11 @@ class MapView extends StatefulWidget {
 
 class _MapViewState extends State<MapView> {
   final _mapKey = GlobalKey<State<StatefulWidget>>();
-
   late final MapController _mapController;
+
   late final StreamSubscription _polygonVisualizerStream;
   late final StreamSubscription _tileCounterTriggerStream;
+  late final StreamSubscription _manualPolygonRecalcTriggerStream;
 
   LatLng? _pointTL;
   LatLng? _pointBR;
@@ -43,10 +44,19 @@ class _MapViewState extends State<MapView> {
     _polygonVisualizerStream =
         _mapController.mapEventStream.listen((_) => _updatePointLatLng());
     _tileCounterTriggerStream = _mapController.mapEventStream
-        .debounce(const Duration(milliseconds: 500))
+        .debounce(const Duration(seconds: 1))
         .listen((_) => _countTiles());
 
     Future.delayed(Duration.zero, () async {
+      _manualPolygonRecalcTriggerStream =
+          Provider.of<DownloadProvider>(context, listen: false)
+              .manualPolygonRecalcTrigger
+              .stream
+              .listen((_) {
+        _updatePointLatLng();
+        _countTiles();
+      });
+
       await _mapController.onReady;
 
       if (!mounted) return;
@@ -60,6 +70,7 @@ class _MapViewState extends State<MapView> {
     super.dispose();
     _polygonVisualizerStream.cancel();
     _tileCounterTriggerStream.cancel();
+    _manualPolygonRecalcTriggerStream.cancel();
   }
 
   @override
@@ -86,6 +97,12 @@ class _MapViewState extends State<MapView> {
                       'Loading Settings...\n\nSeeing this screen for a long time?\nThere may be a misconfiguration of the\nstore. Try disabling caching and deleting\n faulty stores.',
                 );
               }
+
+              final String urlTemplate =
+                  generalProvider.currentStore != null && metadata.data != null
+                      ? metadata.data!['sourceURL']!
+                      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
               return Stack(
                 children: [
                   FlutterMap(
@@ -99,21 +116,39 @@ class _MapViewState extends State<MapView> {
                     children: [
                       TileLayerWidget(
                         options: TileLayerOptions(
-                          urlTemplate: generalProvider.currentStore != null &&
-                                  metadata.data != null
-                              ? metadata.data!['sourceURL']!
-                              : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          urlTemplate: urlTemplate,
                           maxZoom: 20,
                           reset: generalProvider.resetController.stream,
                           keepBuffer: 5,
                           backgroundColor: const Color(0xFFaad3df),
+                          tileBuilder: (context, widget, tile) =>
+                              FutureBuilder<bool?>(
+                            future: generalProvider.currentStore == null
+                                ? Future.sync(() => null)
+                                : FMTC
+                                    .instance(generalProvider.currentStore!)
+                                    .getTileProvider()
+                                    .checkTileCachedAsync(
+                                      coords: tile.coords,
+                                      options: TileLayerOptions(
+                                        urlTemplate: urlTemplate,
+                                      ),
+                                    ),
+                            builder: (context, snapshot) => DecoratedBox(
+                              position: DecorationPosition.foreground,
+                              decoration: BoxDecoration(
+                                color: (snapshot.data ?? false)
+                                    ? Colors.deepOrange.withOpacity(0.5)
+                                    : Colors.transparent,
+                              ),
+                              child: widget,
+                            ),
+                          ),
                         ),
                       ),
                       if (_pointTL != null &&
-                          _pointBR !=
-                              null /*&&
-                          downloadProvider.regionMode != RegionMode.circle*/
-                      )
+                          _pointBR != null &&
+                          downloadProvider.regionMode != RegionMode.circle)
                         PolygonLayerWidget(
                           options: PolygonLayerOptions(
                             polygons: [
@@ -237,36 +272,18 @@ class _MapViewState extends State<MapView> {
         setState(
           () {
             _center = _mapController.pointToLatLng(
-              CustomPoint((mapSize.width / 2) + 1, mapSize.height / 2),
+              CustomPoint(mapSize.width / 2, mapSize.height / 2),
             );
             _radius = const Distance(roundResult: false).distance(
                   _center!,
                   _mapController.pointToLatLng(
                     CustomPoint(
                       mapSize.width / 2,
-                      (mapSize.height / 2) -
-                          (mapSize.height - (mapSize.width + 10)),
+                      (mapSize.height / 2) - (mapSize.width / 2) + 38,
                     ),
                   )!,
                 ) /
                 1000;
-
-            /*print(_center.toString());
-            print(_radius.toString());
-            print(
-              CircleRegion(
-                _center!,
-                _radius!,
-              ).toList(),
-            );*/
-
-            _pointTL = _center;
-            _pointBR = _mapController.pointToLatLng(
-              CustomPoint(
-                mapSize.width / 2,
-                (mapSize.height / 2) - (mapSize.height - (mapSize.width + 10)),
-              ),
-            );
           },
         );
         break;
@@ -282,9 +299,14 @@ class _MapViewState extends State<MapView> {
       provider
         ..regionTiles = null
         ..regionTiles = await FMTC.instance('').download.check(
-              RectangleRegion(
-                LatLngBounds(_pointTL, _pointBR),
-              ).toDownloadable(
+              (Provider.of<DownloadProvider>(context, listen: false)
+                              .regionMode ==
+                          RegionMode.circle
+                      ? CircleRegion(_center!, _radius!)
+                      : RectangleRegion(
+                          LatLngBounds(_pointTL, _pointBR),
+                        ))
+                  .toDownloadable(
                 provider.minZoom,
                 provider.maxZoom,
                 TileLayerOptions(),

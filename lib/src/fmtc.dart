@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'internal/store/directory.dart';
 import 'internal/tile_provider.dart';
 import 'root/directory.dart';
+import 'root/manage.dart';
 import 'settings/tile_provider_settings.dart';
 
 /// Direct alias of [FlutterMapTileCaching] for easier development
@@ -34,7 +35,7 @@ class FMTCSettings {
 class FlutterMapTileCaching {
   /// The cache's root
   ///
-  /// Recommended setup is `await RootDirectory.normalCache`, but any [RootDirectory] is accepted. [FlutterMapTileCaching] checks that [RootDirectory.ready] is 'true', otherwise a [StateError] is thrown.
+  /// Recommended setup is `await RootDirectory.normalCache`, but any [RootDirectory] is accepted. [FlutterMapTileCaching] checks that [RootManagement.ready] is 'true', otherwise a [StateError] is thrown.
   late final RootDirectory rootDirectory;
 
   /// Custom global 'flutter_map_tile_caching' settings
@@ -51,7 +52,7 @@ class FlutterMapTileCaching {
     RootDirectory rootDir, {
     FMTCSettings? settings,
   }) : settings = settings ?? FMTCSettings() {
-    if (!rootDir.ready) {
+    if (!rootDir.manage.ready) {
       throw StateError(
         'Supplied root directory does not exist. Try constructing it again, or using `rootDirectory.manage.create()`.',
       );
@@ -119,7 +120,7 @@ class FlutterMapTileCaching {
 
   /// Get a [StoreDirectory] by store name
   ///
-  /// Does not automatically create the appropriate store, unlike `[]`. Therefore, use `.manage.create()` or `.manage.createAsync()` afterward if necessary.
+  /// Does not automatically create the appropriate store, unlike `[]`. Therefore, use `.manage.createAsync()` afterward if necessary.
   StoreDirectory call(String storeName) =>
       StoreDirectory(rootDirectory, storeName, autoCreate: false);
 }

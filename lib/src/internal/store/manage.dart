@@ -2,10 +2,11 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
-import '../../internal/exts.dart';
 import '../../misc/validate.dart';
 import 'access.dart';
 import 'directory.dart';
+import 'metadata.dart';
+import 'statistics.dart';
 
 /// Manages a [StoreDirectory]'s representation on the filesystem, such as creation and deletion
 class StoreManagement {
@@ -19,19 +20,34 @@ class StoreManagement {
   /// Shorthand for [StoreDirectory.access], used commonly throughout
   final StoreAccess _access;
 
+  /// Check whether all directories exist synchronously
+  bool get ready => [
+        _access.tiles.existsSync(),
+        _access.stats.existsSync(),
+        _access.metadata.existsSync(),
+      ].every((e) => e);
+
+  /// Check whether all directories exist asynchronously
+  Future<bool> get readyAsync async => (await Future.wait<bool>([
+        _access.tiles.exists(),
+        _access.stats.exists(),
+        _access.metadata.exists(),
+      ]))
+          .every((e) => e);
+
   /// Create all of the directories synchronously
   void create() {
-    (_access.real > _access.tiles).createSync(recursive: true);
-    (_access.real > _access.stats).createSync(recursive: true);
-    (_access.real > _access.metadata).createSync(recursive: true);
+    _access.tiles.createSync(recursive: true);
+    _access.stats.createSync(recursive: true);
+    _access.metadata.createSync(recursive: true);
   }
 
   /// Create all of the directories asynchronously
   Future<void> createAsync() async {
     final List<Future<Directory>> jobs = [
-      (_access.real > _access.tiles).create(recursive: true),
-      (_access.real > _access.stats).create(recursive: true),
-      (_access.real > _access.metadata).create(recursive: true),
+      _access.tiles.create(recursive: true),
+      _access.stats.create(recursive: true),
+      _access.metadata.create(recursive: true),
     ];
     await Future.wait(jobs);
   }
@@ -46,20 +62,26 @@ class StoreManagement {
   /// This will remove all traces of this store from the user's device. Use with caution!
   Future<void> deleteAsync() => _access.real.delete(recursive: true);
 
-  /// Empty/reset all of the directories synchronously
+  /// Resets this store synchronously
   ///
-  /// This internally calls [delete] then [create] to achieve the same effect.
+  /// Deletes and recreates the [StoreAccess.tiles] directory, and invalidates any cached statistics ([StoreStats.invalidateCachedStatisticsAsync]). Therefore, custom metadata ([StoreMetadata]) is not deleted.
+  ///
+  /// For a full reset, manually [delete] then [create] the store.
   void reset() {
-    delete();
-    create();
+    _access.tiles.delete(recursive: true);
+    _access.tiles.create();
+    _storeDirectory.stats.invalidateCachedStatistics(null);
   }
 
-  /// Empty/reset all of the directories asynchronously
+  /// Resets this store synchronously
   ///
-  /// This internally calls [deleteAsync] then [createAsync] to achieve the same effect.
+  /// Deletes and recreates the [StoreAccess.tiles] directory, and invalidates any cached statistics ([StoreStats.invalidateCachedStatisticsAsync]). Therefore, custom metadata ([StoreMetadata]) is not deleted.
+  ///
+  /// For a full reset, manually [deleteAsync] then [createAsync] the store.
   Future<void> resetAsync() async {
-    await deleteAsync();
-    await createAsync();
+    await _access.tiles.delete(recursive: true);
+    await _access.tiles.create();
+    await _storeDirectory.stats.invalidateCachedStatisticsAsync(null);
   }
 
   /// Rename the store directory synchronously

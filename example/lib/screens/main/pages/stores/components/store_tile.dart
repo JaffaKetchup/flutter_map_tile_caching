@@ -30,10 +30,10 @@ class _StoreTileState extends State<StoreTile> {
   late final _store = FMTC.instance(widget.storeName);
 
   void _loadStatistics() {
-    _image = _store.stats.coverImageAsync(random: false, size: 62.5);
     _tiles = _store.stats.storeLengthAsync.then((l) => l.toString());
     _size = _store.stats.storeSizeAsync
         .then((s) => '${(s / 1000).toStringAsFixed(2)}MB');
+    _image = _store.stats.tileImageAsync(randomRange: 20, size: 62.5);
 
     setState(() {});
   }

@@ -120,7 +120,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       unawaited(file.create().then((_) => file.writeAsBytes(bytes!)));
       if (needsCreating) {
         unawaited(
-          provider.storeDirectory.stats.invalidateCachedStatistics(null),
+          provider.storeDirectory.stats.invalidateCachedStatisticsAsync(null),
         );
       }
 
@@ -155,7 +155,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
             if (!needToDelete) return;
             await currentOldestFile?.delete();
             await provider.storeDirectory.stats
-                .invalidateCachedStatistics(null);
+                .invalidateCachedStatisticsAsync(null);
           }),
         );
       }

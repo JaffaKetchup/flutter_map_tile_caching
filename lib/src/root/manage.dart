@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import '../internal/exts.dart';
 import 'access.dart';
 import 'directory.dart';
 
@@ -13,19 +12,38 @@ class RootManagement {
   /// Shorthand for [RootDirectory.access], used commonly throughout
   final RootAccess _access;
 
+  /// Check whether all directories exist synchronously
+  ///
+  /// Does not check any sub-stores.
+  bool get ready => [
+        _access.stores.existsSync(),
+        _access.stats.existsSync(),
+        _access.metadata.existsSync(),
+      ].every((e) => e);
+
+  /// Check whether all directories exist asynchronously
+  ///
+  /// Does not check any sub-stores.
+  Future<bool> get readyAsync async => (await Future.wait<bool>([
+        _access.stores.exists(),
+        _access.stats.exists(),
+        _access.metadata.exists(),
+      ]))
+          .every((e) => e);
+
   /// Create all of the directories synchronously
   void create() {
-    (_access.real > _access.stores).createSync(recursive: true);
-    (_access.real > _access.stats).createSync(recursive: true);
-    (_access.real > _access.metadata).createSync(recursive: true);
+    _access.stores.createSync(recursive: true);
+    _access.stats.createSync(recursive: true);
+    _access.metadata.createSync(recursive: true);
   }
 
   /// Create all of the directories asynchronously
   Future<void> createAsync() async {
     final List<Future<Directory>> jobs = [
-      (_access.real > _access.stores).create(recursive: true),
-      (_access.real > _access.stats).create(recursive: true),
-      (_access.real > _access.metadata).create(recursive: true),
+      _access.stores.create(recursive: true),
+      _access.stats.create(recursive: true),
+      _access.metadata.create(recursive: true),
     ];
     await Future.wait(jobs);
   }

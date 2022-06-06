@@ -4,7 +4,9 @@ import 'package:http/http.dart';
 
 import '../fmtc.dart';
 import '../misc/cache_behavior.dart';
+import '../misc/validate.dart';
 import '../settings/tile_provider_settings.dart';
+import 'exts.dart';
 import 'image_provider.dart';
 import 'store/directory.dart';
 
@@ -48,4 +50,30 @@ class FMTCTileProvider extends TileProvider {
         coords: coords,
         httpClient: _httpClient,
       );
+
+  /// Check whether a specified tile is cached in the current store synchronously
+  bool checkTileCached({
+    required Coords<num> coords,
+    required TileLayerOptions options,
+    String? customURL,
+  }) =>
+      (storeDirectory.access.tiles >>>
+              FMTCSafeFilesystemString.sanitiser(
+                inputString: customURL ?? getTileUrl(coords, options),
+                throwIfInvalid: false,
+              ))
+          .existsSync();
+
+  /// Check whether a specified tile is cached in the current store asynchronously
+  Future<bool> checkTileCachedAsync({
+    required Coords<num> coords,
+    required TileLayerOptions options,
+    String? customURL,
+  }) async =>
+      (storeDirectory.access.tiles >>>
+              FMTCSafeFilesystemString.sanitiser(
+                inputString: customURL ?? getTileUrl(coords, options),
+                throwIfInvalid: false,
+              ))
+          .exists();
 }

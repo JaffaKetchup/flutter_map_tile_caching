@@ -9,7 +9,7 @@ import 'directory.dart';
 
 /// Manage custom miscellaneous information tied to a [StoreDirectory]
 ///
-/// Uses a key-value format where both key and value must be [String]. There is no validation or sanitisation on any keys or values; note that keys form part of filenames.
+/// Uses a key-value format where both key and value must be [String]. There is no validation or sanitisation on any keys or values; note that keys form part of filenames. More advanced requirements should use another package, as this is a basic implementation.
 ///
 /// Also used internally to store bulk download recovery files ending in '.recovery.ini'.
 class StoreMetadata {
@@ -18,7 +18,7 @@ class StoreMetadata {
 
   /// Manage custom miscellaneous information tied to a [StoreDirectory]
   ///
-  /// Uses a key-value format where both key and value must be [String]. There is no validation or sanitisation on any keys or values; note that keys form part of filenames.
+  /// Uses a key-value format where both key and value must be [String]. There is no validation or sanitisation on any keys or values; note that keys form part of filenames. More advanced requirements should use another package, as this is a basic implementation.
   ///
   /// Also used internally to store bulk download recovery files ending in '.recovery.ini'.
   StoreMetadata(StoreDirectory storeDirectory)

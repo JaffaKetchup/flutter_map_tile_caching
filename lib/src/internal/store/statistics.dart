@@ -61,10 +61,29 @@ class StoreStats {
     }
   }
 
-  /// Remove the cached statistics
+  /// Remove the cached statistics synchronously
+  ///
+  /// For asynchronous version, see [invalidateCachedStatisticsAsync].
   ///
   /// If [statType] is `null`, all statistic caches are deleted, otherwise only the specified cache is deleted.
-  Future<void> invalidateCachedStatistics(String? statType) async {
+  void invalidateCachedStatistics(String? statType) {
+    try {
+      if (statType != null) {
+        (_access.stats >>> '$statType.cache').deleteSync();
+      } else {
+        (_access.stats >>> 'length.cache').deleteSync();
+        (_access.stats >>> 'size.cache').deleteSync();
+      }
+      // ignore: empty_catches
+    } catch (e) {}
+  }
+
+  /// Remove the cached statistics asynchronously
+  ///
+  /// For synchronous version, see [invalidateCachedStatistics].
+  ///
+  /// If [statType] is `null`, all statistic caches are deleted, otherwise only the specified cache is deleted.
+  Future<void> invalidateCachedStatisticsAsync(String? statType) async {
     try {
       if (statType != null) {
         await (_access.stats >>> '$statType.cache').delete();
@@ -133,39 +152,34 @@ class StoreStats {
         ),
       );
 
-  /// Retrieves a (potentially random) tile from the store and uses it to create a cover [Image]
+  /// Retrieves a tile from the store and extracts it's [Image] synchronously
   ///
-  /// [random] controls whether the chosen tile is chosen at random or whether the chosen tile is the 'first' tile in the store. Note that 'first' means alphabetically, not chronologically.
+  /// [randomRange] controls the randomness of the tile chosen (defaults to `null`):
+  /// * null                  : no randomness - the first tile is chosen
+  /// * value <= 0            : any tile may be chosen
+  /// * value >= store length : any tile may be chosen
+  /// * value < store length  : any tile up to this range may be chosen, enforcing an iteration limit internally
   ///
-  /// Using random mode may take a while to generate if the random number is large.
+  /// Note that tiles are not necessarily ordered chronologically. They are usually ordered alphabetically.
   ///
-  /// If using random mode, optionally set [maxRange] to an integer (1 <= [maxRange] <= [storeLength]) to only generate a random number between 0 and the specified number. Useful to reduce waiting times or enforce consistency.
-  ///
-  /// Returns `null` if there are no cached tiles.
-  Image? coverImage({
-    required bool random,
-    int? maxRange,
+  /// Returns `null` if there are no cached tiles in this store, otherwise an [Image] with [size] height and width.
+  Image? tileImage({
+    int? randomRange,
     double? size,
   }) {
     final int storeLen = storeLength;
     if (storeLen == 0) return null;
 
-    if (!random && maxRange != null) {
-      throw ArgumentError(
-        'If not in random mode, `maxRange` must be left as `null`',
-      );
-    }
-    if (maxRange != null && (maxRange < 1 || maxRange > storeLen)) {
-      throw ArgumentError(
-        'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`',
-      );
-    }
-
-    final int? randInt = !random ? null : Random().nextInt(maxRange!);
     int i = 0;
 
+    final int randomNumber = randomRange == null
+        ? 0
+        : Random().nextInt(
+            randomRange <= 0 ? storeLen : randomRange.clamp(0, storeLen),
+          );
+
     for (final FileSystemEntity e in _access.tiles.listSync()) {
-      if (i >= (randInt ?? 0)) {
+      if (i >= randomNumber) {
         return Image.file(
           File(e.absolute.path),
           width: size,
@@ -178,40 +192,34 @@ class StoreStats {
     throw FallThroughError();
   }
 
-  /// Retrieves a (potentially random) tile from the store and uses it to create a cover [Image]
+  /// Retrieves a tile from the store and extracts it's [Image] asynchronously
   ///
-  /// [random] controls whether the chosen tile is chosen at random or whether the chosen tile is the 'first' tile in the store. Note that 'first' means alphabetically, not chronologically.
+  /// [randomRange] controls the randomness of the tile chosen (defaults to `null`):
+  /// * null                  : no randomness - the first tile is chosen
+  /// * value <= 0            : any tile may be chosen
+  /// * value >= store length : any tile may be chosen
+  /// * value < store length  : any tile up to this range may be chosen, enforcing an iteration limit internally
   ///
-  /// Using random mode may take a while to generate if the random number is large.
+  /// Note that tiles are not necessarily ordered chronologically. They are usually ordered alphabetically.
   ///
-  /// If using random mode, optionally set [maxRange] to an integer (1 <= [maxRange] <= [storeLength]) to only generate a random number between 0 and the specified number. Useful to reduce waiting times or enforce consistency.
-  ///
-  /// Returns `null` if there are no cached tiles.
-  Future<Image?> coverImageAsync({
-    required bool random,
-    int? maxRange,
+  /// Eventually returns `null` if there are no cached tiles in this store, otherwise an [Image] with [size] height and width.
+  Future<Image?> tileImageAsync({
+    int? randomRange,
     double? size,
   }) async {
     final int storeLen = await storeLengthAsync;
     if (storeLen == 0) return null;
 
-    if (!random && maxRange != null) {
-      throw ArgumentError(
-        'If not in random mode, `maxRange` must be left as `null`',
-      );
-    }
-    if (maxRange != null && (maxRange < 1 || maxRange > storeLen)) {
-      throw ArgumentError(
-        'If specified, `maxRange` must be more than or equal to 1 and less than or equal to `storeLength`',
-      );
-    }
-
-    final int? randInt = !random ? null : Random().nextInt(maxRange!);
-
     int i = 0;
 
+    final int randomNumber = randomRange == null
+        ? 0
+        : Random().nextInt(
+            randomRange <= 0 ? storeLen : randomRange.clamp(0, storeLen),
+          );
+
     await for (final FileSystemEntity e in _access.tiles.list()) {
-      if (i >= (randInt ?? 0)) {
+      if (i >= randomNumber) {
         return Image.file(
           File(e.absolute.path),
           width: size,

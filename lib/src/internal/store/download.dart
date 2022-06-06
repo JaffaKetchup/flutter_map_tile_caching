@@ -299,7 +299,7 @@ class DownloadManagement {
   Future<void> cancel() async {
     _queue?.dispose();
     await _streamController?.close();
-    await _storeDirectory.stats.invalidateCachedStatistics(null);
+    await _storeDirectory.stats.invalidateCachedStatisticsAsync(null);
     if (_recoveryId != null) {
       await _storeDirectory.rootDirectory.recovery.cancel(_recoveryId!);
     }

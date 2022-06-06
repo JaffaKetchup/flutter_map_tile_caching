@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../../shared/state/download_provider.dart';
 import '../../../../../shared/state/general_provider.dart';
 import 'min_max_zoom_controller_popup.dart';
 import 'shape_controller_popup.dart';
@@ -28,31 +29,44 @@ class Header extends StatelessWidget {
               Consumer<GeneralProvider>(
                 builder: (context, provider, _) => provider.currentStore == null
                     ? const Text('No store selected')
-                    : Text('Downloading to ${provider.currentStore}'),
+                    : FutureBuilder<bool>(
+                        future: Future.delayed(
+                          const Duration(seconds: 3),
+                          () => true,
+                        ),
+                        builder: (context, snapshot) => snapshot.data ?? false
+                            ? Text('Downloading to ${provider.currentStore}')
+                            : const Text(
+                                'Downloaded tiles will appear red',
+                                style: TextStyle(fontStyle: FontStyle.italic),
+                              ),
+                      ),
               ),
             ],
           ),
           const Spacer(),
           IconButton(
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                useRootNavigator: true,
-                isScrollControlled: true,
-                builder: (_) => const MinMaxZoomControllerPopup(),
-              );
-            },
+            onPressed: () => showModalBottomSheet(
+              context: context,
+              useRootNavigator: true,
+              isScrollControlled: true,
+              builder: (_) => const MinMaxZoomControllerPopup(),
+            ).then(
+              (_) => Provider.of<DownloadProvider>(context, listen: false)
+                  .triggerManualPolygonRecalc(),
+            ),
             icon: const Icon(Icons.zoom_in),
           ),
           IconButton(
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                useRootNavigator: true,
-                isScrollControlled: true,
-                builder: (_) => const ShapeControllerPopup(),
-              );
-            },
+            onPressed: () => showModalBottomSheet(
+              context: context,
+              useRootNavigator: true,
+              isScrollControlled: true,
+              builder: (_) => const ShapeControllerPopup(),
+            ).then(
+              (_) => Provider.of<DownloadProvider>(context, listen: false)
+                  .triggerManualPolygonRecalc(),
+            ),
             icon: const Icon(Icons.select_all),
           ),
         ],

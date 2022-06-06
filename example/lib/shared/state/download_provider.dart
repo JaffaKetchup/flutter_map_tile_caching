@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../vars/region_mode.dart';
@@ -29,5 +31,13 @@ class DownloadProvider extends ChangeNotifier {
   set maxZoom(int newNum) {
     _maxZoom = newNum;
     notifyListeners();
+  }
+
+  final StreamController<void> _manualPolygonRecalcTrigger =
+      StreamController.broadcast();
+  StreamController<void> get manualPolygonRecalcTrigger =>
+      _manualPolygonRecalcTrigger;
+  void triggerManualPolygonRecalc() {
+    _manualPolygonRecalcTrigger.add(null);
   }
 }
