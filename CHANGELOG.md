@@ -1,8 +1,16 @@
 # Changelog
 
-1. Major version releases change the first digit and signify major (breaking) API changes
-2. Minor version releases change the second digit and signify minor (breaking or non-breaking) API changes or internal refactoring
+1. Major version releases change the first digit and signify major (breaking) API changes, with or without deprecation warnings
+2. Minor version releases change the second digit and signify minor (breaking with deprecation warnings, or non-breaking) API changes or internal refactoring
 3. Revision version releases change the third digit and signify bug fixes or documentation changes
+
+## [5.0.0-dev.2] - 2022/06/13
+
+* Example application improvements
+* README documentation improvements
+* Deprecated `preDownloadChecksCallback`
+* Added `checkTileCached` to tile provider
+* Refactored and reorganised public APIs (eg. moved `tileImage` from `stats` to `manage`)
 
 ## [5.0.0-dev.1] - 2022/06/01
 

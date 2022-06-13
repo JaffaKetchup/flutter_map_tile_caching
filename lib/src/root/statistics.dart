@@ -61,16 +61,40 @@ class RootStats {
     }
   }
 
-  /// Remove the cached statistics
+  /// Remove the cached statistics synchronously
+  ///
+  /// For asynchronous version, see [invalidateCachedStatisticsAsync].
   ///
   /// If [statType] is `null`, all statistic caches are deleted, otherwise only the specified cache is deleted.
-  Future<void> invalidateCachedStatistics(String? statType) async {
-    if (statType != null) {
-      await (_access.stats >>> '$statType.cache').delete();
-    } else {
-      await (_access.stats >>> 'length.cache').delete();
-      await (_access.stats >>> 'size.cache').delete();
-    }
+  void invalidateCachedStatistics(String? statType) {
+    try {
+      if (statType != null) {
+        (_access.stats >>> '$statType.cache').deleteSync();
+      } else {
+        (_access.stats >>> 'length.cache').deleteSync();
+        (_access.stats >>> 'size.cache').deleteSync();
+      }
+      // ignore: empty_catches
+    } catch (e) {}
+  }
+
+  /// Remove the cached statistics asynchronously
+  ///
+  /// For synchronous version, see [invalidateCachedStatistics].
+  ///
+  /// If [statType] is `null`, all statistic caches are deleted, otherwise only the specified cache is deleted.
+  Future<void> invalidateCachedStatisticsAsync(String? statType) async {
+    try {
+      if (statType != null) {
+        await (_access.stats >>> '$statType.cache').delete();
+      } else {
+        await Future.wait([
+          (_access.stats >>> 'length.cache').delete(),
+          (_access.stats >>> 'size.cache').delete(),
+        ]);
+      }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   /// Retrieve all the available [StoreDirectory]s

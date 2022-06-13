@@ -65,9 +65,9 @@ This package declares support for these platforms, but no testing has been condu
 As of v4, this package contains a full example application showcasing most of the features of this package. Simply clone the this project, enter the 'example' directory, and then build for your desired platform:
 
 - Android & Windows users should run 'androidBuilder.bat'
-- Android & Linux/MacOS users should run 'androidBuilder.sh' (bash)
+- Android & Linux/MacOS users should run 'androidBuilder.sh' (bash, untested)
 
-... to build the smallest output .apk files possible (< 14MB).  
+... to build the smallest output .apk files possible.  
 There is no build automation for iOS devices: users will need to build manually as usual.
 
 By using the example application, you must comply to your tile server's ToS. OpenStreetMap's (the default throughout the application) can be [found here](https://operations.osmfoundation.org/policies/tiles). If you cannot comply to these rules, you should find one that you can comply to and get the appropriate source URL (which can be customised in the application).  
@@ -75,21 +75,20 @@ Some safeguards have been built in to protect servers - specifically in the bulk
 
 Feel free to use the example app as a starting point for your application. Many screens should fit into any app - perhaps with some restyling to fit your app.
 
-## Functionality
+## Terminology
 
-This package provides every thing you should need to implement advanced caching in your Flutter application, including caching tiles as your users browse the map & bulk downloading regions of a map for later offline use.
+If you don't understand the concept of map tiles and servers yet, you should first become familiar with these. Try reading through the flutter_map documentation.
 
-This terminology appears throughout documentation:
+For development with this package, it is essential to become familiar with some terminology used throughout the documentation and API:
 
-- A 'cache' contains multiple 'stores'. There's usually only one cache per device, but there can be many stores.
-  - A cache is referred to as the `parentDirectory` throughout the API as well. Getting the directory will be an asynchronous process, so it is likely a `FutureBuilder` will be needed.
-  - A store is sometimes referred to as a 'cache store', but this is just for extra clarification.
+- A 'root' (previously 'cache') can hold multiple 'stores'.
+  - There is usually only one root per application, but more complex applications may wish to use more than one. In this case, the initialisation function below can be run more than once.
 - A 'region' is an area of a map formed by particular rules ('shapes') and coordinates.
-- 'Browse caching' is the caching performed when a user pans over a tile in the map view and it becomes visible.
-  - If not otherwise specified, this is also usually referred to as just 'caching'.
+- 'Browse caching' or just 'caching' is the caching performed when a user pans over a tile in the map view and it becomes visible.
 - 'Bulk downloading' is the caching performed when a user initiates a download by specifying a region to download at once.
-  - If not otherwise specified, this is also usually referred to as just 'downloading'.
   - This caching is banned by some servers, make sure you comply with the appropriate rules and ToS for your server.
+
+## Functionality Highlights
 
 Below are some special highlights in no particular order - my personal pick of things I "quite like" and spent a lot of time on. By no means is this an exhaustive list!
 
@@ -102,14 +101,6 @@ Select a multitude of region shapes for displaying to the user and downloading. 
 - Circle regions are formed from a center coordinate and a radius. Internal 'outline' coordinates are generated per degree automatically from this information.  
 - Line-based regions are formed from multiple coordinates and a radius, creating a locus. Internal 'outline' coordinates are generated for every vertex and curve.
 
-</details>
-
-<details>
-<summary> Device Status Controlled Bulk Downloading </summary>
-
-Run tests automatically before starting a bulk download, to consider multiple device-independent factors such as battery level/status and network connectivity.
-
-Write your own tests or use the default checks. For more information see the API Documentation on `PreDownloadChecksCallback`.
 </details>
 
 <details>
@@ -171,9 +162,89 @@ Foreground downloading might also work when app is minimized or the screen is lo
 The background download functionality has been disabled on iOS, because of the even stricter restrictions - note that iOS installation still requires extra setup (see Installation).
 </details>
 
-## [API Details](https://pub.dev/documentation/flutter_map_tile_caching/latest/flutter_map_tile_caching/flutter_map_tile_caching-library.html)
+## Usage
 
---- Rewriting as of v5 ---
+*All of this documentation can be found during development in your favourite IDE (such as VSC) due to the abundance of in code docs. To see the full API docs, [visit them here](https://pub.dev/documentation/flutter_map_tile_caching/latest/flutter_map_tile_caching/flutter_map_tile_caching-library.html).*
+
+The main basis of this package is the `FlutterMapTileCaching` object, which can be shortened to `FMTC` in code (typedefs used internally) and in documentation.  
+There are other high level objects, but they are usually for more advanced usage, and can be explored in more detail through the API documentation.
+
+This singleton must first be initialised, usually in the `main` (asynchronous) function at the start of your app, like this: `FMTC.initialise()`. The function takes a `rootDir` argument, usually `await RootDirectory.normalCache`, and custom global `settings`, which is optional.
+
+Once initialised, it is safe to use `FMTC.instance` (this throws `StateError` if not initialised). At this point, most functionality is accessed through chaining. Any of the following can be chained:
+
+- To use a store without automatically creating it (recommended for performance), use `()` (`call()`). Place the store name inside the parenthesis.
+- To use a store and automatically synchronously create it if it doesn't exist, use `[]`. Place the store name inside the parenthesis.
+- To use the root directory, use `rootDirectory`.
+
+After this, you can chain any of the following:
+
+| API Getter | Structure | Explanation                                                                                  |
+|------------|-----------|----------------------------------------------------------------------------------------------|
+|`access`    | Both      | Access the real directory structure - only for advanced usage                                |
+|`manage`    | Both      | Perform management tasks, such as creation and deletion                                      |
+|`stats`     | Both      | Retrieve statistics, such as size and length                                                 |
+|`recovery`  | Roots     | Manage bulk download recovery                                                                |
+|`download`  | Stores    | Manage bulk downloads                                                                        |
+|`metadata`  | Stores    | Use a simple key-value pair store - suitable for storing simple store related information    |
+
+So, for example, to access statistics for a store, you might use:
+
+```dart
+// Recommended if you are certain the store exists, or you don't need to perform actions with the store at this point
+final stats = FMTC.instance('storeName').stats;
+
+// Use only if you are not sure the store exists and you can't manually create it asynchronously
+final stats = FMTC.instance['storeName'].stats; 
+```
+
+The following subsections explain usage of some of the above getters, and more, in more detail.  
+Note that many of the methods and getters, for example those under `manage` have asynchronous versions, which are recommended for performance. To use them, if available, just add 'Async' to the end of the method/getter. For example, `ready` and `readyAsync`.
+
+### Tile Provider: `getTileProvider()`
+
+In addition to the above getter, stores (not roots) also have the method `getTileProvider`. This is the point of integration with flutter_map, providing browse caching through a custom image provider, and can be used as so:
+
+```dart
+TileLayerOptions(
+    tileProvider: FMTC.instance('storeName').getTileProvider(),
+),
+```
+
+The method optionally takes a `FMTCTileProviderSettings` to override any defaults, whether the package default, or the default set in the initialisation function.
+
+`FMTCTileProviderSettings` can take the following arguments:
+
+| Argument              | Type              | Explanation                                                                           | Default                       |
+|-----------------------|-------------------|---------------------------------------------------------------------------------------|-------------------------------|
+|`behavior`             | `CacheBehavior`   | Logic used for storage and retrieval of tiles                                         | `CacheBehavior.cacheFirst`    |
+|`cachedValidDuration`  | `Duration`        | Duration until a tile expires and needs to be fetched again                           | `const Duration(days: 16)`    |
+|`maxStoreLength`       | `int`             | Maximum number of tiles allowed in a cache store before the oldest tile gets deleted  | `0`: disabled                 |
+
+### Manage: `manage`
+
+| API        | Structure | Explanation                                                                                  |
+|------------|-----------|----------------------------------------------------------------------------------------------|
+|`ready`     | Both      | Check if the necessary directory structure exists                                            |
+|`create()`  | Both      | Create the necessary directory structure, or do nothing if it already exists                 |
+|`delete()`  | Both      | Delete the directory structure, fail if it doesn't exist                                     |
+|`reset()`   | Roots     | Reset the directory structure (delete and recreate)                                          |
+|`reset()`   | Stores    | Reset the tiles directory structure (delete and recreate)                                    |
+|`rename()`  | Stores    | Safely rename the store and the necessary directories                                        |
+|`tileImage` | Stores    | Retrieve a tile and extract it's [Image] asynchronously                                      |
+
+### Statistics: `stats`
+
+Many statistics are cached for better performance, as some take a long time to calculate. If this causes problems, chain `noCache` before the below API getters/methods, like this: `stats.noCache.storeSize`. Alternatively, clear the currently cached statistics using `invalidateCachedStatistics()`. This is automatically called when new tiles are added to the store.
+
+| API               | Structure | Explanation                                                                   |
+|-------------------|-----------|-------------------------------------------------------------------------------|
+|`watchChanges()`   | Both      | Use a file system watcher to watch for changes, useful for a `StreamBuilder`  |
+|`storesAvailable`  | Roots     | List all the currently ready stores under the root                            |
+|`rootSize`         | Roots     | Get the current root size in KiB including all sub-stores                     |
+|`rootLength`       | Roots     | Get the number of tiles currently cached in all sub-stores                    |
+|`storeSize`        | Stores    | Get the current store size in KiB                                             |
+|`storeLength`      | Stores    | Get the number of tiles currently cached                                      |
 
 ## Migrate to v5 from v4
 

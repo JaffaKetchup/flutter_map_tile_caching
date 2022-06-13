@@ -32,6 +32,12 @@ class _MapViewState extends State<MapView> {
                     'Loading Settings...\n\nSeeing this screen for a long time?\nThere may be a misconfiguration of the\nstore. Try disabling caching and deleting\n faulty stores.',
               );
             }
+
+            final String urlTemplate =
+                provider.currentStore != null && metadata.data != null
+                    ? metadata.data!['sourceURL']!
+                    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
             return FlutterMap(
               options: MapOptions(
                 center: LatLng(51.509364, -0.128928),
@@ -40,10 +46,7 @@ class _MapViewState extends State<MapView> {
               ),
               layers: [
                 TileLayerOptions(
-                  urlTemplate:
-                      provider.currentStore != null && metadata.data != null
-                          ? metadata.data!['sourceURL']!
-                          : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate: urlTemplate,
                   tileProvider: provider.currentStore != null
                       ? FMTC.instance(provider.currentStore!).getTileProvider(
                             FMTCTileProviderSettings(
@@ -66,6 +69,11 @@ class _MapViewState extends State<MapView> {
                   reset: provider.resetController.stream,
                   keepBuffer: 5,
                   backgroundColor: const Color(0xFFaad3df),
+                ),
+              ],
+              nonRotatedChildren: [
+                AttributionWidget.defaultWidget(
+                  source: Uri.parse(urlTemplate).host,
                 ),
               ],
             );

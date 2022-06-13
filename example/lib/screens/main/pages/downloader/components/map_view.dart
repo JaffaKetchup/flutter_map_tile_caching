@@ -113,6 +113,11 @@ class _MapViewState extends State<MapView> {
                       interactiveFlags:
                           InteractiveFlag.all & ~InteractiveFlag.rotate,
                     ),
+                    nonRotatedChildren: [
+                      AttributionWidget.defaultWidget(
+                        source: Uri.parse(urlTemplate).host,
+                      ),
+                    ],
                     children: [
                       TileLayerWidget(
                         options: TileLayerOptions(

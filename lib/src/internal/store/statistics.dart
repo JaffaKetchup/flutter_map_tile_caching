@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/widgets.dart';
 import 'package:stream_transform/stream_transform.dart';
@@ -88,8 +87,10 @@ class StoreStats {
       if (statType != null) {
         await (_access.stats >>> '$statType.cache').delete();
       } else {
-        await (_access.stats >>> 'length.cache').delete();
-        await (_access.stats >>> 'size.cache').delete();
+        await Future.wait([
+          (_access.stats >>> 'length.cache').delete(),
+          (_access.stats >>> 'size.cache').delete(),
+        ]);
       }
       // ignore: empty_catches
     } catch (e) {}
@@ -151,86 +152,6 @@ class StoreStats {
           () => _access.tiles.list().length,
         ),
       );
-
-  /// Retrieves a tile from the store and extracts it's [Image] synchronously
-  ///
-  /// [randomRange] controls the randomness of the tile chosen (defaults to `null`):
-  /// * null                  : no randomness - the first tile is chosen
-  /// * value <= 0            : any tile may be chosen
-  /// * value >= store length : any tile may be chosen
-  /// * value < store length  : any tile up to this range may be chosen, enforcing an iteration limit internally
-  ///
-  /// Note that tiles are not necessarily ordered chronologically. They are usually ordered alphabetically.
-  ///
-  /// Returns `null` if there are no cached tiles in this store, otherwise an [Image] with [size] height and width.
-  Image? tileImage({
-    int? randomRange,
-    double? size,
-  }) {
-    final int storeLen = storeLength;
-    if (storeLen == 0) return null;
-
-    int i = 0;
-
-    final int randomNumber = randomRange == null
-        ? 0
-        : Random().nextInt(
-            randomRange <= 0 ? storeLen : randomRange.clamp(0, storeLen),
-          );
-
-    for (final FileSystemEntity e in _access.tiles.listSync()) {
-      if (i >= randomNumber) {
-        return Image.file(
-          File(e.absolute.path),
-          width: size,
-          height: size,
-        );
-      }
-      i++;
-    }
-
-    throw FallThroughError();
-  }
-
-  /// Retrieves a tile from the store and extracts it's [Image] asynchronously
-  ///
-  /// [randomRange] controls the randomness of the tile chosen (defaults to `null`):
-  /// * null                  : no randomness - the first tile is chosen
-  /// * value <= 0            : any tile may be chosen
-  /// * value >= store length : any tile may be chosen
-  /// * value < store length  : any tile up to this range may be chosen, enforcing an iteration limit internally
-  ///
-  /// Note that tiles are not necessarily ordered chronologically. They are usually ordered alphabetically.
-  ///
-  /// Eventually returns `null` if there are no cached tiles in this store, otherwise an [Image] with [size] height and width.
-  Future<Image?> tileImageAsync({
-    int? randomRange,
-    double? size,
-  }) async {
-    final int storeLen = await storeLengthAsync;
-    if (storeLen == 0) return null;
-
-    int i = 0;
-
-    final int randomNumber = randomRange == null
-        ? 0
-        : Random().nextInt(
-            randomRange <= 0 ? storeLen : randomRange.clamp(0, storeLen),
-          );
-
-    await for (final FileSystemEntity e in _access.tiles.list()) {
-      if (i >= randomNumber) {
-        return Image.file(
-          File(e.absolute.path),
-          width: size,
-          height: size,
-        );
-      }
-      i++;
-    }
-
-    throw FallThroughError();
-  }
 
   /// Watch for changes in the current store
   ///
