@@ -231,7 +231,7 @@ The method optionally takes a `FMTCTileProviderSettings` to override any default
 |`reset()`   | Roots     | Reset the directory structure (delete and recreate)                                          |
 |`reset()`   | Stores    | Reset the tiles directory structure (delete and recreate)                                    |
 |`rename()`  | Stores    | Safely rename the store and the necessary directories                                        |
-|`tileImage` | Stores    | Retrieve a tile and extract it's [Image] asynchronously                                      |
+|`tileImage` | Stores    | Retrieve a tile and extract it's `Image` asynchronously                                      |
 
 ### Statistics: `stats`
 
