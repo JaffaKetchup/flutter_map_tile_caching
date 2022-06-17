@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 import '../vars/region_mode.dart';
 
@@ -9,6 +10,13 @@ class DownloadProvider extends ChangeNotifier {
   RegionMode get regionMode => _regionMode;
   set regionMode(RegionMode newMode) {
     _regionMode = newMode;
+    notifyListeners();
+  }
+
+  BaseRegion? _region;
+  BaseRegion? get region => _region;
+  set region(BaseRegion? newRegion) {
+    _region = newRegion;
     notifyListeners();
   }
 

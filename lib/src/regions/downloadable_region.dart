@@ -179,4 +179,8 @@ class DownloadableRegion {
       end.hashCode ^
       crs.hashCode ^
       errorHandler.hashCode;
+
+  @override
+  String toString() =>
+      'DownloadableRegion(type: $type, originalRegion: $originalRegion, points: $points, minZoom: $minZoom, maxZoom: $maxZoom, options: $options, parallelThreads: $parallelThreads, preventRedownload: $preventRedownload, seaTileRemoval: $seaTileRemoval, start: $start, end: $end, crs: $crs, errorHandler: $errorHandler)';
 }

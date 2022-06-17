@@ -70,7 +70,7 @@ class AppContainer extends StatelessWidget {
           title: 'FMTC Example',
           theme: ThemeData(
             colorScheme: ColorScheme.fromSwatch(
-              primarySwatch: Colors.purple,
+              primarySwatch: Colors.teal,
               accentColor: Colors.deepOrange,
             ),
             useMaterial3: true,

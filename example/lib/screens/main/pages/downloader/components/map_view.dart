@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -23,6 +24,9 @@ class MapView extends StatefulWidget {
 }
 
 class _MapViewState extends State<MapView> {
+  static const double shapePadding = 15;
+  static const crosshairsMovement = Point<double>(10, 10);
+
   final _mapKey = GlobalKey<State<StatefulWidget>>();
   late final MapController _mapController;
 
@@ -30,9 +34,10 @@ class _MapViewState extends State<MapView> {
   late final StreamSubscription _tileCounterTriggerStream;
   late final StreamSubscription _manualPolygonRecalcTriggerStream;
 
-  LatLng? _pointTL;
-  LatLng? _pointBR;
-
+  Point<double>? _crosshairsTop;
+  Point<double>? _crosshairsBottom;
+  LatLng? _coordsTopLeft;
+  LatLng? _coordsBottomRight;
   LatLng? _center;
   double? _radius;
 
@@ -143,7 +148,7 @@ class _MapViewState extends State<MapView> {
                               position: DecorationPosition.foreground,
                               decoration: BoxDecoration(
                                 color: (snapshot.data ?? false)
-                                    ? Colors.deepOrange.withOpacity(0.5)
+                                    ? Colors.deepOrange.withOpacity(0.33)
                                     : Colors.transparent,
                               ),
                               child: widget,
@@ -151,15 +156,18 @@ class _MapViewState extends State<MapView> {
                           ),
                         ),
                       ),
-                      if (_pointTL != null &&
-                          _pointBR != null &&
+                      if (_coordsTopLeft != null &&
+                          _coordsBottomRight != null &&
                           downloadProvider.regionMode != RegionMode.circle)
                         PolygonLayerWidget(
                           options: PolygonLayerOptions(
                             polygons: [
                               Polygon(
                                 points: RectangleRegion(
-                                  LatLngBounds(_pointTL, _pointBR),
+                                  LatLngBounds(
+                                    _coordsTopLeft,
+                                    _coordsBottomRight,
+                                  ),
                                 ).toList(),
                                 isFilled: true,
                                 color: Colors.green.withOpacity(0.5),
@@ -186,39 +194,18 @@ class _MapViewState extends State<MapView> {
                         ),
                     ],
                   ),
-                  if (downloadProvider.regionMode != RegionMode.circle) ...[
+                  if (_crosshairsTop != null && _crosshairsBottom != null) ...[
                     Positioned(
-                      top: downloadProvider.regionMode == RegionMode.square
-                          ? constraints.maxHeight - (constraints.maxWidth + 56)
-                          : downloadProvider.regionMode ==
-                                  RegionMode.rectangleHorizontal
-                              ? constraints.maxHeight / 3
-                              : 15,
-                      left: 15,
+                      top: _crosshairsTop!.y,
+                      left: _crosshairsTop!.x,
                       child: const Crosshairs(),
                     ),
                     Positioned(
-                      bottom: downloadProvider.regionMode == RegionMode.square
-                          ? constraints.maxHeight - (constraints.maxWidth + 56)
-                          : downloadProvider.regionMode ==
-                                  RegionMode.rectangleHorizontal
-                              ? constraints.maxHeight / 3
-                              : 15,
-                      right: 15,
+                      top: _crosshairsBottom!.y,
+                      left: _crosshairsBottom!.x,
                       child: const Crosshairs(),
                     ),
-                  ] else ...[
-                    Positioned(
-                      top: (constraints.maxHeight / 2) - 10,
-                      left: (constraints.maxWidth / 2) - 10,
-                      child: const Crosshairs(),
-                    ),
-                    Positioned(
-                      top: constraints.maxHeight - (constraints.maxWidth + 56),
-                      left: (constraints.maxWidth / 2) - 10,
-                      child: const Crosshairs(),
-                    ),
-                  ],
+                  ]
                 ],
               );
             },
@@ -229,89 +216,105 @@ class _MapViewState extends State<MapView> {
   void _updatePointLatLng() {
     final DownloadProvider downloadProvider =
         Provider.of<DownloadProvider>(context, listen: false);
+
     final Size mapSize = _mapKey.currentContext!.size!;
+    final mapCenter = Point<double>(mapSize.width / 2, mapSize.height / 2);
+
+    late final Point<double> calculatedTopLeft;
+    late final Point<double> calculatedBottomRight;
 
     switch (downloadProvider.regionMode) {
       case RegionMode.square:
-        setState(
-          () {
-            _pointTL = _mapController
-                .pointToLatLng(CustomPoint(24, mapSize.width + 48));
-            _pointBR = _mapController.pointToLatLng(
-              CustomPoint(
-                mapSize.width - 24,
-                mapSize.height - mapSize.width - 48,
-              ),
-            );
-          },
+        final allowedArea = Size.square(mapSize.width - (shapePadding * 2));
+        calculatedTopLeft = Point<double>(
+          shapePadding,
+          mapCenter.y - allowedArea.height / 2,
+        );
+        calculatedBottomRight = Point<double>(
+          mapSize.width - shapePadding,
+          mapCenter.y + allowedArea.height / 2,
         );
         break;
       case RegionMode.rectangleVertical:
-        setState(
-          () {
-            _pointTL = _mapController.pointToLatLng(const CustomPoint(24, 24));
-            _pointBR = _mapController.pointToLatLng(
-              CustomPoint(
-                mapSize.width - 24,
-                mapSize.height - 24,
-              ),
-            );
-          },
+        final allowedArea = Size(
+          mapSize.width - (shapePadding * 2),
+          mapSize.height - (shapePadding * 2) - 50,
+        );
+        calculatedTopLeft = Point<double>(
+          shapePadding,
+          mapCenter.y - allowedArea.height / 2,
+        );
+        calculatedBottomRight = Point<double>(
+          mapSize.width - shapePadding,
+          mapCenter.y + allowedArea.height / 2,
         );
         break;
       case RegionMode.rectangleHorizontal:
-        setState(
-          () {
-            _pointTL = _mapController
-                .pointToLatLng(CustomPoint(24, mapSize.height / 3 + 10));
-            _pointBR = _mapController.pointToLatLng(
-              CustomPoint(
-                mapSize.width - 24,
-                mapSize.height - mapSize.height / 3 - 10,
-              ),
-            );
-          },
+        final allowedArea = Size(
+          mapSize.width - (shapePadding * 2),
+          (mapSize.width - (shapePadding * 2)) / 1.75,
+        );
+        calculatedTopLeft = Point<double>(
+          shapePadding,
+          mapCenter.y - allowedArea.height / 2,
+        );
+        calculatedBottomRight = Point<double>(
+          mapSize.width - shapePadding,
+          mapCenter.y + allowedArea.height / 2,
         );
         break;
       case RegionMode.circle:
-        setState(
-          () {
-            _center = _mapController.pointToLatLng(
-              CustomPoint(mapSize.width / 2, mapSize.height / 2),
-            );
-            _radius = const Distance(roundResult: false).distance(
-                  _center!,
-                  _mapController.pointToLatLng(
-                    CustomPoint(
-                      mapSize.width / 2,
-                      (mapSize.height / 2) - (mapSize.width / 2) + 38,
-                    ),
-                  )!,
-                ) /
-                1000;
-          },
+        final allowedArea = Size.square(mapSize.width - (shapePadding * 2));
+
+        final calculatedTop = Point<double>(
+          mapCenter.x,
+          mapCenter.y - allowedArea.height / 2,
         );
+
+        _crosshairsTop = calculatedTop - crosshairsMovement;
+        _crosshairsBottom = mapCenter - crosshairsMovement;
+
+        _center = _mapController.pointToLatLng(customPointFromPoint(mapCenter));
+        _radius = const Distance(roundResult: false).distance(
+              _center!,
+              _mapController
+                  .pointToLatLng(customPointFromPoint(calculatedTop))!,
+            ) /
+            1000;
+        setState(() {});
         break;
     }
+
+    if (downloadProvider.regionMode != RegionMode.circle) {
+      _crosshairsTop = calculatedTopLeft - crosshairsMovement;
+      _crosshairsBottom = calculatedBottomRight - crosshairsMovement;
+
+      _coordsTopLeft =
+          _mapController.pointToLatLng(customPointFromPoint(calculatedTopLeft));
+      _coordsBottomRight = _mapController
+          .pointToLatLng(customPointFromPoint(calculatedBottomRight));
+
+      setState(() {});
+    }
+
+    downloadProvider.region = downloadProvider.regionMode == RegionMode.circle
+        ? CircleRegion(_center!, _radius!)
+        : RectangleRegion(
+            LatLngBounds(_coordsTopLeft, _coordsBottomRight),
+          );
   }
 
   Future<void> _countTiles() async {
-    if (Provider.of<GeneralProvider>(context, listen: false).currentStore !=
-        null) {
-      final DownloadProvider provider =
-          Provider.of<DownloadProvider>(context, listen: false);
+    final DownloadProvider provider =
+        Provider.of<DownloadProvider>(context, listen: false);
 
+    if (Provider.of<GeneralProvider>(context, listen: false).currentStore !=
+            null &&
+        provider.region != null) {
       provider
         ..regionTiles = null
         ..regionTiles = await FMTC.instance('').download.check(
-              (Provider.of<DownloadProvider>(context, listen: false)
-                              .regionMode ==
-                          RegionMode.circle
-                      ? CircleRegion(_center!, _radius!)
-                      : RectangleRegion(
-                          LatLngBounds(_pointTL, _pointBR),
-                        ))
-                  .toDownloadable(
+              provider.region!.toDownloadable(
                 provider.minZoom,
                 provider.maxZoom,
                 TileLayerOptions(),
@@ -320,3 +323,6 @@ class _MapViewState extends State<MapView> {
     }
   }
 }
+
+CustomPoint<E> customPointFromPoint<E extends num>(Point<E> point) =>
+    CustomPoint(point.x, point.y);

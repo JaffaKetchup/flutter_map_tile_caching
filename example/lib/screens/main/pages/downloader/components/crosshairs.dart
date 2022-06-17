@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 class Crosshairs extends StatelessWidget {
   const Crosshairs({
     Key? key,
-    this.length = 20,
+    this.size = 20,
     this.thickness = 2,
   }) : super(key: key);
 
-  final double length;
+  final double size;
   final double thickness;
 
   @override
@@ -16,11 +16,11 @@ class Crosshairs extends StatelessWidget {
         children: [
           Container(
             width: thickness,
-            height: length,
+            height: size,
             color: Colors.black,
           ),
           Container(
-            width: length,
+            width: size,
             height: thickness,
             color: Colors.black,
           ),
