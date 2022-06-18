@@ -5,10 +5,11 @@ import 'package:http/http.dart';
 import '../fmtc.dart';
 import '../misc/cache_behavior.dart';
 import '../misc/validate.dart';
+import '../settings/fmtc_settings.dart';
 import '../settings/tile_provider_settings.dart';
+import '../store/directory.dart';
 import 'exts.dart';
 import 'image_provider.dart';
-import 'store/directory.dart';
 
 /// 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayerOptions]
 class FMTCTileProvider extends TileProvider {

@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import '../internal/store/directory.dart';
+import '../store/directory.dart';
 
 /// Ensures a string is safe for storage in the FMTC-format filesystem structure - usually for store names
 ///

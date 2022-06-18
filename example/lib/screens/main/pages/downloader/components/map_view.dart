@@ -160,36 +160,24 @@ class _MapViewState extends State<MapView> {
                           _coordsBottomRight != null &&
                           downloadProvider.regionMode != RegionMode.circle)
                         PolygonLayerWidget(
-                          options: PolygonLayerOptions(
-                            polygons: [
-                              Polygon(
-                                points: RectangleRegion(
-                                  LatLngBounds(
-                                    _coordsTopLeft,
-                                    _coordsBottomRight,
-                                  ),
-                                ).toList(),
-                                isFilled: true,
-                                color: Colors.green.withOpacity(0.5),
-                              )
-                            ],
+                          options: RectangleRegion(
+                            LatLngBounds(
+                              _coordsTopLeft,
+                              _coordsBottomRight,
+                            ),
+                          ).toDrawable(
+                            fillColor: Colors.green.withOpacity(0.5),
                           ),
                         )
                       else if (_center != null &&
                           _radius != null &&
                           downloadProvider.regionMode == RegionMode.circle)
                         PolygonLayerWidget(
-                          options: PolygonLayerOptions(
-                            polygons: [
-                              Polygon(
-                                points: CircleRegion(
-                                  _center!,
-                                  _radius!,
-                                ).toList(),
-                                isFilled: true,
-                                color: Colors.green.withOpacity(0.5),
-                              )
-                            ],
+                          options: CircleRegion(
+                            _center!,
+                            _radius!,
+                          ).toDrawable(
+                            fillColor: Colors.green.withOpacity(0.5),
                           ),
                         ),
                     ],

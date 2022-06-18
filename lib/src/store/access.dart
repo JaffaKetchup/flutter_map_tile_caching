@@ -1,8 +1,7 @@
 import 'dart:io';
 
-import '../../misc/validate.dart';
-import '../exts.dart';
-
+import '../internal/exts.dart';
+import '../misc/validate.dart';
 import 'directory.dart';
 
 /// Provides direct filesystem access paths to a [StoreDirectory] - use with caution

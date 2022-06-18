@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:stream_transform/stream_transform.dart';
 
-import '../exts.dart';
+import '../internal/exts.dart';
 import 'access.dart';
 import 'directory.dart';
 

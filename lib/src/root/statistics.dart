@@ -5,7 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:stream_transform/stream_transform.dart';
 
 import '../internal/exts.dart';
-import '../internal/store/directory.dart';
+import '../store/directory.dart';
 import 'access.dart';
 import 'directory.dart';
 

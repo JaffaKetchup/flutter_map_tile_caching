@@ -63,10 +63,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                         .metadata
                         .readAsync,
                 builder: (context, metadata) {
-                  if (!metadata.hasData ||
-                      metadata.data == null ||
-                      (provider.currentStore != null &&
-                          (metadata.data ?? {}).isEmpty)) {
+                  if (!metadata.hasData || metadata.data == null) {
                     return const LoadingIndicator(
                       message:
                           'Loading Settings...\n\nSeeing this screen for a long time?\nThere may be a misconfiguration of the\nstore. Try disabling caching and deleting\n faulty stores.',

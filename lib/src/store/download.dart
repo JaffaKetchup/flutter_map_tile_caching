@@ -17,15 +17,15 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:queue/queue.dart';
 
-import '../../bulk_download/download_progress.dart';
-import '../../bulk_download/downloader.dart';
-import '../../bulk_download/tile_loops.dart';
-import '../../bulk_download/tile_progress.dart';
-import '../../fmtc.dart';
-import '../../misc/typedefs.dart';
-import '../../regions/downloadable_region.dart';
-import '../../settings/tile_provider_settings.dart';
-import '../tile_provider.dart';
+import '../bulk_download/download_progress.dart';
+import '../bulk_download/downloader.dart';
+import '../bulk_download/tile_loops.dart';
+import '../bulk_download/tile_progress.dart';
+import '../fmtc.dart';
+import '../internal/tile_provider.dart';
+import '../misc/typedefs.dart';
+import '../regions/downloadable_region.dart';
+import '../settings/tile_provider_settings.dart';
 import 'directory.dart';
 
 /// Provides tools to manage bulk downloading to a specific [StoreDirectory]

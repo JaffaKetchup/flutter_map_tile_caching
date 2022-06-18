@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p;
 
-import '../../misc/validate.dart';
+import '../misc/validate.dart';
 import 'access.dart';
 import 'directory.dart';
 import 'metadata.dart';

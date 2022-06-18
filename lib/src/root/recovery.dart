@@ -7,9 +7,9 @@ import 'package:stream_transform/stream_transform.dart';
 
 import '../internal/recovery/decode.dart';
 import '../internal/recovery/encode.dart';
-import '../internal/store/directory.dart';
 import '../regions/downloadable_region.dart';
 import '../regions/recovered_region.dart';
+import '../store/directory.dart';
 import 'access.dart';
 import 'directory.dart';
 

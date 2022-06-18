@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 import '../internal/exts.dart';
-import '../internal/store/directory.dart';
+import '../store/directory.dart';
 import 'access.dart';
 import 'manage.dart';
 import 'recovery.dart';

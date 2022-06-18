@@ -3,29 +3,15 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'internal/store/directory.dart';
-import 'internal/tile_provider.dart';
 import 'root/directory.dart';
 import 'root/manage.dart';
-import 'settings/tile_provider_settings.dart';
+import 'settings/fmtc_settings.dart';
+import 'store/directory.dart';
 
 /// Direct alias of [FlutterMapTileCaching] for easier development
 ///
 /// Prefer use of full 'FlutterMapTileCaching' when initialising to ensure readability and understanding in other code.
 typedef FMTC = FlutterMapTileCaching;
-
-/// Global 'flutter_map_tile_caching' settings
-class FMTCSettings {
-  /// Default settings used when creating an [FMTCTileProvider]
-  ///
-  /// Can be overriden on a case-to-case basis when actually creating the tile provider.
-  final FMTCTileProviderSettings defaultTileProviderSettings;
-
-  /// Create custom global 'flutter_map_tile_caching' settings
-  FMTCSettings({FMTCTileProviderSettings? defaultTileProviderSettings})
-      : defaultTileProviderSettings =
-            defaultTileProviderSettings ?? FMTCTileProviderSettings();
-}
 
 /// Main singleton access point for 'flutter_map_tile_caching'
 ///

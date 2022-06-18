@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
-import 'package:vector_math/vector_math.dart';
+import 'package:vector_math/vector_math.dart' hide Colors;
 
+import 'base_region.dart';
 import 'downloadable_region.dart';
 
 /// A region with the border as the locus of a line at it's center
@@ -111,9 +112,9 @@ class LineRegion implements BaseRegion {
   ///
   /// Returns a [PolygonLayerOptions] to be added to the `layer` property of a [FlutterMap].
   @override
-  PolygonLayerOptions toDrawable(
-    Color fillColor,
-    Color borderColor, {
+  PolygonLayerOptions toDrawable({
+    Color? fillColor,
+    Color borderColor = const Color(0x00000000),
     double borderStrokeWidth = 3.0,
     bool isDotted = false,
     bool prettyPaint = true,
@@ -233,7 +234,8 @@ class LineRegion implements BaseRegion {
     final List<Polygon> returnable = rects
         .map(
           (rect) => Polygon(
-            color: fillColor,
+            isFilled: fillColor != null,
+            color: fillColor ?? Colors.transparent,
             borderColor: borderColor,
             borderStrokeWidth: borderStrokeWidth,
             isDotted: isDotted,
@@ -246,7 +248,8 @@ class LineRegion implements BaseRegion {
       returnable.addAll(
         curves.map(
           (curve) => Polygon(
-            color: fillColor,
+            isFilled: fillColor != null,
+            color: fillColor ?? Colors.transparent,
             borderColor: borderColor,
             borderStrokeWidth: borderStrokeWidth,
             isDotted: isDotted,

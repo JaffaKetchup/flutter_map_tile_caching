@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'base_region.dart';
 import 'downloadable_region.dart';
 
 /// A rectangular region with two or more corners
@@ -42,19 +43,26 @@ class RectangleRegion implements BaseRegion {
       );
 
   @override
-  PolygonLayerOptions toDrawable(
-    Color fillColor,
-    Color borderColor, {
+  PolygonLayerOptions toDrawable({
+    Color? fillColor,
+    Color borderColor = const Color(0x00000000),
     double borderStrokeWidth = 3.0,
     bool isDotted = false,
+    String? label,
+    TextStyle labelStyle = const TextStyle(),
+    PolygonLabelPlacement labelPlacement = PolygonLabelPlacement.polylabel,
   }) =>
       PolygonLayerOptions(
         polygons: [
           Polygon(
-            color: fillColor,
+            isFilled: fillColor != null,
+            color: fillColor ?? Colors.transparent,
             borderColor: borderColor,
             borderStrokeWidth: borderStrokeWidth,
             isDotted: isDotted,
+            label: label,
+            labelStyle: labelStyle,
+            labelPlacement: labelPlacement,
             points: [
               LatLng(
                 bounds.southEast.latitude,

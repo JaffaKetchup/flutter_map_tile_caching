@@ -8,8 +8,8 @@ import '../../regions/circle.dart';
 import '../../regions/downloadable_region.dart';
 import '../../regions/line.dart';
 import '../../regions/rectangle.dart';
+import '../../store/directory.dart';
 import '../exts.dart';
-import '../store/directory.dart';
 
 Future<void> encode({
   required int id,
