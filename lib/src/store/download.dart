@@ -15,13 +15,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:queue/queue.dart';
 
 import '../bulk_download/download_progress.dart';
 import '../bulk_download/downloader.dart';
 import '../bulk_download/tile_loops.dart';
 import '../bulk_download/tile_progress.dart';
-import '../fmtc.dart';
 import '../internal/tile_provider.dart';
 import '../misc/typedefs.dart';
 import '../regions/downloadable_region.dart';
@@ -127,12 +127,11 @@ class DownloadManagement {
 
   /// Download a specified [DownloadableRegion] in the background, and show a notification progress bar (by default)
   ///
-  /// Only available on Android devices, due to limitations with other operating systems.
+  /// Only available on Android devices, due to limitations with other operating systems. Background downloading is complicated: see the documentation website for more information.
+  ///
+  /// You may want to call [requestIgnoreBatteryOptimizations] beforehand, depending on how/where/why this background download will be used. See documentation on that method for more information.
+  ///
   /// To check the number of tiles that need to be downloaded before using this function, use [check].
-  ///
-  /// Background downloading is complicated: see the main README for more information.
-  ///
-  /// You may want to call [FlutterMapTileCaching.requestIgnoreBatteryOptimizations] beforehand, depending on how/where/why this background download will be used. See documentation on that method for more information.
   ///
   /// Optionally specify [showNotification] as `false` to disable the built-in notification system.
   ///
@@ -305,6 +304,41 @@ class DownloadManagement {
     }
   }
 
+  /// Requests for app to be excluded from battery optimizations to aid running a background process
+  ///
+  /// Only available on Android devices, due to limitations with other operating systems.
+  ///
+  /// Background downloading is complicated: see the documentation website for more information.
+  ///
+  /// If [requestIfDenied] is `true` (default), and the permission has not been granted, an intrusive system dialog will be displayed. If `false`, this method will only check whether it has been granted or not.
+  ///
+  /// If the dialog does appear it contains is no explanation for the user, except that the app will be allowed to run in the background all the time, so less technical users may be put off. It is up to you to decide (and program accordingly) if you want to show a reason first, then request the permission.
+  ///
+  /// Will return ([Future]) `true` if permission was granted, `false` if the permission was denied.
+  Future<bool> requestIgnoreBatteryOptimizations(
+    BuildContext context, {
+    bool requestIfDenied = true,
+  }) async {
+    if (Platform.isAndroid) {
+      final PermissionStatus status =
+          await Permission.ignoreBatteryOptimizations.status;
+      if ((status.isDenied || status.isLimited) && requestIfDenied) {
+        final PermissionStatus statusAfter =
+            await Permission.ignoreBatteryOptimizations.request();
+        if (statusAfter.isGranted) return true;
+        return false;
+      } else if (status.isGranted) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      throw UnsupportedError(
+        'The background download feature is only available on Android due to limitations with other operating systems.',
+      );
+    }
+  }
+
   Stream<DownloadProgress> _startDownload({
     required FMTCTileProviderSettings? tileProviderSettings,
     required DownloadableRegion region,
@@ -319,7 +353,7 @@ class DownloadManagement {
       try {
         seaTileBytes = (await client.get(
           Uri.parse(
-            tileProvider.getTileUrl(Coords(0, 0)..z = 19, region.options),
+            tileProvider.getTileUrl(Coords(0, 0)..z = 17, region.options),
           ),
         ))
             .bodyBytes;

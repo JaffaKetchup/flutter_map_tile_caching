@@ -8,9 +8,9 @@ A plugin for ['flutter_map'](https://pub.dev/packages/flutter_map) providing adv
 
 ---
 
-## [Documentation](https://flutter-map-tile-caching.jaffaketchup.dev)
+## [Documentation](https://fmtc.jaffaketchup.dev)
 
-For the full documentation, visit [the website](https://flutter-map-tile-caching.jaffaketchup.dev) made with GitBook. It also has information about using the example.  
+For the full documentation, visit [the website](https://fmtc.jaffaketchup.dev) made with GitBook. It also has information about using the example.  
 Alternatively, for the API reference, look at the [auto generated 'dartdoc'](https://pub.dev/documentation/flutter_map_tile_caching/latest/flutter_map_tile_caching/flutter_map_tile_caching-library.html), which also appears as you type in your favourite IDE.
 
 ---

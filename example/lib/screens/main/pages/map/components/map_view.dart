@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../../../../../shared/components/loading_indicator.dart';
 import '../../../../../shared/state/general_provider.dart';
 
+// TODO: Override tiles when URL changes
+
 class MapView extends StatefulWidget {
   const MapView({
     Key? key,

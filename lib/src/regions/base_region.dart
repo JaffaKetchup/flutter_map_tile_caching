@@ -20,7 +20,7 @@ abstract class BaseRegion {
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),
-    Function(Object?)? errorHandler,
+    void Function(Object?)? errorHandler,
   });
 
   /// Create a drawable area for a [FlutterMap] out of this region

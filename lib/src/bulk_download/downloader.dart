@@ -52,7 +52,7 @@ Future<TileProgress> _getAndSaveTile({
   required Coords<num> coord,
   required TileLayerOptions options,
   required http.Client client,
-  required Function(Object)? errorHandler,
+  required void Function(Object)? errorHandler,
   required bool preventRedownload,
   required Uint8List? seaTileBytes,
 }) async {

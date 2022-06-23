@@ -29,7 +29,7 @@ class CircleRegion implements BaseRegion {
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),
-    Function(Object?)? errorHandler,
+    void Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion.internal(
         points: toList(),
