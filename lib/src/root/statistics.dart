@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p;
 import 'package:stream_transform/stream_transform.dart';
+import 'package:watcher/watcher.dart';
 
 import '../internal/exts.dart';
 import '../store/directory.dart';
+import '../store/statistics.dart';
 import 'access.dart';
 import 'directory.dart';
 
@@ -190,11 +192,9 @@ class RootStats {
   ///
   /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
   ///
-  /// By default, [recursive] is set to `false`, meaning only top level changes (those to do with each store) will be caught. Enable recursivity to also include events from all sub-directories.
+  /// Recursively watch specific sub-stores (using [StoreStats.watchChanges]) by providing them as a list of [StoreDirectory]s to [recursive]. To watch all stores, use the [storesAvailable]/[storesAvailableAsync] getter as the argument. By default, no sub-stores are watched (empty list), meaning only top level changes (those to do with each store) will be caught.
   ///
-  /// Only supported on some platforms. Will throw [UnsupportedError] if platform has no internal support (eg. OS X 10.6 and below). Note that recursive watching is not supported on some other platforms, but handling for this is unspecified.
-  ///
-  /// Control which changes are caught through the [fileSystemEvents] property, which takes [FileSystemEvent]s.
+  /// Control which changes are caught through the [events] parameter, which takes a list of [ChangeType]s. Catches all change types by default.
   ///
   /// Enable debouncing to prevent unnecessary events for small changes in detail using [debounce]. Defaults to 200ms, or set to null to disable debouncing.
   ///
@@ -204,31 +204,50 @@ class RootStats {
   /// output: ------3---4-----6|
   /// ```
   Stream<void> watchChanges({
-    bool recursive = false,
     Duration? debounce = const Duration(milliseconds: 200),
-    int fileSystemEvents = FileSystemEvent.all,
+    List<StoreDirectory> recursive = const [],
+    List<ChangeType> events = const [
+      ChangeType.ADD,
+      ChangeType.MODIFY,
+      ChangeType.REMOVE
+    ],
   }) {
-    if (!FileSystemEntity.isWatchSupported) {
-      throw UnsupportedError(
-        'Watching is not supported on the current platform',
-      );
-    }
+    Stream<void> constructStream(Directory dir) => FileSystemEntity
+            .isWatchSupported
+        ? dir
+            .watch(
+              events: [
+                events.contains(ChangeType.ADD) ? FileSystemEvent.create : null,
+                events.contains(ChangeType.MODIFY)
+                    ? FileSystemEvent.modify
+                    : null,
+                events.contains(ChangeType.MODIFY)
+                    ? FileSystemEvent.move
+                    : null,
+                events.contains(ChangeType.REMOVE)
+                    ? FileSystemEvent.delete
+                    : null,
+              ].whereType<int>().reduce((v, e) => v | e),
+            )
+            .map<void>((e) {})
+        : DirectoryWatcher(dir.absolute.path)
+            .events
+            .where((evt) => events.contains(evt.type))
+            .map<void>((e) {});
 
-    final stream = _access.real
-        .watch(events: fileSystemEvents)
-        .map((e) => null)
+    final Stream<void> stream = constructStream(_access.real)
         .mergeAll(
-          !recursive
-              ? []
-              : storesAvailable.map(
-                  (e) =>
-                      e.stats.watchChanges(debounce: debounce).map((e) => null),
-                ),
-        )
+      recursive.map(
+        (e) => e.stats.watchChanges(
+          debounce: debounce,
+          events: events,
+        ),
+      ),
+    )
         .mergeAll([
-      _access.metadata.watch(events: fileSystemEvents).map((e) => null),
-      _access.stats.watch(events: fileSystemEvents).map((e) => null),
-      _access.stores.watch(events: fileSystemEvents).map((e) => null)
+      constructStream(_access.metadata),
+      constructStream(_access.stats),
+      constructStream(_access.stores),
     ]);
 
     return debounce == null ? stream : stream.debounce(debounce);

@@ -41,6 +41,13 @@ class DownloadProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  StoreDirectory? _selectedStore;
+  StoreDirectory? get selectedStore => _selectedStore;
+  set selectedStore(StoreDirectory? newStore) {
+    _selectedStore = newStore;
+    notifyListeners();
+  }
+
   final StreamController<void> _manualPolygonRecalcTrigger =
       StreamController.broadcast();
   StreamController<void> get manualPolygonRecalcTrigger =>

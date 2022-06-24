@@ -36,6 +36,7 @@ dependencies:
   queue: ^3.1.0+1
   stream_transform: ^2.0.0
   vector_math: ^2.1.1
+  watcher: ^1.0.1
 
 dev_dependencies:
   flutter_lints: ^2.0.1

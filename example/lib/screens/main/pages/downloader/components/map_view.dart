@@ -262,11 +262,12 @@ class _MapViewState extends State<MapView> {
         _crosshairsTop = calculatedTop - crosshairsMovement;
         _crosshairsBottom = mapCenter - crosshairsMovement;
 
-        _center = _mapController.pointToLatLng(customPointFromPoint(mapCenter));
+        _center =
+            _mapController.pointToLatLng(_customPointFromPoint(mapCenter));
         _radius = const Distance(roundResult: false).distance(
               _center!,
               _mapController
-                  .pointToLatLng(customPointFromPoint(calculatedTop))!,
+                  .pointToLatLng(_customPointFromPoint(calculatedTop))!,
             ) /
             1000;
         setState(() {});
@@ -277,10 +278,10 @@ class _MapViewState extends State<MapView> {
       _crosshairsTop = calculatedTopLeft - crosshairsMovement;
       _crosshairsBottom = calculatedBottomRight - crosshairsMovement;
 
-      _coordsTopLeft =
-          _mapController.pointToLatLng(customPointFromPoint(calculatedTopLeft));
+      _coordsTopLeft = _mapController
+          .pointToLatLng(_customPointFromPoint(calculatedTopLeft));
       _coordsBottomRight = _mapController
-          .pointToLatLng(customPointFromPoint(calculatedBottomRight));
+          .pointToLatLng(_customPointFromPoint(calculatedBottomRight));
 
       setState(() {});
     }
@@ -296,8 +297,8 @@ class _MapViewState extends State<MapView> {
     final DownloadProvider provider =
         Provider.of<DownloadProvider>(context, listen: false);
 
-    if (Provider.of<GeneralProvider>(context, listen: false).currentStore !=
-            null &&
+    if (/*Provider.of<GeneralProvider>(context, listen: false).currentStore !=
+            null &&*/
         provider.region != null) {
       provider
         ..regionTiles = null
@@ -312,5 +313,5 @@ class _MapViewState extends State<MapView> {
   }
 }
 
-CustomPoint<E> customPointFromPoint<E extends num>(Point<E> point) =>
+CustomPoint<E> _customPointFromPoint<E extends num>(Point<E> point) =>
     CustomPoint(point.x, point.y);

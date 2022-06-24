@@ -20,7 +20,7 @@ void main() async {
   FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
   await FMTC.instance.rootDirectory.manage.resetAsync();
 
-  final StoreDirectory instanceA = FMTC.instance('Store Alpha');
+  final StoreDirectory instanceA = FMTC.instance('OpenStreetMap (A)');
   await instanceA.manage.createAsync();
   await instanceA.metadata.addAsync(
     key: 'sourceURL',
@@ -35,7 +35,7 @@ void main() async {
     value: 'cacheFirst',
   );
 
-  final StoreDirectory instanceB = FMTC.instance('Store Beta');
+  final StoreDirectory instanceB = FMTC.instance('OpenStreetMap (B)');
   await instanceB.manage.createAsync();
   await instanceB.metadata.addAsync(
     key: 'sourceURL',

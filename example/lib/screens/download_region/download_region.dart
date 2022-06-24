@@ -3,6 +3,8 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
 import '../../shared/state/download_provider.dart';
+import 'components/region_information.dart';
+import 'components/section_seperator.dart';
 
 class DownloadRegionPopup extends StatefulWidget {
   const DownloadRegionPopup({
@@ -17,15 +19,17 @@ class DownloadRegionPopup extends StatefulWidget {
 }
 
 class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
-  late final CircleRegion circleRegion;
-  late final RectangleRegion rectangleRegion;
+  late final CircleRegion? circleRegion;
+  late final RectangleRegion? rectangleRegion;
 
   @override
   void initState() {
     if (widget.region is CircleRegion) {
       circleRegion = widget.region as CircleRegion;
+      rectangleRegion = null;
     } else {
       rectangleRegion = widget.region as RectangleRegion;
+      circleRegion = null;
     }
 
     super.initState();
@@ -39,106 +43,70 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
         body: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              RegionInformation(
+                widget: widget,
+                circleRegion: circleRegion,
+                rectangleRegion: rectangleRegion,
+              ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (widget.region is CircleRegion) ...[
-                    const Text('APPROX. CENTER'),
-                    Text(
-                      '${circleRegion.center.latitude.toStringAsFixed(3)}, ${circleRegion.center.longitude.toStringAsFixed(3)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text('RADIUS'),
-                    Text(
-                      '${circleRegion.radius.toStringAsFixed(2)} km',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                    ),
-                  ] else ...[
-                    const Text('APPROX. NORTH WEST'),
-                    Text(
-                      '${rectangleRegion.bounds.northWest.latitude.toStringAsFixed(3)}, ${rectangleRegion.bounds.northWest.longitude.toStringAsFixed(3)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text('APPROX. SOUTH EAST'),
-                    Text(
-                      '${rectangleRegion.bounds.southEast.latitude.toStringAsFixed(3)}, ${rectangleRegion.bounds.southEast.longitude.toStringAsFixed(3)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 10),
-                  const Text('TOTAL TILES'),
+                  const SectionSeperator(),
+                  const Text('CHOOSE A STORE'),
                   Consumer<DownloadProvider>(
                     builder: (context, provider, _) =>
-                        provider.regionTiles == null
-                            ? Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: SizedBox(
-                                  height: 36,
-                                  width: 36,
-                                  child: Center(
-                                    child: SizedBox(
-                                      height: 28,
-                                      width: 28,
-                                      child: CircularProgressIndicator(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .secondary,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : Text(
-                                '~${provider.regionTiles}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 24,
-                                ),
+                        FutureBuilder<List<StoreDirectory>>(
+                      future: FMTC
+                          .instance.rootDirectory.stats.storesAvailableAsync,
+                      builder: (context, snapshot) =>
+                          DropdownButton<StoreDirectory>(
+                        items: snapshot.data
+                            ?.map(
+                              (e) => DropdownMenuItem<StoreDirectory>(
+                                value: e,
+                                child: Text(e.storeName),
                               ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 5),
-              const Divider(),
-              const SizedBox(height: 5),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  child: const Text('Start Foreground Download'),
-                ),
-              ),
-              Row(
-                children: [
-                  Tooltip(
-                    message: 'Request Enhanced Background Permissions',
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      child: const Icon(Icons.settings_suggest),
+                            )
+                            .toList(),
+                        onChanged: (store) => provider.selectedStore = store,
+                        value: provider.selectedStore,
+                        isExpanded: true,
+                        hint: Text(
+                          snapshot.data == null
+                              ? 'Loading...'
+                              : snapshot.data!.isEmpty
+                                  ? 'None Available'
+                                  : 'None Selected',
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton(
+                  const SectionSeperator(),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
                       onPressed: () {},
-                      child: const Text('Start Background Download'),
+                      child: const Text('Start Foreground Download'),
                     ),
+                  ),
+                  Row(
+                    children: [
+                      Tooltip(
+                        message: 'Request Enhanced Background Permissions',
+                        child: OutlinedButton(
+                          onPressed: () {},
+                          child: const Icon(Icons.settings_suggest),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {},
+                          child: const Text('Start Background Download'),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

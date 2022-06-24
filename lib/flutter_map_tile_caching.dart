@@ -7,11 +7,12 @@
 /// If you require access to full API, import `package:flutter_map_tile_caching/fmtc_advanced.dart` instead.
 library flutter_map_tile_caching;
 
-export 'dart:io' show Directory, File, FileSystemEvent;
+export 'dart:io' show Directory, File;
 
 export 'package:battery_info/enums/charging_status.dart';
 export 'package:connectivity_plus/connectivity_plus.dart'
     show ConnectivityResult;
+export 'package:watcher/watcher.dart' show ChangeType;
 
 export 'src/bulk_download/download_progress.dart';
 export 'src/fmtc.dart';

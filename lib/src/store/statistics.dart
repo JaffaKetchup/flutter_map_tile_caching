@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:stream_transform/stream_transform.dart';
+import 'package:watcher/watcher.dart';
 
 import '../internal/exts.dart';
 import 'access.dart';
@@ -157,9 +158,7 @@ class StoreStats {
   ///
   /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
   ///
-  /// Only supported on some platforms. Will throw [UnsupportedError] if platform has no internal support (eg. OS X 10.6 and below).
-  ///
-  /// Control which changes are caught through the [fileSystemEvents] property, which takes [FileSystemEvent]s, and by default ignores modifications (ie. renaming).
+  /// Control which changes are caught through the [events] parameter, which takes a list of [ChangeType]s. Catches all change types by default.
   ///
   /// Enable debouncing to prevent unnecessary events for small changes in detail using [debounce]. Defaults to 200ms, or set to null to disable debouncing.
   ///
@@ -170,19 +169,39 @@ class StoreStats {
   /// ```
   Stream<void> watchChanges({
     Duration? debounce = const Duration(milliseconds: 200),
-    int fileSystemEvents = ~FileSystemEvent.modify,
+    List<ChangeType> events = const [
+      ChangeType.ADD,
+      ChangeType.MODIFY,
+      ChangeType.REMOVE
+    ],
   }) {
-    if (!FileSystemEntity.isWatchSupported) {
-      throw UnsupportedError(
-        'Watching is not supported on the current platform',
-      );
-    }
+    Stream<void> constructStream(Directory dir) => FileSystemEntity
+            .isWatchSupported
+        ? dir
+            .watch(
+              events: [
+                events.contains(ChangeType.ADD) ? FileSystemEvent.create : null,
+                events.contains(ChangeType.MODIFY)
+                    ? FileSystemEvent.modify
+                    : null,
+                events.contains(ChangeType.MODIFY)
+                    ? FileSystemEvent.move
+                    : null,
+                events.contains(ChangeType.REMOVE)
+                    ? FileSystemEvent.delete
+                    : null,
+              ].whereType<int>().reduce((v, e) => v | e),
+            )
+            .map<void>((e) {})
+        : DirectoryWatcher(dir.absolute.path)
+            .events
+            .where((evt) => events.contains(evt.type))
+            .map<void>((e) {});
 
-    final stream =
-        _access.real.watch(events: fileSystemEvents).map((e) => null).mergeAll([
-      _access.metadata.watch(events: fileSystemEvents).map((e) => null),
-      _access.stats.watch(events: fileSystemEvents).map((e) => null),
-      _access.tiles.watch(events: fileSystemEvents).map((e) => null)
+    final Stream<void> stream = constructStream(_access.real).mergeAll([
+      constructStream(_access.metadata),
+      constructStream(_access.stats),
+      constructStream(_access.tiles),
     ]);
 
     return debounce == null ? stream : stream.debounce(debounce);
