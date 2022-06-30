@@ -1,133 +1,292 @@
 import 'dart:async';
-import 'dart:ui';
-import 'dart:io' as io;
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:background_fetch/background_fetch.dart';
+import 'package:battery_info/battery_info_plugin.dart';
+import 'package:battery_info/enums/charging_status.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
-import 'package:latlong2/latlong.dart';
+import 'package:path/path.dart' as p show joinAll;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:tuple/tuple.dart';
+import 'package:queue/queue.dart';
 
-import 'regions/downloadableRegion.dart';
-import 'databaseManager.dart';
+import 'bulk_download/download_progress.dart';
+import 'bulk_download/downloader.dart';
+import 'bulk_download/tile_loops.dart';
+import 'bulk_download/tile_progress.dart';
+import 'internal/image_provider.dart';
+import 'internal/recovery/recovery.dart';
+import 'misc/typedefs_and_exts.dart';
+import 'misc/validate.dart';
+import 'regions/downloadable_region.dart';
+import 'regions/recovered_region.dart';
+import 'storage_managers/storage_manager.dart';
 
-/// A `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database
+/// Multiple behaviors dictating how browse caching should be carried out
 ///
-/// A class containing methods to download regions of a map to a local caching database
+/// Check documentation on each value for more information.
+enum CacheBehavior {
+  /// Only get tiles from the local cache
+  ///
+  /// Useful for applications with dedicated 'Offline Mode'.
+  cacheOnly,
+
+  /// Get tiles from the local cache, going on the Internet to update the cached tile if it has expired (`cachedValidDuration` has passed)
+  cacheFirst,
+
+  /// Get tiles from the Internet and update the cache for every tile
+  onlineFirst,
+}
+
+/// A [TileProvider] to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
 ///
-/// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a caching table to use that cache
+/// Requires a valid cache directory: [parentDirectory]. [storeName] defaults to the default store, 'mainStore', but can be overriden to different stores. On initialisation, automatically creates the cache store if it does not exist.
 ///
-/// See online documentation for more information about the caching/downloading behaviour of this library.
+/// Optionally adjust:
+///  - [maxStoreLength] - the number of tiles that can be stored at once in this cache store
+///  - [behavior] - the caching behavior to use, affecting [cachedValidDuration].
+///  - [cachedValidDuration] -  the length of time a cached tile is valid before needing to be updated in some caching behaviors
+///
+/// See each property's individual documentation for more detail.
 class StorageCachingTileProvider extends TileProvider {
-  static final kMaxPreloadTileAreaCount = 20000;
+  /// Container directory for stores (previously `parentDirectory`)
+  ///
+  /// Use [MapCachingManager.normalCache] wherever possible, or [MapCachingManager.temporaryCache] alternatively (see documentation). To use those [Future] values, you will need to wrap your [FlutterMap] widget in a [FutureBuilder] to await the returned directory or show a loading indicator; this shouldn't cause any interference. If creating a path manually, be sure it's the correct format, use the 'package:path' library if needed.
+  ///
+  /// Required.
+  final Directory parentDirectory;
+
+  /// Name of a store (to use for this instance), defaulting to 'mainStore'.
+  ///
+  /// Is validated through [safeFilesystemString] : an error will be thrown if the store name is given and invalid, see [validateStoreNameString] to validate names safely before construction.
+  final String storeName;
+
+  /// Directory containing all cached tiles and metadata for the store
+  ///
+  /// Automatically generated from [parentDirectory] & [storeName].
+  final Directory storeDirectory;
+
+  /// The behavior method to get and cache a tile. Also called `cacheBehaviour`.
+  ///
+  /// Defaults to [CacheBehavior.cacheFirst] - get tiles from the local cache, going on the Internet to update the cached tile if it has expired ([cachedValidDuration] has passed).
+  final CacheBehavior behavior;
+
+  /// The duration until a tile expires and needs to be fetched again when browsing. Also called `validDuration`.
+  ///
+  /// Defaults to 16 days, set to [Duration.zero] to disable.
   final Duration cachedValidDuration;
-  final String cacheName;
 
-  /// Create a `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database
+  /// The maximum number of tiles allowed in a cache store (only whilst 'browsing' - see below) before the oldest tile gets deleted. Also called `maxTiles`.
   ///
-  /// Create a class containing methods to download regions of a map to a local caching database
+  /// Only applies to 'browse caching', ie. downloading regions will bypass this limit. This can be computationally expensive as it potentially involves sorting through this many files to find the oldest file.
   ///
-  /// Optionally pass a vaild cache duration to override the default 31 days, or pass the name of a caching table to use that cache
+  /// Please note that this limit is a 'suggestion'. Due to the nature of the application, it is difficult to set a hard limit on a the store's length. Therefore, fast browsing may go above this limit.
   ///
-  /// See online documentation for more information about the caching/downloading behaviour of this library.
+  /// Defaults to 20000, set to 0 to disable.
+  final int maxStoreLength;
+
+  /// Used internally for recovery purposes
+  bool _downloadOngoing = false;
+
+  /// Used internally for browsing-caused tile requests
+  final http.Client _httpClient = http.Client();
+
+  /// Used internally to queue download tiles to process in bulk
+  Queue? _queue;
+
+  /// Used internally to control bulk downloading
+  StreamController<TileProgress>? _streamController;
+
+  /// Create a `TileProvider` to automatically cache browsed (panned over) tiles to a local caching database. Also contains methods to download regions of a map to a local caching database using an instance.
+  ///
+  /// Requires a valid cache directory: [parentDirectory]. [storeName] defaults to the default store, 'mainStore', but can be overriden to different stores. On initialisation, automatically creates the cache store if it does not exist.
+  ///
+  /// Optionally adjust:
+  ///  - [maxStoreLength] - the number of tiles that can be stored at once in this cache store
+  ///  - [behavior] - the caching behavior to use, affecting [cachedValidDuration]
+  ///  - [cachedValidDuration] -  the length of time a cached tile is valid before needing to be updated in some caching behaviors
+  ///
+  /// See each property's individual documentation for more detail.
   StorageCachingTileProvider({
-    this.cachedValidDuration = const Duration(days: 31),
-    this.cacheName = 'mainCache',
-  });
+    required this.parentDirectory,
+    this.storeName = 'mainStore',
+    this.behavior = CacheBehavior.cacheFirst,
+    this.cachedValidDuration = const Duration(days: 16),
+    this.maxStoreLength = 20000,
+  }) : storeDirectory = Directory(p.joinAll([
+          parentDirectory.absolute.path,
+          safeFilesystemString(inputString: storeName, throwIfInvalid: true),
+        ])) {
+    storeDirectory.createSync(recursive: true);
+  }
 
-  /// Get a browsed tile as an image and save it's bytes to cache for later
+  /// Converts a [MapCachingManager] to [StorageCachingTileProvider], using the same [parentDirectory] and [storeName] (which must be non-null).
+  ///
+  /// For more information about this constructor, see the main class [StorageCachingTileProvider].
+  StorageCachingTileProvider.fromMapCachingManager(
+    MapCachingManager mapCachingManager, {
+    this.behavior = CacheBehavior.cacheFirst,
+    this.cachedValidDuration = const Duration(days: 16),
+    this.maxStoreLength = 20000,
+  })  : parentDirectory = mapCachingManager.parentDirectory,
+        storeName = mapCachingManager.storeName!,
+        storeDirectory = Directory(p.joinAll([
+          mapCachingManager.parentDirectory.absolute.path,
+          safeFilesystemString(
+              inputString: mapCachingManager.storeName!, throwIfInvalid: true),
+        ])) {
+    storeDirectory.createSync(recursive: true);
+  }
+
+  /// Always call (if necessary) after finishing with caching, or in your widget's dispose methods
+  ///
+  /// Ensures the internal stream controller is closed, the internal HTTP client is closed, and the internal queue controller is cancelled. If you require this provider again, you will need to reconstruct it.
+  ///
+  /// Do not call unless you are sure there are no ongoing downloads.
   @override
-  ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
-    final tileUrl = getTileUrl(coords, options);
-    return _CachedTileImageProvider(
-      tileUrl,
-      Coords<num>(coords.x, coords.y)..z = coords.z,
-      cacheName: cacheName,
-      cacheValidDuration: cachedValidDuration,
+  void dispose() {
+    super.dispose();
+    _httpClient.close();
+    if (!(_queue?.isCancelled ?? true)) _queue?.cancel();
+    if (!(_streamController?.isClosed ?? true)) _streamController?.close();
+  }
+
+  /// Get a browsed tile as an image, paint it on the map and save it's bytes to cache for later
+  @override
+  ImageProvider getImage(Coords<num> coords, TileLayerOptions options) =>
+      FMTCImageProvider(
+        provider: this,
+        options: options,
+        coords: coords,
+        httpClient: _httpClient,
+      );
+
+  //! GENERAL DOWNLOADING !//
+
+  /// Download a specified [DownloadableRegion] in the foreground
+  ///
+  /// To check the number of tiles that need to be downloaded before using this function, use [checkRegion].
+  ///
+  /// Unless otherwise specified, also starts a recovery session.
+  ///
+  /// For more information on [preDownloadChecksCallback], see documentation on [PreDownloadChecksCallback]. In a few words, use this callback to check the devices information/status before starting a download. By default, no checks are made (null), but this is not recommended.
+  ///
+  /// Streams a [DownloadProgress] object containing lots of handy information about the download's progression status; unless the pre-download checks fail, in which case the stream's `.isEmpty` will be `true` and no new events will be emitted. If you get messages about 'Bad State' after dealing with the checks, just add `.asBroadcastStream()` on the end of [downloadRegion].
+  Stream<DownloadProgress> downloadRegion(
+    DownloadableRegion region, {
+    bool disableRecovery = false,
+    PreDownloadChecksCallback preDownloadChecksCallback,
+  }) async* {
+    if (preDownloadChecksCallback != null) {
+      final ConnectivityResult connectivity =
+          await Connectivity().checkConnectivity();
+
+      late final int? batteryLevel;
+      late final ChargingStatus? chargingStatus;
+      if (Platform.isAndroid) {
+        final _info = await BatteryInfoPlugin().androidBatteryInfo;
+        batteryLevel = _info?.batteryLevel;
+        chargingStatus = _info?.chargingStatus;
+      } else if (Platform.isIOS) {
+        final _info = await BatteryInfoPlugin().iosBatteryInfo;
+        batteryLevel = _info?.batteryLevel;
+        chargingStatus = _info?.chargingStatus;
+      } else {
+        throw FallThroughError();
+      }
+
+      final bool? result = await preDownloadChecksCallback(
+          connectivity, batteryLevel, chargingStatus);
+
+      if ((result == null &&
+              (connectivity == ConnectivityResult.mobile ||
+                  connectivity == ConnectivityResult.none ||
+                  !((batteryLevel ?? 50) > 15 ||
+                      chargingStatus == ChargingStatus.Charging))) ||
+          result == false) {
+        return;
+      }
+    }
+
+    if (!disableRecovery) {
+      await Recovery(storeDirectory).startRecovery(region);
+      _downloadOngoing = true;
+    }
+
+    _queue = Queue(parallel: region.parallelThreads);
+    _streamController = StreamController();
+
+    yield* _startDownload(
+      region: region,
+      tiles: await _generateTilesComputer(region),
     );
   }
 
-  //! DOWNLOAD (FOREGROUND) FUNCTIONS !//
-
-  /// Download a specified `DownloadableRegion` in the foreground
+  /// Check approximately how many downloadable tiles are within a specified [DownloadableRegion]
   ///
-  /// To check the number of tiles that need to be downloaded before using this function, use `checkRegion()`.
-  ///
-  /// Streams a `DownloadProgress` object containing the number of completed tiles, total number of tiles to download, a list of errored URLs and the percentage completion.
-  Stream<DownloadProgress> downloadRegion(DownloadableRegion region) async* {
-    if (region.type == RegionType.circle) {
-      yield* _downloadCircle(
-        region.points,
-        region.minZoom,
-        region.maxZoom,
-        region.options,
-        region.errorHandler,
-        region.crs,
-        region.tileSize,
-      );
-    } else if (region.type == RegionType.rectangle) {
-      yield* _downloadRectangle(
-        LatLngBounds.fromPoints(region.points),
-        region.minZoom,
-        region.maxZoom,
-        region.options,
-        region.errorHandler,
-        region.crs,
-        region.tileSize,
-      );
-    } else if (region.type == RegionType.line) {
-      throw UnimplementedError();
-    } else if (region.type == RegionType.customPolygon) {
-      throw UnimplementedError();
-    }
-  }
-
-  /// Check how many downloadable tiles are within a specified `DownloadableRegion`
+  /// This does not take into account sea tile removal or redownload prevention, as these are handled in the download area of the code.
   ///
   /// Returns an `int` which is the number of tiles.
-  static int checkRegion(DownloadableRegion region) {
-    if (region.type == RegionType.circle) {
-      return _circleTiles(
-        region.points,
-        region.minZoom,
-        region.maxZoom,
-      ).length;
-    } else if (region.type == RegionType.rectangle) {
-      return _rectangleTiles(
-        LatLngBounds.fromPoints(region.points),
-        region.minZoom,
-        region.maxZoom,
-      ).length;
-    } else if (region.type == RegionType.line) {
-      throw UnimplementedError();
-    } else if (region.type == RegionType.customPolygon) {
-      throw UnimplementedError();
-    }
-    throw UnimplementedError();
+  static Future<int> checkRegion(DownloadableRegion region) async =>
+      (await _generateTilesComputer(region)).length;
+
+  /// Cancels the ongoing foreground download and recovery session (within the current object)
+  ///
+  /// Do not use to cancel background downloads, return `true` from the background download callback to cancel a background download. Background download cancellations require a few more 'shut-down' steps that can create unexpected issues and memory leaks if not carried out.
+  Future<void> cancelDownload() async {
+    _queue?.dispose();
+    _streamController?.close();
+    await Recovery(storeDirectory).endRecovery();
+    _downloadOngoing = false;
   }
 
-  //! DOWNLOAD (BACKGROUND) FUNCTIONS !//
+  //! RECOVERY !//
 
-  /// Request to be excluded from battery optimizations (allows background task to run when app minimized)
+  /// Recover a download that has been stopped without the correct methods, for example after closing the app during a download
+  ///
+  /// Returns `null` if there is no recoverable download, otherwise returns a [RecoveredRegion] containing the salvaged data. Use `.toDownloadable` on the region to recieve a [DownloadableRegion], which can be passed normally to other functions.
+  ///
+  /// Optionally make [deleteRecovery] `false` if you would like the download to still be recoverable after this method has been called.
+  ///
+  /// How does recovery work? At the start of a download, a file is created including information about the download. At the end of a download or when a download is correctly cancelled, this file is deleted. However, if there is no ongoing download (controlled by an internal variable) and the recovery file exists, the download has obviously been stopped incorrectly, meaning it can be recovered using the information within the recovery file.
+  Future<RecoveredRegion?> recoverDownload({bool deleteRecovery = true}) async {
+    if (_downloadOngoing) return null;
+
+    final Recovery rec = Recovery(storeDirectory);
+    final RecoveredRegion? recovered = await rec.readRecovery();
+
+    if (recovered == null) return null;
+    if (deleteRecovery) await rec.endRecovery();
+
+    return recovered;
+  }
+
+  //! BACKGROUND DOWNLOADING !//
+
+  /// Requests for app to be excluded from battery optimizations to aid running a background process
   ///
   /// Only available on Android devices, due to limitations with other operating systems.
   ///
-  /// Pops up an intrusive system dialog asking to be given the permission. There is no explanation for the user, except that the app will be allowed to run in the background all the time, so less technical users may be put off. It is up to you to decide (and program accordingly) if you want to show a reason first, then request the permission.
+  /// Background downloading is complicated: see the main README for more information.
   ///
-  /// Not needed if background download is only intented to be used whilst still within the app. If this is not granted, minimizing the app will usually pause the task. Closing the app fully will always cancel the task, no matter what this permission is.
+  /// If [requestIfDenied] is `true` (default), and the permission has not been granted, an intrusive system dialog will be displayed. If `false`, this method will only check whether it has been granted or not.
   ///
-  /// Will return (`Future`) `true` if permission was granted, `false` if the permission was denied.
+  /// If the dialog does appear it contains is no explanation for the user, except that the app will be allowed to run in the background all the time, so less technical users may be put off. It is up to you to decide (and program accordingly) if you want to show a reason first, then request the permission.
+  ///
+  /// Will return ([Future]) `true` if permission was granted, `false` if the permission was denied.
   static Future<bool> requestIgnoreBatteryOptimizations(
-      BuildContext context) async {
-    if (io.Platform.isAndroid) {
+    BuildContext context, {
+    bool requestIfDenied = true,
+  }) async {
+    if (Platform.isAndroid) {
       final PermissionStatus status =
           await Permission.ignoreBatteryOptimizations.status;
-      if (status.isDenied || status.isLimited) {
+      if ((status.isDenied || status.isLimited) && requestIfDenied) {
         final PermissionStatus statusAfter =
             await Permission.ignoreBatteryOptimizations.request();
         if (statusAfter.isGranted) return true;
@@ -137,34 +296,54 @@ class StorageCachingTileProvider extends TileProvider {
       } else {
         return false;
       }
-    } else
+    } else {
       throw UnsupportedError(
           'The background download feature is only available on Android due to limitations with other operating systems.');
+    }
   }
 
-  /// Download a specified `DownloadableRegion` in the background, and show a notification progress bar (by default)
+  /// Download a specified [DownloadableRegion] in the background, and show a notification progress bar (by default)
   ///
   /// Only available on Android devices, due to limitations with other operating systems.
+  /// To check the number of tiles that need to be downloaded before using this function, use [checkRegion].
   ///
-  /// To check the number of tiles that need to be downloaded before using this function, use `checkRegion()`.
+  /// Background downloading is complicated: see the main README for more information.
   ///
-  /// You may want to call `requestIgnoreBatteryOptimizations()` before hand, depending on how/where/why this background download will be used. See documentation on that function for more information.
+  /// You may want to call [requestIgnoreBatteryOptimizations] beforehand, depending on how/where/why this background download will be used. See documentation on that method for more information.
   ///
-  /// Optionally specify a `callback` that gets fired every time another tile is downloaded/failed, takes one `DownloadProgress` argument, and returns a boolean.
+  /// Optionally specify [showNotification] as `false` to disable the built-in notification system.
   ///
-  /// Download can be cancelled by returning `true` from `callback` function or by fully closing the app.
+  /// Optionally specify a [callback] that gets fired every time another tile is downloaded/failed, takes one [DownloadProgress] argument, and returns a boolean. Download can be cancelled by returning `true` from [callback] function.
+  ///
+  /// If the download doesn't seem to start on a device, try changing [useAltMethod] to `true`. This will switch to an older Android API, so should only be used if it is the most stable on a device. You may be able to programatically detect if the download hasn't started by using the callback, therefore allowing you to call this method again with [useAltMethod], but this isn't guranteed.
+  ///
+  /// For more information on [preDownloadChecksCallback], see documentation on [PreDownloadChecksCallback]. In a few words, use this callback to check the devices information/status before starting a download. By default, no checks are made (null), but this is not recommended. [preDownloadChecksFailedCallback] is optional and will be called if the checks do fail, after cancelling the download.
   ///
   /// Returns nothing.
   void downloadRegionBackground(
     DownloadableRegion region, {
-    bool showNotification = true,
     bool Function(DownloadProgress)? callback,
+    PreDownloadChecksCallback preDownloadChecksCallback,
+    void Function()? preDownloadChecksFailedCallback,
+    bool useAltMethod = false,
+    bool showNotification = true,
+    String notificationChannelName = 'Map Background Downloader',
+    String notificationChannelDescription =
+        'Displays progress notifications to inform the user about the progress of their map download.',
+    String notificationIcon = '@mipmap/ic_launcher',
+    String subText = 'Map Downloader',
+    String ongoingTitle = 'Map Downloading...',
+    String Function(DownloadProgress)? ongoingBodyBuilder,
+    String cancelledTitle = 'Map Download Cancelled',
+    String Function(DownloadProgress)? cancelledBodyBuilder,
+    String completeTitle = 'Map Downloaded',
+    String Function(DownloadProgress)? completeBodyBuilder,
   }) async {
-    if (io.Platform.isAndroid) {
+    if (Platform.isAndroid) {
       FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
       flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-      const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+      final AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings(notificationIcon);
       final InitializationSettings initializationSettings =
           InitializationSettings(android: initializationSettingsAndroid);
       await flutterLocalNotificationsPlugin.initialize(initializationSettings);
@@ -177,449 +356,209 @@ class StorageCachingTileProvider extends TileProvider {
           if (taskId == 'backgroundTileDownload') {
             // ignore: cancel_subscriptions
             StreamSubscription<DownloadProgress>? sub;
-            sub = downloadRegion(region).listen((event) async {
+            final download = downloadRegion(
+              region,
+              preDownloadChecksCallback: preDownloadChecksCallback,
+            ).asBroadcastStream();
+            if (await download.isEmpty) {
+              cancelDownload();
+              if (preDownloadChecksFailedCallback != null) {
+                preDownloadChecksFailedCallback();
+              }
+              BackgroundFetch.finish(taskId);
+              return;
+            }
+
+            sub = download.listen((event) async {
               AndroidNotificationDetails androidPlatformChannelSpecifics =
                   AndroidNotificationDetails(
                 'MapDownloading',
-                'Map Background Downloader',
-                'Displays progress notifications to inform the user about the progress of their map download.',
-                importance: Importance.defaultImportance,
+                notificationChannelName,
+                channelDescription: notificationChannelDescription,
+                showProgress: true,
+                maxProgress: event.maxTiles,
+                progress: event.attemptedTiles,
+                visibility: NotificationVisibility.public,
+                subText: subText,
+                importance: Importance.low,
                 priority: Priority.low,
                 showWhen: false,
-                showProgress: true,
-                maxProgress: event.totalTiles,
-                progress: event.completedTiles,
-                visibility: NotificationVisibility.public,
                 playSound: false,
+                enableLights: false,
+                enableVibration: false,
                 onlyAlertOnce: true,
-                subText: 'Map Downloader',
+                autoCancel: false,
               );
               NotificationDetails platformChannelSpecifics =
                   NotificationDetails(android: androidPlatformChannelSpecifics);
               if (showNotification) {
                 await flutterLocalNotificationsPlugin!.show(
                   0,
-                  'Map Downloading...',
-                  '${event.completedTiles}/${event.totalTiles} (${event.percentageProgress.toStringAsFixed(1)}%)',
+                  ongoingTitle,
+                  ongoingBodyBuilder == null
+                      ? '${event.attemptedTiles}/${event.maxTiles} (${event.percentageProgress.round().toString()}%)'
+                      : ongoingBodyBuilder(event),
                   platformChannelSpecifics,
                 );
               }
 
-              if (callback != null) {
-                if (callback(event)) {
-                  sub!.cancel();
-                  if (showNotification) {
-                    flutterLocalNotificationsPlugin!.cancel(0);
-                    await flutterLocalNotificationsPlugin.show(
-                      0,
-                      'Map Download Cancelled',
-                      '${event.totalTiles - event.completedTiles} tiles remained',
-                      platformChannelSpecifics,
-                    );
-                  }
-                  BackgroundFetch.finish(taskId);
-                }
-              }
-
-              if (event.percentageProgress == 100) {
+              if (callback != null && callback(event)) {
                 sub!.cancel();
+                cancelDownload();
                 if (showNotification) {
                   flutterLocalNotificationsPlugin!.cancel(0);
                   await flutterLocalNotificationsPlugin.show(
                     0,
-                    'Map Downloaded',
-                    '${event.erroredTiles.length} failed tiles',
+                    cancelledTitle,
+                    cancelledBodyBuilder == null
+                        ? '${event.remainingTiles} tiles remained'
+                        : cancelledBodyBuilder(event),
+                    platformChannelSpecifics,
+                  );
+                }
+                BackgroundFetch.finish(taskId);
+              }
+
+              if (event.percentageProgress == 100) {
+                sub!.cancel();
+                cancelDownload();
+                if (showNotification) {
+                  flutterLocalNotificationsPlugin!.cancel(0);
+                  await flutterLocalNotificationsPlugin.show(
+                    0,
+                    completeTitle,
+                    completeBodyBuilder == null
+                        ? '${event.failedTiles.length} failed tiles'
+                        : completeBodyBuilder(event),
                     platformChannelSpecifics,
                   );
                 }
                 BackgroundFetch.finish(taskId);
               }
             });
-          } else
+          } else {
             BackgroundFetch.finish(taskId);
+          }
         },
-        (String taskId) async {
-          BackgroundFetch.finish(taskId);
-        },
+        (String taskId) async => BackgroundFetch.finish(taskId),
       );
       await BackgroundFetch.scheduleTask(
         TaskConfig(
           taskId: 'backgroundTileDownload',
-          delay: 1,
-          forceAlarmManager: true,
+          delay: 0,
+          forceAlarmManager: useAltMethod,
         ),
       );
-    } else
+    } else {
       throw UnsupportedError(
           'The background download feature is only available on Android due to limitations with other operating systems.');
-  }
-
-  //! CIRCLE FUNCTIONS !//
-
-  static List<Coords<num>> _circleTiles(
-    List<LatLng> circleOutline,
-    int minZoom,
-    int maxZoom, {
-    Crs crs = const Epsg3857(),
-    CustomPoint<num> tileSize = const CustomPoint(256, 256),
-  }) {
-    final Map<int, Map<int, List<int>>> outlineTileNums = {};
-
-    final List<Coords<num>> coords = [];
-
-    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-      outlineTileNums[zoomLvl] = {};
-
-      for (LatLng node in circleOutline) {
-        /*
-        The below code has been retained on purpose.
-        DO NOT remove it.
-        
-        final double n = math.pow(2, zoomLvl).toDouble();
-        final int x = ((node.longitude + 180.0) / 360.0 * n).toInt();
-        final int y =
-            ((1.0 - _asinh(math.tan(node.latitudeInRad)) / math.pi) / 2.0 * n)
-                .toInt();
-        */
-
-        final CustomPoint<num> tile = crs
-            .latLngToPoint(node, zoomLvl.toDouble())
-            .unscaleBy(tileSize)
-            .floor();
-
-        if (outlineTileNums[zoomLvl]![tile.x.toInt()] == null) {
-          outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-            999999999999999999,
-            -999999999999999999
-          ];
-        }
-
-        outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-          tile.y.toInt() < (outlineTileNums[zoomLvl]![tile.x.toInt()]![0])
-              ? tile.y.toInt()
-              : (outlineTileNums[zoomLvl]![tile.x.toInt()]![0]),
-          tile.y.toInt() > (outlineTileNums[zoomLvl]![tile.x.toInt()]![1])
-              ? tile.y.toInt()
-              : (outlineTileNums[zoomLvl]![tile.x.toInt()]![1]),
-        ];
-      }
-
-      for (int x in outlineTileNums[zoomLvl]!.keys) {
-        for (int y = outlineTileNums[zoomLvl]![x]![0];
-            y <= outlineTileNums[zoomLvl]![x]![1];
-            y++) {
-          coords.add(
-            Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble(),
-          );
-        }
-      }
     }
-
-    return coords;
   }
 
-  Stream<DownloadProgress> _downloadCircle(
-    List<LatLng> circleOutline,
-    int minZoom,
-    int maxZoom,
-    TileLayerOptions options, [
-    Function(dynamic)? errorHandler,
-    Crs crs = const Epsg3857(),
-    CustomPoint<num> tileSize = const CustomPoint(256, 256),
-  ]) async* {
-    final List<Coords<num>> tiles = _circleTiles(
-      circleOutline,
-      minZoom,
-      maxZoom,
-      crs: crs,
-      tileSize: tileSize,
-    );
-    assert(tiles.length <= kMaxPreloadTileAreaCount,
-        '${tiles.length} exceeds maximum number of pre-cacheable tiles');
+  //! INTERNAL DOWNLOAD FUNCTION !//
 
-    final List<String> erroredUrls = [];
+  Stream<DownloadProgress> _startDownload({
+    required DownloadableRegion region,
+    required List<Coords<num>> tiles,
+  }) async* {
     final http.Client client = http.Client();
 
-    for (var i = 0; i < tiles.length; i++) {
-      await _getAndSaveTile(tiles[i], options, client, (url, e) {
-        erroredUrls.add(url);
-        if (errorHandler != null) errorHandler(e);
-      });
-      yield DownloadProgress(
-        i + 1,
-        tiles.length,
-        erroredUrls,
-        ((i + 1) / tiles.length) * 100,
-      );
-    }
-
-    client.close();
-  }
-
-  //! RECTANGLE FUNCTIONS !//
-
-  static List<Coords> _rectangleTiles(
-    LatLngBounds bounds,
-    int minZoom,
-    int maxZoom, {
-    Crs crs = const Epsg3857(),
-    tileSize = const CustomPoint(256, 256),
-  }) {
-    final coords = <Coords>[];
-    for (var zoomLevel in List<int>.generate(
-        maxZoom - minZoom + 1, (index) => index + minZoom)) {
-      final nwPoint = crs
-          .latLngToPoint(bounds.northWest, zoomLevel.toDouble())
-          .unscaleBy(tileSize)
-          .floor();
-      final sePoint = crs
-              .latLngToPoint(bounds.southEast, zoomLevel.toDouble())
-              .unscaleBy(tileSize)
-              .ceil() -
-          CustomPoint(1, 1);
-      for (var x = nwPoint.x; x <= sePoint.x; x++) {
-        for (var y = nwPoint.y; y <= sePoint.y; y++) {
-          coords.add(Coords(x, y)..z = zoomLevel);
-        }
-      }
-    }
-    return coords;
-  }
-
-  Stream<DownloadProgress> _downloadRectangle(
-    LatLngBounds bounds,
-    int minZoom,
-    int maxZoom,
-    TileLayerOptions options, [
-    Function(dynamic)? errorHandler,
-    Crs crs = const Epsg3857(),
-    CustomPoint<num> tileSize = const CustomPoint(256, 256),
-  ]) async* {
-    final List<Coords<num>> tiles = _rectangleTiles(
-      bounds,
-      minZoom,
-      maxZoom,
-      crs: crs,
-      tileSize: tileSize,
-    );
-    assert(tiles.length <= kMaxPreloadTileAreaCount,
-        '${tiles.length} exceeds maximum number of pre-cacheable tiles');
-
-    final List<String> erroredUrls = [];
-    final http.Client client = http.Client();
-
-    for (var i = 0; i < tiles.length; i++) {
-      await _getAndSaveTile(tiles[i], options, client, (url, e) {
-        erroredUrls.add(url);
-        if (errorHandler != null) errorHandler(e);
-      });
-      yield DownloadProgress(
-        i + 1,
-        tiles.length,
-        erroredUrls,
-        ((i + 1) / tiles.length) * 100,
-      );
-    }
-
-    client.close();
-  }
-
-  //! MISCELLANEOUS FUNCTIONS !//
-
-  Future<void> _getAndSaveTile(
-    Coords<num> coord,
-    TileLayerOptions options,
-    http.Client client,
-    Function(String, dynamic) errorHandler,
-  ) async {
-    String url = "";
-    try {
-      final coordDouble = Coords(coord.x.toDouble(), coord.y.toDouble())
-        ..z = coord.z.toDouble();
-      url = getTileUrl(coordDouble, options);
-      final bytes = (await client.get(Uri.parse(url))).bodyBytes;
-      await TileStorageCachingManager.saveTile(
-        bytes,
-        coord,
-        cacheName: cacheName,
-      );
-    } catch (e) {
-      errorHandler(url, e);
-    }
-  }
-
-  //! DEPRECATED FUNCTIONS !//
-
-  /// Caching tile area by provided [bounds], zoom edges and [options].
-  /// The maximum number of tiles to load is [kMaxPreloadTileAreaCount].
-  /// To check tiles number before calling this method, use
-  /// [approximateTileAmount].
-  /// Return [Tuple3] with number of downloaded tiles as [Tuple3.item1],
-  /// number of errored tiles as [Tuple3.item2], and number of total tiles that need to be downloaded as [Tuple3.item3]
-  ///
-  /// Deprecated. Migrate to [downloadRegion()]
-  @Deprecated(
-      'This function will be removed in the next release. Migrate to the Regions API as soon as possible (see docs).')
-  Stream<Tuple3<int, int, int>> loadTiles(
-      LatLngBounds bounds, int minZoom, int maxZoom, TileLayerOptions options,
-      {Function(dynamic)? errorHandler}) async* {
-    final tilesRange = approximateTileRange(
-        bounds: bounds,
-        minZoom: minZoom,
-        maxZoom: maxZoom,
-        tileSize: CustomPoint(options.tileSize, options.tileSize));
-    assert(tilesRange.length <= kMaxPreloadTileAreaCount,
-        '${tilesRange.length} exceeds maximum number of pre-cacheable tiles');
-    var errorsCount = 0;
-    for (var i = 0; i < tilesRange.length; i++) {
+    Uint8List? seaTileBytes;
+    if (region.seaTileRemoval) {
       try {
-        final cord = tilesRange[i];
-        final cordDouble = Coords(cord.x.toDouble(), cord.y.toDouble());
-        cordDouble.z = cord.z.toDouble();
-        final url = getTileUrl(cordDouble, options);
-        final bytes = (await http.get(Uri.parse(url))).bodyBytes;
-        await TileStorageCachingManager.saveTile(bytes, cord);
+        seaTileBytes = (await client.get(
+          Uri.parse(getTileUrl(Coords(0, 0)..z = 19, region.options)),
+        ))
+            .bodyBytes;
       } catch (e) {
-        errorsCount++;
-        if (errorHandler != null) errorHandler(e);
-      }
-      yield Tuple3(i + 1, errorsCount, tilesRange.length);
-    }
-  }
-
-  /// Get approximate tile amount from bounds and zoom edges
-  ///
-  /// Deprecated. Migrate to [checkRegion()]
-  @Deprecated(
-      'This function will be removed in the next release. Migrate to the Regions API as soon as possible (see docs).')
-  static int approximateTileAmount({
-    required LatLngBounds bounds,
-    required int minZoom,
-    required int maxZoom,
-    Crs crs = const Epsg3857(),
-    tileSize = const CustomPoint(256, 256),
-  }) {
-    assert(minZoom <= maxZoom, 'minZoom > maxZoom');
-    var amount = 0;
-    for (var zoomLevel in List<int>.generate(
-        maxZoom - minZoom + 1, (index) => index + minZoom)) {
-      final nwPoint = crs
-          .latLngToPoint(bounds.northWest, zoomLevel.toDouble())
-          .unscaleBy(tileSize)
-          .floor();
-      final sePoint = crs
-              .latLngToPoint(bounds.southEast, zoomLevel.toDouble())
-              .unscaleBy(tileSize)
-              .ceil() -
-          CustomPoint(1, 1);
-      final a = sePoint.x - nwPoint.x + 1;
-      final b = sePoint.y - nwPoint.y + 1;
-      amount += a * b as int;
-    }
-    return amount;
-  }
-
-  /// Get tileRange from bounds and zoom edges.
-  ///
-  /// Deprecated.
-  @Deprecated(
-      'This function will be removed in the next release, and merged to another function. Migrate to the Regions API as soon as possible (see docs).')
-  static List<Coords> approximateTileRange(
-      {required LatLngBounds bounds,
-      required int minZoom,
-      required int maxZoom,
-      Crs crs = const Epsg3857(),
-      tileSize = const CustomPoint(256, 256)}) {
-    assert(minZoom <= maxZoom, 'minZoom > maxZoom');
-    final cords = <Coords>[];
-    for (var zoomLevel in List<int>.generate(
-        maxZoom - minZoom + 1, (index) => index + minZoom)) {
-      final nwPoint = crs
-          .latLngToPoint(bounds.northWest, zoomLevel.toDouble())
-          .unscaleBy(tileSize)
-          .floor();
-      final sePoint = crs
-              .latLngToPoint(bounds.southEast, zoomLevel.toDouble())
-              .unscaleBy(tileSize)
-              .ceil() -
-          CustomPoint(1, 1);
-      for (var x = nwPoint.x; x <= sePoint.x; x++) {
-        for (var y = nwPoint.y; y <= sePoint.y; y++) {
-          cords.add(Coords(x, y)..z = zoomLevel);
-        }
+        seaTileBytes = null;
       }
     }
-    return cords;
+
+    int successfulTiles = 0;
+    int seaTiles = 0;
+    int existingTiles = 0;
+    final List<String> failedTiles = [];
+    final List<Duration> durationPerTile = [];
+    final DateTime startTime = DateTime.now();
+
+    final Stream<TileProgress> downloadStream = bulkDownloader(
+      tiles: tiles,
+      provider: this,
+      options: region.options,
+      client: client,
+      parallelThreads: region.parallelThreads,
+      errorHandler: region.errorHandler,
+      preventRedownload: region.preventRedownload,
+      seaTileBytes: seaTileBytes,
+      queue: _queue!,
+      streamController: _streamController!,
+    );
+
+    await for (TileProgress evt in downloadStream) {
+      if (evt.failedUrl == null) {
+        successfulTiles++;
+      } else {
+        failedTiles.add(evt.failedUrl!);
+      }
+
+      seaTiles += evt.wasSeaTile ? 1 : 0;
+      existingTiles += evt.wasExistingTile ? 1 : 0;
+
+      durationPerTile.add(evt.duration);
+
+      final DownloadProgress prog = DownloadProgress.internal(
+        maxTiles: tiles.length,
+        successfulTiles: successfulTiles,
+        failedTiles: failedTiles,
+        seaTiles: seaTiles,
+        existingTiles: existingTiles,
+        durationPerTile: durationPerTile,
+        duration: DateTime.now().difference(startTime),
+      );
+
+      yield prog;
+      if (prog.percentageProgress >= 100) cancelDownload();
+    }
+
+    client.close();
+  }
+
+  static Future<List<Coords<num>>> _generateTilesComputer(
+    DownloadableRegion region, {
+    bool applyRange = true,
+  }) async {
+    final List<Coords<num>> tiles = await compute(
+      region.type == RegionType.rectangle
+          ? rectangleTiles
+          : region.type == RegionType.circle
+              ? circleTiles
+              : lineTiles,
+      {
+        'bounds': LatLngBounds.fromPoints(region.points),
+        'circleOutline': region.points,
+        'lineOutline': region.points.chunked(4),
+        'minZoom': region.minZoom,
+        'maxZoom': region.maxZoom,
+        'crs': region.crs,
+        'tileSize':
+            CustomPoint(region.options.tileSize, region.options.tileSize),
+      },
+    );
+
+    if (!applyRange) return tiles;
+    return tiles.getRange(region.start, region.end ?? tiles.length).toList();
   }
 }
 
-/// An `ImageProvider` to deal with the communication between `TileProvider` and caching manager
-class _CachedTileImageProvider extends ImageProvider<Coords<num>> {
-  /// The function to use if the network request fails
-  final Function(dynamic)? networkErrorHandler;
+extension _ListExtensionsE<E> on List<E> {
+  List<List<E>> chunked(int size) {
+    List<List<E>> chunks = [];
 
-  /// The URL used to get the image from the network
-  final String url;
-
-  /// The coordinates of the tile to get from the network
-  final Coords<num> coords;
-
-  /// How long the image is valid for before it needs to be requested again
-  ///
-  /// Defaults to 31 days.
-  final Duration cacheValidDuration;
-
-  /// The name of the caching table to write the image bytes to for future use
-  ///
-  /// Defaults to the default caching table.
-  final String cacheName;
-
-  /// Creates an `ImageProvider` to deal with the communication between `TileProvider` and caching manager
-  _CachedTileImageProvider(
-    this.url,
-    this.coords, {
-    this.cacheValidDuration = const Duration(days: 31),
-    this.networkErrorHandler,
-    this.cacheName = 'mainCache',
-  });
-
-  @override
-  ImageStreamCompleter load(Coords<num> key, decode) =>
-      MultiFrameImageStreamCompleter(
-          codec: _loadAsync(cacheName: cacheName),
-          scale: 1,
-          informationCollector: () sync* {
-            yield DiagnosticsProperty<ImageProvider>('Image provider', this);
-            yield DiagnosticsProperty<Coords>('Image key', key);
-          });
-
-  @override
-  Future<Coords<num>> obtainKey(ImageConfiguration configuration) =>
-      SynchronousFuture(coords);
-
-  Future<Codec> _loadAsync({String cacheName = 'mainCache'}) async {
-    final localBytes = await TileStorageCachingManager.getTile(
-      coords,
-      cacheName: cacheName,
-    );
-    var bytes = localBytes?.item1;
-    if ((DateTime.now().millisecondsSinceEpoch -
-            (localBytes?.item2.millisecondsSinceEpoch ?? 0)) >
-        cacheValidDuration.inMilliseconds) {
-      try {
-        bytes = (await http.get(Uri.parse(url))).bodyBytes;
-        await TileStorageCachingManager.saveTile(
-          bytes,
-          coords,
-          cacheName: cacheName,
-        );
-      } catch (e) {
-        if (networkErrorHandler != null) networkErrorHandler!(e);
-      }
+    for (var i = 0; i < length; i += size) {
+      chunks.add(sublist(i, (i + size < length) ? i + size : length));
     }
-    if (bytes == null) {
-      return Future<Codec>.error('Failed to load tile for coords: $coords');
-    }
-    return await PaintingBinding.instance!.instantiateImageCodec(bytes);
+
+    return chunks;
   }
 }
