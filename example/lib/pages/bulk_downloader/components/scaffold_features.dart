@@ -1,9 +1,8 @@
 import 'package:backdrop/backdrop.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:provider/provider.dart';
-
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 import '../../../state/bulk_download_provider.dart';
 import '../../download/background_download.dart';
@@ -22,7 +21,7 @@ Widget buildInfoPanel(context) {
     child: Padding(
       padding: const EdgeInsets.all(8.0),
       child: Scrollbar(
-        isAlwaysShown: true,
+        thumbVisibility: true,
         thickness: 2,
         child: SingleChildScrollView(
           child: Padding(

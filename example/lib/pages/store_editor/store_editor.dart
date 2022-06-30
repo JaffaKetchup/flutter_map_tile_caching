@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-
 import '../../state/general_provider.dart';
-import 'components/map.dart';
 import 'components/exit.dart';
+import 'components/map.dart';
 
 class StoreEditor extends StatefulWidget {
   const StoreEditor({Key? key}) : super(key: key);
@@ -115,7 +114,7 @@ class _StoreEditorState extends State<StoreEditor> {
                     bottom: 0,
                   ),
                   child: Scrollbar(
-                    isAlwaysShown: true,
+                    thumbVisibility: true,
                     child: SingleChildScrollView(
                       child: Form(
                         key: _formKey,

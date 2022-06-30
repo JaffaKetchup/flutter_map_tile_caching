@@ -2,9 +2,8 @@
 
 import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:provider/provider.dart';
 
 import '../../state/general_provider.dart';
 import 'components/list_tile_image.dart';
@@ -121,8 +120,8 @@ class _StoreManagerState extends State<StoreManager> {
                                           currentMCM.storeName!;
                                       provider.persistent!.setString(
                                           'lastUsedStore', provider.storeName);
-                                      PaintingBinding.instance?.imageCache
-                                          ?.clear();
+                                      PaintingBinding.instance.imageCache
+                                          .clear();
                                       provider.resetMap();
                                     },
                                     onLongPress: () {
