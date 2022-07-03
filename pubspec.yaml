@@ -21,11 +21,11 @@ dependencies:
   battery_info: ^1.1.1
   bezier: ^1.2.0
   collection: ^1.16.0
-  connectivity_plus: ^2.3.0
+  connectivity_plus: ^2.3.5
   flutter:
     sdk: flutter
   flutter_local_notifications: ^9.4.1
-  flutter_map: ^1.1.0
+  flutter_map: ^1.1.1
   http: ^0.13.3
   ini: ^2.1.0
   latlong2: ^0.8.0

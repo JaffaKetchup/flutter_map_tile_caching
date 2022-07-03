@@ -13,7 +13,7 @@ dependencies:
   badges: ^2.0.2
   flutter:
     sdk: flutter
-  flutter_map: ^1.0.0
+  flutter_map: ^1.1.1
   flutter_map_tile_caching:
     path: ../
   google_fonts: ^3.0.1
