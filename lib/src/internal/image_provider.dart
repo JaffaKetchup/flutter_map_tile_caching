@@ -47,7 +47,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   @override
   ImageStreamCompleter load(FMTCImageProvider key, DecoderCallback decode) =>
       MultiFrameImageStreamCompleter(
-        codec: _loadAsync(decode),
+        codec: _loadAsync(decode, key),
         scale: 1,
         debugLabel: coords.toString(),
         informationCollector: () sync* {
@@ -55,7 +55,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         },
       );
 
-  Future<Codec> _loadAsync(DecoderCallback decode) async {
+  Future<Codec> _loadAsync(
+    DecoderCallback decode,
+    FMTCImageProvider key,
+  ) async {
     final String url = provider.getTileUrl(coords, options);
     final File file = provider.storeDirectory.access.tiles >>>
         FMTCSafeFilesystemString.sanitiser(
@@ -79,7 +82,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     // IF network is disabled & the tile does not exist THEN throw an error
     if (settings.behavior == CacheBehavior.cacheOnly && needsCreating) {
-      PaintingBinding.instance.imageCache.evict(this);
+      scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
       throw _FMTCBrowsingError(
         'Failed to load the tile from the cache because it was missing.',
       );
@@ -94,7 +97,9 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         serverData = await httpClient.get(Uri.parse(url));
       } catch (err) {
         if (needsCreating) {
-          PaintingBinding.instance.imageCache.evict(this);
+          scheduleMicrotask(
+            () => PaintingBinding.instance.imageCache.evict(key),
+          );
           throw _FMTCBrowsingError(
             'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.',
           );
@@ -106,7 +111,9 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       // Check for an OK HTTP status code, throwing an error if not possible & the tile does not exist
       if (serverData.statusCode != 200) {
         if (needsCreating) {
-          PaintingBinding.instance.imageCache.evict(this);
+          scheduleMicrotask(
+            () => PaintingBinding.instance.imageCache.evict(key),
+          );
           throw _FMTCBrowsingError(
             'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.',
           );
@@ -160,7 +167,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         );
       }
 
-      PaintingBinding.instance.imageCache.evict(this);
+      scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
       return decode(bytes);
     }
 

@@ -55,4 +55,25 @@ class DownloadProvider extends ChangeNotifier {
   void triggerManualPolygonRecalc() {
     _manualPolygonRecalcTrigger.add(null);
   }
+
+  bool _preventRedownload = false;
+  bool get preventRedownload => _preventRedownload;
+  set preventRedownload(bool newBool) {
+    _preventRedownload = newBool;
+    notifyListeners();
+  }
+
+  bool _seaTileRemoval = true;
+  bool get seaTileRemoval => _seaTileRemoval;
+  set seaTileRemoval(bool newBool) {
+    _seaTileRemoval = newBool;
+    notifyListeners();
+  }
+
+  bool _disableRecovery = false;
+  bool get disableRecovery => _disableRecovery;
+  set disableRecovery(bool newBool) {
+    _disableRecovery = newBool;
+    notifyListeners();
+  }
 }

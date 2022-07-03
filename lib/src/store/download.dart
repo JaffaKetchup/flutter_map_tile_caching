@@ -322,6 +322,7 @@ class DownloadManagement {
     if (Platform.isAndroid) {
       final PermissionStatus status =
           await Permission.ignoreBatteryOptimizations.status;
+
       if ((status.isDenied || status.isLimited) && requestIfDenied) {
         final PermissionStatus statusAfter =
             await Permission.ignoreBatteryOptimizations.request();

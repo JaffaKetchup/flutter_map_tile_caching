@@ -12,24 +12,31 @@ class Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Stores',
-                style: GoogleFonts.openSans(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Stores',
+                  style: GoogleFonts.openSans(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
                 ),
-              ),
-              Consumer<GeneralProvider>(
-                builder: (context, provider, _) => provider.currentStore == null
-                    ? const Text('Caching Disabled')
-                    : Text('Current Store: ${provider.currentStore}'),
-              ),
-            ],
+                Consumer<GeneralProvider>(
+                  builder: (context, provider, _) =>
+                      provider.currentStore == null
+                          ? const Text('Caching Disabled')
+                          : Text(
+                              'Current Store: ${provider.currentStore}',
+                              overflow: TextOverflow.fade,
+                              softWrap: false,
+                            ),
+                ),
+              ],
+            ),
           ),
-          const Spacer(),
+          const SizedBox(width: 15),
           Consumer<GeneralProvider>(
             child: const Icon(Icons.cancel),
             builder: (context, provider, child) => IconButton(

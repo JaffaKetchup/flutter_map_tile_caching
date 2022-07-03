@@ -59,10 +59,10 @@ AppBar buildHeader({
                 value: newValues['validDuration']!,
               );
 
-              if (useNewCacheModeValue) {
+              if (widget.existingStoreName == null || useNewCacheModeValue) {
                 await instance.metadata.addAsync(
                   key: 'behaviour',
-                  value: cacheModeValue!,
+                  value: cacheModeValue ?? 'cacheFirst',
                 );
               }
 
