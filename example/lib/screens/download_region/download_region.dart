@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
 import '../../shared/state/download_provider.dart';
+import '../../shared/state/general_provider.dart';
 import 'components/background_download_info.dart';
 import 'components/optional_functionality.dart';
 import 'components/region_information.dart';
@@ -66,22 +68,59 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                   const UsageWarning(),
                   const SectionSeperator(),
                   const Text('START DOWNLOAD IN'),
-                  Consumer<DownloadProvider>(
-                    builder: (context, provider, _) => Row(
+                  Consumer2<DownloadProvider, GeneralProvider>(
+                    builder: (context, downloadProvider, generalProvider, _) =>
+                        Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Expanded(
                           child: ElevatedButton(
-                            onPressed:
-                                provider.selectedStore == null ? null : () {},
+                            onPressed: downloadProvider.selectedStore == null
+                                ? null
+                                : () async {
+                                    final Map<String, String> metadata =
+                                        await downloadProvider
+                                            .selectedStore!.metadata.readAsync;
+
+                                    downloadProvider.downloadProgress =
+                                        downloadProvider.selectedStore!.download
+                                            .startForeground(
+                                              region:
+                                                  widget.region.toDownloadable(
+                                                downloadProvider.minZoom,
+                                                downloadProvider.maxZoom,
+                                                TileLayerOptions(
+                                                  urlTemplate:
+                                                      metadata['sourceURL'],
+                                                ),
+                                                preventRedownload:
+                                                    downloadProvider
+                                                        .preventRedownload,
+                                                seaTileRemoval: downloadProvider
+                                                    .seaTileRemoval,
+                                              ),
+                                              disableRecovery: downloadProvider
+                                                  .disableRecovery,
+                                            )
+                                            .asBroadcastStream();
+
+                                    downloadProvider.downloadProgress!.listen(
+                                      (evt) => print(
+                                        evt.percentageProgress,
+                                      ),
+                                    );
+
+                                    if (mounted) Navigator.of(context).pop();
+                                  },
                             child: const Text('Foreground'),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: OutlinedButton(
-                            onPressed:
-                                provider.selectedStore == null ? null : () {},
+                            onPressed: downloadProvider.selectedStore == null
+                                ? null
+                                : () {},
                             child: const Text('Background'),
                           ),
                         ),

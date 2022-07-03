@@ -13,10 +13,7 @@ class BackgroundDownloadInfo extends StatefulWidget {
 class _BackgroundDownloadInfoState extends State<BackgroundDownloadInfo> {
   @override
   Widget build(BuildContext context) => FutureBuilder<bool?>(
-        future: FMTC
-            .instance('#fakeStore')
-            .download
-            .requestIgnoreBatteryOptimizations(
+        future: FMTC.instance('').download.requestIgnoreBatteryOptimizations(
               context,
               requestIfDenied: false,
             ),
@@ -54,7 +51,7 @@ class _BackgroundDownloadInfoState extends State<BackgroundDownloadInfo> {
                       child: OutlinedButton(
                         onPressed: () async {
                           await FMTC
-                              .instance('#fakeStore')
+                              .instance('')
                               .download
                               .requestIgnoreBatteryOptimizations(context);
                           setState(() {});

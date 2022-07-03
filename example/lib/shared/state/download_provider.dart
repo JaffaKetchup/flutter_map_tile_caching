@@ -56,6 +56,13 @@ class DownloadProvider extends ChangeNotifier {
     _manualPolygonRecalcTrigger.add(null);
   }
 
+  Stream<DownloadProgress>? _downloadProgress;
+  Stream<DownloadProgress>? get downloadProgress => _downloadProgress;
+  set downloadProgress(Stream<DownloadProgress>? newStream) {
+    _downloadProgress = newStream;
+    notifyListeners();
+  }
+
   bool _preventRedownload = false;
   bool get preventRedownload => _preventRedownload;
   set preventRedownload(bool newBool) {

@@ -1,7 +1,10 @@
 import 'package:badges/badges.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../shared/state/download_provider.dart';
 import 'pages/downloader/downloader.dart';
+import 'pages/downloading/downloading.dart';
 import 'pages/map/map.dart';
 import 'pages/stores/stores.dart';
 
@@ -43,7 +46,11 @@ class _MainScreenState extends State<MainScreen> {
   static final _pages = <Widget>[
     const MapPage(),
     const StoresPage(),
-    const DownloaderPage(),
+    Consumer<DownloadProvider>(
+      builder: (context, provider, _) => provider.downloadProgress == null
+          ? const DownloaderPage()
+          : const DownloadingPage(),
+    ),
     Container(
       color: Colors.red,
       alignment: Alignment.center,

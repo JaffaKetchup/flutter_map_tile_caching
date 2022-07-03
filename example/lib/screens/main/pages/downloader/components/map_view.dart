@@ -297,9 +297,7 @@ class _MapViewState extends State<MapView> {
     final DownloadProvider provider =
         Provider.of<DownloadProvider>(context, listen: false);
 
-    if (/*Provider.of<GeneralProvider>(context, listen: false).currentStore !=
-            null &&*/
-        provider.region != null) {
+    if (provider.region != null) {
       provider
         ..regionTiles = null
         ..regionTiles = await FMTC.instance('').download.check(
