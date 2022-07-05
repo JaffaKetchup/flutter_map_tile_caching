@@ -182,7 +182,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   @override
   bool operator ==(Object other) {
     if (other.runtimeType != runtimeType) return false;
-    return other is FMTCImageProvider && other.coords == coords;
+    return other is FMTCImageProvider && other.coords == coords && other.provider.storeDirectory.storeName == provider.storeDirectory.storeName;
   }
 
   @override
