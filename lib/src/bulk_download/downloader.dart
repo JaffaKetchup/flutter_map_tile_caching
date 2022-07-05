@@ -68,6 +68,8 @@ Future<TileProgress> _getAndSaveTile({
         throwIfInvalid: false,
       );
 
+  late final Uint8List bytes;
+
   try {
     if (preventRedownload && await file.exists()) {
       return TileProgress(
@@ -75,11 +77,13 @@ Future<TileProgress> _getAndSaveTile({
         wasSeaTile: false,
         wasExistingTile: true,
         duration: calcElapsed(),
+        tileImage: null,
       );
     }
 
+    bytes = (await client.get(Uri.parse(url))).bodyBytes;
     file.writeAsBytesSync(
-      (await client.get(Uri.parse(url))).bodyBytes,
+      bytes,
       flush: true,
     );
 
@@ -91,6 +95,7 @@ Future<TileProgress> _getAndSaveTile({
         wasSeaTile: true,
         wasExistingTile: false,
         duration: calcElapsed(),
+        tileImage: bytes,
       );
     }
   } catch (e) {
@@ -100,6 +105,7 @@ Future<TileProgress> _getAndSaveTile({
       wasSeaTile: false,
       wasExistingTile: false,
       duration: calcElapsed(),
+      tileImage: null,
     );
   }
 
@@ -108,5 +114,6 @@ Future<TileProgress> _getAndSaveTile({
     wasSeaTile: false,
     wasExistingTile: false,
     duration: DateTime.now().difference(startTime),
+    tileImage: bytes,
   );
 }

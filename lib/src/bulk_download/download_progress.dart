@@ -40,6 +40,11 @@ class DownloadProgress {
   /// Elapsed duration since start of download process
   final Duration duration;
 
+  /// Get the [ImageProvider] of the last tile that was downloaded
+  ///
+  /// Is `null` if the last tile failed, or the tile already existed and `preventRedownload` is enabled.
+  MemoryImage? tileImage;
+
   /// Number of attempted tile downloads, including failures
   ///
   /// Note that this is not used in any other calculations: for example, [remainingTiles] uses [successfulTiles] instead of this.
@@ -113,6 +118,7 @@ class DownloadProgress {
     required this.existingTiles,
     required this.durationPerTile,
     required this.duration,
+    required this.tileImage,
   });
 
   /// Create an empty placeholder (all values set to 0 or empty) [DownloadProgress], useful for `initalData` in a [StreamBuilder]
@@ -120,7 +126,7 @@ class DownloadProgress {
       : downloadID = 0,
         successfulTiles = 0,
         failedTiles = [],
-        maxTiles = 0,
+        maxTiles = 1,
         seaTiles = 0,
         existingTiles = 0,
         durationPerTile = [],

@@ -25,7 +25,7 @@ class Header extends StatelessWidget {
                 ),
                 Consumer<DownloadProvider>(
                   builder: (context, provider, _) => Text(
-                    'Downloading To: ${provider.selectedStore!.storeName}',
+                    'Downloading To: ${provider.selectedStore?.storeName ?? '<in test mode>'}',
                     overflow: TextOverflow.fade,
                     softWrap: false,
                   ),

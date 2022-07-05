@@ -405,6 +405,7 @@ class DownloadManagement {
         existingTiles: existingTiles,
         durationPerTile: durationPerTile,
         duration: DateTime.now().difference(startTime),
+        tileImage: evt.tileImage == null ? null : MemoryImage(evt.tileImage!),
       );
 
       yield prog;

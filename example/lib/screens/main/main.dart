@@ -47,7 +47,8 @@ class _MainScreenState extends State<MainScreen> {
     const MapPage(),
     const StoresPage(),
     Consumer<DownloadProvider>(
-      builder: (context, provider, _) => provider.downloadProgress == null
+      // Use inequality to enter test mode
+      builder: (context, provider, _) => provider.downloadProgress != null
           ? const DownloaderPage()
           : const DownloadingPage(),
     ),

@@ -105,9 +105,7 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                             .asBroadcastStream();
 
                                     downloadProvider.downloadProgress!.listen(
-                                      (evt) => print(
-                                        evt.percentageProgress,
-                                      ),
+                                      (evt) => print(evt.percentageProgress),
                                     );
 
                                     if (mounted) Navigator.of(context).pop();

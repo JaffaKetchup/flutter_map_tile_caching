@@ -23,13 +23,16 @@ class _DownloadingPageState extends State<DownloadingPage> {
               children: [
                 const Header(),
                 const SizedBox(height: 12),
-                Consumer<DownloadProvider>(
-                  builder: (context, provider, _) =>
-                      StreamBuilder<DownloadProgress>(
-                    stream: provider.downloadProgress,
-                    initialData: DownloadProgress.empty(),
-                    builder: (context, snapshot) => Text(
-                      snapshot.data!.percentageProgress.toStringAsFixed(2),
+                Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Consumer<DownloadProvider>(
+                    builder: (context, provider, _) =>
+                        StreamBuilder<DownloadProgress>(
+                      stream: provider.downloadProgress,
+                      initialData: DownloadProgress.empty(),
+                      builder: (context, snapshot) => Text(
+                        snapshot.data!.percentageProgress.toStringAsFixed(2),
+                      ),
                     ),
                   ),
                 ),
