@@ -1,5 +1,6 @@
 import 'package:badges/badges.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
 import '../../shared/state/download_provider.dart';
@@ -48,7 +49,7 @@ class _MainScreenState extends State<MainScreen> {
     const StoresPage(),
     Consumer<DownloadProvider>(
       // Use inequality to enter test mode
-      builder: (context, provider, _) => provider.downloadProgress != null
+      builder: (context, provider, _) => provider.downloadProgress == null
           ? const DownloaderPage()
           : const DownloadingPage(),
     ),
@@ -73,24 +74,26 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Colors.white,
-        bottomNavigationBar: NavigationBar(
-          onDestinationSelected: (int index) {
-            setState(() => _currentPageIndex = index);
-            _pageController.animateToPage(
-              _currentPageIndex,
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOut,
-            );
-          },
-          selectedIndex: _currentPageIndex,
-          destinations: _destinations,
-        ),
-        body: PageView(
-          controller: _pageController,
-          physics: const NeverScrollableScrollPhysics(),
-          children: _pages,
+  Widget build(BuildContext context) => FMTCBackgroundDownload(
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          bottomNavigationBar: NavigationBar(
+            onDestinationSelected: (int index) {
+              setState(() => _currentPageIndex = index);
+              _pageController.animateToPage(
+                _currentPageIndex,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+              );
+            },
+            selectedIndex: _currentPageIndex,
+            destinations: _destinations,
+          ),
+          body: PageView(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            children: _pages,
+          ),
         ),
       );
 }

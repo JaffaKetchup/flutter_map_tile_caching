@@ -17,14 +17,15 @@ environment:
   flutter: ">=3.0.0"
 
 dependencies:
-  background_fetch: ^1.1.0
+  #background_fetch: ^1.1.0
   battery_info: ^1.1.1
   bezier: ^1.2.0
   collection: ^1.16.0
   connectivity_plus: ^2.3.5
   flutter:
     sdk: flutter
-  flutter_local_notifications: ^9.4.1
+  #flutter_local_notifications: ^9.4.1
+  flutter_foreground_task: ^3.7.3
   flutter_map: ^1.1.1
   http: ^0.13.3
   ini: ^2.1.0
@@ -32,7 +33,7 @@ dependencies:
   meta: ^1.7.0
   path: ^1.8.0
   path_provider: ^2.0.7
-  permission_handler: ^10.0.0
+  #permission_handler: ^10.0.0
   queue: ^3.1.0+1
   stream_transform: ^2.0.0
   vector_math: ^2.1.1

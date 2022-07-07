@@ -5,7 +5,8 @@ import 'package:provider/provider.dart';
 
 import '../../shared/state/download_provider.dart';
 import '../../shared/state/general_provider.dart';
-import 'components/background_download_info.dart';
+import 'components/bd_battery_optimizations_info.dart';
+import 'components/bd_draw_system_alert_window_info.dart';
 import 'components/optional_functionality.dart';
 import 'components/region_information.dart';
 import 'components/section_seperator.dart';
@@ -63,7 +64,9 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                   const SectionSeperator(),
                   const OptionalFunctionality(),
                   const SectionSeperator(),
-                  const BackgroundDownloadInfo(),
+                  const BackgroundDownloadBatteryOptimizationsInfo(),
+                  const SectionSeperator(),
+                  const BackgroundDownloadDrawSystemAlertWindowInfo(),
                   const SectionSeperator(),
                   const UsageWarning(),
                   const SectionSeperator(),
@@ -118,7 +121,51 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                           child: OutlinedButton(
                             onPressed: downloadProvider.selectedStore == null
                                 ? null
-                                : () {},
+                                : () async {
+                                    final Map<String, String> metadata =
+                                        await downloadProvider
+                                            .selectedStore!.metadata.readAsync;
+
+                                    final Color backgroundColor;
+                                    if (mounted) {
+                                      backgroundColor =
+                                          Theme.of(context).colorScheme.primary;
+                                    } else {
+                                      backgroundColor = Colors.red;
+                                    }
+
+                                    await downloadProvider
+                                        .selectedStore!.download
+                                        .startBackground(
+                                      region: widget.region.toDownloadable(
+                                        downloadProvider.minZoom,
+                                        downloadProvider.maxZoom,
+                                        TileLayerOptions(
+                                          urlTemplate: metadata['sourceURL'],
+                                        ),
+                                        preventRedownload:
+                                            downloadProvider.preventRedownload,
+                                        seaTileRemoval:
+                                            downloadProvider.seaTileRemoval,
+                                      ),
+                                      disableRecovery:
+                                          downloadProvider.disableRecovery,
+                                      automaticallyRequestRecommendedPermissions:
+                                          false,
+                                      androidNotificationOptions:
+                                          AndroidNotificationOptions(
+                                        channelId: '',
+                                        channelName: '',
+                                        iconData: const NotificationIconData(
+                                          resType: ResourceType.mipmap,
+                                          resPrefix: ResourcePrefix.ic,
+                                          name: 'notification_icon',
+                                        ),
+                                      ),
+                                    );
+
+                                    if (mounted) Navigator.of(context).pop();
+                                  },
                             child: const Text('Background'),
                           ),
                         ),
