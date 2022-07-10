@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
-class BackgroundDownloadInfo extends StatefulWidget {
-  const BackgroundDownloadInfo({
+class BackgroundDownloadDrawSystemAlertWindowInfo extends StatefulWidget {
+  const BackgroundDownloadDrawSystemAlertWindowInfo({
     Key? key,
   }) : super(key: key);
 
   @override
-  State<BackgroundDownloadInfo> createState() => _BackgroundDownloadInfoState();
+  State<BackgroundDownloadDrawSystemAlertWindowInfo> createState() =>
+      _BackgroundDownloadDrawSystemAlertWindowInfoState();
 }
 
-class _BackgroundDownloadInfoState extends State<BackgroundDownloadInfo> {
+class _BackgroundDownloadDrawSystemAlertWindowInfoState
+    extends State<BackgroundDownloadDrawSystemAlertWindowInfo> {
   @override
   Widget build(BuildContext context) => FutureBuilder<bool?>(
-        future: FMTC.instance('').download.requestIgnoreBatteryOptimizations(
-              context,
-              requestIfDenied: false,
-            ),
+        future: FMTC
+            .instance('')
+            .download
+            .requestDrawSystemAlertWindow(requestIfDenied: false),
         builder: (context, snapshot) => Row(
           children: [
             Icon(
@@ -33,7 +35,7 @@ class _BackgroundDownloadInfoState extends State<BackgroundDownloadInfo> {
               child: Column(
                 children: [
                   const Text(
-                    "Apps that support background downloading can request extra permissions to help prevent the background process being stopped by the system. Specifically, the 'ignore battery optimisations' permission helps most. The API has a method to manage this permission.",
+                    "Apps that support background downloading can request extra permissions to allow the progress notification to start the application when tapped. Specifically, the 'draw system alert window'/'draw over other apps' permission helps most. The API has a method to manage this permission.",
                     textAlign: TextAlign.justify,
                   ),
                   const SizedBox(height: 5),
@@ -53,7 +55,7 @@ class _BackgroundDownloadInfoState extends State<BackgroundDownloadInfo> {
                           await FMTC
                               .instance('')
                               .download
-                              .requestIgnoreBatteryOptimizations(context);
+                              .requestDrawSystemAlertWindow();
                           setState(() {});
                         },
                         child: const Text('Request Permission'),

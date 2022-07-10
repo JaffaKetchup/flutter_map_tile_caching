@@ -64,9 +64,10 @@ class _MapViewState extends State<MapView> {
                                     ),
                             ),
                           )
-                      : const NonCachingNetworkTileProvider(),
+                      : NetworkNoRetryTileProvider(),
                   maxZoom: 20,
                   reset: provider.resetController.stream,
+                  userAgentPackageName: 'dev.org.fmtc.example.app',
                   keepBuffer: 5,
                   backgroundColor: const Color(0xFFaad3df),
                   overrideTilesWhenUrlChanges: true,

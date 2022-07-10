@@ -12,11 +12,24 @@ export 'dart:io' show Directory, File;
 export 'package:battery_info/enums/charging_status.dart';
 export 'package:connectivity_plus/connectivity_plus.dart'
     show ConnectivityResult;
+export 'package:flutter_foreground_task/flutter_foreground_task.dart'
+    show
+        AndroidNotificationOptions,
+        IOSNotificationOptions,
+        NotificationIconData,
+        NotificationButton,
+        NotificationChannelImportance,
+        NotificationPriority,
+        NotificationVisibility,
+        ResourcePrefix,
+        ResourceType;
 export 'package:watcher/watcher.dart' show ChangeType;
 
 export 'src/bulk_download/download_progress.dart';
 export 'src/fmtc.dart';
+export 'src/misc/background_download_widget.dart';
 export 'src/misc/cache_behavior.dart';
+export 'src/misc/exts.dart';
 export 'src/misc/typedefs.dart';
 export 'src/misc/validate.dart';
 export 'src/regions/base_region.dart';
