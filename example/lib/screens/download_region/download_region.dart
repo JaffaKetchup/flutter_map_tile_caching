@@ -122,17 +122,12 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                             onPressed: downloadProvider.selectedStore == null
                                 ? null
                                 : () async {
+                                    final Color backgroundColor =
+                                        Theme.of(context).colorScheme.primary;
+
                                     final Map<String, String> metadata =
                                         await downloadProvider
                                             .selectedStore!.metadata.readAsync;
-
-                                    final Color backgroundColor;
-                                    if (mounted) {
-                                      backgroundColor =
-                                          Theme.of(context).colorScheme.primary;
-                                    } else {
-                                      backgroundColor = Colors.red;
-                                    }
 
                                     await downloadProvider
                                         .selectedStore!.download
@@ -156,10 +151,11 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                           AndroidNotificationOptions(
                                         channelId: '',
                                         channelName: '',
-                                        iconData: const NotificationIconData(
+                                        iconData: NotificationIconData(
                                           resType: ResourceType.mipmap,
                                           resPrefix: ResourcePrefix.ic,
                                           name: 'notification_icon',
+                                          backgroundColor: backgroundColor,
                                         ),
                                       ),
                                     );

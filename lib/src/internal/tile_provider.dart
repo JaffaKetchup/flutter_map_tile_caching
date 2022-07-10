@@ -1,6 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:http/http.dart';
 
 import '../fmtc.dart';
 import '../misc/cache_behavior.dart';
@@ -22,7 +23,7 @@ class FMTCTileProvider extends TileProvider {
   final FMTCTileProviderSettings settings;
 
   /// Used internally for browsing-caused tile requests
-  final _httpClient = Client();
+  final HttpClient httpClient;
 
   /// 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayerOptions]
   ///
@@ -32,14 +33,18 @@ class FMTCTileProvider extends TileProvider {
   FMTCTileProvider({
     required this.storeDirectory,
     required FMTCTileProviderSettings? settings,
-  }) : settings =
-            settings ?? FMTC.instance.settings.defaultTileProviderSettings;
+    super.headers,
+    HttpClient? httpClient,
+  })  : settings =
+            settings ?? FMTC.instance.settings.defaultTileProviderSettings,
+        httpClient = httpClient ?? HttpClient()
+          ..userAgent = null;
 
-  /// Closes the open [Client] - this will make the provider unable to perform network requests
+  /// Closes the open [HttpClient] - this will make the provider unable to perform network requests
   @override
   void dispose() {
     super.dispose();
-    _httpClient.close();
+    httpClient.close();
   }
 
   /// Get a browsed tile as an image, paint it on the map and save it's bytes to cache for later (dependent on the [CacheBehavior])
@@ -49,7 +54,15 @@ class FMTCTileProvider extends TileProvider {
         provider: this,
         options: options,
         coords: coords,
-        httpClient: _httpClient,
+        httpClient: httpClient,
+        headers: {
+          ...headers,
+          'User-Agent': headers['User-Agent']?.replaceAll(
+                'flutter_map',
+                'flutter_map_tile_caching for flutter_map',
+              ) ??
+              'flutter_map_tile_caching for flutter_map (unknown)',
+        },
       );
 
   /// Check whether a specified tile is cached in the current store synchronously

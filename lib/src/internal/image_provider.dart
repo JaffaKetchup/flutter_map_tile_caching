@@ -6,7 +6,6 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:http/http.dart' as http;
 import 'package:queue/queue.dart';
 
 import '../internal/exts.dart';
@@ -27,7 +26,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   final Coords<num> coords;
 
   /// A HTTP client used to send requests
-  final http.Client httpClient;
+  final HttpClient httpClient;
+
+  /// Custom headers to send with each request
+  final Map<String, String> headers;
 
   /// Used internally to safely and efficiently enforce the `settings.maxStoreLength`
   static final Queue removeOldestQueue =
@@ -42,23 +44,42 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required this.options,
     required this.coords,
     required this.httpClient,
+    required this.headers,
   }) : settings = provider.settings;
 
   @override
-  ImageStreamCompleter load(FMTCImageProvider key, DecoderCallback decode) =>
-      MultiFrameImageStreamCompleter(
-        codec: _loadAsync(decode, key),
-        scale: 1,
-        debugLabel: coords.toString(),
-        informationCollector: () sync* {
-          yield ErrorDescription('Coordinates: $coords');
-        },
-      );
+  ImageStreamCompleter load(FMTCImageProvider key, DecoderCallback decode) {
+    // ignore: close_sinks
+    final StreamController<ImageChunkEvent> chunkEvents =
+        StreamController<ImageChunkEvent>();
 
-  Future<Codec> _loadAsync(
-    DecoderCallback decode,
-    FMTCImageProvider key,
-  ) async {
+    return MultiFrameImageStreamCompleter(
+      codec: _loadAsync(key: key, decode: decode, chunkEvents: chunkEvents),
+      chunkEvents: chunkEvents.stream,
+      scale: 1,
+      debugLabel: coords.toString(),
+      informationCollector: () => <DiagnosticsNode>[
+        DiagnosticsProperty<Coords>('Coordinates', coords),
+      ],
+    );
+  }
+
+  Future<Codec> _loadAsync({
+    required FMTCImageProvider key,
+    required DecoderCallback decode,
+    required StreamController<ImageChunkEvent> chunkEvents,
+  }) async {
+    Future<Codec> finish({
+      Uint8List? bytes,
+      String? throwError,
+    }) {
+      scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
+      unawaited(chunkEvents.close());
+      if (throwError != null) throw _FMTCBrowsingError(throwError);
+      if (bytes != null) return decode(bytes);
+      throw FallThroughError();
+    }
+
     final String url = provider.getTileUrl(coords, options);
     final File file = provider.storeDirectory.access.tiles >>>
         FMTCSafeFilesystemString.sanitiser(
@@ -82,48 +103,81 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     // IF network is disabled & the tile does not exist THEN throw an error
     if (settings.behavior == CacheBehavior.cacheOnly && needsCreating) {
-      scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
+      /*scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
       throw _FMTCBrowsingError(
         'Failed to load the tile from the cache because it was missing.',
+      );*/
+      return finish(
+        throwError:
+            'Failed to load the tile from the cache because it was missing.',
       );
     }
 
     // IF network is enabled & (the tile does not exist | needs updating) THEN download the tile | throw an error
     if (needsCreating || needsUpdating) {
-      late final http.Response serverData;
+      final HttpClientResponse response;
 
       // Try to get a response from a server, throwing an error if not possible & the tile does not exist
       try {
-        serverData = await httpClient.get(Uri.parse(url));
+        final HttpClientRequest request =
+            await httpClient.getUrl(Uri.parse(url));
+        headers.forEach((k, v) => request.headers.add(k, v));
+        response = await request.close();
       } catch (err) {
         if (needsCreating) {
-          scheduleMicrotask(
+          /*scheduleMicrotask(
             () => PaintingBinding.instance.imageCache.evict(key),
           );
+          unawaited(chunkEvents.close());
           throw _FMTCBrowsingError(
             'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.',
+          );*/
+          return finish(
+            throwError:
+                'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.',
           );
         } else {
-          return decode(bytes!);
+          //unawaited(chunkEvents.close());
+          //return decode(bytes!);
+          return finish(bytes: bytes);
         }
       }
 
       // Check for an OK HTTP status code, throwing an error if not possible & the tile does not exist
-      if (serverData.statusCode != 200) {
+      if (response.statusCode != 200) {
         if (needsCreating) {
-          scheduleMicrotask(
+          /*scheduleMicrotask(
             () => PaintingBinding.instance.imageCache.evict(key),
           );
+          unawaited(chunkEvents.close());
           throw _FMTCBrowsingError(
             'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.',
+          );*/
+          return finish(
+            throwError:
+                'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.',
           );
         } else {
-          return decode(bytes!);
+          //unawaited(chunkEvents.close());
+          //return decode(bytes!);
+          return finish(bytes: bytes);
         }
       }
 
+      // Read the bytes from the HTTP request response
+      bytes = await consolidateHttpClientResponseBytes(
+        response,
+        onBytesReceived: (int cumulative, int? total) {
+          chunkEvents.add(
+            ImageChunkEvent(
+              cumulativeBytesLoaded: cumulative,
+              expectedTotalBytes: total,
+            ),
+          );
+        },
+      );
+
       // Cache the tile in a seperate isolate
-      bytes = serverData.bodyBytes;
       unawaited(file.create().then((_) => file.writeAsBytes(bytes!)));
       if (needsCreating) {
         unawaited(
@@ -167,12 +221,16 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         );
       }
 
-      scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
-      return decode(bytes);
+      //scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
+      //unawaited(chunkEvents.close());
+      //return decode(bytes);
+      return finish(bytes: bytes);
     }
 
     // IF tile exists & does not need updating THEN return the existing tile
-    return decode(bytes!);
+    //unawaited(chunkEvents.close());
+    //return decode(bytes!);
+    return finish(bytes: bytes);
   }
 
   @override

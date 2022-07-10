@@ -1,4 +1,5 @@
-// ignore_for_file: deprecated_member_use_from_same_package
+// ignore_for_file: avoid_print, deprecated_member_use_from_same_package
+// TODO: Remove prints
 
 import 'dart:async';
 import 'dart:io';
@@ -229,8 +230,7 @@ class DownloadManagement {
         //interval: 5000,
         allowWifiLock: true,
       ),
-
-      printDevLog: true, // TODO(jaffaketchup): Remove for release
+      printDevLog: true, // TODO: Remove for release
     );
 
     await FlutterForegroundTask.saveData(

@@ -13,7 +13,7 @@ platforms:
   windows:
 
 environment:
-  sdk: ">=2.15.0 <3.0.0"
+  sdk: ">=2.17.0 <3.0.0"
   flutter: ">=3.0.0"
 
 dependencies:
@@ -26,7 +26,7 @@ dependencies:
     sdk: flutter
   #flutter_local_notifications: ^9.4.1
   flutter_foreground_task: ^3.7.3
-  flutter_map: ^1.1.1
+  flutter_map: ^2.0.0-beta
   http: ^0.13.3
   ini: ^2.1.0
   latlong2: ^0.8.0
