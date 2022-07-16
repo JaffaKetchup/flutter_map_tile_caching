@@ -108,6 +108,7 @@ class FMTCBackgroundTaskHandler extends TaskHandler {
     print('notificationText: $notificationText');
 
     print(
+      // ignore: prefer_interpolation_to_compose_strings
       'formatted: ' +
           _replacePlaceholdersNotificationText(
             textWithPlaceholders: notificationText!,

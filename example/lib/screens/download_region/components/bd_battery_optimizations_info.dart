@@ -40,11 +40,13 @@ class _BackgroundDownloadBatteryOptimizationsInfoState
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    snapshot.data == null
-                        ? 'Checking if this permission is currently granted to this application...'
-                        : (!snapshot.data!
-                            ? 'This application does not have this permission granted to it currently. Tap the button below to use the API method to request the permission.'
-                            : 'This application does currently have this permission granted to it.'),
+                    snapshot.hasError
+                        ? 'This platform currently does not support this API: it is only supported on Android.'
+                        : snapshot.data == null
+                            ? 'Checking if this permission is currently granted to this application...'
+                            : (!snapshot.data!
+                                ? 'This application does not have this permission granted to it currently. Tap the button below to use the API method to request the permission.'
+                                : 'This application does currently have this permission granted to it.'),
                     textAlign: TextAlign.justify,
                   ),
                   if (!(snapshot.data ?? true))

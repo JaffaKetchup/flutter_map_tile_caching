@@ -206,64 +206,74 @@ class _MapViewState extends State<MapView> {
         Provider.of<DownloadProvider>(context, listen: false);
 
     final Size mapSize = _mapKey.currentContext!.size!;
-    final mapCenter = Point<double>(mapSize.width / 2, mapSize.height / 2);
+    final bool isHeightLongestSide = mapSize.width < mapSize.height;
+
+    final centerNormal = Point<double>(mapSize.width / 2, mapSize.height / 2);
+    final centerInversed = Point<double>(mapSize.height / 2, mapSize.width / 2);
 
     late final Point<double> calculatedTopLeft;
     late final Point<double> calculatedBottomRight;
 
     switch (downloadProvider.regionMode) {
       case RegionMode.square:
-        final allowedArea = Size.square(mapSize.width - (shapePadding * 2));
+        final double offset = (mapSize.shortestSide - (shapePadding * 2)) / 2;
+
         calculatedTopLeft = Point<double>(
-          shapePadding,
-          mapCenter.y - allowedArea.height / 2,
+          centerNormal.x - offset,
+          centerNormal.y - offset,
         );
         calculatedBottomRight = Point<double>(
-          mapSize.width - shapePadding,
-          mapCenter.y + allowedArea.height / 2,
+          centerNormal.x + offset,
+          centerNormal.y + offset,
         );
         break;
       case RegionMode.rectangleVertical:
         final allowedArea = Size(
           mapSize.width - (shapePadding * 2),
-          mapSize.height - (shapePadding * 2) - 50,
+          (mapSize.height - (shapePadding * 2)) / 1.5 - 50,
         );
+
         calculatedTopLeft = Point<double>(
+          centerInversed.y - allowedArea.shortestSide / 2,
           shapePadding,
-          mapCenter.y - allowedArea.height / 2,
         );
         calculatedBottomRight = Point<double>(
-          mapSize.width - shapePadding,
-          mapCenter.y + allowedArea.height / 2,
+          centerInversed.y + allowedArea.shortestSide / 2,
+          mapSize.height - shapePadding - 25,
         );
         break;
       case RegionMode.rectangleHorizontal:
         final allowedArea = Size(
           mapSize.width - (shapePadding * 2),
-          (mapSize.width - (shapePadding * 2)) / 1.75,
+          (mapSize.width < mapSize.height + 250)
+              ? (mapSize.width - (shapePadding * 2)) / 1.75
+              : (mapSize.height - (shapePadding * 2) - 0),
         );
+
         calculatedTopLeft = Point<double>(
           shapePadding,
-          mapCenter.y - allowedArea.height / 2,
+          centerNormal.y - allowedArea.height / 2,
         );
         calculatedBottomRight = Point<double>(
           mapSize.width - shapePadding,
-          mapCenter.y + allowedArea.height / 2,
+          centerNormal.y + allowedArea.height / 2 - 25,
         );
         break;
       case RegionMode.circle:
-        final allowedArea = Size.square(mapSize.width - (shapePadding * 2));
+        final allowedArea =
+            Size.square(mapSize.shortestSide - (shapePadding * 2));
 
         final calculatedTop = Point<double>(
-          mapCenter.x,
-          mapCenter.y - allowedArea.height / 2,
+          centerNormal.x,
+          (isHeightLongestSide ? centerNormal.y : centerInversed.x) -
+              allowedArea.width / 2,
         );
 
         _crosshairsTop = calculatedTop - crosshairsMovement;
-        _crosshairsBottom = mapCenter - crosshairsMovement;
+        _crosshairsBottom = centerNormal - crosshairsMovement;
 
         _center =
-            _mapController.pointToLatLng(_customPointFromPoint(mapCenter));
+            _mapController.pointToLatLng(_customPointFromPoint(centerNormal));
         _radius = const Distance(roundResult: false).distance(
               _center!,
               _mapController

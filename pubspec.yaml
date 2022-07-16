@@ -26,7 +26,7 @@ dependencies:
     sdk: flutter
   #flutter_local_notifications: ^9.4.1
   flutter_foreground_task: ^3.7.3
-  flutter_map: ^2.0.0-beta
+  flutter_map: ^2.0.0
   http: ^0.13.3
   ini: ^2.1.0
   latlong2: ^0.8.0
