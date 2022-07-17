@@ -10,7 +10,7 @@ library flutter_map_tile_caching;
 export 'dart:io' show Directory, File;
 
 export 'package:flutter_background/flutter_background.dart'
-    show FlutterBackgroundAndroidConfig;
+    show AndroidResource;
 export 'package:flutter_local_notifications/flutter_local_notifications.dart'
     show AndroidNotificationDetails;
 export 'package:watcher/watcher.dart' show ChangeType;
@@ -19,7 +19,6 @@ export 'src/bulk_download/download_progress.dart';
 export 'src/fmtc.dart';
 export 'src/misc/background_download_widget.dart';
 export 'src/misc/cache_behavior.dart';
-export 'src/misc/exts.dart';
 export 'src/misc/typedefs.dart';
 export 'src/misc/validate.dart';
 export 'src/regions/base_region.dart';

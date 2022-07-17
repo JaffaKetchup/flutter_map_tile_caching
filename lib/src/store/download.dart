@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-//import 'package:background_fetch/background_fetch.dart';
 import 'package:battery_info/battery_info_plugin.dart';
 import 'package:battery_info/enums/charging_status.dart';
 import 'package:battery_info/model/android_battery_info.dart';
@@ -15,20 +14,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-//import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-//import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
-//import 'package:permission_handler/permission_handler.dart';
 import 'package:queue/queue.dart';
 
 import '../bulk_download/download_progress.dart';
 import '../bulk_download/downloader.dart';
 import '../bulk_download/tile_loops.dart';
 import '../bulk_download/tile_progress.dart';
+import '../internal/exts.dart';
 import '../internal/tile_provider.dart';
-import '../misc/exts.dart';
 import '../misc/typedefs.dart';
 import '../regions/downloadable_region.dart';
 import '../settings/tile_provider_settings.dart';
@@ -131,18 +127,42 @@ class DownloadManagement {
     );
   }
 
-  /// Download a specified [DownloadableRegion] in the background, and show a notification progress bar (by default)
+  /// Download a specified [DownloadableRegion] in the background, and show a progress notification (by default)
   ///
-  /// CURRENTLY NOT WORKING IN v5: DO NOT USE
+  /// To check the number of tiles that need to be downloaded before using this function, use [check].
+  ///
+  /// Only available on Android devices, due to limitations with other operating systems. Background downloading is complicated: see the documentation website for more information.
+  ///
+  /// Calling this method will automatically request the necessary permissions. You may want to call [requestIgnoreBatteryOptimizations] beforehand, as this will allow you more control.
+  ///
+  /// Uses a foreground service internally, meaning the process should be stable unless the application is force stopped/fully closed. However, you should still read the Limitations page, available in the online documentation.
+  ///
+  /// Displays two notifications:
+  /// * A service notification, informing the user that the process is running. This is unavoidable due to the system limitations, however it can be easily hidden by the user. The default text explains this process roughly.
+  /// * A progress notification, informing the user of the current state of the download. Includes a progress bar and time estimate by default.
+  ///
+  /// Configure the progress notification using:
+  /// * `showProgressNotification`: set to `false` to disable the progress notification - not recommended
+  /// * `progressNotificationIcon`: set to a string in the format '@\<type\>/\<name\>' (found in the 'android\app\src\main\res') to override the default icon ('@mipmap/ic_notification_icon': only available in the example application)
+  /// * `progressNotificationTitle`: set to a `String` to override the default title
+  /// * `progressNotificationText`: set to a `String` to override the default body text
+  /// * `progressNotificationConfig`: use to further customise the notification properties
+  ///
+  /// Configure the background notification using:
+  /// * `backgroundNotificationIcon`: set to an `AndroidResource` to override the default icon ('@mipmap/ic_launcher': the app's launcher icon)
+  /// * `backgroundNotificationTitle`: set to a `String` to override the default title
+  /// * `backgroundNotificationText`: set to a `String` to override the default body text
   Future<void> startBackground({
     required DownloadableRegion region,
     FMTCTileProviderSettings? tileProviderSettings,
     bool disableRecovery = false,
-    bool requirePermissions = false,
-    FlutterBackgroundAndroidConfig? backgroundNotificationConfig,
+    String backgroundNotificationTitle = 'App Running In Background',
+    String backgroundNotificationText =
+        "Hide this notification by holding down and opening the notification's settings. Then disable this notification only.",
+    AndroidResource? backgroundNotificationIcon,
     bool showProgressNotification = true,
     AndroidNotificationDetails? progressNotificationConfig,
-    String progressnotificationIcon = '@mipmap/ic_notification_icon',
+    String progressNotificationIcon = '@mipmap/ic_notification_icon',
     String progressNotificationTitle = 'Downloading Map...',
     String Function(DownloadProgress)? progressNotificationBody,
     @Deprecated(
@@ -152,19 +172,16 @@ class DownloadManagement {
   }) async {
     if (Platform.isAndroid) {
       final bool initSuccess = await FlutterBackground.initialize(
-        androidConfig: backgroundNotificationConfig ??
-            const FlutterBackgroundAndroidConfig(
-              notificationTitle: 'Downloading Map...',
-              notificationText: 'This application is running in the background',
-              notificationIcon: AndroidResource(
-                name: 'ic_notification_icon',
-                defType: 'mipmap',
-              ),
-            ),
+        androidConfig: FlutterBackgroundAndroidConfig(
+          notificationTitle: backgroundNotificationTitle,
+          notificationText: backgroundNotificationText,
+          notificationIcon: backgroundNotificationIcon ??
+              const AndroidResource(name: 'ic_launcher', defType: 'mipmap'),
+        ),
       );
-      if (!initSuccess && requirePermissions) {
+      if (!initSuccess) {
         throw StateError(
-          'Failed to aquire the necessary permissions to run the background process',
+          'Failed to acquire the necessary permissions to run the background process',
         );
       }
 
@@ -177,7 +194,7 @@ class DownloadManagement {
       final notification = FlutterLocalNotificationsPlugin();
       await notification.initialize(
         InitializationSettings(
-          android: AndroidInitializationSettings(progressnotificationIcon),
+          android: AndroidInitializationSettings(progressNotificationIcon),
         ),
       );
 
@@ -290,40 +307,6 @@ class DownloadManagement {
       if ((status.isDenied || status.isLimited) && requestIfDenied) {
         final PermissionStatus statusAfter =
             await Permission.ignoreBatteryOptimizations.request();
-        if (statusAfter.isGranted) return true;
-        return false;
-      } else if (status.isGranted) {
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      throw PlatformException(
-        code: 'notAndroid',
-        message:
-            'The background download feature is only available on Android due to internal limitations.',
-      );
-    }
-  }
-
-  /// Requests for app to be able to draw system alert windows and intercept notification presses
-  ///
-  /// Only available on Android devices, due to limitations with other operating systems.
-  ///
-  /// Background downloading is complicated: see the documentation website for more information.
-  ///
-  /// If [requestIfDenied] is `true` (default), and the permission has not been granted, an intrusive system dialog/screen will be displayed. If `false`, this method will only check whether it has been granted or not.
-  ///
-  /// Will return `true` if permission was granted, `false` if the permission was denied.
-  Future<bool> requestDrawSystemAlertWindow({
-    bool requestIfDenied = true,
-  }) async {
-    if (Platform.isAndroid) {
-      final PermissionStatus status = await Permission.systemAlertWindow.status;
-
-      if ((status.isDenied || status.isLimited) && requestIfDenied) {
-        final PermissionStatus statusAfter =
-            await Permission.systemAlertWindow.request();
         if (statusAfter.isGranted) return true;
         return false;
       } else if (status.isGranted) {

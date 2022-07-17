@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import '../../shared/state/download_provider.dart';
 import '../../shared/state/general_provider.dart';
 import 'components/bd_battery_optimizations_info.dart';
-import 'components/bd_draw_system_alert_window_info.dart';
 import 'components/optional_functionality.dart';
 import 'components/region_information.dart';
 import 'components/section_seperator.dart';
@@ -65,8 +64,6 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                   const OptionalFunctionality(),
                   const SectionSeperator(),
                   const BackgroundDownloadBatteryOptimizationsInfo(),
-                  const SectionSeperator(),
-                  const BackgroundDownloadDrawSystemAlertWindowInfo(),
                   const SectionSeperator(),
                   const UsageWarning(),
                   const SectionSeperator(),
@@ -142,6 +139,11 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                       ),
                                       disableRecovery:
                                           downloadProvider.disableRecovery,
+                                      backgroundNotificationIcon:
+                                          const AndroidResource(
+                                        name: 'ic_notification_icon',
+                                        defType: 'mipmap',
+                                      ),
                                     );
 
                                     if (mounted) Navigator.of(context).pop();
