@@ -8,7 +8,6 @@
     <application
         android:label="FMTC Example"
         android:icon="@mipmap/ic_launcher">
-        <service android:name="com.pravera.flutter_foreground_task.service.ForegroundService" />
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"
@@ -20,10 +19,6 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
-            <!--<meta-data
-              android:name="io.flutter.embedding.android.SplashScreenDrawable"
-              android:resource="@drawable/launch_background"
-              />-->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

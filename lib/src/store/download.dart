@@ -1,9 +1,7 @@
-// ignore_for_file: avoid_print, deprecated_member_use_from_same_package
-// TODO: Remove prints
+// ignore_for_file: deprecated_member_use_from_same_package
 
 import 'dart:async';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:typed_data';
 
 //import 'package:background_fetch/background_fetch.dart';
@@ -14,10 +12,14 @@ import 'package:battery_info/model/iso_battery_info.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_background/flutter_background.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+//import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 //import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 //import 'package:permission_handler/permission_handler.dart';
 import 'package:queue/queue.dart';
 
@@ -25,7 +27,6 @@ import '../bulk_download/download_progress.dart';
 import '../bulk_download/downloader.dart';
 import '../bulk_download/tile_loops.dart';
 import '../bulk_download/tile_progress.dart';
-import '../internal/background_task_handler.dart';
 import '../internal/tile_provider.dart';
 import '../misc/exts.dart';
 import '../misc/typedefs.dart';
@@ -46,9 +47,6 @@ class DownloadManagement {
 
   /// Used internally to control bulk downloading
   StreamController<TileProgress>? _streamController;
-
-  /// Used internally to communicate with the background downloader service/process
-  ReceivePort? _receivePort;
 
   /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
   DownloadManagement(this._storeDirectory);
@@ -133,29 +131,6 @@ class DownloadManagement {
     );
   }
 
-  void _closeReceivePort() {
-    _receivePort?.close();
-    _receivePort = null;
-  }
-
-  void _registerReceivePort(ReceivePort? receivePort) {
-    _closeReceivePort();
-
-    if (receivePort != null) {
-      _receivePort = receivePort;
-      _receivePort?.listen((message) {
-        if (message is int) {
-          print('eventCount: $message');
-        } else if (message is String) {
-          /*if (message == 'onNotificationPressed' &&
-              onNotificationPressed != null) onNotificationPressed();*/
-        } else if (message is DateTime) {
-          print('timestamp: ${message.toString()}');
-        }
-      });
-    }
-  }
-
   /// Download a specified [DownloadableRegion] in the background, and show a notification progress bar (by default)
   ///
   /// CURRENTLY NOT WORKING IN v5: DO NOT USE
@@ -163,106 +138,113 @@ class DownloadManagement {
     required DownloadableRegion region,
     FMTCTileProviderSettings? tileProviderSettings,
     bool disableRecovery = false,
-    AndroidNotificationOptions? androidNotificationOptions,
-    IOSNotificationOptions? iOSNotificationOptions,
-    String notificationTitle = 'Downloading Map Tiles',
-    String notificationText =
-        '{attemptedTiles}/{maxTiles}\nEstimated Time Remaining: {estRemainingDuration}',
-    bool automaticallyRequestRecommendedPermissions = true,
+    bool requirePermissions = false,
+    FlutterBackgroundAndroidConfig? backgroundNotificationConfig,
+    bool showProgressNotification = true,
+    AndroidNotificationDetails? progressNotificationConfig,
+    String progressnotificationIcon = '@mipmap/ic_notification_icon',
+    String progressNotificationTitle = 'Downloading Map...',
+    String Function(DownloadProgress)? progressNotificationBody,
     @Deprecated(
       '`preDownloadChecksCallback` has been deprecated without replacement or alternative. Usage will no longer have any effect. This functionality will be removed in the next minor release',
     )
         PreDownloadChecksCallback preDownloadChecksCallback,
   }) async {
-    final AndroidNotificationOptions androidNotificationOpts =
-        androidNotificationOptions?.copyWith(
-              channelId: 'fmtc_background_downloader',
-              channelName: 'Map Downloader',
-              channelDescription:
-                  'Displays progress notifications to inform the user about the progress of their map download.',
-              isSticky: false,
-              buttons: androidNotificationOptions.buttons == null
-                  ? const [
-                      NotificationButton(
-                        id: 'cancelDownload',
-                        text: 'Cancel Download',
-                      ),
-                    ]
-                  : [
-                      ...androidNotificationOptions.buttons!,
-                      const NotificationButton(
-                        id: 'cancelDownload',
-                        text: 'Cancel Download',
-                      ),
-                    ],
-            ) ??
-            AndroidNotificationOptions(
-              channelId: 'fmtc_background_downloader',
-              channelName: 'Map Downloader',
-              channelDescription:
-                  'Displays progress notifications to inform the user about the progress of their map download.',
-              channelImportance: NotificationChannelImportance.MIN,
-              priority: NotificationPriority.MIN,
-              isSticky: false,
-              buttons: const [
-                NotificationButton(
-                  id: 'cancelDownload',
-                  text: 'Cancel Download',
+    if (Platform.isAndroid) {
+      final bool initSuccess = await FlutterBackground.initialize(
+        androidConfig: backgroundNotificationConfig ??
+            const FlutterBackgroundAndroidConfig(
+              notificationTitle: 'Downloading Map...',
+              notificationText: 'This application is running in the background',
+              notificationIcon: AndroidResource(
+                name: 'ic_notification_icon',
+                defType: 'mipmap',
+              ),
+            ),
+      );
+      if (!initSuccess && requirePermissions) {
+        throw StateError(
+          'Failed to aquire the necessary permissions to run the background process',
+        );
+      }
+
+      final bool startSuccess =
+          await FlutterBackground.enableBackgroundExecution();
+      if (!startSuccess) {
+        throw StateError('Failed to start the background process');
+      }
+
+      final notification = FlutterLocalNotificationsPlugin();
+      await notification.initialize(
+        InitializationSettings(
+          android: AndroidInitializationSettings(progressnotificationIcon),
+        ),
+      );
+
+      final Stream<DownloadProgress> downloadStream = startForeground(
+        region: region,
+        tileProviderSettings: tileProviderSettings,
+        disableRecovery: disableRecovery,
+        preDownloadChecksCallback: preDownloadChecksCallback,
+      ).asBroadcastStream();
+      if (await downloadStream.isEmpty) return cancel();
+
+      final AndroidNotificationDetails androidNotificationDetails =
+          progressNotificationConfig?.copyWith(
+                channelId: 'FMTCMapDownloader',
+                ongoing: true,
+              ) ??
+              const AndroidNotificationDetails(
+                'FMTCMapDownloader',
+                'Map Download Progress',
+                channelDescription:
+                    'Displays progress notifications to inform the user about the progress of their map download',
+                showProgress: true,
+                visibility: NotificationVisibility.public,
+                subText: 'Map Downloader',
+                importance: Importance.low,
+                priority: Priority.low,
+                showWhen: false,
+                playSound: false,
+                enableVibration: false,
+                onlyAlertOnce: true,
+                autoCancel: false,
+                ongoing: true,
+              );
+
+      late final StreamSubscription<DownloadProgress> subscription;
+
+      subscription = downloadStream.listen(
+        (event) async {
+          if (showProgressNotification) {
+            await notification.show(
+              0,
+              progressNotificationTitle,
+              progressNotificationBody == null
+                  ? '${event.attemptedTiles}/${event.maxTiles} (${event.percentageProgress.round().toString()}%)'
+                  : progressNotificationBody(event),
+              NotificationDetails(
+                android: androidNotificationDetails.copyWith(
+                  maxProgress: event.maxTiles,
+                  progress: event.attemptedTiles,
                 ),
-              ],
+              ),
             );
-
-    final IOSNotificationOptions iOSNotificationOpts =
-        iOSNotificationOptions?.copyWith(
-              showNotification: true,
-            ) ??
-            const IOSNotificationOptions();
-
-    if (await FlutterForegroundTask.isRunningService) {
-      final newReceivePort = await FlutterForegroundTask.receivePort;
-      _registerReceivePort(newReceivePort);
-    }
-
-    await FlutterForegroundTask.init(
-      androidNotificationOptions: androidNotificationOpts,
-      iosNotificationOptions: iOSNotificationOpts,
-      foregroundTaskOptions: const ForegroundTaskOptions(
-        //interval: 5000,
-        allowWifiLock: true,
-      ),
-      printDevLog: true, // TODO: Remove for release
-    );
-
-    await FlutterForegroundTask.saveData(
-      key: 'notificationTitle',
-      value: notificationTitle,
-    );
-    await FlutterForegroundTask.saveData(
-      key: 'notificationText',
-      value: notificationText,
-    );
-
-    if (automaticallyRequestRecommendedPermissions) {
-      if (!await FlutterForegroundTask.canDrawOverlays) {
-        await FlutterForegroundTask.openSystemAlertWindowSettings();
-      }
-      if (!await FlutterForegroundTask.isIgnoringBatteryOptimizations) {
-        await FlutterForegroundTask.openIgnoreBatteryOptimizationSettings();
-      }
-    }
-
-    late final ReceivePort? receivePort;
-    if (await FlutterForegroundTask.isRunningService) {
-      receivePort = await FlutterForegroundTask.restartService();
+          }
+        },
+        onDone: () async {
+          if (showProgressNotification) await notification.cancel(0);
+          await subscription.cancel();
+          await cancel();
+        },
+      );
     } else {
-      receivePort = await FlutterForegroundTask.startService(
-        notificationTitle: notificationTitle,
-        notificationText: notificationText,
-        callback: _backgroundDownloadCallback,
+      throw PlatformException(
+        code: 'notAndroid',
+        message:
+            'The background download feature is only available on Android due to internal limitations.',
       );
     }
-
-    return _registerReceivePort(receivePort);
   }
 
   /// Check approximately how many downloadable tiles are within a specified [DownloadableRegion]
@@ -278,10 +260,14 @@ class DownloadManagement {
   /// Do not use to cancel background downloads, return `true` from the background download callback to cancel a background download. Background download cancellations require a few more 'shut-down' steps that can create unexpected issues and memory leaks if not carried out.
   Future<void> cancel() async {
     _queue?.dispose();
-    await _streamController?.close();
+    unawaited(_streamController?.close());
 
     if (_recoveryId != null) {
       await _storeDirectory.rootDirectory.recovery.cancel(_recoveryId!);
+    }
+
+    if (FlutterBackground.isBackgroundExecutionEnabled) {
+      await FlutterBackground.disableBackgroundExecution();
     }
   }
 
@@ -298,17 +284,24 @@ class DownloadManagement {
     bool requestIfDenied = true,
   }) async {
     if (Platform.isAndroid) {
-      if (await FlutterForegroundTask.isIgnoringBatteryOptimizations) {
-        return true;
-      } else if (requestIfDenied) {
-        await FlutterForegroundTask.openIgnoreBatteryOptimizationSettings();
-        return FlutterForegroundTask.isIgnoringBatteryOptimizations;
-      }
+      final PermissionStatus status =
+          await Permission.ignoreBatteryOptimizations.status;
 
-      return false;
+      if ((status.isDenied || status.isLimited) && requestIfDenied) {
+        final PermissionStatus statusAfter =
+            await Permission.ignoreBatteryOptimizations.request();
+        if (statusAfter.isGranted) return true;
+        return false;
+      } else if (status.isGranted) {
+        return true;
+      } else {
+        return false;
+      }
     } else {
-      throw UnsupportedError(
-        'The background download feature is only available on Android due to limitations with other operating systems.',
+      throw PlatformException(
+        code: 'notAndroid',
+        message:
+            'The background download feature is only available on Android due to internal limitations.',
       );
     }
   }
@@ -326,17 +319,23 @@ class DownloadManagement {
     bool requestIfDenied = true,
   }) async {
     if (Platform.isAndroid) {
-      if (await FlutterForegroundTask.canDrawOverlays) {
-        return true;
-      } else if (requestIfDenied) {
-        await FlutterForegroundTask.openSystemAlertWindowSettings();
-        return FlutterForegroundTask.canDrawOverlays;
-      }
+      final PermissionStatus status = await Permission.systemAlertWindow.status;
 
-      return false;
+      if ((status.isDenied || status.isLimited) && requestIfDenied) {
+        final PermissionStatus statusAfter =
+            await Permission.systemAlertWindow.request();
+        if (statusAfter.isGranted) return true;
+        return false;
+      } else if (status.isGranted) {
+        return true;
+      } else {
+        return false;
+      }
     } else {
-      throw UnsupportedError(
-        'The background download feature is only available on Android due to limitations with other operating systems.',
+      throw PlatformException(
+        code: 'notAndroid',
+        message:
+            'The background download feature is only available on Android due to internal limitations.',
       );
     }
   }
@@ -442,9 +441,6 @@ class DownloadManagement {
     return tiles.getRange(region.start, region.end ?? tiles.length).toList();
   }
 }
-
-void _backgroundDownloadCallback() =>
-    FlutterForegroundTask.setTaskHandler(FMTCBackgroundTaskHandler());
 
 extension _ListExtensionsE<E> on List<E> {
   Iterable<List<E>> chunked(int size) sync* {

@@ -1,5 +1,8 @@
 // ignore_for_file: deprecated_member_use_from_same_package
 
+import 'package:battery_info/enums/charging_status.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 import '../../fmtc_advanced.dart';
 
 /// _[PreDownloadChecksCallback] (and it's related argument) have been deprecated without replacement or alternative. Usage will continue to function until the next minor release, at which time this functionality will be removed._
