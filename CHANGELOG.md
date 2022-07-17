@@ -4,6 +4,18 @@
 2. Minor version releases change the second digit and signify minor (breaking with deprecation warnings, or non-breaking) API changes or internal refactoring
 3. Revision version releases change the third digit and signify bug fixes or documentation changes
 
+---
+
+## [5.0.0-dev.3] - 2022/07/17
+
+* Improved example application
+* Updated Gradle for example application
+* Improved documentation
+* Improved background downloading implementation
+* Added support for 'flutter_map' v2.0.0
+* Added Windows support to example application
+* Fixed multiple bugs
+
 ## [5.0.0-dev.2] - 2022/06/13
 
 * Example application improvements
