@@ -80,6 +80,17 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       throw FallThroughError();
     }
 
+    Future<void> cacheHitMiss({
+      required bool hit,
+    }) async {
+      final File file = provider.storeDirectory.access.stats >>>
+          (hit ? 'cacheHits.cache' : 'cacheMisses.cache');
+      await file.writeAsString(
+        (int.parse(await file.readAsString()) + 1).toString(),
+        flush: true,
+      );
+    }
+
     final String url = provider.getTileUrl(coords, options);
     final File file = provider.storeDirectory.access.tiles >>>
         FMTCSafeFilesystemString.sanitiser(
@@ -103,10 +114,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     // IF network is disabled & the tile does not exist THEN throw an error
     if (settings.behavior == CacheBehavior.cacheOnly && needsCreating) {
-      /*scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
-      throw _FMTCBrowsingError(
-        'Failed to load the tile from the cache because it was missing.',
-      );*/
       return finish(
         throwError:
             'Failed to load the tile from the cache because it was missing.',
@@ -124,44 +131,22 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         headers.forEach((k, v) => request.headers.add(k, v));
         response = await request.close();
       } catch (err) {
-        if (needsCreating) {
-          /*scheduleMicrotask(
-            () => PaintingBinding.instance.imageCache.evict(key),
-          );
-          unawaited(chunkEvents.close());
-          throw _FMTCBrowsingError(
-            'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.',
-          );*/
-          return finish(
-            throwError:
-                'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.',
-          );
-        } else {
-          //unawaited(chunkEvents.close());
-          //return decode(bytes!);
-          return finish(bytes: bytes);
-        }
+        return finish(
+          bytes: !needsCreating ? bytes : null,
+          throwError: needsCreating
+              ? 'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.'
+              : null,
+        );
       }
 
       // Check for an OK HTTP status code, throwing an error if not possible & the tile does not exist
       if (response.statusCode != 200) {
-        if (needsCreating) {
-          /*scheduleMicrotask(
-            () => PaintingBinding.instance.imageCache.evict(key),
-          );
-          unawaited(chunkEvents.close());
-          throw _FMTCBrowsingError(
-            'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.',
-          );*/
-          return finish(
-            throwError:
-                'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.',
-          );
-        } else {
-          //unawaited(chunkEvents.close());
-          //return decode(bytes!);
-          return finish(bytes: bytes);
-        }
+        return finish(
+          bytes: !needsCreating ? bytes : null,
+          throwError: needsCreating
+              ? 'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.'
+              : null,
+        );
       }
 
       // Read the bytes from the HTTP request response
@@ -181,7 +166,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       unawaited(file.create().then((_) => file.writeAsBytes(bytes!)));
       if (needsCreating) {
         unawaited(
-          provider.storeDirectory.stats.invalidateCachedStatisticsAsync(null),
+          provider.storeDirectory.stats.invalidateCachedStatisticsAsync(),
         );
       }
 
@@ -216,20 +201,17 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
             if (!needToDelete) return;
             await currentOldestFile?.delete();
             await provider.storeDirectory.stats
-                .invalidateCachedStatisticsAsync(null);
+                .invalidateCachedStatisticsAsync();
           }),
         );
       }
 
-      //scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
-      //unawaited(chunkEvents.close());
-      //return decode(bytes);
+      unawaited(cacheHitMiss(hit: false));
       return finish(bytes: bytes);
     }
 
     // IF tile exists & does not need updating THEN return the existing tile
-    //unawaited(chunkEvents.close());
-    //return decode(bytes!);
+    unawaited(cacheHitMiss(hit: true));
     return finish(bytes: bytes);
   }
 

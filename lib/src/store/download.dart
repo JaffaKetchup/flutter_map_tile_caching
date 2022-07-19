@@ -369,7 +369,7 @@ class DownloadManagement {
     await for (final TileProgress evt in downloadStream) {
       if (evt.failedUrl == null) {
         successfulTiles++;
-        unawaited(_storeDirectory.stats.invalidateCachedStatisticsAsync(null));
+        unawaited(_storeDirectory.stats.invalidateCachedStatisticsAsync());
       } else {
         failedTiles.add(evt.failedUrl!);
       }

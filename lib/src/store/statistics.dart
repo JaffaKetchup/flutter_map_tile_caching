@@ -65,15 +65,23 @@ class StoreStats {
   ///
   /// For asynchronous version, see [invalidateCachedStatisticsAsync].
   ///
-  /// If [statType] is `null`, all statistic caches are deleted, otherwise only the specified cache is deleted.
-  void invalidateCachedStatistics(String? statType) {
+  /// [statTypes] dictates the types of statistics to remove, defaulting to only 'length' and 'size'. Set to `null` to remove all types.
+  void invalidateCachedStatistics({
+    List<String>? statTypes = const [
+      'length',
+      'size',
+    ],
+  }) {
     try {
-      if (statType != null) {
-        (_access.stats >>> '$statType.cache').deleteSync();
-      } else {
-        (_access.stats >>> 'length.cache').deleteSync();
-        (_access.stats >>> 'size.cache').deleteSync();
-      }
+      (statTypes ??
+              [
+                'length',
+                'size',
+                'cacheHits',
+                'cacheMisses',
+              ])
+          .map((e) => _access.stats >>> '$e.cache')
+          .forEach((e) => e.deleteSync());
       // ignore: empty_catches
     } catch (e) {}
   }
@@ -82,17 +90,24 @@ class StoreStats {
   ///
   /// For synchronous version, see [invalidateCachedStatistics].
   ///
-  /// If [statType] is `null`, all statistic caches are deleted, otherwise only the specified cache is deleted.
-  Future<void> invalidateCachedStatisticsAsync(String? statType) async {
+  /// [statTypes] dictates the types of statistics to remove, defaulting to only 'length' and 'size'. Set to `null` to remove all types.
+  Future<void> invalidateCachedStatisticsAsync({
+    List<String>? statTypes = const [
+      'length',
+      'size',
+    ],
+  }) async {
     try {
-      if (statType != null) {
-        await (_access.stats >>> '$statType.cache').delete();
-      } else {
-        await Future.wait([
-          (_access.stats >>> 'length.cache').delete(),
-          (_access.stats >>> 'size.cache').delete(),
-        ]);
-      }
+      await Future.wait(
+        (statTypes ??
+                [
+                  'length',
+                  'size',
+                  'cacheHits',
+                  'cacheMisses',
+                ])
+            .map((e) => (_access.stats >>> '$e.cache').delete()),
+      );
       // ignore: empty_catches
     } catch (e) {}
   }
@@ -151,6 +166,46 @@ class StoreStats {
         await _csgAsync(
           'length',
           () => _access.tiles.list().length,
+        ),
+      );
+
+  /// Retrieve the number of tiles that were successfully retrieved from the store during browsing
+  ///
+  /// For asynchronous version, see [cacheHitsAsync].
+  int get cacheHits => int.parse(
+        _csgSync(
+          'cacheHits',
+          () => 0,
+        ),
+      );
+
+  /// Retrieve the number of tiles that were successfully retrieved from the store during browsing
+  ///
+  /// For synchronous version, see [cacheHits].
+  Future<int> get cacheHitsAsync async => int.parse(
+        await _csgAsync(
+          'cacheHits',
+          () => Future.sync(() => 0),
+        ),
+      );
+
+  /// Retrieve the number of tiles that were unsuccessfully retrieved from the store during browsing
+  ///
+  /// For asynchronous version, see [cacheMissesAsync].
+  int get cacheMisses => int.parse(
+        _csgSync(
+          'cacheMisses',
+          () => 0,
+        ),
+      );
+
+  /// Retrieve the number of tiles that were unsuccessfully retrieved from the store during browsing
+  ///
+  /// For synchronous version, see [cacheMisses].
+  Future<int> get cacheMissesAsync async => int.parse(
+        await _csgAsync(
+          'cacheMisses',
+          () => Future.sync(() => 0),
         ),
       );
 

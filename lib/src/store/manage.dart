@@ -72,7 +72,7 @@ class StoreManagement {
   void reset() {
     _access.tiles.delete(recursive: true);
     _access.tiles.create();
-    _storeDirectory.stats.invalidateCachedStatistics(null);
+    _storeDirectory.stats.invalidateCachedStatistics(statTypes: null);
   }
 
   /// Resets this store synchronously
@@ -83,7 +83,8 @@ class StoreManagement {
   Future<void> resetAsync() async {
     await _access.tiles.delete(recursive: true);
     await _access.tiles.create();
-    await _storeDirectory.stats.invalidateCachedStatisticsAsync(null);
+    await _storeDirectory.stats
+        .invalidateCachedStatisticsAsync(statTypes: null);
   }
 
   /// Rename the store directory synchronously
