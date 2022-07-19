@@ -6,6 +6,14 @@
 
 ---
 
+## [5.0.0-dev.4] - 2022/07/19
+
+* Added cache hits and misses statistics
+* Added v4 to v5 file structure migration methods
+* Reworked `invalidateCachedStatistics`
+* Improved documentation
+* Fixed bugs
+
 ## [5.0.0-dev.3] - 2022/07/17
 
 * Improved example application
