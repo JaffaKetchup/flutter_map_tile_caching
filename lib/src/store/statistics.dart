@@ -172,6 +172,8 @@ class StoreStats {
   /// Retrieve the number of tiles that were successfully retrieved from the store during browsing
   ///
   /// For asynchronous version, see [cacheHitsAsync].
+  ///
+  /// If using [noCache], this will always return 0.
   int get cacheHits => int.parse(
         _csgSync(
           'cacheHits',
@@ -182,6 +184,8 @@ class StoreStats {
   /// Retrieve the number of tiles that were successfully retrieved from the store during browsing
   ///
   /// For synchronous version, see [cacheHits].
+  ///
+  /// If using [noCache], this will always return 0.
   Future<int> get cacheHitsAsync async => int.parse(
         await _csgAsync(
           'cacheHits',
@@ -192,6 +196,8 @@ class StoreStats {
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the store during browsing
   ///
   /// For asynchronous version, see [cacheMissesAsync].
+  ///
+  /// If using [noCache], this will always return 0.
   int get cacheMisses => int.parse(
         _csgSync(
           'cacheMisses',

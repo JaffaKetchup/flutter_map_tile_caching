@@ -35,6 +35,12 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   static final Queue removeOldestQueue =
       Queue(timeout: const Duration(seconds: 1));
 
+  /// Used internally to safely and efficiently update the cache hits statistic
+  static final Queue cacheHitsQueue = Queue();
+
+  /// Used internally to safely and efficiently update the cache misses statistic
+  static final Queue cacheMissesQueue = Queue();
+
   /// Shorthand for `provider.settings`
   late final FMTCTileProviderSettings settings;
 
@@ -85,10 +91,14 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     }) async {
       final File file = provider.storeDirectory.access.stats >>>
           (hit ? 'cacheHits.cache' : 'cacheMisses.cache');
-      await file.writeAsString(
-        (int.parse(await file.readAsString()) + 1).toString(),
-        flush: true,
-      );
+
+      await (hit ? cacheHitsQueue : cacheMissesQueue).add(() async {
+        await file.create(recursive: true);
+        await file.writeAsString(
+          ((int.tryParse(await file.readAsString()) ?? 0) + 1).toString(),
+          flush: true,
+        );
+      });
     }
 
     final String url = provider.getTileUrl(coords, options);
