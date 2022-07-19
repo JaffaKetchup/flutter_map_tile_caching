@@ -1,11 +1,9 @@
-import 'dart:io';
-
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:stream_transform/stream_transform.dart';
 
+import '../../flutter_map_tile_caching.dart';
 import '../internal/exts.dart';
-import '../root/directory.dart';
 
 /// Manage migration for file structure across FMTC versions
 class FMTCMigrator {
@@ -43,11 +41,15 @@ class FMTCMigrator {
 
     try {
       await root.list().whereType<Directory>().asyncMap((e) async {
-        print(e.path);
-        print(_rootDirectory.access.stats > p.basename(e.absolute.path));
-        await e.rename(
-          _rootDirectory.access.stats > p.basename(e.absolute.path),
+        final StoreDirectory store = StoreDirectory(
+          _rootDirectory,
+          p.basename(e.absolute.path),
+          autoCreate: false,
         );
+        await store.manage.createAsync();
+
+        await store.access.tiles.delete();
+        await e.rename(store.access.real > 'tiles');
       }).last;
 
       await root.delete(recursive: true);
