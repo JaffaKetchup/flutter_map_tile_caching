@@ -1,8 +1,46 @@
 # Changelog
 
-1. Major version releases change the first digit and signify major (breaking) API changes
-2. Minor version releases change the second digit and signify minor (breaking or non-breaking) API changes or internal refactoring
+1. Major version releases change the first digit and signify major (breaking) API changes, with or without deprecation warnings
+2. Minor version releases change the second digit and signify minor (breaking with deprecation warnings, or non-breaking) API changes or internal refactoring
 3. Revision version releases change the third digit and signify bug fixes or documentation changes
+
+---
+
+## [5.0.0-dev.4] - 2022/07/19
+
+* Added cache hits and misses statistics
+* Added v4 to v5 file structure migration methods
+* Reworked `invalidateCachedStatistics`
+* Improved documentation
+* Fixed bugs
+
+## [5.0.0-dev.3] - 2022/07/17
+
+* Improved example application
+* Updated Gradle for example application
+* Improved documentation
+* Improved background downloading implementation
+* Added support for 'flutter_map' v2.0.0
+* Added Windows support to example application
+* Fixed multiple bugs
+
+## [5.0.0-dev.2] - 2022/06/13
+
+* Example application improvements
+* README documentation improvements
+* Deprecated `preDownloadChecksCallback`
+* Added `checkTileCached` to tile provider
+* Refactored and reorganised public APIs (eg. moved `tileImage` from `stats` to `manage`)
+
+## [5.0.0-dev.1] - 2022/06/01
+
+* Widespread syntax changes
+* Added custom metadata storage functionality
+* Added statistic caching to improve performance somewhat
+* Start of new example application for better performance and Material 3 support
+* Documentation improvements
+* Specification of platform support
+* Internal refactoring and reorganization
 
 ## [4.0.1] - 2022/02/28
 

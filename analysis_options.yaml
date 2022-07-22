@@ -1,5 +1,11 @@
-include: package:flutter_lints/flutter.yaml
+include: jaffa_lints.yaml
+
+analyzer: # TEMPORARY
+  exclude:
+    - example/old_lib/pages/**
+    - example/old_lib/state/**
+    - example/old_lib/main.dart
 
 linter:
   rules:
-    avoid_returning_null_for_void: false
+    avoid_slow_async_io: false

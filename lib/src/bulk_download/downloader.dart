@@ -5,26 +5,26 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as p show joinAll;
 import 'package:queue/queue.dart';
 
-import '../main.dart';
+import '../internal/exts.dart';
+import '../internal/tile_provider.dart';
 import '../misc/validate.dart';
 import 'tile_progress.dart';
 
 Stream<TileProgress> bulkDownloader({
   required List<Coords<num>> tiles,
-  required StorageCachingTileProvider provider,
+  required FMTCTileProvider provider,
   required TileLayerOptions options,
   required http.Client client,
-  required Function(dynamic)? errorHandler,
+  required Function(Object?)? errorHandler,
   required int parallelThreads,
   required bool preventRedownload,
   required Uint8List? seaTileBytes,
   required Queue queue,
   required StreamController<TileProgress> streamController,
 }) {
-  for (Coords<num> coord in tiles) {
+  for (final Coords<num> coord in tiles) {
     queue
         .add(
       () => _getAndSaveTile(
@@ -48,11 +48,11 @@ Stream<TileProgress> bulkDownloader({
 }
 
 Future<TileProgress> _getAndSaveTile({
-  required StorageCachingTileProvider provider,
+  required FMTCTileProvider provider,
   required Coords<num> coord,
   required TileLayerOptions options,
   required http.Client client,
-  required Function(dynamic)? errorHandler,
+  required void Function(Object)? errorHandler,
   required bool preventRedownload,
   required Uint8List? seaTileBytes,
 }) async {
@@ -62,35 +62,40 @@ Future<TileProgress> _getAndSaveTile({
   final Coords<double> coordDouble =
       Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
   final String url = provider.getTileUrl(coordDouble, options);
-  final String path = p.joinAll([
-    provider.storeDirectory.absolute.path,
-    safeFilesystemString(inputString: url, throwIfInvalid: false),
-  ]);
+  final File file = provider.storeDirectory.access.tiles >>>
+      FMTCSafeFilesystemString.sanitiser(
+        inputString: url,
+        throwIfInvalid: false,
+      );
+
+  late final Uint8List bytes;
 
   try {
-    if (preventRedownload && await File(path).exists()) {
+    if (preventRedownload && await file.exists()) {
       return TileProgress(
         failedUrl: null,
         wasSeaTile: false,
         wasExistingTile: true,
         duration: calcElapsed(),
+        tileImage: null,
       );
     }
 
-    File(path).writeAsBytesSync(
-      (await client.get(Uri.parse(url))).bodyBytes,
+    bytes = (await client.get(Uri.parse(url))).bodyBytes;
+    file.writeAsBytesSync(
+      bytes,
       flush: true,
     );
 
     if (seaTileBytes != null &&
-        const ListEquality()
-            .equals(await File(path).readAsBytes(), seaTileBytes)) {
-      await File(path).delete();
+        const ListEquality().equals(await file.readAsBytes(), seaTileBytes)) {
+      await file.delete();
       return TileProgress(
         failedUrl: null,
         wasSeaTile: true,
         wasExistingTile: false,
         duration: calcElapsed(),
+        tileImage: bytes,
       );
     }
   } catch (e) {
@@ -100,6 +105,7 @@ Future<TileProgress> _getAndSaveTile({
       wasSeaTile: false,
       wasExistingTile: false,
       duration: calcElapsed(),
+      tileImage: null,
     );
   }
 
@@ -108,5 +114,6 @@ Future<TileProgress> _getAndSaveTile({
     wasSeaTile: false,
     wasExistingTile: false,
     duration: DateTime.now().difference(startTime),
+    tileImage: bytes,
   );
 }
