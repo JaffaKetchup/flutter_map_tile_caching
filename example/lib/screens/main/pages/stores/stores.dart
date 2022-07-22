@@ -25,7 +25,9 @@ class _StoresPageState extends State<StoresPage> {
         _stores = FMTC.instance.rootDirectory.stats.storesAvailableAsync;
 
     _listStores();
-    FMTC.instance.rootDirectory.stats.watchChanges().listen((_) {
+    FMTC.instance.rootDirectory.stats.watchChanges(
+      rootParts: [RootParts.stores],
+    ).listen((_) {
       if (mounted) {
         _listStores();
         setState(() {});
@@ -43,13 +45,13 @@ class _StoresPageState extends State<StoresPage> {
               children: [
                 const Header(),
                 const SizedBox(height: 12),
-                FutureBuilder<List<StoreDirectory>>(
-                  future: _stores,
-                  builder: (context, snapshot) => snapshot.hasData
-                      ? snapshot.data!.isEmpty
-                          ? const EmptyIndicator()
-                          : Expanded(
-                              child: ListView.builder(
+                Expanded(
+                  child: FutureBuilder<List<StoreDirectory>>(
+                    future: _stores,
+                    builder: (context, snapshot) => snapshot.hasData
+                        ? snapshot.data!.isEmpty
+                            ? const EmptyIndicator()
+                            : ListView.builder(
                                 itemCount: snapshot.data!.length,
                                 itemBuilder: (context, index) => StoreTile(
                                   context: context,
@@ -57,13 +59,11 @@ class _StoresPageState extends State<StoresPage> {
                                   key:
                                       ValueKey(snapshot.data![index].storeName),
                                 ),
-                              ),
-                            )
-                      : const Expanded(
-                          child: LoadingIndicator(
+                              )
+                        : const LoadingIndicator(
                             message: 'Loading Stores...',
                           ),
-                        ),
+                  ),
                 ),
               ],
             ),

@@ -9,7 +9,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:queue/queue.dart';
 
 import '../internal/exts.dart';
-import '../misc/cache_behavior.dart';
+import '../misc/enums.dart';
 import '../misc/validate.dart';
 import '../settings/tile_provider_settings.dart';
 import 'tile_provider.dart';

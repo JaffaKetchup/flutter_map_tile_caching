@@ -110,8 +110,7 @@ class DownloadManagement {
     if (!disableRecovery) {
       await _storeDirectory.rootDirectory.recovery.start(
         id: _recoveryId!,
-        description:
-            '${_storeDirectory.storeName}: ${region.type.name[0].toUpperCase() + region.type.name.substring(1)} Type',
+        storeName: _storeDirectory.storeName,
         region: region,
         storeDirectory: _storeDirectory,
       );

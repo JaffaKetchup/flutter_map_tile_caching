@@ -10,9 +10,9 @@ class EmptyIndicator extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(Icons.folder_off, size: 36),
+            Icon(Icons.done_all, size: 36),
             SizedBox(height: 10),
-            Text('No Stores Found'),
+            Text('No Recoverable Regions Found'),
           ],
         ),
       );

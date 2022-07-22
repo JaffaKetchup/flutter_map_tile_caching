@@ -14,7 +14,7 @@ class RootAccess {
     real = _rootDirectory.rootDirectory;
     stores = real >> 'stores';
     stats = real >> 'stats';
-    metadata = real >> 'metadata';
+    recovery = real >> 'recovery';
   }
 
   /// The real [Directory] of the [RootDirectory]
@@ -28,6 +28,6 @@ class RootAccess {
   /// The sub[Directory] used to store cached statistics
   late final Directory stats;
 
-  /// The sub[Directory] used to store any miscellaneous metadata
-  late final Directory metadata;
+  /// The sub[Directory] used to store recovery information
+  late final Directory recovery;
 }

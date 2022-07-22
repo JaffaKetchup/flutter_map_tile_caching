@@ -1,5 +1,5 @@
 import '../internal/tile_provider.dart';
-import '../misc/cache_behavior.dart';
+import '../misc/enums.dart';
 
 /// Settings for an [FMTCTileProvider]
 class FMTCTileProviderSettings {

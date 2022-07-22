@@ -17,11 +17,14 @@ import 'directory.dart';
 ///
 /// Is a singleton to ensure a list is kept of the ongoing downloads.
 class RootRecovery {
+  /// The root directory containing the stores to recover from
+  final RootDirectory _rootDirectory;
+
   /// Manages the download recovery of all sub-stores of this [RootDirectory]
   ///
   /// Is a singleton to ensure a list is kept of the ongoing downloads.
-  RootRecovery(RootDirectory rootDirectory)
-      : _metadata = RootAccess(rootDirectory).metadata {
+  RootRecovery(this._rootDirectory)
+      : _metadata = RootAccess(_rootDirectory).recovery {
     instance = this;
   }
 
@@ -30,7 +33,7 @@ class RootRecovery {
   /// Is a singleton to ensure a list is kept of the ongoing downloads.
   static RootRecovery? instance;
 
-  /// Shorthand for [RootAccess.metadata], used commonly throughout
+  /// Shorthand for [RootAccess.recovery], used commonly throughout
   final Directory _metadata;
 
   /// Keeps a list of downloads that are ongoing, so they are not recoverable unnecessarily
@@ -76,16 +79,16 @@ class RootRecovery {
   @internal
   Future<void> start({
     required int id,
-    required String description,
+    required String storeName,
     required DownloadableRegion region,
     required StoreDirectory storeDirectory,
   }) async {
     _downloadsOngoing.add(id);
     return encode(
       id: id,
-      description: description,
+      storeName: storeName,
       region: region,
-      storeDirectory: storeDirectory,
+      rootDirectory: _rootDirectory,
     );
   }
 
@@ -94,4 +97,50 @@ class RootRecovery {
     _downloadsOngoing.remove(id);
     await (await getRecoverableRegion(id))?.file.delete();
   }
+
+  /*/// Watch for changes in recovery information
+  ///
+  /// Useful to update UI only when required, for example, in a [StreamBuilder].
+  ///
+  /// Control which changes are caught through the [events] parameter, which takes a list of [ChangeType]s. Catches all change types by default.
+  ///
+  /// Enable debouncing to prevent unnecessary events for small changes in detail using [debounce]. Defaults to 200ms, or set to null to disable debouncing.
+  ///
+  /// Debouncing example (dash roughly represents [debounce]):
+  /// ```dart
+  /// input:  1-2-3---4---5-6-|
+  /// output: ------3---4-----6|
+  /// ```
+  Stream<void> watchChanges({
+    Duration? debounce = const Duration(milliseconds: 200),
+    List<ChangeType> events = const [
+      ChangeType.ADD,
+      ChangeType.MODIFY,
+      ChangeType.REMOVE
+    ],
+  }) {
+    final Stream<void> stream = FileSystemEntity.isWatchSupported
+        ? _metadata
+            .watch(
+              events: [
+                events.contains(ChangeType.ADD) ? FileSystemEvent.create : null,
+                events.contains(ChangeType.MODIFY)
+                    ? FileSystemEvent.modify
+                    : null,
+                events.contains(ChangeType.MODIFY)
+                    ? FileSystemEvent.move
+                    : null,
+                events.contains(ChangeType.REMOVE)
+                    ? FileSystemEvent.delete
+                    : null,
+              ].whereType<int>().reduce((v, e) => v | e),
+            )
+            .map<void>((e) {})
+        : DirectoryWatcher(_metadata.absolute.path)
+            .events
+            .where((evt) => events.contains(evt.type))
+            .map<void>((e) {});
+
+    return debounce == null ? stream : stream.debounce(debounce);
+  }*/
 }

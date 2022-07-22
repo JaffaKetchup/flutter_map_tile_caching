@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/main/main.dart';
 import 'shared/state/download_provider.dart';
@@ -17,39 +18,44 @@ void main() async {
     ),
   );
 
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+
   FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
-  await FMTC.instance.rootDirectory.manage.resetAsync();
   await FMTC.instance.migrator.fromV4();
 
-  final StoreDirectory instanceA = FMTC.instance('OpenStreetMap (A)');
-  await instanceA.manage.createAsync();
-  await instanceA.metadata.addAsync(
-    key: 'sourceURL',
-    value: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  );
-  await instanceA.metadata.addAsync(
-    key: 'validDuration',
-    value: '14',
-  );
-  await instanceA.metadata.addAsync(
-    key: 'behaviour',
-    value: 'cacheFirst',
-  );
+  if (prefs.getBool('reset') ?? true) {
+    await FMTC.instance.rootDirectory.manage.resetAsync();
 
-  final StoreDirectory instanceB = FMTC.instance('OpenStreetMap (B)');
-  await instanceB.manage.createAsync();
-  await instanceB.metadata.addAsync(
-    key: 'sourceURL',
-    value: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  );
-  await instanceB.metadata.addAsync(
-    key: 'validDuration',
-    value: '14',
-  );
-  await instanceB.metadata.addAsync(
-    key: 'behaviour',
-    value: 'cacheFirst',
-  );
+    final StoreDirectory instanceA = FMTC.instance('OpenStreetMap (A)');
+    await instanceA.manage.createAsync();
+    await instanceA.metadata.addAsync(
+      key: 'sourceURL',
+      value: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    );
+    await instanceA.metadata.addAsync(
+      key: 'validDuration',
+      value: '14',
+    );
+    await instanceA.metadata.addAsync(
+      key: 'behaviour',
+      value: 'cacheFirst',
+    );
+
+    final StoreDirectory instanceB = FMTC.instance('OpenStreetMap (B)');
+    await instanceB.manage.createAsync();
+    await instanceB.metadata.addAsync(
+      key: 'sourceURL',
+      value: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    );
+    await instanceB.metadata.addAsync(
+      key: 'validDuration',
+      value: '14',
+    );
+    await instanceB.metadata.addAsync(
+      key: 'behaviour',
+      value: 'cacheFirst',
+    );
+  }
 
   runApp(const AppContainer());
 }

@@ -18,7 +18,7 @@ class RootManagement {
   bool get ready => [
         _access.stores.existsSync(),
         _access.stats.existsSync(),
-        _access.metadata.existsSync(),
+        _access.recovery.existsSync(),
       ].every((e) => e);
 
   /// Check whether all directories exist asynchronously
@@ -27,7 +27,7 @@ class RootManagement {
   Future<bool> get readyAsync async => (await Future.wait<bool>([
         _access.stores.exists(),
         _access.stats.exists(),
-        _access.metadata.exists(),
+        _access.recovery.exists(),
       ]))
           .every((e) => e);
 
@@ -35,7 +35,7 @@ class RootManagement {
   void create() {
     _access.stores.createSync(recursive: true);
     _access.stats.createSync(recursive: true);
-    _access.metadata.createSync(recursive: true);
+    _access.recovery.createSync(recursive: true);
   }
 
   /// Create all of the directories asynchronously
@@ -43,7 +43,7 @@ class RootManagement {
     final List<Future<Directory>> jobs = [
       _access.stores.create(recursive: true),
       _access.stats.create(recursive: true),
-      _access.metadata.create(recursive: true),
+      _access.recovery.create(recursive: true),
     ];
     await Future.wait(jobs);
   }

@@ -5,6 +5,7 @@ import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import '../internal/exts.dart';
+import '../misc/enums.dart';
 import 'access.dart';
 import 'directory.dart';
 
@@ -235,6 +236,7 @@ class StoreStats {
       ChangeType.MODIFY,
       ChangeType.REMOVE
     ],
+    List<StoreParts> storeParts = StoreParts.values,
   }) {
     Stream<void> constructStream(Directory dir) => FileSystemEntity
             .isWatchSupported
@@ -260,9 +262,10 @@ class StoreStats {
             .map<void>((e) {});
 
     final Stream<void> stream = constructStream(_access.real).mergeAll([
-      constructStream(_access.metadata),
-      constructStream(_access.stats),
-      constructStream(_access.tiles),
+      if (storeParts.contains(StoreParts.metadata))
+        constructStream(_access.metadata),
+      if (storeParts.contains(StoreParts.stats)) constructStream(_access.stats),
+      if (storeParts.contains(StoreParts.tiles)) constructStream(_access.tiles),
     ]);
 
     return debounce == null ? stream : stream.debounce(debounce);

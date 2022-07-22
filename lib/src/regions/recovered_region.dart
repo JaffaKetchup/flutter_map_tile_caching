@@ -28,10 +28,10 @@ class RecoveredRegion {
   /// Not actually used when converting to [DownloadableRegion].
   final int id;
 
-  /// A human-readable description of the region of the recovery
+  /// The store name originally associated with this download.
   ///
   /// Not actually used when converting to [DownloadableRegion].
-  final String description;
+  final String storeName;
 
   /// The time at which this recovery was started
   ///
@@ -87,7 +87,7 @@ class RecoveredRegion {
   RecoveredRegion.internal({
     required this.file,
     required this.id,
-    required this.description,
+    required this.storeName,
     required this.time,
     required this.type,
     required this.bounds,

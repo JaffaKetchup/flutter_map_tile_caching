@@ -13,7 +13,7 @@ Future<RecoveredRegion> decode(File file) async {
   final Config cfg = Config.fromStrings(await file.readAsLines());
 
   final int id = int.parse(cfg.get('info', 'id')!);
-  final String description = cfg.get('info', 'description')!;
+  final String storeName = cfg.get('info', 'storeName')!;
   final DateTime time =
       DateTime.fromMillisecondsSinceEpoch(int.parse(cfg.get('info', 'time')!));
   final RegionType type =
@@ -68,7 +68,7 @@ Future<RecoveredRegion> decode(File file) async {
   return RecoveredRegion.internal(
     file: file,
     id: id,
-    description: description,
+    storeName: storeName,
     time: time,
     type: type,
     bounds: rectBounds,

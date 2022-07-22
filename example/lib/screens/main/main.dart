@@ -7,6 +7,8 @@ import '../../shared/state/download_provider.dart';
 import 'pages/downloader/downloader.dart';
 import 'pages/downloading/downloading.dart';
 import 'pages/map/map.dart';
+import 'pages/recovery/recovery.dart';
+import 'pages/settings/settings.dart';
 import 'pages/stores/stores.dart';
 
 class MainScreen extends StatefulWidget {
@@ -34,13 +36,25 @@ class _MainScreenState extends State<MainScreen> {
           label: 'Download',
         ),
         NavigationDestination(
-          icon: Badge(
-            position: BadgePosition.topEnd(top: -5, end: -6),
-            animationDuration: const Duration(milliseconds: 100),
-            showBadge: _currentPageIndex != 3,
-            child: const Icon(Icons.history),
+          icon: StreamBuilder(
+            stream: FMTC.instance.rootDirectory.stats
+                .watchChanges(rootParts: [RootParts.recovery]),
+            builder: (context, _) => FutureBuilder<List<RecoveredRegion>>(
+              future: FMTC.instance.rootDirectory.recovery.failedRegions,
+              builder: (context, snapshot) => Badge(
+                position: BadgePosition.topEnd(top: -5, end: -6),
+                animationDuration: const Duration(milliseconds: 100),
+                showBadge: _currentPageIndex != 3 &&
+                    (snapshot.data?.isNotEmpty ?? false),
+                child: const Icon(Icons.history),
+              ),
+            ),
           ),
           label: 'Recover',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.settings),
+          label: 'Settings',
         ),
       ];
 
@@ -53,12 +67,8 @@ class _MainScreenState extends State<MainScreen> {
           ? const DownloaderPage()
           : const DownloadingPage(),
     ),
-    Container(
-      color: Colors.red,
-      alignment: Alignment.center,
-      key: UniqueKey(),
-      child: const Text('Page 4'),
-    ),
+    const RecoveryPage(),
+    const SettingsPage(),
   ];
 
   @override
@@ -88,6 +98,9 @@ class _MainScreenState extends State<MainScreen> {
             },
             selectedIndex: _currentPageIndex,
             destinations: _destinations,
+            labelBehavior: MediaQuery.of(context).size.width > 450
+                ? null
+                : NavigationDestinationLabelBehavior.onlyShowSelected,
           ),
           body: PageView(
             controller: _pageController,

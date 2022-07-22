@@ -1,6 +1,6 @@
-import 'misc/migrator.dart';
 import 'root/directory.dart';
 import 'root/manage.dart';
+import 'root/migrator.dart';
 import 'settings/fmtc_settings.dart';
 import 'store/directory.dart';
 

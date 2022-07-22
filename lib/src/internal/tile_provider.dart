@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 
 import '../fmtc.dart';
-import '../misc/cache_behavior.dart';
+import '../misc/enums.dart';
 import '../misc/validate.dart';
 import '../settings/fmtc_settings.dart';
 import '../settings/tile_provider_settings.dart';
@@ -57,11 +57,9 @@ class FMTCTileProvider extends TileProvider {
         httpClient: httpClient,
         headers: {
           ...headers,
-          'User-Agent': headers['User-Agent']?.replaceAll(
-                'flutter_map',
-                'flutter_map_tile_caching for flutter_map',
-              ) ??
-              'flutter_map_tile_caching for flutter_map (unknown)',
+          'User-Agent': headers['User-Agent'] == null
+              ? 'flutter_map_tile_caching for flutter_map (unknown)'
+              : 'flutter_map_tile_caching for ${headers['User-Agent']}',
         },
       );
 

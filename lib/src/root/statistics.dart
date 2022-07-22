@@ -6,6 +6,7 @@ import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import '../internal/exts.dart';
+import '../misc/enums.dart';
 import '../store/directory.dart';
 import '../store/statistics.dart';
 import 'access.dart';
@@ -192,7 +193,7 @@ class RootStats {
   ///
   /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
   ///
-  /// Recursively watch specific sub-stores (using [StoreStats.watchChanges]) by providing them as a list of [StoreDirectory]s to [recursive]. To watch all stores, use the [storesAvailable]/[storesAvailableAsync] getter as the argument. By default, no sub-stores are watched (empty list), meaning only top level changes (those to do with each store) will be caught.
+  /// Recursively watch specific sub-stores (using [StoreStats.watchChanges]) by providing them as a list of [StoreDirectory]s to [recursive]. To watch all stores, use the [storesAvailable]/[storesAvailableAsync] getter as the argument.  By default, no sub-stores are watched (empty list), meaning only top level changes (those to do with each store) will be caught.
   ///
   /// Control which changes are caught through the [events] parameter, which takes a list of [ChangeType]s. Catches all change types by default.
   ///
@@ -209,8 +210,10 @@ class RootStats {
     List<ChangeType> events = const [
       ChangeType.ADD,
       ChangeType.MODIFY,
-      ChangeType.REMOVE
+      ChangeType.REMOVE,
     ],
+    List<RootParts> rootParts = RootParts.values,
+    List<StoreParts> storeParts = StoreParts.values,
   }) {
     Stream<void> constructStream(Directory dir) => FileSystemEntity
             .isWatchSupported
@@ -241,13 +244,15 @@ class RootStats {
         (e) => e.stats.watchChanges(
           debounce: debounce,
           events: events,
+          storeParts: storeParts,
         ),
       ),
     )
         .mergeAll([
-      constructStream(_access.metadata),
-      constructStream(_access.stats),
-      constructStream(_access.stores),
+      if (rootParts.contains(RootParts.recovery))
+        constructStream(_access.recovery),
+      if (rootParts.contains(RootParts.stats)) constructStream(_access.stats),
+      if (rootParts.contains(RootParts.stores)) constructStream(_access.stores),
     ]);
 
     return debounce == null ? stream : stream.debounce(debounce);

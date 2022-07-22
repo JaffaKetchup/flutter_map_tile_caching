@@ -8,22 +8,22 @@ import '../../regions/circle.dart';
 import '../../regions/downloadable_region.dart';
 import '../../regions/line.dart';
 import '../../regions/rectangle.dart';
-import '../../store/directory.dart';
+import '../../root/directory.dart';
 import '../exts.dart';
 
 Future<void> encode({
   required int id,
-  required String description,
+  required String storeName,
   required DownloadableRegion region,
-  required StoreDirectory storeDirectory,
+  required RootDirectory rootDirectory,
 }) async {
-  final File file = storeDirectory.access.metadata >>> '$id.recovery.ini';
+  final File file = rootDirectory.access.recovery >>> '$id.recovery.ini';
   await file.create(recursive: true);
 
   final Config cfg = Config.fromStrings(await file.readAsLines())
     ..addSection('info')
     ..set('info', 'id', id.toString())
-    ..set('info', 'description', description)
+    ..set('info', 'storeName', storeName)
     ..set('info', 'time', DateTime.now().millisecondsSinceEpoch.toString())
     ..set('info', 'regionType', region.type.name)
     ..addSection('zoom')
