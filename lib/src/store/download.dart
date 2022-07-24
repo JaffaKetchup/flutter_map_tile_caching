@@ -21,6 +21,7 @@ import 'package:queue/queue.dart';
 
 import '../bulk_download/download_progress.dart';
 import '../bulk_download/downloader.dart';
+import '../bulk_download/progress_management.dart';
 import '../bulk_download/tile_loops.dart';
 import '../bulk_download/tile_progress.dart';
 import '../internal/exts.dart';
@@ -43,6 +44,9 @@ class DownloadManagement {
 
   /// Used internally to control bulk downloading
   StreamController<TileProgress>? _streamController;
+
+  /// Used internally to manage tiles per second progress calculations
+  late ProgressManagement _progressManagement;
 
   /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
   DownloadManagement(this._storeDirectory);
@@ -277,6 +281,7 @@ class DownloadManagement {
   Future<void> cancel() async {
     _queue?.dispose();
     unawaited(_streamController?.close());
+    unawaited(_progressManagement.stopTracking());
 
     if (_recoveryId != null) {
       await _storeDirectory.rootDirectory.recovery.cancel(_recoveryId!);
@@ -349,8 +354,9 @@ class DownloadManagement {
     int seaTiles = 0;
     int existingTiles = 0;
     final List<String> failedTiles = [];
-    final List<Duration> durationPerTile = [];
     final DateTime startTime = DateTime.now();
+
+    _progressManagement = ProgressManagement()..startTracking();
 
     final Stream<TileProgress> downloadStream = bulkDownloader(
       tiles: tiles,
@@ -363,6 +369,8 @@ class DownloadManagement {
       seaTileBytes: seaTileBytes,
       queue: _queue!,
       streamController: _streamController!,
+      downloadID: _recoveryId!,
+      progressManagement: _progressManagement,
     );
 
     await for (final TileProgress evt in downloadStream) {
@@ -376,8 +384,6 @@ class DownloadManagement {
       seaTiles += evt.wasSeaTile ? 1 : 0;
       existingTiles += evt.wasExistingTile ? 1 : 0;
 
-      durationPerTile.add(evt.duration);
-
       final DownloadProgress prog = DownloadProgress.internal(
         downloadID: _recoveryId!,
         maxTiles: tiles.length,
@@ -385,9 +391,9 @@ class DownloadManagement {
         failedTiles: failedTiles,
         seaTiles: seaTiles,
         existingTiles: existingTiles,
-        durationPerTile: durationPerTile,
         duration: DateTime.now().difference(startTime),
         tileImage: evt.tileImage == null ? null : MemoryImage(evt.tileImage!),
+        progressManagement: _progressManagement,
       );
 
       yield prog;

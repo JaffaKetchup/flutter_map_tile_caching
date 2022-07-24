@@ -10,6 +10,7 @@ import 'package:queue/queue.dart';
 import '../internal/exts.dart';
 import '../internal/tile_provider.dart';
 import '../misc/validate.dart';
+import 'progress_management.dart';
 import 'tile_progress.dart';
 
 Stream<TileProgress> bulkDownloader({
@@ -23,6 +24,8 @@ Stream<TileProgress> bulkDownloader({
   required Uint8List? seaTileBytes,
   required Queue queue,
   required StreamController<TileProgress> streamController,
+  required int downloadID,
+  required ProgressManagement progressManagement,
 }) {
   for (final Coords<num> coord in tiles) {
     queue
@@ -35,6 +38,8 @@ Stream<TileProgress> bulkDownloader({
         errorHandler: errorHandler,
         preventRedownload: preventRedownload,
         seaTileBytes: seaTileBytes,
+        downloadID: downloadID,
+        progressManagement: progressManagement,
       ),
     )
         .then(
@@ -55,10 +60,9 @@ Future<TileProgress> _getAndSaveTile({
   required void Function(Object)? errorHandler,
   required bool preventRedownload,
   required Uint8List? seaTileBytes,
+  required int downloadID,
+  required ProgressManagement progressManagement,
 }) async {
-  final DateTime startTime = DateTime.now();
-  Duration calcElapsed() => DateTime.now().difference(startTime);
-
   final Coords<double> coordDouble =
       Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
   final String url = provider.getTileUrl(coordDouble, options);
@@ -68,7 +72,7 @@ Future<TileProgress> _getAndSaveTile({
         throwIfInvalid: false,
       );
 
-  late final Uint8List bytes;
+  final List<int> bytes = [];
 
   try {
     if (preventRedownload && await file.exists()) {
@@ -76,12 +80,25 @@ Future<TileProgress> _getAndSaveTile({
         failedUrl: null,
         wasSeaTile: false,
         wasExistingTile: true,
-        duration: calcElapsed(),
         tileImage: null,
       );
     }
 
-    bytes = (await client.get(Uri.parse(url))).bodyBytes;
+    final http.StreamedResponse response =
+        await client.send(http.Request('GET', Uri.parse(url)));
+    final int totalBytes = response.contentLength ?? 0;
+
+    int received = 0;
+
+    final Stream<List<int>> stream = response.stream.asBroadcastStream()
+      ..listen((eventBytes) {
+        bytes.addAll(eventBytes);
+        received += eventBytes.length;
+        progressManagement.progress[DateTime.now()] = received / totalBytes;
+      });
+
+    await stream.last;
+
     file.writeAsBytesSync(
       bytes,
       flush: true,
@@ -94,8 +111,7 @@ Future<TileProgress> _getAndSaveTile({
         failedUrl: null,
         wasSeaTile: true,
         wasExistingTile: false,
-        duration: calcElapsed(),
-        tileImage: bytes,
+        tileImage: Uint8List.fromList(bytes),
       );
     }
   } catch (e) {
@@ -104,7 +120,6 @@ Future<TileProgress> _getAndSaveTile({
       failedUrl: url,
       wasSeaTile: false,
       wasExistingTile: false,
-      duration: calcElapsed(),
       tileImage: null,
     );
   }
@@ -113,7 +128,6 @@ Future<TileProgress> _getAndSaveTile({
     failedUrl: null,
     wasSeaTile: false,
     wasExistingTile: false,
-    duration: DateTime.now().difference(startTime),
-    tileImage: bytes,
+    tileImage: Uint8List.fromList(bytes),
   );
 }

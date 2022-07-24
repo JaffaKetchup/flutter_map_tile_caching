@@ -42,6 +42,18 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
   }
 
   @override
+  void didChangeDependencies() {
+    final String? currentStore =
+        Provider.of<GeneralProvider>(context, listen: false).currentStore;
+    if (currentStore != null) {
+      Provider.of<DownloadProvider>(context, listen: false)
+          .setSelectedStore(FMTC.instance(currentStore), notify: false);
+    }
+
+    super.didChangeDependencies();
+  }
+
+  @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Download Region'),
@@ -103,10 +115,6 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                                   .disableRecovery,
                                             )
                                             .asBroadcastStream();
-
-                                    /*downloadProvider.downloadProgress!.listen(
-                                      (evt) => print(evt.percentageProgress),
-                                    );*/
 
                                     if (mounted) Navigator.of(context).pop();
                                   },

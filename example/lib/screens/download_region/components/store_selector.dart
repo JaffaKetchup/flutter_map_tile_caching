@@ -31,7 +31,7 @@ class _StoreSelectorState extends State<StoreSelector> {
                       ),
                     )
                     .toList(),
-                onChanged: (store) => downloadProvider.selectedStore = store,
+                onChanged: (store) => downloadProvider.setSelectedStore(store),
                 value: downloadProvider.selectedStore ??
                     (generalProvider.currentStore == null
                         ? null

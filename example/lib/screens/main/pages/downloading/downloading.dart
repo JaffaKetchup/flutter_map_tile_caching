@@ -30,8 +30,98 @@ class _DownloadingPageState extends State<DownloadingPage> {
                         StreamBuilder<DownloadProgress>(
                       stream: provider.downloadProgress,
                       initialData: DownloadProgress.empty(),
-                      builder: (context, snapshot) => Text(
-                        snapshot.data!.percentageProgress.toStringAsFixed(2),
+                      builder: (context, snapshot) => Column(
+                        children: [
+                          Row(
+                            children: [
+                              snapshot.data!.tileImage != null
+                                  ? Image(
+                                      image: snapshot.data!.tileImage!,
+                                      height: 128,
+                                      width: 128,
+                                      gaplessPlayback: true,
+                                    )
+                                  : const SizedBox(
+                                      height: 128,
+                                      width: 128,
+                                      child: Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    ),
+                              const SizedBox(width: 15),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${snapshot.data!.successfulTiles} (${snapshot.data!.percentageProgress.round()}%)',
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const Text(
+                                    'successful tiles',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    snapshot.data!.maxTiles.toString(),
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const Text(
+                                    'total tiles',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 15),
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    snapshot.data!.duration
+                                        .toString()
+                                        .split('.')
+                                        .first
+                                        .padLeft(8, '0'),
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const Text(
+                                    'time taken',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    snapshot.data!.estRemainingDuration
+                                        .toString()
+                                        .split('.')
+                                        .first
+                                        .padLeft(8, '0'),
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const Text(
+                                    'est time remaining',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 15),
+                          LinearProgressIndicator(
+                            value: snapshot.data!.percentageProgress / 100,
+                          )
+                        ],
                       ),
                     ),
                   ),

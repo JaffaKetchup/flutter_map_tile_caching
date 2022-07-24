@@ -6,6 +6,10 @@
 library fmtc_advanced;
 
 export 'flutter_map_tile_caching.dart' hide StoreDirectory;
+export 'src/bulk_download/downloader.dart';
+export 'src/bulk_download/progress_management.dart';
+export 'src/bulk_download/tile_loops.dart';
+export 'src/bulk_download/tile_progress.dart';
 export 'src/internal/exts.dart';
 export 'src/internal/image_provider.dart';
 export 'src/internal/recovery/decode.dart';

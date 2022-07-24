@@ -1,6 +1,7 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
+
+import 'progress_management.dart';
 
 /// Represents the progress of an ongoing or finished (if [percentageProgress] is 100%) bulk download
 ///
@@ -12,6 +13,9 @@ class DownloadProgress {
   ///
   /// A zero identification denotes that there is no corresponding download yet, usually due to the initialisation with [DownloadProgress.empty].
   final int downloadID;
+
+  /// Class for managing the tiles per second ([ProgressManagement.tps]) measurement of a download
+  final ProgressManagement _progressManagement;
 
   /// Number of successful tile downloads
   final int successfulTiles;
@@ -31,11 +35,6 @@ class DownloadProgress {
   ///
   /// Only applicable if redownload prevention is enabled, otherwise this value is always 0.
   final int existingTiles;
-
-  /// The length of time each tile took to download (one element per tile)
-  ///
-  /// Use [duration] for time elapsed so far (each element added up)
-  final List<Duration> durationPerTile;
 
   /// Elapsed duration since start of download process
   final Duration duration;
@@ -84,23 +83,16 @@ class DownloadProgress {
   /// Is equal to `(attemptedTiles / approxMaxTiles) * 100`.
   double get percentageProgress => (attemptedTiles / maxTiles) * 100;
 
-  /// Estimated duration for entire download process, based on existing progress and elapsed duration
+  /// Calculate the number of tiles that are being downloaded per second
+  ///
+  /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate estimations based on this data. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
+  double get tilesPerSecond => _progressManagement.tps;
+
+  /// Estimate duration for entire download process
   ///
   /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate duration calculations, but may not return the same result as expected. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
-  Duration get estTotalDuration {
-    final List<int> data =
-        durationPerTile.map((e) => e.inMicroseconds).toList();
-    const double smoothing = 0.005;
-
-    return Duration(
-          microseconds: data.length == 1
-              ? data[0]
-              : ((smoothing * data.last) +
-                      ((1 - smoothing) * (data.sum / data.length)))
-                  .round(),
-        ) *
-        (maxTiles / 2);
-  }
+  Duration get estTotalDuration =>
+      Duration(milliseconds: (tilesPerSecond * 1000).round() * maxTiles);
 
   /// Estimated remaining duration until the end of the download process, based on [estTotalDuration]
   ///
@@ -116,10 +108,10 @@ class DownloadProgress {
     required this.maxTiles,
     required this.seaTiles,
     required this.existingTiles,
-    required this.durationPerTile,
     required this.duration,
     required this.tileImage,
-  });
+    required ProgressManagement progressManagement,
+  }) : _progressManagement = progressManagement;
 
   /// Create an empty placeholder (all values set to 0 or empty) [DownloadProgress], useful for `initalData` in a [StreamBuilder]
   DownloadProgress.empty()
@@ -129,8 +121,8 @@ class DownloadProgress {
         maxTiles = 1,
         seaTiles = 0,
         existingTiles = 0,
-        durationPerTile = [],
-        duration = Duration.zero;
+        duration = Duration.zero,
+        _progressManagement = ProgressManagement();
 
   //! GENERAL OBJECT STUFF !//
 
