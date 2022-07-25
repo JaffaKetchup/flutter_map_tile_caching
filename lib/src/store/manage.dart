@@ -66,23 +66,21 @@ class StoreManagement {
 
   /// Resets this store synchronously
   ///
-  /// Deletes and recreates the [StoreAccess.tiles] directory, and invalidates any cached statistics ([StoreStats.invalidateCachedStatisticsAsync]). Therefore, custom metadata ([StoreMetadata]) is not deleted.
+  /// Deletes all files within the [StoreAccess.tiles] directory, and invalidates any cached statistics ([StoreStats.invalidateCachedStatisticsAsync]). Therefore, custom metadata ([StoreMetadata]) is not deleted.
   ///
   /// For a full reset, manually [delete] then [create] the store.
   void reset() {
-    _access.tiles.delete(recursive: true);
-    _access.tiles.create();
+    _access.tiles.listSync().forEach((e) => e.delete());
     _storeDirectory.stats.invalidateCachedStatistics(statTypes: null);
   }
 
   /// Resets this store synchronously
   ///
-  /// Deletes and recreates the [StoreAccess.tiles] directory, and invalidates any cached statistics ([StoreStats.invalidateCachedStatisticsAsync]). Therefore, custom metadata ([StoreMetadata]) is not deleted.
+  /// Deletes all files within the [StoreAccess.tiles] directory, and invalidates any cached statistics ([StoreStats.invalidateCachedStatisticsAsync]). Therefore, custom metadata ([StoreMetadata]) is not deleted.
   ///
   /// For a full reset, manually [deleteAsync] then [createAsync] the store.
   Future<void> resetAsync() async {
-    await _access.tiles.delete(recursive: true);
-    await _access.tiles.create();
+    await _access.tiles.list().forEach((e) => e.delete());
     await _storeDirectory.stats
         .invalidateCachedStatisticsAsync(statTypes: null);
   }

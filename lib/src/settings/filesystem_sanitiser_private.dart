@@ -6,8 +6,15 @@ FilesystemSanitiserResult defaultFilesystemSanitiser(String input) {
   final List<String> errorMessages = [];
   String validOutput = input;
 
+  // Apply other character rules with general RegExp
+  validOutput = validOutput.replaceAll(RegExp(r'[\\\\/\:\*\?\"\<\>\|]'), '_');
+  if (validOutput != input) {
+    errorMessages
+        .add('The name cannot contain invalid characters: \'[NUL]\\/:*?"<>|\'');
+  }
+
   // Trim
-  validOutput = input.trim();
+  validOutput = validOutput.trim();
   if (validOutput != input) {
     errorMessages.add('The name cannot contain leading and/or trailing spaces');
   }
@@ -24,13 +31,6 @@ FilesystemSanitiserResult defaultFilesystemSanitiser(String input) {
     validOutput = validOutput.replaceAll('.', '_');
   }
 
-  // Apply other character rules with general RegExp
-  validOutput = validOutput.replaceAll(RegExp(r'[\\\\/\:\*\?\"\<\>\|]'), '_');
-  if (validOutput != input) {
-    errorMessages
-        .add('The name cannot contain invalid characters: \'[NUL]\\/:*?"<>|\'');
-  }
-
   // Reduce string to under 255 chars (keeps end)
   if (validOutput.length > 255) {
     validOutput = validOutput.substring(validOutput.length - 255);
@@ -39,7 +39,10 @@ FilesystemSanitiserResult defaultFilesystemSanitiser(String input) {
     }
   }
 
-  return FilesystemSanitiserResult(validOutput: validOutput);
+  return FilesystemSanitiserResult(
+    validOutput: validOutput,
+    errorMessages: errorMessages,
+  );
 }
 
 /// An [Exception] thrown by [FMTCSettings.filesystemSanitiser] indicating that the supplied string was invalid

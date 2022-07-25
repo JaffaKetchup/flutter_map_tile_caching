@@ -16,7 +16,7 @@ class UsageWarning extends StatelessWidget {
           SizedBox(width: 15),
           Expanded(
             child: Text(
-              "You must abide by your tile server's Terms of Service when Bulk Downloading. Many servers will forbid or heavily restrict this action, as it places extra strain on resources.\nBe respectful, and note that you use this functionality at your own risk.",
+              "You must abide by your tile server's Terms of Service when Bulk Downloading. Many servers will forbid or heavily restrict this action, as it places extra strain on resources.\nBe respectful, and note that you use this functionality at your own risk.\n\nThis example application is limited to a maximum of 2 simultaneous download threads.",
               textAlign: TextAlign.justify,
             ),
           ),

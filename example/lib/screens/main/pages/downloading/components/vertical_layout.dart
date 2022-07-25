@@ -97,9 +97,9 @@ class VerticalLayout extends StatelessWidget {
                       const SizedBox(height: 15),
                       Expanded(
                         child: ListView.builder(
-                          itemCount: 10,
+                          itemCount: data.failedTiles.length,
                           itemBuilder: (context, index) => ListTile(
-                            title: Text(index.toString()),
+                            title: Text(data.failedTiles[index]),
                           ),
                         ),
                       ),

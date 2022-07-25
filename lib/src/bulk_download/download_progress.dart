@@ -81,7 +81,7 @@ class DownloadProgress {
   /// Is equal to `(attemptedTiles / approxMaxTiles) * 100`.
   double get percentageProgress => (attemptedTiles / maxTiles) * 100;
 
-  /// Calculate the number of tiles that are being downloaded per second
+  /// Retreive the average number of tiles per second that are being downloaded
   ///
   /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate estimations based on this data. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
   double get tilesPerSecond => _progressManagement.averageTPS;
@@ -93,9 +93,9 @@ class DownloadProgress {
         seconds: (maxTiles / tilesPerSecond.clamp(1, double.infinity)).round(),
       );
 
-  /// Estimated remaining duration until the end of the download process, based on [estTotalDuration]
+  /// Estimate remaining duration until the end of the download process, based on [estTotalDuration]
   ///
-  /// Is equal to `estTotalDuration - duration`
+  /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate duration calculations, but may not return the same result as expected. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
   Duration get estRemainingDuration => estTotalDuration - duration;
 
   /// Avoid construction using this method. Use [DownloadProgress.empty] to generate empty placeholders where necessary.

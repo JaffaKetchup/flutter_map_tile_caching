@@ -110,6 +110,7 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                                         .preventRedownload,
                                                 seaTileRemoval: downloadProvider
                                                     .seaTileRemoval,
+                                                parallelThreads: 2,
                                               ),
                                               disableRecovery: downloadProvider
                                                   .disableRecovery,
@@ -144,6 +145,7 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                             downloadProvider.preventRedownload,
                                         seaTileRemoval:
                                             downloadProvider.seaTileRemoval,
+                                        parallelThreads: 2,
                                       ),
                                       disableRecovery:
                                           downloadProvider.disableRecovery,
