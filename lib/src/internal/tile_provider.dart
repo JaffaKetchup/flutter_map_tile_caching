@@ -5,7 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 
 import '../fmtc.dart';
 import '../misc/enums.dart';
-import '../misc/validate.dart';
+import '../settings/filesystem_sanitiser_private.dart';
 import '../settings/fmtc_settings.dart';
 import '../settings/tile_provider_settings.dart';
 import '../store/directory.dart';
@@ -70,7 +70,7 @@ class FMTCTileProvider extends TileProvider {
     String? customURL,
   }) =>
       (storeDirectory.access.tiles >>>
-              FMTCSafeFilesystemString.sanitiser(
+              filesystemSanitiseValidate(
                 inputString: customURL ?? getTileUrl(coords, options),
                 throwIfInvalid: false,
               ))
@@ -83,7 +83,7 @@ class FMTCTileProvider extends TileProvider {
     String? customURL,
   }) async =>
       (storeDirectory.access.tiles >>>
-              FMTCSafeFilesystemString.sanitiser(
+              filesystemSanitiseValidate(
                 inputString: customURL ?? getTileUrl(coords, options),
                 throwIfInvalid: false,
               ))

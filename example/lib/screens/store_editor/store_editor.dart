@@ -34,10 +34,18 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
   bool _useNewCacheModeValue = false;
   String? _cacheModeValue;
 
+  late final ScaffoldMessengerState scaffoldMessenger;
+
+  @override
+  void didChangeDependencies() {
+    scaffoldMessenger = ScaffoldMessenger.of(context);
+    super.didChangeDependencies();
+  }
+
   @override
   Widget build(BuildContext context) => WillPopScope(
         onWillPop: () async {
-          ScaffoldMessenger.of(context).showSnackBar(
+          scaffoldMessenger.showSnackBar(
             const SnackBar(content: Text('Changes not saved')),
           );
           return true;
@@ -92,8 +100,9 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                                 return 'Required';
                               }
 
-                              final String? nameValidation =
-                                  FMTCSafeFilesystemString.validator(input);
+                              final String? nameValidation = FMTC
+                                  .instance.settings
+                                  .filesystemFormFieldValidator(input);
                               if (nameValidation != null) {
                                 return nameValidation;
                               }

@@ -8,8 +8,6 @@ import 'downloadable_region.dart';
 /// A region that can be downloaded, drawn on a map, or converted to a list of points, that forms a particular shape
 abstract class BaseRegion {
   /// Create a downloadable region out of this region - for more information see [DownloadableRegion]'s properties' documentation
-  ///
-  /// Returns a [DownloadableRegion] to be passed to the `StorageCachingTileProvider().downloadRegion()`, `StorageCachingTileProvider().downloadRegionBackground()`, or `StorageCachingTileProvider().checkRegion()` function.
   DownloadableRegion toDownloadable(
     int minZoom,
     int maxZoom,

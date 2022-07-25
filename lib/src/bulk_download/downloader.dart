@@ -9,7 +9,7 @@ import 'package:queue/queue.dart';
 
 import '../internal/exts.dart';
 import '../internal/tile_provider.dart';
-import '../misc/validate.dart';
+import '../settings/filesystem_sanitiser_private.dart';
 import 'progress_management.dart';
 import 'tile_progress.dart';
 
@@ -67,7 +67,7 @@ Future<TileProgress> _getAndSaveTile({
       Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
   final String url = provider.getTileUrl(coordDouble, options);
   final File file = provider.storeDirectory.access.tiles >>>
-      FMTCSafeFilesystemString.sanitiser(
+      filesystemSanitiseValidate(
         inputString: url,
         throwIfInvalid: false,
       );
@@ -94,7 +94,13 @@ Future<TileProgress> _getAndSaveTile({
       ..listen((eventBytes) {
         bytes.addAll(eventBytes);
         received += eventBytes.length;
-        progressManagement.progress[DateTime.now()] = received / totalBytes;
+        progressManagement.progress.add(
+          TileTimestampProgress(
+            url,
+            DateTime.now(),
+            received / totalBytes,
+          ),
+        );
       });
 
     await stream.last;

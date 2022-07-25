@@ -1,55 +1,100 @@
 import 'dart:async';
 
-/// Internal class for managing the tiles per second ([tps]) measurement of a download
+class TileTimestampProgress {
+  final int? tileID;
+  final DateTime? timestamp;
+  final double progress;
+
+  TileTimestampProgress(
+    String? tileURL,
+    this.timestamp,
+    this.progress,
+  ) : tileID = tileURL?.hashCode;
+
+  @override
+  String toString() =>
+      'TileTimestampProgress(tileID: $tileID, timestamp: $timestamp, progress: $progress)';
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is TileTimestampProgress &&
+        other.tileID == tileID &&
+        other.timestamp == timestamp &&
+        other.progress == progress;
+  }
+
+  @override
+  int get hashCode => tileID.hashCode ^ timestamp.hashCode ^ progress.hashCode;
+}
+
+/// Internal class for managing the tiles per second ([averageTPS]) measurement of a download
 class ProgressManagement {
   // ignore: cancel_subscriptions
   late StreamSubscription<void> _subscription;
 
-  /// Map representing the percentage progress (0 - 1) of a tile, and the timestamp of each progress measurement
+  /// Map representing the progress of a tile
+  ///
+  /// * `key`s should be the tile identifier, created by the [Object.hashCode] method on the tile's URL.
+  /// * `values`s should be a [TileTimestampProgress], including the percentage (0-1) progress of the tile, and the timestamp the progress was taken at.
   ///
   /// Should not be read outside of this object.
-  final Map<DateTime, double> progress = {};
+  final List<TileTimestampProgress> progress = [];
 
   /// The number of tiles per second, based on [startTracking]
-  double _tps = 0;
+  double _averageTPS = 0;
 
   /// Retrieve the number of tiles per second, based on [startTracking]
-  double get tps => _tps;
+  double get averageTPS => _averageTPS;
 
-  /// Internal class for managing the tiles per second ([tps]) measurement of a download
+  /// Internal class for managing the tiles per second ([averageTPS]) measurement of a download
   ProgressManagement();
 
-  /// Start calculating the [tps] measurement
+  /// Start calculating the [averageTPS] measurement
   ///
-  /// Increasing [pollingInterval] may increase accuracy, but will decrease the number of updates to the [tps] value.
-  void startTracking({
-    Duration pollingInterval = const Duration(seconds: 1),
-  }) {
+  /// Increasing [pollingInterval] may increase accuracy, but will decrease the number of updates to the [averageTPS] value.
+  Future<void> startTracking({
+    Duration pollingInterval = const Duration(milliseconds: 100),
+  }) async {
     final List<double> downloadSpeeds = [];
 
     _subscription = Stream<void>.periodic(pollingInterval).listen((_) {
-      downloadSpeeds.add(
-        Map<DateTime, double>.fromIterable(
-          progress.keys.where(
-            (k) => k.isAfter(DateTime.now().subtract(pollingInterval)),
-          ),
-          value: (k) => progress[k]!,
-        ).values.reduce((v, e) => v + e),
+      final Iterable<TileTimestampProgress> filtered = progress.where(
+        (e) => e.timestamp!.isAfter(DateTime.now().subtract(pollingInterval)),
       );
 
-      _tps = _calculateTPS(
-        downloadSpeeds: downloadSpeeds,
+      downloadSpeeds.add(
+        (filtered.isEmpty ? [TileTimestampProgress(null, null, 0)] : filtered)
+            .toList()
+            .reduce(
+              (v, e) => TileTimestampProgress(
+                null,
+                null,
+                v.progress + e.progress,
+              ),
+            )
+            .progress,
       );
+
+      _averageTPS = (_calculateAverage(
+                downloadSpeeds: downloadSpeeds,
+              ) *
+              (1000 / pollingInterval.inMilliseconds)) /
+          progress
+              .where((e) => e.progress == 1)
+              .length
+              .clamp(1, double.infinity);
     });
   }
 
-  /// Stop calculating the [tps] measurement
+  /// Stop calculating the [averageTPS] measurement
   Future<void> stopTracking() => _subscription.cancel();
 
-  /// Calculate the number of tiles that are being downloaded per second
+  /// Calculate the number of tiles that are being downloaded per second on average
   ///
   /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate estimations based on this data. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
-  double _calculateTPS({
+  double _calculateAverage({
     required List<double> downloadSpeeds,
     int? latestSamples,
     double smoothing = 0.02,

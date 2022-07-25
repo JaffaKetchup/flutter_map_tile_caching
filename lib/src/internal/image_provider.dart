@@ -10,7 +10,7 @@ import 'package:queue/queue.dart';
 
 import '../internal/exts.dart';
 import '../misc/enums.dart';
-import '../misc/validate.dart';
+import '../settings/filesystem_sanitiser_private.dart';
 import '../settings/tile_provider_settings.dart';
 import 'tile_provider.dart';
 
@@ -103,7 +103,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     final String url = provider.getTileUrl(coords, options);
     final File file = provider.storeDirectory.access.tiles >>>
-        FMTCSafeFilesystemString.sanitiser(
+        filesystemSanitiseValidate(
           inputString: url,
           throwIfInvalid: false,
         );

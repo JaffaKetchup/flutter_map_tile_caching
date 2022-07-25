@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../internal/exts.dart';
-import '../misc/validate.dart';
+import '../settings/filesystem_sanitiser_private.dart';
 import 'directory.dart';
 
 /// Provides direct filesystem access paths to a [StoreDirectory] - use with caution
@@ -12,7 +12,7 @@ class StoreAccess {
   /// Provides direct filesystem access paths to a [StoreDirectory] - use with caution
   StoreAccess(this._storeDirectory) {
     real = _storeDirectory.rootDirectory.access.stores >>
-        FMTCSafeFilesystemString.sanitiser(
+        filesystemSanitiseValidate(
           inputString: _storeDirectory.storeName,
           throwIfInvalid: true,
         );

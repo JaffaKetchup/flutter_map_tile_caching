@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p;
 
-import '../misc/validate.dart';
+import '../settings/filesystem_sanitiser_private.dart';
 import 'access.dart';
 import 'directory.dart';
 import 'metadata.dart';
@@ -91,7 +91,7 @@ class StoreManagement {
   ///
   /// The old [StoreDirectory] will still retain it's link to the old store, so always use the new returned value instead: returns a new [StoreDirectory] after a successful renaming operation.
   StoreDirectory rename(String storeName) {
-    final String safe = FMTCSafeFilesystemString.sanitiser(
+    final String safe = filesystemSanitiseValidate(
       inputString: storeName,
       throwIfInvalid: true,
     );
@@ -107,7 +107,7 @@ class StoreManagement {
   ///
   /// The old [StoreDirectory] will still retain it's link to the old store, so always use the new returned value instead: returns a new [StoreDirectory] after a successful renaming operation.
   Future<StoreDirectory> renameAsync(String storeName) async {
-    final String safe = FMTCSafeFilesystemString.sanitiser(
+    final String safe = filesystemSanitiseValidate(
       inputString: storeName,
       throwIfInvalid: true,
     );

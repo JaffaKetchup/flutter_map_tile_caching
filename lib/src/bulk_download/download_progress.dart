@@ -6,15 +6,13 @@ import 'progress_management.dart';
 /// Represents the progress of an ongoing or finished (if [percentageProgress] is 100%) bulk download
 ///
 /// Should avoid manual construction, use named constructor [DownloadProgress.empty] to generate placeholders.
-///
-/// Is yielded from `StorageCachingTileProvider().downloadRegion()`, and returned in a callback from `StorageCachingTileProvider().downloadRegionBackground()`.
 class DownloadProgress {
   /// Identification number of the corresponding download
   ///
   /// A zero identification denotes that there is no corresponding download yet, usually due to the initialisation with [DownloadProgress.empty].
   final int downloadID;
 
-  /// Class for managing the tiles per second ([ProgressManagement.tps]) measurement of a download
+  /// Class for managing the tiles per second ([ProgressManagement.averageTPS]) measurement of a download
   final ProgressManagement _progressManagement;
 
   /// Number of successful tile downloads
@@ -86,7 +84,7 @@ class DownloadProgress {
   /// Calculate the number of tiles that are being downloaded per second
   ///
   /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate estimations based on this data. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
-  double get tilesPerSecond => _progressManagement.tps;
+  double get tilesPerSecond => _progressManagement.averageTPS;
 
   /// Estimate duration for entire download process
   ///

@@ -17,7 +17,7 @@ enum RegionType {
   line,
 }
 
-/// A downloadable region to be passed to the `StorageCachingTileProvider().downloadRegion()` function
+/// A downloadable region to be passed to bulk download functions
 ///
 /// Should avoid manual construction. Use a supported region shape and the `.toDownloadable()` extension on it.
 ///
