@@ -62,7 +62,6 @@ class _MainScreenState extends State<MainScreen> {
     const MapPage(),
     const StoresPage(),
     Consumer<DownloadProvider>(
-      // Use inequality to enter test mode
       builder: (context, provider, _) => provider.downloadProgress == null
           ? const DownloaderPage()
           : const DownloadingPage(),
@@ -95,6 +94,12 @@ class _MainScreenState extends State<MainScreen> {
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeInOut,
               );
+
+              final DownloadProvider downloadProvider =
+                  Provider.of<DownloadProvider>(context, listen: false);
+              if (downloadProvider.downloadProgress != null) {
+                downloadProvider.downloadProgress = null;
+              }
             },
             selectedIndex: _currentPageIndex,
             destinations: _destinations,

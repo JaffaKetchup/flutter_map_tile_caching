@@ -94,12 +94,9 @@ Future<TileProgress> _getAndSaveTile({
       ..listen((eventBytes) {
         bytes.addAll(eventBytes);
         received += eventBytes.length;
-        progressManagement.progress.add(
-          TileTimestampProgress(
-            url,
-            DateTime.now(),
-            received / totalBytes,
-          ),
+        progressManagement.progress[url.hashCode] = TimestampProgress(
+          DateTime.now(),
+          received / totalBytes,
         );
       });
 

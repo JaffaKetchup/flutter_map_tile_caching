@@ -1,32 +1,34 @@
 import 'dart:async';
 
-class TileTimestampProgress {
-  final int? tileID;
-  final DateTime? timestamp;
+/// Object containing the [timestamp] of the measurement and the percentage [progress] (0-1) of the applicable tile
+class TimestampProgress {
+  /// Time at which the measurement of progress was taken
+  final DateTime timestamp;
+
+  /// Percentage progress (0-1) of the applicable tile
   final double progress;
 
-  TileTimestampProgress(
-    String? tileURL,
+  /// Object containing the [timestamp] of the measurement and the percentage [progress] (0-1) of the applicable tile
+  TimestampProgress(
     this.timestamp,
     this.progress,
-  ) : tileID = tileURL?.hashCode;
+  );
 
   @override
   String toString() =>
-      'TileTimestampProgress(tileID: $tileID, timestamp: $timestamp, progress: $progress)';
+      'TileTimestampProgress(timestamp: $timestamp, progress: $progress)';
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is TileTimestampProgress &&
-        other.tileID == tileID &&
+    return other is TimestampProgress &&
         other.timestamp == timestamp &&
         other.progress == progress;
   }
 
   @override
-  int get hashCode => tileID.hashCode ^ timestamp.hashCode ^ progress.hashCode;
+  int get hashCode => timestamp.hashCode ^ progress.hashCode;
 }
 
 /// Internal class for managing the tiles per second ([averageTPS]) measurement of a download
@@ -36,11 +38,11 @@ class ProgressManagement {
 
   /// Map representing the progress of a tile
   ///
-  /// * `key`s should be the tile identifier, created by the [Object.hashCode] method on the tile's URL.
-  /// * `values`s should be a [TileTimestampProgress], including the percentage (0-1) progress of the tile, and the timestamp the progress was taken at.
+  /// * `key`s should be the tile identifier, created by the [Object.hashCode] method on the tile's URL to impose uniqueness
+  /// * `values`s should be a [TimestampProgress], including the percentage (0-1) progress of the tile, and the timestamp the progress was taken at
   ///
   /// Should not be read outside of this object.
-  final List<TileTimestampProgress> progress = [];
+  final Map<int, TimestampProgress> progress = {};
 
   /// The number of tiles per second, based on [startTracking]
   double _averageTPS = 0;
@@ -48,43 +50,35 @@ class ProgressManagement {
   /// Retrieve the number of tiles per second, based on [startTracking]
   double get averageTPS => _averageTPS;
 
-  /// Internal class for managing the tiles per second ([averageTPS]) measurement of a download
+  /// Create internal class for managing the tiles per second ([averageTPS]) measurement of a download
+  ///
+  /// Use [startTracking] afterward to use main functionality.
   ProgressManagement();
 
   /// Start calculating the [averageTPS] measurement
   ///
   /// Increasing [pollingInterval] may increase accuracy, but will decrease the number of updates to the [averageTPS] value.
-  Future<void> startTracking({
-    Duration pollingInterval = const Duration(milliseconds: 100),
-  }) async {
-    final List<double> downloadSpeeds = [];
+  void startTracking({
+    Duration pollingInterval = const Duration(milliseconds: 1000),
+  }) {
+    final List<double> tps = [];
 
     _subscription = Stream<void>.periodic(pollingInterval).listen((_) {
-      final Iterable<TileTimestampProgress> filtered = progress.where(
-        (e) => e.timestamp!.isAfter(DateTime.now().subtract(pollingInterval)),
+      progress.removeWhere(
+        (_, v) =>
+            v.timestamp.isBefore(DateTime.now().subtract(pollingInterval)),
       );
 
-      downloadSpeeds.add(
-        (filtered.isEmpty ? [TileTimestampProgress(null, null, 0)] : filtered)
-            .toList()
-            .reduce(
-              (v, e) => TileTimestampProgress(
-                null,
-                null,
-                v.progress + e.progress,
-              ),
-            )
-            .progress,
+      final Iterable<double> progressMap =
+          progress.values.map((e) => e.progress);
+      tps.add(
+        (progressMap.isEmpty
+                ? Iterable.castFrom<double, double>([0.0])
+                : progressMap)
+            .reduce((v, e) => v + e),
       );
 
-      _averageTPS = (_calculateAverage(
-                downloadSpeeds: downloadSpeeds,
-              ) *
-              (1000 / pollingInterval.inMilliseconds)) /
-          progress
-              .where((e) => e.progress == 1)
-              .length
-              .clamp(1, double.infinity);
+      _averageTPS = _calculateAverage(downloadSpeeds: tps);
     });
   }
 

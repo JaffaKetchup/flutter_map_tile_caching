@@ -52,9 +52,7 @@ class DownloadProvider extends ChangeNotifier {
       StreamController.broadcast();
   StreamController<void> get manualPolygonRecalcTrigger =>
       _manualPolygonRecalcTrigger;
-  void triggerManualPolygonRecalc() {
-    _manualPolygonRecalcTrigger.add(null);
-  }
+  void triggerManualPolygonRecalc() => _manualPolygonRecalcTrigger.add(null);
 
   Stream<DownloadProgress>? _downloadProgress;
   Stream<DownloadProgress>? get downloadProgress => _downloadProgress;

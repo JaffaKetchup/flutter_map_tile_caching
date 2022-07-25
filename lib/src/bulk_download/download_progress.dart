@@ -89,8 +89,9 @@ class DownloadProgress {
   /// Estimate duration for entire download process
   ///
   /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate duration calculations, but may not return the same result as expected. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
-  Duration get estTotalDuration =>
-      Duration(milliseconds: (tilesPerSecond * 1000).round() * maxTiles);
+  Duration get estTotalDuration => Duration(
+        seconds: (maxTiles / tilesPerSecond.clamp(1, double.infinity)).round(),
+      );
 
   /// Estimated remaining duration until the end of the download process, based on [estTotalDuration]
   ///
