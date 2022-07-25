@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../../shared/state/download_provider.dart';
 import 'pages/downloader/downloader.dart';
 import 'pages/downloading/downloading.dart';
-import 'pages/map/map.dart';
+import 'pages/map/map_view.dart';
 import 'pages/recovery/recovery.dart';
 import 'pages/settings/settings.dart';
 import 'pages/stores/stores.dart';

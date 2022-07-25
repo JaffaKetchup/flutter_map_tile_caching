@@ -4,19 +4,19 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../../shared/components/loading_indicator.dart';
-import '../../../../../shared/state/general_provider.dart';
+import '../../../../shared/components/loading_indicator.dart';
+import '../../../../shared/state/general_provider.dart';
 
-class MapView extends StatefulWidget {
-  const MapView({
+class MapPage extends StatefulWidget {
+  const MapPage({
     Key? key,
   }) : super(key: key);
 
   @override
-  State<MapView> createState() => _MapViewState();
+  State<MapPage> createState() => _MapPageState();
 }
 
-class _MapViewState extends State<MapView> {
+class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) => Consumer<GeneralProvider>(
         builder: (context, provider, _) => FutureBuilder<Map<String, String>?>(
@@ -43,6 +43,7 @@ class _MapViewState extends State<MapView> {
                 center: LatLng(51.509364, -0.128928),
                 zoom: 9.2,
                 interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                keepAlive: true,
               ),
               layers: [
                 TileLayerOptions(

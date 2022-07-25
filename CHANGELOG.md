@@ -6,6 +6,15 @@
 
 ---
 
+## [5.0.0-dev.5] - 2022/07/25
+
+* Improved download time estimates and added tiles per second statistic
+* Added custom filesystem string sanitiser setting to `FMTCSettings`
+* Improved statistic watchers
+* Improved example application
+* Improved documentation
+* Fixed bugs
+
 ## [5.0.0-dev.4] - 2022/07/19
 
 * Added cache hits and misses statistics
