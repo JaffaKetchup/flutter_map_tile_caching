@@ -30,7 +30,7 @@ class Header extends StatelessWidget {
                 builder: (context, provider, _) => provider.currentStore == null
                     ? const SizedBox.shrink()
                     : const Text(
-                        'Downloaded tiles will appear in red',
+                        'Existing tiles will appear in red',
                         style: TextStyle(fontStyle: FontStyle.italic),
                       ),
               ),

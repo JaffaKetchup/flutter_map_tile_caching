@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../shared/state/download_provider.dart';
 import '../../shared/state/general_provider.dart';
@@ -110,7 +111,15 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                                         .preventRedownload,
                                                 seaTileRemoval: downloadProvider
                                                     .seaTileRemoval,
-                                                parallelThreads: 2,
+                                                parallelThreads:
+                                                    (await SharedPreferences
+                                                                    .getInstance())
+                                                                .getBool(
+                                                              'bypassDownloadThreadsLimitation',
+                                                            ) ??
+                                                            false
+                                                        ? 10
+                                                        : 2,
                                               ),
                                               disableRecovery: downloadProvider
                                                   .disableRecovery,
@@ -145,7 +154,15 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                             downloadProvider.preventRedownload,
                                         seaTileRemoval:
                                             downloadProvider.seaTileRemoval,
-                                        parallelThreads: 2,
+                                        parallelThreads:
+                                            (await SharedPreferences
+                                                            .getInstance())
+                                                        .getBool(
+                                                      'bypassDownloadThreadsLimitation',
+                                                    ) ??
+                                                    false
+                                                ? 10
+                                                : 2,
                                       ),
                                       disableRecovery:
                                           downloadProvider.disableRecovery,

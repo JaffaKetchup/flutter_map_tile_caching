@@ -8,7 +8,7 @@ import 'pages/downloader/downloader.dart';
 import 'pages/downloading/downloading.dart';
 import 'pages/map/map_view.dart';
 import 'pages/recovery/recovery.dart';
-import 'pages/settings/settings.dart';
+import 'pages/settingsAndAbout/settings_and_about.dart';
 import 'pages/stores/stores.dart';
 
 class MainScreen extends StatefulWidget {
@@ -52,8 +52,14 @@ class _MainScreenState extends State<MainScreen> {
           ),
           label: 'Recover',
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.settings),
+        NavigationDestination(
+          icon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(Icons.settings),
+              Icon(Icons.info),
+            ],
+          ),
           label: 'Settings',
         ),
       ];
@@ -67,7 +73,7 @@ class _MainScreenState extends State<MainScreen> {
           : const DownloadingPage(),
     ),
     const RecoveryPage(),
-    const SettingsPage(),
+    const SettingsAndAboutPage(),
   ];
 
   @override

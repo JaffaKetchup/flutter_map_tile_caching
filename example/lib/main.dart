@@ -23,7 +23,7 @@ void main() async {
   FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
   await FMTC.instance.migrator.fromV4();
 
-  if (prefs.getBool('reset') ?? true) {
+  if (prefs.getBool('reset') ?? false) {
     await FMTC.instance.rootDirectory.manage.resetAsync();
 
     final StoreDirectory instanceA = FMTC.instance('OpenStreetMap (A)');
