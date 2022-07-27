@@ -15,6 +15,6 @@ Alternatively, for the API reference, look at the [auto generated 'dartdoc'](htt
 
 If you have any change to spare, I'd be grateful for any amount, big or small :D. Every donation gives me 'mental fuel' to continue this project, and lets me know that I'm doing a good job. You can read more about me and what I do on my GitHub Sponsors page.
 
-<iframe src="https://github.com/sponsors/JaffaKetchup/card" title="Sponsor JaffaKetchup" width="100%" style="border: 0;"></iframe>
+[![Sponsor Me Via GitHub Sponsors](GitHubSponsorsImage.jpg)](https://github.com/sponsors/JaffaKetchup)
 
 Alternatively, if you prefer not to use GitHub Sponsors, please feel free to use my [Ko-fi](https://ko-fi.com/jaffaketchup). Note that the PayPal backend will take a small amount of donations made through this method.
