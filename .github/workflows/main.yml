@@ -44,13 +44,17 @@ jobs:
         working-directory: ./example
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "17"
       - uses: subosito/flutter-action@v2
         with:
           channel: "stable"
       - run: flutter --version
       - run: flutter clean
       - run: flutter build apk --split-per-abi --obfuscate --split-debug-info=/symbols
-      - run: move /Y "example/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk" "prebuiltExampleApplications/"
+      - run: move /Y "example/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk" "prebuiltExampleApplications/android.apk"
         working-directory: .
       - run: flutter build windows --obfuscate --split-debug-info=/symbols
       - uses: vimtor/action-zip@v1
