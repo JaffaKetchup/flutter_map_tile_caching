@@ -2,43 +2,64 @@ name: Analyse Package & Contents
 on: [push, workflow_dispatch]
 
 jobs:
-  #package-analysis:
-  #  name: "Analyse Package"
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - uses: actions/checkout@v2
-  #    - uses: axel-op/dart-package-analyzer@v3
-  #      id: analysis
-  #      with:
-  #        githubToken: ${{ secrets.GITHUB_TOKEN }}
-  #    - name: Check Scores
-  #      env:
-  #        TOTAL: ${{ steps.analysis.outputs.total }}
-  #        TOTAL_MAX: ${{ steps.analysis.outputs.total_max }}
-  #      run: |
-  #        if (( $TOTAL < ($TOTAL_MAX - 10) ))
-  #        then
-  #          echo Total score below expected minimum score. Improve the score!
-  #          exit 1
-  #        fi
-  #
-  #content-analysis:
-  #  name: "Analyse Contents"
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - uses: actions/checkout@v2
-  #    - uses: subosito/flutter-action@v2
-  #      with:
-  #        channel: "stable"
-  #    - run: flutter --version
-  #    - run: flutter pub get
-  #    - run: dart format --output=none --set-exit-if-changed .
-  #    - run: dart analyze --fatal-infos --fatal-warnings
+  package-analysis:
+    name: "Analyse Package"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: axel-op/dart-package-analyzer@v3
+        id: analysis
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check Scores
+        env:
+          TOTAL: ${{ steps.analysis.outputs.total }}
+          TOTAL_MAX: ${{ steps.analysis.outputs.total_max }}
+        run: |
+          if (( $TOTAL < ($TOTAL_MAX - 10) ))
+          then
+            echo Total score below expected minimum score. Improve the score!
+            exit 1
+          fi
+
+  content-analysis:
+    name: "Analyse Contents"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+      - run: flutter --version
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: dart analyze --fatal-infos --fatal-warnings
+
+  check-example-changes:
+    name: "Check Example Application For Changes"
+    runs-on: "ubuntu-20.04"
+    needs: [content-analysis, package-analysis]
+    outputs:
+      example_changed: ${{ steps.check_file_changed.outputs.example_changed }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - shell: pwsh
+        id: check_file_changed
+        run: |
+          $diff = git diff --name-only HEAD^ HEAD
+
+          $SourceDiff = $diff | Where-Object { $_ -match '^example/'}
+          $HasDiff = $SourceDiff.Length -gt 0
+
+          Write-Host "::set-output name=example_changed::$HasDiff"
 
   build-example:
     name: "Build Example Applications"
     runs-on: windows-latest
-    #needs: [content-analysis, package-analysis]
+    needs: [check-example-changes, content-analysis, package-analysis]
+    if: needs.check-example-changes.outputs.example_changed == 'True'
     defaults:
       run:
         working-directory: ./example
@@ -54,16 +75,19 @@ jobs:
       - run: flutter --version
       - run: flutter clean
       - run: flutter build apk --split-per-abi --obfuscate --split-debug-info=/symbols
+      - run: Remove-Item "prebuiltExampleApplications" -Recurse -ErrorAction Ignore
+        working-directory: .
       - run: md prebuiltExampleApplications
         working-directory: .
-      - run: move "example\build\app\outputs\flutter-apk\app-armeabi-v7a-release.apk" "prebuiltExampleApplications\android.apk"
+      - run: move "example\build\app\outputs\flutter-apk\app-armeabi-v7a-release.apk" "prebuiltExampleApplications\AndroidApplication.apk"
         working-directory: .
       - run: flutter build windows --obfuscate --split-debug-info=/symbols
       - uses: vimtor/action-zip@v1
         with:
           files: ./example/build/windows/runner/Release
-          dest: prebuiltExampleApplications/windows.zip
+          dest: prebuiltExampleApplications/WindowsApplication.zip
       - uses: EndBug/add-and-commit@v9.0.1
         with:
           message: "Built Example Applications"
           add: "prebuiltExampleApplications/"
+          default_author: github_actions
