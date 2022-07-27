@@ -38,7 +38,6 @@ jobs:
   check-example-changes:
     name: "Check Example Application For Changes"
     runs-on: "ubuntu-20.04"
-    needs: [content-analysis, package-analysis]
     outputs:
       example_changed: ${{ steps.check_file_changed.outputs.example_changed }}
     steps:
