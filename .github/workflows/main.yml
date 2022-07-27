@@ -38,7 +38,7 @@ jobs:
   build-example:
     name: "Build Example Applications"
     runs-on: windows-latest
-    needs: [content-analysis, package-analysis]
+    #needs: [content-analysis, package-analysis]
     defaults:
       run:
         working-directory: ./example
