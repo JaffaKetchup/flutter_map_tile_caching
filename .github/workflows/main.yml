@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Run Dart Package Analyser
         uses: axel-op/dart-package-analyzer@v3
         id: analysis
@@ -18,7 +18,7 @@ jobs:
           TOTAL: ${{ steps.analysis.outputs.total }}
           TOTAL_MAX: ${{ steps.analysis.outputs.total_max }}
         run: |
-          if (( $TOTAL < ($TOTAL_MAX - 10) ))
+          if (( $TOTAL < $TOTAL_MAX ))
           then
             echo Total score below expected minimum score. Improve the score!
             exit 1
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup Flutter Environment
         uses: subosito/flutter-action@v2
         with:
@@ -50,7 +50,7 @@ jobs:
       example_changed: ${{ steps.check_file_changed.outputs.example_changed }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
       - name: Compare Commit Diffs
@@ -72,7 +72,7 @@ jobs:
         working-directory: ./example
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup Java 17 Environment
         uses: actions/setup-java@v3
         with:
