@@ -6,12 +6,14 @@ jobs:
     name: "Analyse Package"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: axel-op/dart-package-analyzer@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Run Dart Package Analyser
+        uses: axel-op/dart-package-analyzer@v3
         id: analysis
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check Scores
+      - name: Check Package Scores
         env:
           TOTAL: ${{ steps.analysis.outputs.total }}
           TOTAL_MAX: ${{ steps.analysis.outputs.total_max }}
@@ -26,14 +28,20 @@ jobs:
     name: "Analyse Contents"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: subosito/flutter-action@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Setup Flutter Environment
+        uses: subosito/flutter-action@v2
         with:
           channel: "stable"
-      - run: flutter --version
-      - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed .
-      - run: dart analyze --fatal-infos --fatal-warnings
+      - name: Ensure Correct Flutter Installation
+        run: flutter --version
+      - name: Get All Dependencies
+        run: flutter pub get
+      - name: Check Formatting
+        run: dart format --output=none --set-exit-if-changed .
+      - name: Check Lints
+        run: dart analyze --fatal-infos --fatal-warnings
 
   check-example-changes:
     name: "Check Example Application For Changes"
@@ -41,10 +49,12 @@ jobs:
     outputs:
       example_changed: ${{ steps.check_file_changed.outputs.example_changed }}
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v2
         with:
           fetch-depth: 2
-      - shell: pwsh
+      - name: Compare Commit Diffs
+        shell: pwsh
         id: check_file_changed
         run: |
           $diff = git diff --name-only HEAD^ HEAD
@@ -61,29 +71,41 @@ jobs:
       run:
         working-directory: ./example
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Setup Java 17 Environment
+        uses: actions/setup-java@v3
         with:
           distribution: "temurin"
           java-version: "17"
-      - uses: subosito/flutter-action@v2
+      - name: Setup Flutter Environment
+        uses: subosito/flutter-action@v2
         with:
           channel: "stable"
-      - run: flutter --version
-      - run: flutter clean
-      - run: flutter build apk --split-per-abi --obfuscate --split-debug-info=/symbols
-      - run: Remove-Item "prebuiltExampleApplications" -Recurse -ErrorAction Ignore
+      - name: Ensure Correct Flutter Installation
+        run: flutter --version
+      - name: Ensure Clean Flutter Environment
+        run: flutter clean
+      - name: Remove Existing Prebuilt Applications
+        run: Remove-Item "prebuiltExampleApplications" -Recurse -ErrorAction Ignore
         working-directory: .
-      - run: md prebuiltExampleApplications
+      - name: Create Prebuilt Applications (Output) Directory
+        run: md prebuiltExampleApplications
         working-directory: .
-      - run: move "example\build\app\outputs\flutter-apk\app-armeabi-v7a-release.apk" "prebuiltExampleApplications\AndroidApplication.apk"
+      - name: Build Android Application
+        run: flutter build apk --split-per-abi --obfuscate --split-debug-info=/symbols
+      - name: Move Android Application To Output Directory
+        run: move "example\build\app\outputs\flutter-apk\app-armeabi-v7a-release.apk" "prebuiltExampleApplications\AndroidApplication.apk"
         working-directory: .
-      - run: flutter build windows --obfuscate --split-debug-info=/symbols
-      - uses: vimtor/action-zip@v1
+      - name: Build Windows Application
+        run: flutter build windows --obfuscate --split-debug-info=/symbols
+      - name: Archive (ZIP) Windows Application To Output Directory
+        uses: vimtor/action-zip@v1
         with:
           files: ./example/build/windows/runner/Release
           dest: prebuiltExampleApplications/WindowsApplication.zip
-      - uses: EndBug/add-and-commit@v9.0.1
+      - name: Commit Output Directory
+        uses: EndBug/add-and-commit@v9.0.1
         with:
           message: "Built Example Applications"
           add: "prebuiltExampleApplications/"
