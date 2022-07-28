@@ -1,6 +1,5 @@
 import 'root/directory.dart';
 import 'root/manage.dart';
-import 'root/migrator.dart';
 import 'settings/fmtc_settings.dart';
 import 'store/directory.dart';
 
@@ -58,9 +57,6 @@ class FlutterMapTileCaching {
 
     return _instance!;
   }
-
-  /// Manage migration for file structure across FMTC versions
-  FMTCMigrator get migrator => FMTCMigrator(rootDirectory);
 
   /// Get a [StoreDirectory] by store name
   ///

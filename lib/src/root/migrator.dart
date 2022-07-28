@@ -15,7 +15,7 @@ class FMTCMigrator {
 
   /// Migrates a v4 file structure to a v5 structure
   ///
-  /// Checks within `getApplicationDocumentsDirectory()` and `getTemporaryDirectory()` for a directory named 'mapCache'. Alternativley, specify a custom directory to search for 'mapCache' within.
+  /// Checks within `getApplicationDocumentsDirectory()` and `getTemporaryDirectory()` for a directory named 'mapCache'. Alternatively, specify a custom directory to search for 'mapCache' within.
   ///
   /// Returns `false` if no structure was found or migration failed, otherwise `true`.
   Future<bool> fromV4({

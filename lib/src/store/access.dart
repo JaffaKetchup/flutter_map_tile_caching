@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../internal/exts.dart';
-import '../settings/filesystem_sanitiser_private.dart';
+import '../internal/filesystem_sanitiser_private.dart';
 import 'directory.dart';
 
 /// Provides direct filesystem access paths to a [StoreDirectory] - use with caution

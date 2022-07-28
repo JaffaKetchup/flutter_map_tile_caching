@@ -10,8 +10,8 @@ import 'package:queue/queue.dart';
 
 import '../internal/exts.dart';
 import '../misc/enums.dart';
-import '../settings/filesystem_sanitiser_private.dart';
 import '../settings/tile_provider_settings.dart';
+import 'filesystem_sanitiser_private.dart';
 import 'tile_provider.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
@@ -172,7 +172,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         },
       );
 
-      // Cache the tile in a seperate isolate
+      // Cache the tile in a separate isolate
       unawaited(file.create().then((_) => file.writeAsBytes(bytes!)));
       if (needsCreating) {
         unawaited(

@@ -81,7 +81,7 @@ class DownloadProgress {
   /// Is equal to `(attemptedTiles / approxMaxTiles) * 100`.
   double get percentageProgress => (attemptedTiles / maxTiles) * 100;
 
-  /// Retreive the average number of tiles per second that are being downloaded
+  /// Retrieve the average number of tiles per second that are being downloaded
   ///
   /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate estimations based on this data. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
   double get tilesPerSecond => _progressManagement.averageTPS;
@@ -112,7 +112,7 @@ class DownloadProgress {
     required ProgressManagement progressManagement,
   }) : _progressManagement = progressManagement;
 
-  /// Create an empty placeholder (all values set to 0 or empty) [DownloadProgress], useful for `initalData` in a [StreamBuilder]
+  /// Create an empty placeholder (all values set to 0 or empty) [DownloadProgress], useful for `initialData` in a [StreamBuilder]
   DownloadProgress.empty()
       : downloadID = 0,
         successfulTiles = 0,

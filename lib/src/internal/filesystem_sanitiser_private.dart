@@ -1,6 +1,6 @@
 import '../fmtc.dart';
-import 'filesystem_sanitiser_public.dart';
-import 'fmtc_settings.dart';
+import '../settings/filesystem_sanitiser_public.dart';
+import '../settings/fmtc_settings.dart';
 
 FilesystemSanitiserResult defaultFilesystemSanitiser(String input) {
   final List<String> errorMessages = [];

@@ -24,7 +24,7 @@ enum RootParts {
 
   /// Watch changes about sub-stores
   ///
-  /// Note that this will not recursivley watch within each store. For example, additions of new stores will be caught, but changes in statistics in each store will not.
+  /// Note that this will not recursively watch within each store. For example, additions of new stores will be caught, but changes in statistics in each store will not.
   stores,
 }
 
@@ -38,6 +38,6 @@ enum StoreParts {
 
   /// Watch changes within the tiles directory
   ///
-  /// Usually not recommended to watch, due to the high freqency of changes.
+  /// Usually not recommended to watch, due to the high frequency of changes.
   tiles,
 }

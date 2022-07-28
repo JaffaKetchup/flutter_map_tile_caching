@@ -396,8 +396,6 @@ class DownloadManagement {
         progressManagement: _progressManagement,
       );
 
-      //print(prog.tilesPerSecond);
-
       yield prog;
       if (prog.percentageProgress >= 100) await cancel();
     }

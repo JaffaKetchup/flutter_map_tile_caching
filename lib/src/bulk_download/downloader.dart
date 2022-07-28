@@ -8,8 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:queue/queue.dart';
 
 import '../internal/exts.dart';
+import '../internal/filesystem_sanitiser_private.dart';
 import '../internal/tile_provider.dart';
-import '../settings/filesystem_sanitiser_private.dart';
 import 'progress_management.dart';
 import 'tile_progress.dart';
 

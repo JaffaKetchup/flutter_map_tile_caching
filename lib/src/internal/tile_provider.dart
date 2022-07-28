@@ -5,11 +5,11 @@ import 'package:flutter_map/flutter_map.dart';
 
 import '../fmtc.dart';
 import '../misc/enums.dart';
-import '../settings/filesystem_sanitiser_private.dart';
 import '../settings/fmtc_settings.dart';
 import '../settings/tile_provider_settings.dart';
 import '../store/directory.dart';
 import 'exts.dart';
+import 'filesystem_sanitiser_private.dart';
 import 'image_provider.dart';
 
 /// 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayerOptions]

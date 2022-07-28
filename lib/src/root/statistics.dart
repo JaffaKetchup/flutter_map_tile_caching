@@ -102,7 +102,7 @@ class RootStats {
 
   /// Retrieve all the available [StoreDirectory]s
   ///
-  /// For asynchronous version, see [storesAvailableAsync]. Note that this statstic is not cached for performance, as the effect would be negligible.
+  /// For asynchronous version, see [storesAvailableAsync]. Note that this statistic is not cached for performance, as the effect would be negligible.
   List<StoreDirectory> get storesAvailable => _access.stores
       .listSync()
       .map(
@@ -115,7 +115,7 @@ class RootStats {
 
   /// Retrieve all the available [StoreDirectory]s
   ///
-  /// For synchronous version, see [storesAvailable]. Note that this statstic is not cached for performance, as the effect would be negligible.
+  /// For synchronous version, see [storesAvailable]. Note that this statistic is not cached for performance, as the effect would be negligible.
   Future<List<StoreDirectory>> get storesAvailableAsync async =>
       (await _access.stores
               .list()

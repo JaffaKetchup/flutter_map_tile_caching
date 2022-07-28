@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p;
 
-import '../settings/filesystem_sanitiser_private.dart';
+import '../internal/filesystem_sanitiser_private.dart';
 import 'access.dart';
 import 'directory.dart';
 import 'metadata.dart';

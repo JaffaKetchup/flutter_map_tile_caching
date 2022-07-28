@@ -6,6 +6,7 @@ import '../internal/exts.dart';
 import '../store/directory.dart';
 import 'access.dart';
 import 'manage.dart';
+import 'migrator.dart';
 import 'recovery.dart';
 import 'statistics.dart';
 
@@ -82,6 +83,9 @@ class RootDirectory {
   /// Manage the download recovery of all sub-stores
   RootRecovery get recovery => RootRecovery.instance ?? RootRecovery(this);
 
+  /// Manage migration for file structure across FMTC versions
+  FMTCMigrator get migrator => FMTCMigrator(this);
+
   @override
   String toString() => 'RootDirectory(_rootDirectory: $rootDirectory)';
 
@@ -94,13 +98,4 @@ class RootDirectory {
 
   @override
   int get hashCode => rootDirectory.hashCode;
-
-  RootDirectory copyWith({
-    Directory? rootDirectory,
-    bool autoCreate = true,
-  }) =>
-      RootDirectory.custom(
-        rootDirectory ?? this.rootDirectory,
-        autoCreate: autoCreate,
-      );
 }

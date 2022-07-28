@@ -9,7 +9,7 @@ import '../../shared/state/general_provider.dart';
 import 'components/bd_battery_optimizations_info.dart';
 import 'components/optional_functionality.dart';
 import 'components/region_information.dart';
-import 'components/section_seperator.dart';
+import 'components/section_separator.dart';
 import 'components/store_selector.dart';
 import 'components/usage_warning.dart';
 
@@ -71,15 +71,15 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                     circleRegion: circleRegion,
                     rectangleRegion: rectangleRegion,
                   ),
-                  const SectionSeperator(),
+                  const SectionSeparator(),
                   const StoreSelector(),
-                  const SectionSeperator(),
+                  const SectionSeparator(),
                   const OptionalFunctionality(),
-                  const SectionSeperator(),
+                  const SectionSeparator(),
                   const BackgroundDownloadBatteryOptimizationsInfo(),
-                  const SectionSeperator(),
+                  const SectionSeparator(),
                   const UsageWarning(),
-                  const SectionSeperator(),
+                  const SectionSeparator(),
                   const Text('START DOWNLOAD IN'),
                   Consumer2<DownloadProvider, GeneralProvider>(
                     builder: (context, downloadProvider, generalProvider, _) =>
