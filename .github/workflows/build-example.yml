@@ -1,43 +1,16 @@
-name: Analyse Package & Contents
-on: [push, workflow_dispatch]
+name: Build Example Applications
+on:
+  workflow_run:
+    workflows: ["Analyse Package & Contents"]
+    types:
+      - completed
+  workflow_dispatch:
 
 jobs:
-  package-analysis:
-    name: "Analyse Package"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: axel-op/dart-package-analyzer@v3
-        id: analysis
-        with:
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check Scores
-        env:
-          TOTAL: ${{ steps.analysis.outputs.total }}
-          TOTAL_MAX: ${{ steps.analysis.outputs.total_max }}
-        run: |
-          if (( $TOTAL < ($TOTAL_MAX - 10) ))
-          then
-            echo Total score below expected minimum score. Improve the score!
-            exit 1
-          fi
-
-  content-analysis:
-    name: "Analyse Contents"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: "stable"
-      - run: flutter --version
-      - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed .
-      - run: dart analyze --fatal-infos --fatal-warnings
-
   check-example-changes:
     name: "Check Example Application For Changes"
     runs-on: "ubuntu-20.04"
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     outputs:
       example_changed: ${{ steps.check_file_changed.outputs.example_changed }}
     steps:
@@ -57,7 +30,7 @@ jobs:
   build-example:
     name: "Build Example Applications"
     runs-on: windows-latest
-    needs: [check-example-changes, content-analysis, package-analysis]
+    needs: [check-example-changes]
     if: needs.check-example-changes.outputs.example_changed == 'True'
     defaults:
       run:
