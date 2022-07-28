@@ -64,17 +64,26 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ];
 
-  static final _pages = <Widget>[
-    const MapPage(),
-    const StoresPage(),
-    Consumer<DownloadProvider>(
-      builder: (context, provider, _) => provider.downloadProgress == null
-          ? const DownloaderPage()
-          : const DownloadingPage(),
-    ),
-    const RecoveryPage(),
-    const SettingsAndAboutPage(),
-  ];
+  List<Widget> get _pages => [
+        const MapPage(),
+        const StoresPage(),
+        Consumer<DownloadProvider>(
+          builder: (context, provider, _) => provider.downloadProgress == null
+              ? const DownloaderPage()
+              : const DownloadingPage(),
+        ),
+        RecoveryPage(
+          moveToDownloadPage: () {
+            setState(() => _currentPageIndex = 2);
+            _pageController.animateToPage(
+              2,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+            );
+          },
+        ),
+        const SettingsAndAboutPage(),
+      ];
 
   @override
   void initState() {

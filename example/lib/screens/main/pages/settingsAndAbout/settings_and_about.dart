@@ -73,7 +73,7 @@ class _SettingsAndAboutPageState extends State<SettingsAndAboutPage> {
                   "An example application for the 'flutter_map_tile_caching' project, built by Luka S (JaffaKetchup).\n",
                 ),
                 const Text(
-                  'Many thanks go to all my donors, including:\n - @ibrierley\n - @tonyshkurenko\nIf you want to support me, any amount is appriciated! Please visit the GitHub repository for donation/sponsorship options.',
+                  'Many thanks go to all my donors, including:\n - @ibrierley\n - @tonyshkurenko\nIf you want to support me, any amount is appriciated! Please visit the GitHub repository for donation/sponsorship options.\n\nThanks to all of the dependencies used in both this app and the main library. In addition, thanks to Nominatim: their services are used to retrieve the location of a recovered download on the Recover screen.',
                 ),
               ],
             ),

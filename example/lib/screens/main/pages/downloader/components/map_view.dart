@@ -117,6 +117,7 @@ class _MapViewState extends State<MapView> {
                       zoom: 9.2,
                       interactiveFlags:
                           InteractiveFlag.all & ~InteractiveFlag.rotate,
+                      keepAlive: true,
                     ),
                     nonRotatedChildren: [
                       AttributionWidget.defaultWidget(

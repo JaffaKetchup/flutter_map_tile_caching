@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:osm_nominatim/osm_nominatim.dart';
 
+import 'recovery_start_button.dart';
+
 class RecoveryList extends StatefulWidget {
   const RecoveryList({
     Key? key,
     required this.all,
+    required this.moveToDownloadPage,
   }) : super(key: key);
 
   final List<Future<RecoveredRegion>> all;
+  final void Function() moveToDownloadPage;
 
   @override
   State<RecoveryList> createState() => _RecoveryListState();
@@ -50,13 +54,9 @@ class _RecoveryListState extends State<RecoveryList> {
                       zoom: 10,
                       addressDetails: true,
                     ),
-                    builder: (context, response) => response.hasError
-                        ? const Text('Unable To Reverse Geocode Location')
-                        : response.hasData
-                            ? Text(
-                                'Near ${response.data!.address!['postcode']}, ${response.data!.address!['country']} (Nominatim)',
-                              )
-                            : const Text('Please Wait...'),
+                    builder: (context, response) => Text(
+                      'Started at ${region.data!.time} (~${DateTime.now().difference(region.data!.time).inMinutes} minutes ago)\n${response.hasData ? 'Center near ${response.data!.address!['postcode']}, ${response.data!.address!['country']}' : response.hasError ? 'Unable To Reverse Geocode Location' : 'Please Wait...'}',
+                    ),
                   ),
                   onTap: () {},
                   trailing: Row(
@@ -78,16 +78,9 @@ class _RecoveryListState extends State<RecoveryList> {
                         },
                       ),
                       const SizedBox(width: 10),
-                      FutureBuilder<RecoveredRegion?>(
-                        future: FMTC.instance.rootDirectory.recovery
-                            .getFailedRegion(region.data!.id),
-                        builder: (context, isFailed) => IconButton(
-                          icon: Icon(
-                            Icons.download,
-                            color: isFailed.data != null ? Colors.green : null,
-                          ),
-                          onPressed: isFailed.data == null ? null : () {},
-                        ),
+                      RecoveryStartButton(
+                        moveToDownloadPage: widget.moveToDownloadPage,
+                        region: region.data!,
                       ),
                     ],
                   ),

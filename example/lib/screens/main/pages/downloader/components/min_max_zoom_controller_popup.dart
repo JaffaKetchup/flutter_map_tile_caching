@@ -38,20 +38,23 @@ class MinMaxZoomControllerPopup extends StatelessWidget {
                   label: Text('Minimum Zoom Level'),
                 ),
                 validator: (input) {
-                  if (input == null || input.isEmpty || int.parse(input) < 1) {
-                    return 'Must be 1 or more';
+                  if (input == null || input.isEmpty) return 'Required';
+                  if (int.parse(input) < 1) return 'Must be 1 or more';
+                  if (int.parse(input) > provider.maxZoom) {
+                    return 'Must be less than maximum zoom';
                   }
+
                   return null;
                 },
                 onChanged: (input) {
-                  final int parsed = int.parse(input);
-
-                  if (input.isEmpty || parsed < 1) return;
-                  provider.minZoom = parsed;
+                  if (input.isNotEmpty) provider.minZoom = int.parse(input);
                 },
                 keyboardType: TextInputType.number,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  _NumericalRangeFormatter(min: 1, max: 22),
+                ],
                 textInputAction: TextInputAction.next,
                 initialValue: provider.minZoom.toString(),
               ),
@@ -63,6 +66,11 @@ class MinMaxZoomControllerPopup extends StatelessWidget {
                 ),
                 validator: (input) {
                   if (input == null || input.isEmpty) return 'Required';
+                  if (int.parse(input) > 22) return 'Must be 22 or less';
+                  if (int.parse(input) < provider.minZoom) {
+                    return 'Must be more than minimum zoom';
+                  }
+
                   return null;
                 },
                 onChanged: (input) {
@@ -70,7 +78,10 @@ class MinMaxZoomControllerPopup extends StatelessWidget {
                 },
                 keyboardType: TextInputType.number,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  _NumericalRangeFormatter(min: 1, max: 22),
+                ],
                 textInputAction: TextInputAction.done,
                 initialValue: provider.maxZoom.toString(),
               ),
@@ -78,4 +89,27 @@ class MinMaxZoomControllerPopup extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _NumericalRangeFormatter extends TextInputFormatter {
+  final int min;
+  final int max;
+
+  _NumericalRangeFormatter({
+    required this.min,
+    required this.max,
+  });
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) =>
+      newValue.text == ''
+          ? newValue
+          : int.parse(newValue.text) < min
+              ? TextEditingValue.empty.copyWith(text: min.toString())
+              : int.parse(newValue.text) > max
+                  ? TextEditingValue.empty.copyWith(text: max.toString())
+                  : newValue;
 }

@@ -7,7 +7,12 @@ import 'components/header.dart';
 import 'components/recovery_list.dart';
 
 class RecoveryPage extends StatefulWidget {
-  const RecoveryPage({Key? key}) : super(key: key);
+  const RecoveryPage({
+    Key? key,
+    required this.moveToDownloadPage,
+  }) : super(key: key);
+
+  final void Function() moveToDownloadPage;
 
   @override
   State<RecoveryPage> createState() => _RecoveryPageState();
@@ -50,7 +55,10 @@ class _RecoveryPageState extends State<RecoveryPage> {
                     builder: (context, all) => all.hasData
                         ? all.data!.isEmpty
                             ? const EmptyIndicator()
-                            : RecoveryList(all: all.data!)
+                            : RecoveryList(
+                                all: all.data!,
+                                moveToDownloadPage: widget.moveToDownloadPage,
+                              )
                         : const LoadingIndicator(
                             message: 'Loading Recoverable Downloads...',
                           ),
