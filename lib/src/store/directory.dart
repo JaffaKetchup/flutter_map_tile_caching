@@ -67,8 +67,6 @@ class StoreDirectory {
   /// Manage custom miscellaneous information tied to a [StoreDirectory]
   ///
   /// Uses a key-value format where both key and value must be [String]. There is no validation or sanitisation on any keys or values; note that keys form part of filenames.
-  ///
-  /// Also used internally to store bulk download recovery files ending in '.recovery.ini'.
   StoreMetadata get metadata => StoreMetadata(this);
 
   /// Get 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayerOptions], specific to this store

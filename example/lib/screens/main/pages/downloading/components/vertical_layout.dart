@@ -18,44 +18,44 @@ class VerticalLayout extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               StatDisplay(
-                largeText:
+                statistic:
                     '${data.successfulTiles} / ${data.maxTiles} (${data.percentageProgress.toStringAsFixed(2)}%)',
-                smallText: 'successful / total tiles',
+                description: 'successful / total tiles',
               ),
               const SizedBox(height: 2),
               StatDisplay(
-                largeText: data.tilesPerSecond.round().toString(),
-                smallText: 'tiles per second',
+                statistic: data.tilesPerSecond.round().toString(),
+                description: 'tiles per second',
               ),
               const SizedBox(height: 2),
               StatDisplay(
-                largeText:
+                statistic:
                     data.duration.toString().split('.').first.padLeft(8, '0'),
-                smallText: 'duration taken',
+                description: 'duration taken',
               ),
               const SizedBox(height: 2),
               StatDisplay(
-                largeText: data.estRemainingDuration
+                statistic: data.estRemainingDuration
                     .toString()
                     .split('.')
                     .first
                     .padLeft(8, '0'),
-                smallText: 'est remaining duration',
+                description: 'est remaining duration',
               ),
               const SizedBox(height: 2),
               StatDisplay(
-                largeText: data.estTotalDuration
+                statistic: data.estTotalDuration
                     .toString()
                     .split('.')
                     .first
                     .padLeft(8, '0'),
-                smallText: 'est total duration',
+                description: 'est total duration',
               ),
               const SizedBox(height: 2),
               StatDisplay(
-                largeText:
+                statistic:
                     '${data.existingTiles} (${data.existingTilesDiscount.ceil()}%) | ${data.seaTiles} (${data.seaTilesDiscount.ceil()}%)',
-                smallText: 'existing tiles | sea tiles',
+                description: 'existing tiles | sea tiles',
               ),
             ],
           ),

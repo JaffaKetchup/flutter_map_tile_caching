@@ -23,14 +23,14 @@ class HorizontalLayout extends StatelessWidget {
               Column(
                 children: [
                   StatDisplay(
-                    largeText:
+                    statistic:
                         '${data.successfulTiles} (${data.tilesPerSecond.round()} tps)',
-                    smallText: 'successful tiles',
+                    description: 'successful tiles',
                   ),
                   const SizedBox(height: 5),
                   StatDisplay(
-                    largeText: data.maxTiles.toString(),
-                    smallText: 'total tiles',
+                    statistic: data.maxTiles.toString(),
+                    description: 'total tiles',
                   ),
                 ],
               ),
@@ -39,30 +39,30 @@ class HorizontalLayout extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   StatDisplay(
-                    largeText: data.duration
+                    statistic: data.duration
                         .toString()
                         .split('.')
                         .first
                         .padLeft(8, '0'),
-                    smallText: 'duration taken',
+                    description: 'duration taken',
                   ),
                   const SizedBox(height: 5),
                   StatDisplay(
-                    largeText: data.estRemainingDuration
+                    statistic: data.estRemainingDuration
                         .toString()
                         .split('.')
                         .first
                         .padLeft(8, '0'),
-                    smallText: 'est remaining duration',
+                    description: 'est remaining duration',
                   ),
                   const SizedBox(height: 5),
                   StatDisplay(
-                    largeText: data.estTotalDuration
+                    statistic: data.estTotalDuration
                         .toString()
                         .split('.')
                         .first
                         .padLeft(8, '0'),
-                    smallText: 'est total duration',
+                    description: 'est total duration',
                   ),
                 ],
               ),
@@ -71,15 +71,15 @@ class HorizontalLayout extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   StatDisplay(
-                    largeText:
+                    statistic:
                         '${data.existingTiles} (${data.existingTilesDiscount.ceil()}%)',
-                    smallText: 'existing tiles',
+                    description: 'existing tiles',
                   ),
                   const SizedBox(height: 5),
                   StatDisplay(
-                    largeText:
+                    statistic:
                         '${data.seaTiles} (${data.seaTilesDiscount.ceil()}%)',
-                    smallText: 'sea tiles',
+                    description: 'sea tiles',
                   ),
                 ],
               ),
@@ -113,8 +113,8 @@ class HorizontalLayout extends StatelessWidget {
                           ),
                           const SizedBox(height: 10),
                           StatDisplay(
-                            largeText: data.failedTiles.length.toString(),
-                            smallText: 'failed tiles',
+                            statistic: data.failedTiles.length.toString(),
+                            description: 'failed tiles',
                           ),
                         ],
                       ),

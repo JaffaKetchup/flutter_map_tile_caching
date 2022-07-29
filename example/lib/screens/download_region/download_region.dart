@@ -95,36 +95,37 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                         await downloadProvider
                                             .selectedStore!.metadata.readAsync;
 
-                                    downloadProvider.downloadProgress =
-                                        downloadProvider.selectedStore!.download
-                                            .startForeground(
-                                              region:
-                                                  widget.region.toDownloadable(
-                                                downloadProvider.minZoom,
-                                                downloadProvider.maxZoom,
-                                                TileLayerOptions(
-                                                  urlTemplate:
-                                                      metadata['sourceURL'],
-                                                ),
-                                                preventRedownload:
-                                                    downloadProvider
-                                                        .preventRedownload,
-                                                seaTileRemoval: downloadProvider
-                                                    .seaTileRemoval,
-                                                parallelThreads:
-                                                    (await SharedPreferences
-                                                                    .getInstance())
-                                                                .getBool(
-                                                              'bypassDownloadThreadsLimitation',
-                                                            ) ??
-                                                            false
-                                                        ? 10
-                                                        : 2,
+                                    downloadProvider.setDownloadProgress(
+                                      downloadProvider.selectedStore!.download
+                                          .startForeground(
+                                            region:
+                                                widget.region.toDownloadable(
+                                              downloadProvider.minZoom,
+                                              downloadProvider.maxZoom,
+                                              TileLayerOptions(
+                                                urlTemplate:
+                                                    metadata['sourceURL'],
                                               ),
-                                              disableRecovery: downloadProvider
-                                                  .disableRecovery,
-                                            )
-                                            .asBroadcastStream();
+                                              preventRedownload:
+                                                  downloadProvider
+                                                      .preventRedownload,
+                                              seaTileRemoval: downloadProvider
+                                                  .seaTileRemoval,
+                                              parallelThreads:
+                                                  (await SharedPreferences
+                                                                  .getInstance())
+                                                              .getBool(
+                                                            'bypassDownloadThreadsLimitation',
+                                                          ) ??
+                                                          false
+                                                      ? 10
+                                                      : 2,
+                                            ),
+                                            disableRecovery: downloadProvider
+                                                .disableRecovery,
+                                          )
+                                          .asBroadcastStream(),
+                                    );
 
                                     if (mounted) Navigator.of(context).pop();
                                   },

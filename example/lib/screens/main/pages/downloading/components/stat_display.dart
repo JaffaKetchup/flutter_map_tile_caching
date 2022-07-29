@@ -3,25 +3,25 @@ import 'package:flutter/material.dart';
 class StatDisplay extends StatelessWidget {
   const StatDisplay({
     Key? key,
-    required this.largeText,
-    required this.smallText,
+    required this.statistic,
+    required this.description,
   }) : super(key: key);
 
-  final String largeText;
-  final String smallText;
+  final String statistic;
+  final String description;
 
   @override
   Widget build(BuildContext context) => Column(
         children: [
           Text(
-            largeText,
+            statistic,
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
           Text(
-            smallText,
+            description,
             style: const TextStyle(fontSize: 16),
           ),
         ],

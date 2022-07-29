@@ -15,14 +15,14 @@ import 'directory.dart';
 
 /// Manages the download recovery of all sub-stores of this [RootDirectory]
 ///
-/// Is a singleton to ensure a list is kept of the ongoing downloads.
+/// Is a singleton to ensure functioning as expected.
 class RootRecovery {
   /// The root directory containing the stores to recover from
   final RootDirectory _rootDirectory;
 
   /// Manages the download recovery of all sub-stores of this [RootDirectory]
   ///
-  /// Is a singleton to ensure a list is kept of the ongoing downloads.
+  /// Is a singleton to ensure functioning as expected.
   RootRecovery(this._rootDirectory)
       : _metadata = RootAccess(_rootDirectory).recovery {
     instance = this;
@@ -30,7 +30,7 @@ class RootRecovery {
 
   /// Manages the download recovery of all sub-stores of this [RootDirectory]
   ///
-  /// Is a singleton to ensure a list is kept of the ongoing downloads.
+  /// Is a singleton to ensure functioning as expected.
   static RootRecovery? instance;
 
   /// Shorthand for [RootAccess.recovery], used commonly throughout

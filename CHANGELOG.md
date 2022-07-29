@@ -6,6 +6,15 @@
 
 ---
 
+## [5.0.0-dev.6] - 2022/07/29
+
+* Polish and preparations for full v5 release
+* Moved `migrator` into `rootDirectory` to fix bugs
+* Converted `DownloadManagement` to a singleton object
+* Finished example application
+* Improved documentation
+* Fixed bugs
+
 ## [5.0.0-dev.5] - 2022/07/25
 
 * Improved download time estimates and added tiles per second statistic

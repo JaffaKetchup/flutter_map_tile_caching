@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class Stat extends StatelessWidget {
-  const Stat({
+class StatDisplay extends StatelessWidget {
+  const StatDisplay({
     Key? key,
     required this.statistic,
     required this.description,

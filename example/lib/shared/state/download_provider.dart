@@ -56,9 +56,12 @@ class DownloadProvider extends ChangeNotifier {
 
   Stream<DownloadProgress>? _downloadProgress;
   Stream<DownloadProgress>? get downloadProgress => _downloadProgress;
-  set downloadProgress(Stream<DownloadProgress>? newStream) {
+  void setDownloadProgress(
+    Stream<DownloadProgress>? newStream, {
+    bool notify = true,
+  }) {
     _downloadProgress = newStream;
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
   bool _preventRedownload = false;

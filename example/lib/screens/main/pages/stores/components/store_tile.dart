@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../../shared/components/stat.dart';
 import '../../../../../shared/state/general_provider.dart';
 import '../../../../store_editor/store_editor.dart';
+import 'stat_display.dart';
 
 class StoreTile extends StatefulWidget {
   const StoreTile({
@@ -55,14 +55,14 @@ class _StoreTileState extends State<StoreTile> {
             ),
             FutureBuilder<String>(
               future: _tiles,
-              builder: (context, snapshot) => Stat(
+              builder: (context, snapshot) => StatDisplay(
                 statistic: snapshot.data,
                 description: 'Total Tiles',
               ),
             ),
             FutureBuilder<String>(
               future: _size,
-              builder: (context, snapshot) => Stat(
+              builder: (context, snapshot) => StatDisplay(
                 statistic: snapshot.data,
                 description: 'Total Size',
               ),

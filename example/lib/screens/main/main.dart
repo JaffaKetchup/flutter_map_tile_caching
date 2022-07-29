@@ -72,23 +72,23 @@ class _MainScreenState extends State<MainScreen> {
               ? const DownloaderPage()
               : const DownloadingPage(),
         ),
-        RecoveryPage(
-          moveToDownloadPage: () {
-            setState(() => _currentPageIndex = 2);
-            _pageController.animateToPage(
-              2,
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOut,
-            );
-          },
-        ),
+        RecoveryPage(moveToDownloadPage: () => _onDestinationSelected(2)),
         const SettingsAndAboutPage(),
       ];
 
+  void _onDestinationSelected(int index) {
+    setState(() => _currentPageIndex = index);
+    _pageController.animateToPage(
+      _currentPageIndex,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+    );
+  }
+
   @override
   void initState() {
-    super.initState();
     _pageController = PageController(initialPage: _currentPageIndex);
+    super.initState();
   }
 
   @override
@@ -102,20 +102,7 @@ class _MainScreenState extends State<MainScreen> {
         child: Scaffold(
           backgroundColor: Colors.white,
           bottomNavigationBar: NavigationBar(
-            onDestinationSelected: (int index) {
-              setState(() => _currentPageIndex = index);
-              _pageController.animateToPage(
-                _currentPageIndex,
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-              );
-
-              final DownloadProvider downloadProvider =
-                  Provider.of<DownloadProvider>(context, listen: false);
-              if (downloadProvider.downloadProgress != null) {
-                downloadProvider.downloadProgress = null;
-              }
-            },
+            onDestinationSelected: _onDestinationSelected,
             selectedIndex: _currentPageIndex,
             destinations: _destinations,
             labelBehavior: MediaQuery.of(context).size.width > 450

@@ -32,6 +32,8 @@ import '../settings/tile_provider_settings.dart';
 import 'directory.dart';
 
 /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
+///
+/// Is a singleton to ensure functioning as expected.
 class DownloadManagement {
   /// The store directory to provide access paths to
   final StoreDirectory _storeDirectory;
@@ -49,7 +51,22 @@ class DownloadManagement {
   late ProgressManagement _progressManagement;
 
   /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
-  DownloadManagement(this._storeDirectory);
+  ///
+  /// Is a singleton to ensure functioning as expected.
+  factory DownloadManagement(StoreDirectory storeDirectory) {
+    if (!_instances.keys.contains(storeDirectory)) {
+      _instances[storeDirectory] = DownloadManagement._(storeDirectory);
+    }
+    return _instances[storeDirectory]!;
+  }
+
+  /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
+  ///
+  /// Is a singleton to ensure functioning as expected.
+  DownloadManagement._(this._storeDirectory);
+
+  /// Contains the intialised instances of [DownloadManagement]s
+  static final Map<StoreDirectory, DownloadManagement> _instances = {};
 
   /// Download a specified [DownloadableRegion] in the foreground
   ///

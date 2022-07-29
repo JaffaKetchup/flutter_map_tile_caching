@@ -33,12 +33,24 @@ class _DownloadingPageState extends State<DownloadingPage> {
                           StreamBuilder<DownloadProgress>(
                         stream: provider.downloadProgress,
                         initialData: DownloadProgress.empty(),
-                        builder: (context, snapshot) => LayoutBuilder(
-                          builder: (context, constraints) =>
-                              constraints.maxWidth > 725
-                                  ? HorizontalLayout(data: snapshot.data!)
-                                  : VerticalLayout(data: snapshot.data!),
-                        ),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.done) {
+                            WidgetsBinding.instance.addPostFrameCallback(
+                              (_) => provider.setDownloadProgress(
+                                null,
+                                notify: false,
+                              ),
+                            );
+                          }
+
+                          return LayoutBuilder(
+                            builder: (context, constraints) =>
+                                constraints.maxWidth > 725
+                                    ? HorizontalLayout(data: snapshot.data!)
+                                    : VerticalLayout(data: snapshot.data!),
+                          );
+                        },
                       ),
                     ),
                   ),
