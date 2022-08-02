@@ -54,8 +54,8 @@ class DownloadProgress {
 
   /// Approximate number of tiles remaining to be downloaded
   ///
-  /// Is equal to `approxMaxTiles - successfulTiles`.
-  int get remainingTiles => maxTiles - successfulTiles;
+  /// Is equal to `approxMaxTiles - attemptedTiles`.
+  int get remainingTiles => maxTiles - attemptedTiles;
 
   /// Percentage of tiles saved by using sea tile removal (ie. discount)
   ///
