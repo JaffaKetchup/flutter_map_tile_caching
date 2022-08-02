@@ -6,6 +6,14 @@
 
 ---
 
+## [5.0.0] - 2022/08/XX
+
+* Renamed and refactored internal and public APIs, ready for release
+* Added `successfulSize` statistic to `DownloadProgress`
+* Improved example application
+* Improved documentation
+* Fixed bugs
+
 ## [5.0.0-dev.6] - 2022/07/29
 
 * Polish and preparations for full v5 release

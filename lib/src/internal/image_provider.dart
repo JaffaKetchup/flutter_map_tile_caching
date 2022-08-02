@@ -75,17 +75,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required DecoderCallback decode,
     required StreamController<ImageChunkEvent> chunkEvents,
   }) async {
-    Future<Codec> finish({
-      Uint8List? bytes,
-      String? throwError,
-    }) {
-      scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
-      unawaited(chunkEvents.close());
-      if (throwError != null) throw _FMTCBrowsingError(throwError);
-      if (bytes != null) return decode(bytes);
-      throw FallThroughError();
-    }
-
     Future<void> cacheHitMiss({
       required bool hit,
     }) async {
@@ -99,6 +88,19 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
           flush: true,
         );
       });
+    }
+
+    Future<Codec> finish({
+      Uint8List? bytes,
+      String? throwError,
+      bool? cacheHit,
+    }) {
+      scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
+      unawaited(chunkEvents.close());
+      if (cacheHit != null) unawaited(cacheHitMiss(hit: cacheHit));
+      if (throwError != null) throw _FMTCBrowsingError(throwError);
+      if (bytes != null) return decode(bytes);
+      throw FallThroughError();
     }
 
     final String url = provider.getTileUrl(coords, options);
@@ -127,6 +129,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       return finish(
         throwError:
             'Failed to load the tile from the cache because it was missing.',
+        cacheHit: false,
       );
     }
 
@@ -146,6 +149,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
           throwError: needsCreating
               ? 'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.'
               : null,
+          cacheHit: false,
         );
       }
 
@@ -156,6 +160,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
           throwError: needsCreating
               ? 'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.'
               : null,
+          cacheHit: false,
         );
       }
 
@@ -216,13 +221,11 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         );
       }
 
-      unawaited(cacheHitMiss(hit: false));
-      return finish(bytes: bytes);
+      return finish(bytes: bytes, cacheHit: false);
     }
 
     // IF tile exists & does not need updating THEN return the existing tile
-    unawaited(cacheHitMiss(hit: true));
-    return finish(bytes: bytes);
+    return finish(bytes: bytes, cacheHit: true);
   }
 
   @override

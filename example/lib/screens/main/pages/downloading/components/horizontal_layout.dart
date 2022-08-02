@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
+import '../../../../../shared/components/size_formatter.dart';
 import 'stat_display.dart';
 import 'tile_image.dart';
 
@@ -24,8 +25,13 @@ class HorizontalLayout extends StatelessWidget {
                 children: [
                   StatDisplay(
                     statistic:
-                        '${data.successfulTiles} (${data.tilesPerSecond.round()} tps)',
+                        '${data.successfulTiles} (${data.averageTPS.round()} avg tps)',
                     description: 'successful tiles',
+                  ),
+                  const SizedBox(height: 5),
+                  StatDisplay(
+                    statistic: (data.successfulSize * 1024).asReadableSize,
+                    description: 'downloaded size',
                   ),
                   const SizedBox(height: 5),
                   StatDisplay(

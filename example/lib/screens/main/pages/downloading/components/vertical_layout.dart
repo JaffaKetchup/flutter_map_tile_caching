@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
+import '../../../../../shared/components/size_formatter.dart';
 import 'stat_display.dart';
 
 class VerticalLayout extends StatelessWidget {
@@ -19,13 +20,13 @@ class VerticalLayout extends StatelessWidget {
             children: [
               StatDisplay(
                 statistic:
-                    '${data.successfulTiles} / ${data.maxTiles} (${data.percentageProgress.toStringAsFixed(2)}%)',
+                    '${data.successfulTiles} / ${data.maxTiles} (${data.averageTPS.round()} avg tps)',
                 description: 'successful / total tiles',
               ),
               const SizedBox(height: 2),
               StatDisplay(
-                statistic: data.tilesPerSecond.round().toString(),
-                description: 'tiles per second',
+                statistic: (data.successfulSize * 1024).asReadableSize,
+                description: 'downloaded size',
               ),
               const SizedBox(height: 2),
               StatDisplay(

@@ -10,7 +10,7 @@ import 'package:queue/queue.dart';
 import '../internal/exts.dart';
 import '../internal/filesystem_sanitiser_private.dart';
 import '../internal/tile_provider.dart';
-import 'progress_management.dart';
+import 'internal_timing_progress_management.dart';
 import 'tile_progress.dart';
 
 Stream<TileProgress> bulkDownloader({
@@ -25,7 +25,7 @@ Stream<TileProgress> bulkDownloader({
   required Queue queue,
   required StreamController<TileProgress> streamController,
   required int downloadID,
-  required ProgressManagement progressManagement,
+  required InternalProgressTimingManagement progressManagement,
 }) {
   for (final Coords<num> coord in tiles) {
     queue
@@ -61,7 +61,7 @@ Future<TileProgress> _getAndSaveTile({
   required bool preventRedownload,
   required Uint8List? seaTileBytes,
   required int downloadID,
-  required ProgressManagement progressManagement,
+  required InternalProgressTimingManagement progressManagement,
 }) async {
   final Coords<double> coordDouble =
       Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
@@ -90,17 +90,14 @@ Future<TileProgress> _getAndSaveTile({
 
     int received = 0;
 
-    final Stream<List<int>> stream = response.stream.asBroadcastStream()
-      ..listen((eventBytes) {
-        bytes.addAll(eventBytes);
-        received += eventBytes.length;
-        progressManagement.progress[url.hashCode] = TimestampProgress(
-          DateTime.now(),
-          received / totalBytes,
-        );
-      });
-
-    await stream.last;
+    await for (final List<int> evt in response.stream) {
+      bytes.addAll(evt);
+      received += evt.length;
+      progressManagement.progress[url.hashCode] = TimestampProgress(
+        DateTime.now(),
+        received / totalBytes,
+      );
+    }
 
     file.writeAsBytesSync(
       bytes,

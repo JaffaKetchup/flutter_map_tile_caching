@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 
-import 'progress_management.dart';
+import 'internal_timing_progress_management.dart';
 
 /// Represents the progress of an ongoing or finished (if [percentageProgress] is 100%) bulk download
 ///
@@ -12,8 +12,8 @@ class DownloadProgress {
   /// A zero identification denotes that there is no corresponding download yet, usually due to the initialisation with [DownloadProgress.empty].
   final int downloadID;
 
-  /// Class for managing the tiles per second ([ProgressManagement.averageTPS]) measurement of a download
-  final ProgressManagement _progressManagement;
+  /// Class for managing the average tiles per second ([InternalProgressTimingManagement.averageTPS]) measurement of a download
+  final InternalProgressTimingManagement _progressManagement;
 
   /// Number of successful tile downloads
   final int successfulTiles;
@@ -23,6 +23,9 @@ class DownloadProgress {
 
   /// Approximate total number of tiles to be downloaded
   final int maxTiles;
+
+  /// Number of kibibytes successfully downloaded
+  final double successfulSize;
 
   /// Number of tiles removed because they were entirely sea (these also make up part of [successfulTiles])
   ///
@@ -84,16 +87,16 @@ class DownloadProgress {
   /// Retrieve the average number of tiles per second that are being downloaded
   ///
   /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate estimations based on this data. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
-  double get tilesPerSecond => _progressManagement.averageTPS;
+  double get averageTPS => _progressManagement.averageTPS;
 
-  /// Estimate duration for entire download process
+  /// Estimate duration for entire download process, using [averageTPS]
   ///
   /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate duration calculations, but may not return the same result as expected. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
   Duration get estTotalDuration => Duration(
-        seconds: (maxTiles / tilesPerSecond.clamp(1, double.infinity)).round(),
+        seconds: (maxTiles / averageTPS.clamp(1, double.infinity)).round(),
       );
 
-  /// Estimate remaining duration until the end of the download process, based on [estTotalDuration]
+  /// Estimate remaining duration until the end of the download process
   ///
   /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate duration calculations, but may not return the same result as expected. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
   Duration get estRemainingDuration => estTotalDuration - duration;
@@ -105,11 +108,12 @@ class DownloadProgress {
     required this.successfulTiles,
     required this.failedTiles,
     required this.maxTiles,
+    required this.successfulSize,
     required this.seaTiles,
     required this.existingTiles,
     required this.duration,
     required this.tileImage,
-    required ProgressManagement progressManagement,
+    required InternalProgressTimingManagement progressManagement,
   }) : _progressManagement = progressManagement;
 
   /// Create an empty placeholder (all values set to 0 or empty) [DownloadProgress], useful for `initialData` in a [StreamBuilder]
@@ -117,11 +121,12 @@ class DownloadProgress {
       : downloadID = 0,
         successfulTiles = 0,
         failedTiles = [],
+        successfulSize = 0,
         maxTiles = 1,
         seaTiles = 0,
         existingTiles = 0,
         duration = Duration.zero,
-        _progressManagement = ProgressManagement();
+        _progressManagement = InternalProgressTimingManagement();
 
   //! GENERAL OBJECT STUFF !//
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../../shared/components/size_formatter.dart';
 import '../../../../../shared/state/general_provider.dart';
 import '../../../../store_editor/store_editor.dart';
 import 'stat_display.dart';
@@ -21,9 +22,11 @@ class StoreTile extends StatefulWidget {
 }
 
 class _StoreTileState extends State<StoreTile> {
-  Future<Image?>? _image;
   Future<String>? _tiles;
   Future<String>? _size;
+  Future<String>? _cacheHits;
+  Future<String>? _cacheMisses;
+  Future<Image?>? _image;
 
   bool _deletingProgress = false;
 
@@ -31,12 +34,44 @@ class _StoreTileState extends State<StoreTile> {
 
   void _loadStatistics() {
     _tiles = _store.stats.storeLengthAsync.then((l) => l.toString());
-    _size = _store.stats.storeSizeAsync
-        .then((s) => '${(s / 1000).toStringAsFixed(2)}MB');
-    _image = _store.manage.tileImageAsync(randomRange: 20, size: 62.5);
+    _size = _store.stats.storeSizeAsync.then((s) => (s * 1024).asReadableSize);
+    _cacheHits = _store.stats.cacheHitsAsync.then((h) => h.toString());
+    _cacheMisses = _store.stats.cacheMissesAsync.then((m) => m.toString());
+    _image = _store.manage.tileImageAsync(randomRange: 20, size: 125);
 
     setState(() {});
   }
+
+  List<Widget> get stats => [
+        FutureBuilder<String>(
+          future: _tiles,
+          builder: (context, snapshot) => StatDisplay(
+            statistic: snapshot.data,
+            description: 'Total Tiles',
+          ),
+        ),
+        FutureBuilder<String>(
+          future: _size,
+          builder: (context, snapshot) => StatDisplay(
+            statistic: snapshot.data,
+            description: 'Total Size',
+          ),
+        ),
+        FutureBuilder<String>(
+          future: _cacheHits,
+          builder: (context, snapshot) => StatDisplay(
+            statistic: snapshot.data,
+            description: 'Cache Hits',
+          ),
+        ),
+        FutureBuilder<String>(
+          future: _cacheMisses,
+          builder: (context, snapshot) => StatDisplay(
+            statistic: snapshot.data,
+            description: 'Cache Misses',
+          ),
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) => Consumer<GeneralProvider>(
@@ -47,26 +82,16 @@ class _StoreTileState extends State<StoreTile> {
               future: _image,
               builder: (context, snapshot) => snapshot.data == null
                   ? const SizedBox(
-                      height: 62.5,
-                      width: 62.5,
+                      height: 125,
+                      width: 125,
                       child: Icon(Icons.help_outline, size: 36),
                     )
                   : snapshot.data!,
             ),
-            FutureBuilder<String>(
-              future: _tiles,
-              builder: (context, snapshot) => StatDisplay(
-                statistic: snapshot.data,
-                description: 'Total Tiles',
-              ),
-            ),
-            FutureBuilder<String>(
-              future: _size,
-              builder: (context, snapshot) => StatDisplay(
-                statistic: snapshot.data,
-                description: 'Total Size',
-              ),
-            ),
+            if (MediaQuery.of(context).size.width > 675)
+              ...stats
+            else
+              Column(children: stats),
           ],
         ),
         builder: (context, provider, statistics) {

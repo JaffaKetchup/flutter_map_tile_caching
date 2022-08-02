@@ -32,7 +32,7 @@ class TimestampProgress {
 }
 
 /// Internal class for managing the tiles per second ([averageTPS]) measurement of a download
-class ProgressManagement {
+class InternalProgressTimingManagement {
   // ignore: cancel_subscriptions
   late StreamSubscription<void> _subscription;
 
@@ -50,33 +50,17 @@ class ProgressManagement {
   /// Retrieve the number of tiles per second, based on [startTracking]
   double get averageTPS => _averageTPS;
 
-  /// Create internal class for managing the tiles per second ([averageTPS]) measurement of a download
-  ///
-  /// Use [startTracking] afterward to use main functionality.
-  ProgressManagement();
-
   /// Start calculating the [averageTPS] measurement
-  ///
-  /// Increasing [pollingInterval] may increase accuracy, but will decrease the number of updates to the [averageTPS] value.
-  void startTracking({
-    Duration pollingInterval = const Duration(milliseconds: 1000),
-  }) {
+  void startTracking() {
     final List<double> tps = [];
 
-    _subscription = Stream<void>.periodic(pollingInterval).listen((_) {
+    _subscription =
+        Stream<void>.periodic(const Duration(seconds: 1)).listen((_) {
       progress.removeWhere(
-        (_, v) =>
-            v.timestamp.isBefore(DateTime.now().subtract(pollingInterval)),
+        (_, v) => v.timestamp
+            .isBefore(DateTime.now().subtract(const Duration(seconds: 1))),
       );
-
-      final Iterable<double> progressMap =
-          progress.values.map((e) => e.progress);
-      tps.add(
-        (progressMap.isEmpty
-                ? Iterable.castFrom<double, double>([0.0])
-                : progressMap)
-            .reduce((v, e) => v + e),
-      );
+      tps.add(progress.values.map((e) => e.progress).fold(0, (p, c) => p + c));
 
       _averageTPS = _calculateAverage(downloadSpeeds: tps);
     });
@@ -101,10 +85,7 @@ class ProgressManagement {
 
     return (smoothing * downloadSpeeds.last) +
         ((1 - smoothing) *
-            downloadSpeeds.reversed
-                .take(samples)
-                .toList()
-                .reduce((v, e) => v + e) /
+            downloadSpeeds.reversed.take(samples).reduce((v, e) => v + e) /
             samples);
   }
 }

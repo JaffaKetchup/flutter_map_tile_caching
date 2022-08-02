@@ -21,7 +21,7 @@ import 'package:queue/queue.dart';
 
 import '../bulk_download/download_progress.dart';
 import '../bulk_download/downloader.dart';
-import '../bulk_download/progress_management.dart';
+import '../bulk_download/internal_timing_progress_management.dart';
 import '../bulk_download/tile_loops.dart';
 import '../bulk_download/tile_progress.dart';
 import '../internal/exts.dart';
@@ -48,7 +48,7 @@ class DownloadManagement {
   StreamController<TileProgress>? _streamController;
 
   /// Used internally to manage tiles per second progress calculations
-  late ProgressManagement _progressManagement;
+  late InternalProgressTimingManagement _progressManagement;
 
   /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
   ///
@@ -368,12 +368,13 @@ class DownloadManagement {
     }
 
     int successfulTiles = 0;
+    int successfulSize = 0;
     int seaTiles = 0;
     int existingTiles = 0;
     final List<String> failedTiles = [];
     final DateTime startTime = DateTime.now();
 
-    _progressManagement = ProgressManagement()..startTracking();
+    _progressManagement = InternalProgressTimingManagement()..startTracking();
 
     final Stream<TileProgress> downloadStream = bulkDownloader(
       tiles: tiles,
@@ -398,6 +399,8 @@ class DownloadManagement {
         failedTiles.add(evt.failedUrl!);
       }
 
+      successfulSize += evt.sizeBytes;
+
       seaTiles += evt.wasSeaTile ? 1 : 0;
       existingTiles += evt.wasExistingTile ? 1 : 0;
 
@@ -406,6 +409,7 @@ class DownloadManagement {
         maxTiles: tiles.length,
         successfulTiles: successfulTiles,
         failedTiles: failedTiles,
+        successfulSize: successfulSize / 1024,
         seaTiles: seaTiles,
         existingTiles: existingTiles,
         duration: DateTime.now().difference(startTime),

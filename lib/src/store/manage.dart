@@ -70,7 +70,7 @@ class StoreManagement {
   ///
   /// For a full reset, manually [delete] then [create] the store.
   void reset() {
-    _access.tiles.listSync().forEach((e) => e.delete());
+    _access.tiles.listSync().forEach((e) => e.deleteSync());
     _storeDirectory.stats.invalidateCachedStatistics(statTypes: null);
   }
 
@@ -80,7 +80,9 @@ class StoreManagement {
   ///
   /// For a full reset, manually [deleteAsync] then [createAsync] the store.
   Future<void> resetAsync() async {
-    await _access.tiles.list().forEach((e) => e.delete());
+    await Future.wait(
+      await _access.tiles.list().map((e) => e.delete()).toList(),
+    );
     await _storeDirectory.stats
         .invalidateCachedStatisticsAsync(statTypes: null);
   }
@@ -94,9 +96,11 @@ class StoreManagement {
       throwIfInvalid: true,
     );
 
-    _access.real.renameSync(
-      p.joinAll([_storeDirectory.rootDirectory.access.real.path, safe]),
-    );
+    if (safe != _storeDirectory.storeName) {
+      _access.real.renameSync(
+        p.joinAll([_storeDirectory.rootDirectory.access.real.path, safe]),
+      );
+    }
 
     return _storeDirectory.copyWith(storeName: safe);
   }
@@ -110,9 +114,11 @@ class StoreManagement {
       throwIfInvalid: true,
     );
 
-    await _access.real.rename(
-      p.joinAll([_storeDirectory.rootDirectory.access.stores.path, safe]),
-    );
+    if (safe != _storeDirectory.storeName) {
+      await _access.real.rename(
+        p.joinAll([_storeDirectory.rootDirectory.access.stores.path, safe]),
+      );
+    }
 
     return _storeDirectory.copyWith(storeName: safe);
   }
@@ -154,7 +160,7 @@ class StoreManagement {
       i++;
     }
 
-    throw FallThroughError();
+    return null;
   }
 
   /// Retrieves a tile from the store and extracts it's [Image] asynchronously
@@ -194,6 +200,6 @@ class StoreManagement {
       i++;
     }
 
-    throw FallThroughError();
+    return null;
   }
 }
