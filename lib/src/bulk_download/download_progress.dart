@@ -45,9 +45,7 @@ class DownloadProgress {
   /// Is `null` if the last tile failed, or the tile already existed and `preventRedownload` is enabled.
   MemoryImage? tileImage;
 
-  /// Number of attempted tile downloads, including failures
-  ///
-  /// Note that this is not used in any other calculations: for example, [remainingTiles] uses [successfulTiles] instead of this.
+  /// Number of attempted tile downloads, including failure
   ///
   /// Is equal to `successfulTiles + failedTiles.length`.
   int get attemptedTiles => successfulTiles + failedTiles.length;
