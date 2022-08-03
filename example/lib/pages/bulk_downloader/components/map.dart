@@ -33,17 +33,17 @@ class MapView extends StatelessWidget {
             zoom: 9.2,
             interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
           ),
-          layers: [
-            TileLayerOptions(
+          children: [
+            TileLayerWidget(options: TileLayerOptions(
               urlTemplate: source,
-              tileProvider: const NonCachingNetworkTileProvider(),
+              tileProvider: NonCachingNetworkTileProvider(),
               maxZoom: 20,
               reset: context.read<GeneralProvider>().resetController.stream,
               tileBuilder: (_, child, __) => Container(
                 decoration: BoxDecoration(border: Border.all()),
                 child: child,
               ),
-            ),
+            )),
           ],
         );
       },

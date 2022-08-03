@@ -20,14 +20,14 @@ class MapView extends StatelessWidget {
         options: MapOptions(
           center: LatLng(51.50781936891249, -0.12691235597072373),
         ),
-        layers: [
-          TileLayerOptions(
+        children: [
+          TileLayerWidget(options: TileLayerOptions(
             urlTemplate: source,
             subdomains: ['a', 'b', 'c'],
-            tileProvider: const NonCachingNetworkTileProvider(),
+            tileProvider: NonCachingNetworkTileProvider(),
             maxZoom: 20,
             reset: provider.resetController.stream,
-          ),
+          )),
         ],
       ),
     );

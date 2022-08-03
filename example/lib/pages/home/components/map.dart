@@ -37,8 +37,8 @@ class MapView extends StatelessWidget {
             zoom: 9.2,
             interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
           ),
-          layers: [
-            TileLayerOptions(
+          children: [
+            TileLayerWidget(options: TileLayerOptions(
               urlTemplate: !provider.cachingEnabled || source == null
                   ? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
                   : source,
@@ -55,10 +55,10 @@ class MapView extends StatelessWidget {
                       cachedValidDuration: Duration(days: validDuration ?? 16),
                       maxStoreLength: maxTiles ?? 20000,
                     )
-                  : const NonCachingNetworkTileProvider(),
+                  : NonCachingNetworkTileProvider(),
               maxZoom: 20,
               reset: provider.resetController.stream,
-            ),
+            )),
           ],
         );
       },

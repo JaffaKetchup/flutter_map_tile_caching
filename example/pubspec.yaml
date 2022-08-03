@@ -15,7 +15,7 @@ dependencies:
   feature_discovery: ^0.14.1
   flutter:
     sdk: flutter
-  flutter_map: ^0.14.0
+  flutter_map: ^3.0.0
   flutter_map_tile_caching:
     path: ../
   flutter_speed_dial: ^5.0.0+1

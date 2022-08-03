@@ -19,7 +19,7 @@ dependencies:
   collection: ^1.15.0
   connectivity_plus: ^2.2.1
   flutter_local_notifications: ^9.3.2
-  flutter_map: ^0.14.0
+  flutter_map: ^3.0.0
   http: ^0.13.3
   ini: ^2.1.0
   latlong2: ^0.8.0
