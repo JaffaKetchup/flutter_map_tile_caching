@@ -5,26 +5,29 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as p show joinAll;
 import 'package:queue/queue.dart';
 
-import '../main.dart';
-import '../misc/validate.dart';
+import '../internal/exts.dart';
+import '../internal/filesystem_sanitiser_private.dart';
+import '../internal/tile_provider.dart';
+import 'internal_timing_progress_management.dart';
 import 'tile_progress.dart';
 
 Stream<TileProgress> bulkDownloader({
   required List<Coords<num>> tiles,
-  required StorageCachingTileProvider provider,
+  required FMTCTileProvider provider,
   required TileLayerOptions options,
   required http.Client client,
-  required Function(dynamic)? errorHandler,
+  required Function(Object?)? errorHandler,
   required int parallelThreads,
   required bool preventRedownload,
   required Uint8List? seaTileBytes,
   required Queue queue,
   required StreamController<TileProgress> streamController,
+  required int downloadID,
+  required InternalProgressTimingManagement progressManagement,
 }) {
-  for (Coords<num> coord in tiles) {
+  for (final Coords<num> coord in tiles) {
     queue
         .add(
       () => _getAndSaveTile(
@@ -35,6 +38,8 @@ Stream<TileProgress> bulkDownloader({
         errorHandler: errorHandler,
         preventRedownload: preventRedownload,
         seaTileBytes: seaTileBytes,
+        downloadID: downloadID,
+        progressManagement: progressManagement,
       ),
     )
         .then(
@@ -48,49 +53,65 @@ Stream<TileProgress> bulkDownloader({
 }
 
 Future<TileProgress> _getAndSaveTile({
-  required StorageCachingTileProvider provider,
+  required FMTCTileProvider provider,
   required Coords<num> coord,
   required TileLayerOptions options,
   required http.Client client,
-  required Function(dynamic)? errorHandler,
+  required void Function(Object)? errorHandler,
   required bool preventRedownload,
   required Uint8List? seaTileBytes,
+  required int downloadID,
+  required InternalProgressTimingManagement progressManagement,
 }) async {
-  final DateTime startTime = DateTime.now();
-  Duration calcElapsed() => DateTime.now().difference(startTime);
-
   final Coords<double> coordDouble =
       Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
   final String url = provider.getTileUrl(coordDouble, options);
-  final String path = p.joinAll([
-    provider.storeDirectory.absolute.path,
-    safeFilesystemString(inputString: url, throwIfInvalid: false),
-  ]);
+  final File file = provider.storeDirectory.access.tiles >>>
+      filesystemSanitiseValidate(
+        inputString: url,
+        throwIfInvalid: false,
+      );
+
+  final List<int> bytes = [];
 
   try {
-    if (preventRedownload && await File(path).exists()) {
+    if (preventRedownload && await file.exists()) {
       return TileProgress(
         failedUrl: null,
         wasSeaTile: false,
         wasExistingTile: true,
-        duration: calcElapsed(),
+        tileImage: null,
       );
     }
 
-    File(path).writeAsBytesSync(
-      (await client.get(Uri.parse(url))).bodyBytes,
+    final http.StreamedResponse response =
+        await client.send(http.Request('GET', Uri.parse(url)));
+    final int totalBytes = response.contentLength ?? 0;
+
+    int received = 0;
+
+    await for (final List<int> evt in response.stream) {
+      bytes.addAll(evt);
+      received += evt.length;
+      progressManagement.progress[url.hashCode] = TimestampProgress(
+        DateTime.now(),
+        received / totalBytes,
+      );
+    }
+
+    file.writeAsBytesSync(
+      bytes,
       flush: true,
     );
 
     if (seaTileBytes != null &&
-        const ListEquality()
-            .equals(await File(path).readAsBytes(), seaTileBytes)) {
-      await File(path).delete();
+        const ListEquality().equals(await file.readAsBytes(), seaTileBytes)) {
+      await file.delete();
       return TileProgress(
         failedUrl: null,
         wasSeaTile: true,
         wasExistingTile: false,
-        duration: calcElapsed(),
+        tileImage: Uint8List.fromList(bytes),
       );
     }
   } catch (e) {
@@ -99,7 +120,7 @@ Future<TileProgress> _getAndSaveTile({
       failedUrl: url,
       wasSeaTile: false,
       wasExistingTile: false,
-      duration: calcElapsed(),
+      tileImage: null,
     );
   }
 
@@ -107,6 +128,6 @@ Future<TileProgress> _getAndSaveTile({
     failedUrl: null,
     wasSeaTile: false,
     wasExistingTile: false,
-    duration: DateTime.now().difference(startTime),
+    tileImage: Uint8List.fromList(bytes),
   );
 }

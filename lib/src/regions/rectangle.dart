@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'base_region.dart';
 import 'downloadable_region.dart';
 
 /// A rectangular region with two or more corners
@@ -23,7 +24,7 @@ class RectangleRegion implements BaseRegion {
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),
-    Function(dynamic)? errorHandler,
+    void Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion.internal(
         points: [bounds.northWest, bounds.southEast],
@@ -42,55 +43,47 @@ class RectangleRegion implements BaseRegion {
       );
 
   @override
-  PolygonLayerOptions toDrawable(
-    Color fillColor,
-    Color borderColor, {
+  PolygonLayerOptions toDrawable({
+    Color? fillColor,
+    Color borderColor = const Color(0x00000000),
     double borderStrokeWidth = 3.0,
     bool isDotted = false,
-  }) {
-    return PolygonLayerOptions(
-      polygons: [
-        Polygon(
-          color: fillColor,
-          borderColor: borderColor,
-          borderStrokeWidth: borderStrokeWidth,
-          isDotted: isDotted,
-          points: [
-            LatLng(
-              bounds.southEast.latitude,
-              bounds.northWest.longitude,
-            ),
-            bounds.southEast,
-            LatLng(
-              bounds.northWest.latitude,
-              bounds.southEast.longitude,
-            ),
-            bounds.northWest,
-          ],
-        )
-      ],
-    );
-  }
+    String? label,
+    TextStyle labelStyle = const TextStyle(),
+    PolygonLabelPlacement labelPlacement = PolygonLabelPlacement.polylabel,
+  }) =>
+      PolygonLayerOptions(
+        polygons: [
+          Polygon(
+            isFilled: fillColor != null,
+            color: fillColor ?? Colors.transparent,
+            borderColor: borderColor,
+            borderStrokeWidth: borderStrokeWidth,
+            isDotted: isDotted,
+            label: label,
+            labelStyle: labelStyle,
+            labelPlacement: labelPlacement,
+            points: [
+              LatLng(
+                bounds.southEast.latitude,
+                bounds.northWest.longitude,
+              ),
+              bounds.southEast,
+              LatLng(
+                bounds.northWest.latitude,
+                bounds.southEast.longitude,
+              ),
+              bounds.northWest,
+            ],
+          )
+        ],
+      );
 
   @override
-  List<LatLng> toList() {
-    return [
-      LatLng(bounds.southEast.latitude, bounds.northWest.longitude),
-      bounds.southEast,
-      LatLng(bounds.northWest.latitude, bounds.southEast.longitude),
-      bounds.northWest,
-    ];
-  }
-}
-
-/// Deprecated due to other available methods. Migrate to construction using the real constructor (`RectangleRegion()`).
-@Deprecated(
-    'Due to other available methods. Migrate to construction using the real constructor (`RectangleRegion()`).')
-extension RectangleRegionExts on LatLngBounds {
-  /// Deprecated due to other available methods. Migrate to construction using the real constructor (`RectangleRegion()`).
-  @Deprecated(
-      'Due to other available methods. Migrate to construction using the real constructor (`RectangleRegion()`).')
-  RectangleRegion toRectangleRegion() {
-    return RectangleRegion(this);
-  }
+  List<LatLng> toList() => [
+        LatLng(bounds.southEast.latitude, bounds.northWest.longitude),
+        bounds.southEast,
+        LatLng(bounds.northWest.latitude, bounds.southEast.longitude),
+        bounds.northWest,
+      ];
 }

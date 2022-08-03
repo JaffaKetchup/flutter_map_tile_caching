@@ -1,30 +1,33 @@
-// This is 'flutter_map_tile_caching's' main file
-// You should never need to include anything other than this file from this library in your project
+/// Main import point for 'flutter_map_tile_caching'
+///
+/// Checkout the README for more documentation.
+///
+/// Exports all objects that you should need in normal use, including from dependencies.
+///
+/// If you require access to full API, import `package:flutter_map_tile_caching/fmtc_advanced.dart` instead.
+library flutter_map_tile_caching;
 
-export 'src/main.dart';
+export 'dart:io' show Directory, File;
 
-// Misc
-export 'src/misc/typedefs_and_exts.dart';
-export 'src/misc/validate.dart' hide safeFilesystemString;
+export 'package:flutter_background/flutter_background.dart'
+    show AndroidResource;
+export 'package:flutter_local_notifications/flutter_local_notifications.dart'
+    show AndroidNotificationDetails;
+export 'package:watcher/watcher.dart' show ChangeType;
 
-// Storage Managers & Download Progress
-export 'src/storage_managers/storage_manager.dart';
-export 'src/storage_managers/async_storage_manager.dart';
 export 'src/bulk_download/download_progress.dart';
-
-// Regions
+export 'src/fmtc.dart';
+export 'src/misc/background_download_widget.dart';
+export 'src/misc/enums.dart';
+export 'src/misc/typedefs.dart';
+export 'src/regions/base_region.dart';
+export 'src/regions/circle.dart';
 export 'src/regions/downloadable_region.dart';
+export 'src/regions/line.dart';
 export 'src/regions/recovered_region.dart';
 export 'src/regions/rectangle.dart';
-export 'src/regions/circle.dart';
-export 'src/regions/line.dart';
-
-// Other Libraries
-export 'package:connectivity_plus/connectivity_plus.dart'
-    show ConnectivityResult;
-export 'package:battery_info/enums/charging_status.dart';
-export 'dart:io' show Directory, File, FileSystemEvent;
-
-// Deprecated
-export 'src/deprecated/old_caching_manager.dart';
-export 'src/deprecated/shape_chooser.dart';
+export 'src/root/directory.dart';
+export 'src/settings/filesystem_sanitiser_public.dart';
+export 'src/settings/fmtc_settings.dart';
+export 'src/settings/tile_provider_settings.dart';
+export 'src/store/directory.dart';

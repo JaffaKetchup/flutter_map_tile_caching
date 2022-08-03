@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'base_region.dart';
 import 'downloadable_region.dart';
 
 /// A circular region with a center point and a radius
@@ -28,7 +29,7 @@ class CircleRegion implements BaseRegion {
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),
-    Function(dynamic)? errorHandler,
+    void Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion.internal(
         points: toList(),
@@ -47,24 +48,30 @@ class CircleRegion implements BaseRegion {
       );
 
   @override
-  PolygonLayerOptions toDrawable(
-    Color fillColor,
-    Color borderColor, {
+  PolygonLayerOptions toDrawable({
+    Color? fillColor,
+    Color borderColor = const Color(0x00000000),
     double borderStrokeWidth = 3.0,
     bool isDotted = false,
-  }) {
-    return PolygonLayerOptions(
-      polygons: [
-        Polygon(
-          color: fillColor,
-          borderColor: borderColor,
-          borderStrokeWidth: borderStrokeWidth,
-          isDotted: isDotted,
-          points: toList(),
-        )
-      ],
-    );
-  }
+    String? label,
+    TextStyle labelStyle = const TextStyle(),
+    PolygonLabelPlacement labelPlacement = PolygonLabelPlacement.polylabel,
+  }) =>
+      PolygonLayerOptions(
+        polygons: [
+          Polygon(
+            isFilled: fillColor != null,
+            color: fillColor ?? Colors.transparent,
+            borderColor: borderColor,
+            borderStrokeWidth: borderStrokeWidth,
+            isDotted: isDotted,
+            label: label,
+            labelStyle: labelStyle,
+            labelPlacement: labelPlacement,
+            points: toList(),
+          )
+        ],
+      );
 
   @override
   List<LatLng> toList() {
@@ -95,17 +102,5 @@ class CircleRegion implements BaseRegion {
     }
 
     return output;
-  }
-}
-
-/// Deprecated due to other available methods. Migrate to construction using the real constructor (`CircleRegion()`).
-@Deprecated(
-    'Due to other available methods. Migrate to construction using the real constructor (`CircleRegion()`).')
-extension CircleRegionExts on LatLng {
-  /// Deprecated due to other available methods. Migrate to construction using the real constructor (`CircleRegion()`).
-  @Deprecated(
-      'Due to other available methods. Migrate to construction using the real constructor (`CircleRegion()`).')
-  CircleRegion toCircleRegion(double radius) {
-    return CircleRegion(this, radius);
   }
 }

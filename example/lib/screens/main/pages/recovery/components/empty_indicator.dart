@@ -1,0 +1,19 @@
+import 'package:flutter/material.dart';
+
+class EmptyIndicator extends StatelessWidget {
+  const EmptyIndicator({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.done_all, size: 36),
+            SizedBox(height: 10),
+            Text('No Recoverable Regions Found'),
+          ],
+        ),
+      );
+}
