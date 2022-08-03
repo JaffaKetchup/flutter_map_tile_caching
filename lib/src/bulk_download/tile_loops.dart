@@ -10,13 +10,13 @@ List<Coords<num>> rectangleTiles(Map<String, dynamic> input) {
   final Crs crs = input['crs'];
   final CustomPoint<num> tileSize = input['tileSize'];
 
-  final coords = <Coords<num>>[];
+  final List<Coords<num>> coords = [];
   for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-    final nwCustomPoint = crs
+    final CustomPoint<num> nwCustomPoint = crs
         .latLngToPoint(bounds.northWest, zoomLvl.toDouble())
         .unscaleBy(tileSize)
         .floor();
-    final seCustomPoint = crs
+    final CustomPoint<num> seCustomPoint = crs
             .latLngToPoint(bounds.southEast, zoomLvl.toDouble())
             .unscaleBy(tileSize)
             .ceil() -
@@ -51,10 +51,10 @@ List<Coords<num>> circleTiles(Map<String, dynamic> input) {
   final List<Coords<num>> coords = [];
 
   for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-    outlineTileNums[zoomLvl] = {};
+    outlineTileNums[zoomLvl] = <int, List<int>>{};
 
-    for (LatLng node in circleOutline) {
-      final tile = crs
+    for (final LatLng node in circleOutline) {
+      final CustomPoint<num> tile = crs
           .latLngToPoint(node, zoomLvl.toDouble())
           .unscaleBy(tileSize)
           .floor();
@@ -74,11 +74,13 @@ List<Coords<num>> circleTiles(Map<String, dynamic> input) {
       ];
     }
 
-    for (int x in outlineTileNums[zoomLvl]!.keys) {
+    for (final int x in outlineTileNums[zoomLvl]!.keys) {
       for (int y = outlineTileNums[zoomLvl]![x]![0];
           y <= outlineTileNums[zoomLvl]![x]![1];
           y++) {
-        coords.add(Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble());
+        coords.add(
+          Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble(),
+        );
       }
     }
   }
@@ -110,7 +112,7 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
         double minA = double.infinity;
         double maxA = double.negativeInfinity;
 
-        for (CustomPoint<num> p in a.points) {
+        for (final CustomPoint<num> p in a.points) {
           final num projected = normal.x * p.x + normal.y * p.y;
 
           if (projected < minA) minA = projected.toDouble();
@@ -120,7 +122,7 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
         double minB = double.infinity;
         double maxB = double.negativeInfinity;
 
-        for (CustomPoint<num> p in b.points) {
+        for (final CustomPoint<num> p in b.points) {
           final num projected = normal.x * p.x + normal.y * p.y;
 
           if (projected < minB) minB = projected.toDouble();
@@ -140,10 +142,10 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
   final Crs crs = input['crs'];
   final CustomPoint<num> tileSize = input['tileSize'];
 
-  final coords = <Coords<num>>[];
+  final List<Coords<num>> coords = [];
 
   for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-    for (List<LatLng> rect in rects) {
+    for (final List<LatLng> rect in rects) {
       final LatLng rrBottomLeft = rect[0];
       final LatLng rrBottomRight = rect[1];
       final LatLng rrTopRight = rect[2];
@@ -162,34 +164,34 @@ List<Coords<num>> lineTiles(Map<String, dynamic> input) {
         rrBottomRight.longitude,
       ];
 
-      final rrNorthWest = crs
+      final CustomPoint<num> rrNorthWest = crs
           .latLngToPoint(rrTopLeft, zoomLvl.toDouble())
           .unscaleBy(tileSize)
           .floor();
-      final rrNorthEast = crs
+      final CustomPoint<num> rrNorthEast = crs
               .latLngToPoint(rrTopRight, zoomLvl.toDouble())
               .unscaleBy(tileSize)
               .ceil() -
           const CustomPoint(1, 0);
-      final rrSouthWest = crs
+      final CustomPoint<num> rrSouthWest = crs
               .latLngToPoint(rrBottomLeft, zoomLvl.toDouble())
               .unscaleBy(tileSize)
               .ceil() -
           const CustomPoint(0, 1);
-      final rrSouthEast = crs
+      final CustomPoint<num> rrSouthEast = crs
               .latLngToPoint(rrBottomRight, zoomLvl.toDouble())
               .unscaleBy(tileSize)
               .ceil() -
           const CustomPoint(1, 1);
 
-      final srNorthWest = crs
+      final CustomPoint<num> srNorthWest = crs
           .latLngToPoint(
             LatLng(rrAllLat.maxNum, rrAllLon.minNum),
             zoomLvl.toDouble(),
           )
           .unscaleBy(tileSize)
           .floor();
-      final srSouthEast = crs
+      final CustomPoint<num> srSouthEast = crs
               .latLngToPoint(
                 LatLng(rrAllLat.minNum, rrAllLon.maxNum),
                 zoomLvl.toDouble(),

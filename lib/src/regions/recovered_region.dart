@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
+import 'base_region.dart';
 import 'circle.dart';
 import 'downloadable_region.dart';
 import 'line.dart';
@@ -15,6 +18,26 @@ import 'rectangle.dart';
 ///
 /// Should avoid manual construction. Use [toDownloadable] to restore a valid [DownloadableRegion].
 class RecoveredRegion {
+  /// The file that this region was contained in
+  ///
+  /// Not actually used when converting to [DownloadableRegion].
+  final File file;
+
+  /// A unique ID created for every bulk download operation
+  ///
+  /// Not actually used when converting to [DownloadableRegion].
+  final int id;
+
+  /// The store name originally associated with this download.
+  ///
+  /// Not actually used when converting to [DownloadableRegion].
+  final String storeName;
+
+  /// The time at which this recovery was started
+  ///
+  /// Not actually used when converting to [DownloadableRegion].
+  final DateTime time;
+
   /// The shape that this region conforms to
   final RegionType type;
 
@@ -44,7 +67,7 @@ class RecoveredRegion {
 
   /// The number of download threads allowed to run simultaneously
   ///
-  /// This will significatly increase speed, at the expense of faster battery drain. Note that some servers may forbid multithreading, in which case this should be set to 1.
+  /// This will significantly increase speed, at the expense of faster battery drain. Note that some servers may forbid multithreading, in which case this should be set to 1, unless another limit is specified.
   final int parallelThreads;
 
   /// Whether to skip downloading tiles that already exist
@@ -54,14 +77,18 @@ class RecoveredRegion {
   ///
   /// The checks are conducted by comparing the bytes of the tile at x:0, y:0, and z:19 to the bytes of the currently downloading tile. If they match, the tile is deleted, otherwise the tile is kept.
   ///
-  /// This option is therefore not supported when using satelite tiles (because of the variations from tile to tile), on maps where the tile 0/0/19 is not entirely sea, or on servers where zoom level 19 is not supported. If not supported, set this to `false` to avoid wasting unnecessary time and to avoid errors.
+  /// This option is therefore not supported when using satellite tiles (because of the variations from tile to tile), on maps where the tile 0/0/19 is not entirely sea, or on servers where zoom level 19 is not supported. If not supported, set this to `false` to avoid wasting unnecessary time and to avoid errors.
   ///
   /// This is a storage saving feature, not a time saving or data saving feature: tiles still have to be fully downloaded before they can be checked.
   final bool seaTileRemoval;
 
-  /// Avoid construction using this method.
+  /// Avoid construction using this method
   @internal
   RecoveredRegion.internal({
+    required this.file,
+    required this.id,
+    required this.storeName,
+    required this.time,
     required this.type,
     required this.bounds,
     required this.center,
@@ -76,10 +103,11 @@ class RecoveredRegion {
     required this.seaTileRemoval,
   });
 
+  /// Convert this region into a downloadable region
   DownloadableRegion toDownloadable(
     TileLayerOptions options, {
     Crs crs = const Epsg3857(),
-    Function(dynamic)? errorHandler,
+    Function(Object?)? errorHandler,
   }) {
     final BaseRegion region = type == RegionType.rectangle
         ? RectangleRegion(bounds!)

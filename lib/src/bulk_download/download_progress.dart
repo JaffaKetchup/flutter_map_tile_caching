@@ -1,12 +1,20 @@
-import 'package:collection/collection.dart';
+import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
+
+import 'internal_timing_progress_management.dart';
 
 /// Represents the progress of an ongoing or finished (if [percentageProgress] is 100%) bulk download
 ///
 /// Should avoid manual construction, use named constructor [DownloadProgress.empty] to generate placeholders.
-///
-/// Is yielded from `StorageCachingTileProvider().downloadRegion()`, and returned in a callback from `StorageCachingTileProvider().downloadRegionBackground()`.
 class DownloadProgress {
+  /// Identification number of the corresponding download
+  ///
+  /// A zero identification denotes that there is no corresponding download yet, usually due to the initialisation with [DownloadProgress.empty].
+  final int downloadID;
+
+  /// Class for managing the average tiles per second ([InternalProgressTimingManagement.averageTPS]) measurement of a download
+  final InternalProgressTimingManagement _progressManagement;
+
   /// Number of successful tile downloads
   final int successfulTiles;
 
@@ -15,6 +23,9 @@ class DownloadProgress {
 
   /// Approximate total number of tiles to be downloaded
   final int maxTiles;
+
+  /// Number of kibibytes successfully downloaded
+  final double successfulSize;
 
   /// Number of tiles removed because they were entirely sea (these also make up part of [successfulTiles])
   ///
@@ -26,25 +37,23 @@ class DownloadProgress {
   /// Only applicable if redownload prevention is enabled, otherwise this value is always 0.
   final int existingTiles;
 
-  /// The length of time each tile took to download (one element per tile)
-  ///
-  /// Use [duration] for time elapsed so far (each element added up)
-  final List<Duration> durationPerTile;
-
   /// Elapsed duration since start of download process
   final Duration duration;
 
-  /// Number of attempted tile downloads, including failures
+  /// Get the [ImageProvider] of the last tile that was downloaded
   ///
-  /// Note that this is not used in any other calculations: for example, [remainingTiles] uses [successfulTiles] instead of this.
+  /// Is `null` if the last tile failed, or the tile already existed and `preventRedownload` is enabled.
+  MemoryImage? tileImage;
+
+  /// Number of attempted tile downloads, including failure
   ///
   /// Is equal to `successfulTiles + failedTiles.length`.
   int get attemptedTiles => successfulTiles + failedTiles.length;
 
   /// Approximate number of tiles remaining to be downloaded
   ///
-  /// Is equal to `approxMaxTiles - successfulTiles`.
-  int get remainingTiles => maxTiles - successfulTiles;
+  /// Is equal to `approxMaxTiles - attemptedTiles`.
+  int get remainingTiles => maxTiles - attemptedTiles;
 
   /// Percentage of tiles saved by using sea tile removal (ie. discount)
   ///
@@ -73,78 +82,49 @@ class DownloadProgress {
   /// Is equal to `(attemptedTiles / approxMaxTiles) * 100`.
   double get percentageProgress => (attemptedTiles / maxTiles) * 100;
 
-  /// Estimated duration for entire download process, based on existing progress and elapsed duration
+  /// Retrieve the average number of tiles per second that are being downloaded
+  ///
+  /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate estimations based on this data. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
+  double get averageTPS => _progressManagement.averageTPS;
+
+  /// Estimate duration for entire download process, using [averageTPS]
   ///
   /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate duration calculations, but may not return the same result as expected. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
-  Duration get estTotalDuration {
-    final List<int> data =
-        durationPerTile.map((e) => e.inMicroseconds).toList();
-    const double smoothing = 0.005;
+  Duration get estTotalDuration => Duration(
+        seconds: (maxTiles / averageTPS.clamp(1, double.infinity)).round(),
+      );
 
-    return Duration(
-          microseconds: data.length == 1
-              ? data[0]
-              : ((smoothing * data.last) +
-                      ((1 - smoothing) * (data.sum / data.length)))
-                  .round(),
-        ) *
-        (maxTiles / 2);
-  }
-
-  /// Estimated remaining duration until the end of the download process, based on [estTotalDuration]
+  /// Estimate remaining duration until the end of the download process
   ///
-  /// Is equal to `estTotalDuration - duration`
+  /// Uses an exponentially smoothed moving average algorithm instead of a linear average algorithm. This should lead to more accurate duration calculations, but may not return the same result as expected. The full original algorithm (written in Python) can be found at https://stackoverflow.com/a/54264570/11846040.
   Duration get estRemainingDuration => estTotalDuration - duration;
-
-  /// The 'exponential moving' average duration for download per tile, based on [estTotalDuration].
-  ///
-  /// Deprecated due to minimal uses, and introduction of more accurate time estimations which do not use linear averaging. No new alternative is provided.
-  @Deprecated(
-      'Deprecated due to minimal uses, and introduction of more accurate time estimations which do not use linear averaging. No new alternative is provided.')
-  Duration get avgDurationTile => Duration(
-      microseconds: (estTotalDuration.inMicroseconds / maxTiles).round());
-
-  /// Deprecated due to internal refactoring. Migrate to `attemptedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
-  @Deprecated(
-      'Deprecated due to internal refactoring. Migrate to `attemptedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
-  int get completedTiles => attemptedTiles;
-
-  /// Deprecated due to internal refactoring. Migrate to `failedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
-  @Deprecated(
-      'Due to internal refactoring. Migrate to `failedTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
-  List<String> get erroredTiles => failedTiles;
-
-  /// Deprecated due to internal refactoring. Migrate to `maxTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.
-  @Deprecated(
-      'Due to internal refactoring. Migrate to `maxTiles` for nearest equivalent. Note that the new alternative is not exactly the same as this: read new documentation for information.')
-  int get totalTiles => maxTiles;
 
   /// Avoid construction using this method. Use [DownloadProgress.empty] to generate empty placeholders where necessary.
   @internal
   DownloadProgress.internal({
+    required this.downloadID,
     required this.successfulTiles,
     required this.failedTiles,
     required this.maxTiles,
+    required this.successfulSize,
     required this.seaTiles,
     required this.existingTiles,
-    required this.durationPerTile,
     required this.duration,
-  });
+    required this.tileImage,
+    required InternalProgressTimingManagement progressManagement,
+  }) : _progressManagement = progressManagement;
 
-  /// Create an empty placeholder (all values set to 0 or empty) [DownloadProgress], useful for `initalData` in a [StreamBuilder]
+  /// Create an empty placeholder (all values set to 0 or empty) [DownloadProgress], useful for `initialData` in a [StreamBuilder]
   DownloadProgress.empty()
-      : successfulTiles = 0,
+      : downloadID = 0,
+        successfulTiles = 0,
         failedTiles = [],
-        maxTiles = 0,
+        successfulSize = 0,
+        maxTiles = 1,
         seaTiles = 0,
         existingTiles = 0,
-        durationPerTile = [],
-        duration = const Duration();
-
-  /// Deprecated due to internal refactoring. Migrate to the named constructor [DownloadProgress.empty]. Will be removed in next update.
-  @Deprecated(
-      'Due to internal refactoring. Migrate to the named constructor [DownloadProgress.empty]. Will be removed in next update.')
-  static DownloadProgress get placeholder => DownloadProgress.empty();
+        duration = Duration.zero,
+        _progressManagement = InternalProgressTimingManagement();
 
   //! GENERAL OBJECT STUFF !//
 
