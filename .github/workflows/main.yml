@@ -99,11 +99,9 @@ jobs:
         working-directory: .
       - name: Build Windows Application
         run: flutter build windows --obfuscate --split-debug-info=/symbols
-      - name: Archive (ZIP) Windows Application To Output Directory
-        uses: vimtor/action-zip@v1
-        with:
-          files: ./example/build/windows/runner/Release
-          dest: prebuiltExampleApplications/WindowsApplication.zip
+      - name: Create Windows Application Installer
+        run: iscc "windowsApplicationInstallerSetup.iss"
+        working-directory: .
       - name: Commit Output Directory
         uses: EndBug/add-and-commit@v9.0.1
         with:
