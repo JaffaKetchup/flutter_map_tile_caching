@@ -17,10 +17,8 @@ environment:
   flutter: ">=3.0.0"
 
 dependencies:
-  battery_info: ^1.1.1
   bezier: ^1.2.0
   collection: ^1.16.0
-  connectivity_plus: ^2.3.6
   flutter:
     sdk: flutter
   flutter_background: ^1.1.0

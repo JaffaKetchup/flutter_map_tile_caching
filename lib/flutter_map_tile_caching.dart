@@ -19,7 +19,6 @@ export 'src/bulk_download/download_progress.dart';
 export 'src/fmtc.dart';
 export 'src/misc/background_download_widget.dart';
 export 'src/misc/enums.dart';
-export 'src/misc/typedefs.dart';
 export 'src/regions/base_region.dart';
 export 'src/regions/circle.dart';
 export 'src/regions/downloadable_region.dart';
