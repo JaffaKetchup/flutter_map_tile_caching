@@ -44,7 +44,7 @@ jobs:
         run: dart analyze --fatal-infos --fatal-warnings
 
   check-example-changes:
-    name: "Check Example Application For Changes"
+    name: "Check Example/Config For Changes"
     runs-on: "ubuntu-20.04"
     outputs:
       example_changed: ${{ steps.check_file_changed.outputs.example_changed }}
@@ -58,7 +58,7 @@ jobs:
         id: check_file_changed
         run: |
           $diff = git diff --name-only HEAD^ HEAD
-          $SourceDiff = $diff | Where-Object { $_ -match '^example/'}
+          $SourceDiff = $diff | Where-Object { $_ -match '^example/' -or $_ -match '.iss$'}
           $HasDiff = $SourceDiff.Length -gt 0
           Write-Host "::set-output name=example_changed::$HasDiff"
 
