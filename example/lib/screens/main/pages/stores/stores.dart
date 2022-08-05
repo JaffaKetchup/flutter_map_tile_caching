@@ -3,6 +3,7 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
 import '../../../../shared/components/loading_indicator.dart';
+import '../../../import_store/import_store.dart';
 import '../../../store_editor/store_editor.dart';
 import 'components/empty_indicator.dart';
 import 'components/header.dart';
@@ -88,22 +89,14 @@ class _StoresPageState extends State<StoresPage> {
               label: 'Create New Store',
             ),
             SpeedDialChild(
-              onTap: () async {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Importing...')),
-                );
-
-                await FMTC.instance.rootDirectory.import
-                    .selectAndImportStores();
-
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Finished Importing')),
-                  );
-                }
-              },
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<String>(
+                  builder: (BuildContext context) => const ImportStorePopup(),
+                  fullscreenDialog: true,
+                ),
+              ),
               child: const Icon(Icons.file_open),
-              label: 'Import Store',
+              label: 'Import Stores',
             ),
           ],
         ),

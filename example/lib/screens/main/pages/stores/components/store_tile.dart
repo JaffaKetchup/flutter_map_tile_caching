@@ -119,7 +119,7 @@ class _StoreTileState extends State<StoreTile> {
                   child: Column(
                     children: [
                       statistics!,
-                      const SizedBox(height: 5),
+                      const SizedBox(height: 15),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -133,7 +133,7 @@ class _StoreTileState extends State<StoreTile> {
                                     color: isCurrentStore ? null : Colors.red,
                                   ),
                             tooltip: 'Delete Store',
-                            onPressed: isCurrentStore
+                            onPressed: isCurrentStore || _deletingProgress
                                 ? null
                                 : () async {
                                     setState(() {
@@ -156,25 +156,30 @@ class _StoreTileState extends State<StoreTile> {
                                   )
                                 : const Icon(Icons.delete),
                             tooltip: 'Empty Store',
-                            onPressed: () async {
-                              setState(() => _emptyingProgress = true);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Emptying...')),
-                              );
+                            onPressed: _emptyingProgress
+                                ? null
+                                : () async {
+                                    setState(() => _emptyingProgress = true);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Emptying...'),
+                                      ),
+                                    );
 
-                              await _store.manage.resetAsync();
+                                    await _store.manage.resetAsync();
 
-                              setState(() => _emptyingProgress = false);
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Finished Emptying'),
-                                  ),
-                                );
-                              }
+                                    setState(() => _emptyingProgress = false);
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Finished Emptying'),
+                                        ),
+                                      );
+                                    }
 
-                              _loadStatistics();
-                            },
+                                    _loadStatistics();
+                                  },
                           ),
                           IconButton(
                             icon: _exportingProgress
@@ -193,7 +198,8 @@ class _StoreTileState extends State<StoreTile> {
                                       ),
                                     );
 
-                                    await _store.export.selectAndExportStore();
+                                    await _store.export
+                                        .withGUI(context: context);
 
                                     setState(() => _exportingProgress = false);
                                     if (mounted) {
