@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
 import '../../../../shared/components/loading_indicator.dart';
 import '../../../store_editor/store_editor.dart';
@@ -69,17 +70,42 @@ class _StoresPageState extends State<StoresPage> {
             ),
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute<String>(
-              builder: (BuildContext context) => const StoreEditorPopup(
-                existingStoreName: null,
-                isStoreInUse: false,
+        floatingActionButton: SpeedDial(
+          icon: Icons.create_new_folder,
+          activeIcon: Icons.close,
+          children: [
+            SpeedDialChild(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<String>(
+                  builder: (BuildContext context) => const StoreEditorPopup(
+                    existingStoreName: null,
+                    isStoreInUse: false,
+                  ),
+                  fullscreenDialog: true,
+                ),
               ),
-              fullscreenDialog: true,
+              child: const Icon(Icons.add),
+              label: 'Create New Store',
             ),
-          ),
-          child: const Icon(Icons.create_new_folder),
+            SpeedDialChild(
+              onTap: () async {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Importing...')),
+                );
+
+                await FMTC.instance.rootDirectory.import
+                    .selectAndImportStores();
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Finished Importing')),
+                  );
+                }
+              },
+              child: const Icon(Icons.file_open),
+              label: 'Import Store',
+            ),
+          ],
         ),
       );
 }

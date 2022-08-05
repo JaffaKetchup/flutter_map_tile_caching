@@ -6,12 +6,12 @@ import '../../flutter_map_tile_caching.dart';
 import '../internal/exts.dart';
 
 /// Manage migration for file structure across FMTC versions
-class FMTCMigrator {
+class RootMigrator {
   /// The root directory to migrate into
   final RootDirectory _rootDirectory;
 
   /// Manage migration for file structure across FMTC versions
-  FMTCMigrator(this._rootDirectory);
+  RootMigrator(this._rootDirectory);
 
   /// Migrates a v4 file structure to a v5 structure
   ///

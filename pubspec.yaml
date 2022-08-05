@@ -17,8 +17,10 @@ environment:
   flutter: ">=3.0.0"
 
 dependencies:
+  archive: ^3.3.1
   bezier: ^1.2.0
   collection: ^1.16.0
+  file_picker:
   flutter:
     sdk: flutter
   flutter_background: ^1.1.0

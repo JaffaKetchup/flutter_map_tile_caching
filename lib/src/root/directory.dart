@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import '../internal/exts.dart';
 import '../store/directory.dart';
 import 'access.dart';
+import 'import.dart';
 import 'manage.dart';
 import 'migrator.dart';
 import 'recovery.dart';
@@ -84,7 +85,10 @@ class RootDirectory {
   RootRecovery get recovery => RootRecovery.instance ?? RootRecovery(this);
 
   /// Manage migration for file structure across FMTC versions
-  FMTCMigrator get migrator => FMTCMigrator(this);
+  RootMigrator get migrator => RootMigrator(this);
+
+  /// Provides store import functionality for this root
+  RootImport get import => RootImport(this);
 
   @override
   String toString() => 'RootDirectory(_rootDirectory: $rootDirectory)';

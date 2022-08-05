@@ -17,6 +17,7 @@ dependencies:
   flutter_map: ^2.0.0
   flutter_map_tile_caching:
     path: ../
+  flutter_speed_dial: ^6.0.0
   google_fonts: ^3.0.1
   http: ^0.13.4
   intl: ^0.17.0
