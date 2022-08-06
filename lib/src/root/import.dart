@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
@@ -22,10 +23,17 @@ class RootImport {
   ///
   /// Uses the platform specifc file picker. Where supported, limits file extension to [fileExtension] ('fmtc' by default), otherwise any file can be selected as a fallback.
   ///
+  /// It is recommended to leave [emptyCacheBeforePicking] as the default (`true`). Otherwise, the picker may use cached files as opposed to the real files, which may yield unexpected results. This is only effective on Android and iOS - other platforms cannot use cache.
+  ///
   /// If any files are selected, a [Map] is returned: where the keys are the the selected filenames (without extensions), and the values will resolve to a [bool] specifying whether the import was successful or unsuccessful. Otherwise `null` will be returned.
   Future<Map<String, Future<bool>>?> withGUI({
     String fileExtension = 'fmtc',
+    bool emptyCacheBeforePicking = true,
   }) async {
+    if (emptyCacheBeforePicking && (Platform.isAndroid || Platform.isIOS)) {
+      await FilePicker.platform.clearTemporaryFiles();
+    }
+
     late final FilePickerResult? importPaths;
     try {
       importPaths = await FilePicker.platform.pickFiles(
@@ -59,38 +67,48 @@ class RootImport {
   ///
   /// The output specifies whether the import was successful or unsuccessful.
   Future<bool> manual(File inputFile) async {
+    Future<bool> returnError(StoreManagement storeManagement) async {
+      await storeManagement.deleteAsync();
+      return false;
+    }
+
     final String path = inputFile.absolute.path;
     final String storeName = p.basenameWithoutExtension(path);
-    final StoreManagement storeManagement = StoreDirectory(
-      _rootDirectory,
-      storeName,
-      autoCreate: false,
-    ).manage;
+    final StoreManagement storeManagement =
+        StoreDirectory(_rootDirectory, storeName, autoCreate: false).manage;
 
-    await compute(_import, {
+    if (!await compute(_import, {
       _rootDirectory.access.stores > storeName: await File(path).readAsBytes(),
-    });
+    })) return returnError(storeManagement);
 
     if (await storeManagement.readyAsync) return true;
-    await storeManagement.deleteAsync();
-    return false;
+    return returnError(storeManagement);
   }
 }
 
-Future<void> _import(Map<String, Uint8List> data) async {
-  final Directory baseDirectory = Directory(data.keys.toList()[0]);
-  final Archive archive = ZipDecoder().decodeBytes(data.values.toList()[0]);
+Future<bool> _import(Map<String, Uint8List> data) async {
+  try {
+    final Directory baseDirectory = Directory(data.keys.toList()[0]);
+    final Archive archive = ZipDecoder().decodeBytes(
+      data.values.toList()[0],
+      verify: true,
+    );
 
-  await Future.wait(
-    [
-      archive.where((f) => f.isFile).map(
-            (f) async =>
-                (await (baseDirectory >>> f.name).create(recursive: true))
-                    .writeAsBytes(f.content),
-          ),
-      archive
-          .where((f) => !f.isFile)
-          .map((f) => (baseDirectory >> f.name).create(recursive: true)),
-    ].expand((e) => e),
-  );
+    await Future.wait(
+      [
+        archive
+            .where((f) => !f.isFile)
+            .map((f) => (baseDirectory >> f.name).create(recursive: true)),
+        archive.where((f) => f.isFile).map(
+              (f) async =>
+                  (await (baseDirectory >>> f.name).create(recursive: true))
+                      .writeAsBytes(f.content),
+            ),
+      ].expand((e) => e),
+    );
+
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
