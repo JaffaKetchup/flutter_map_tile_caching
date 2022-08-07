@@ -24,17 +24,17 @@ class StoreExport {
 
   /// Export the store with a graphical user interface (uses [manual] internally)
   ///
-  /// By default, uses the platform specifc file picker on Windows, MacOS, or Windows, and the share dialog/sheet on other platforms (inferred to be Android or iOS).
-  ///
-  /// Exported files are named as the store name plus the [fileExtension] ('fmtc' by default).
-  ///
   /// Set [forceFilePicker] to:
   /// * `true`: always force an attempt at using the file picker. This will cause an error on unsupported platforms, and so is not recommended.
   /// * `false`: always force an attempt at using the share dialog/sheet. This will cause an error on unsupported platforms, and so is not recommended.
-  /// * `null`: use default as above
+  /// * `null`: uses the platform specifc file picker on Windows, MacOS, or Windows, and the share dialog/sheet on other platforms (inferred to be Android or iOS).
   ///
-  /// [context] ([BuildContext]) must be specified if using the share dialog/sheet, so it is recommended to always pass it. Will cause a null error if not passed when necessary.
-  Future<void> withGUI({
+  /// [context] ([BuildContext]) must be specified if using the share dialog/sheet, so it is necessary to pass it unless [forceFilePicker] is `true`. Will cause an unhandled null error if not passed when necessary.
+  ///
+  /// Exported files are named as the store name plus the [fileExtension] ('fmtc' by default).
+  ///
+  /// Returns `true` when successful, otherwise `false` when unsuccessful or unknown.
+  Future<bool> withGUI({
     String fileExtension = 'fmtc',
     bool? forceFilePicker,
     BuildContext? context,
@@ -48,20 +48,23 @@ class StoreExport {
         allowedExtensions: [fileExtension],
       );
 
-      if (outputPath != null) {
-        await manual(File(outputPath));
-      }
+      if (outputPath == null) return false;
+
+      await manual(File(outputPath));
+      return true;
     } else {
       final File exportFile =
           _access >>> '${_storeDirectory.storeName}.$fileExtension';
       final box = context!.findRenderObject() as RenderBox?;
 
       await manual(exportFile);
-      await Share.shareFiles(
+      final ShareResult result = await Share.shareFilesWithResult(
         [exportFile.absolute.path],
         sharePositionOrigin: box!.localToGlobal(Offset.zero) & box.size,
       );
       await exportFile.delete();
+
+      return result.status == ShareResultStatus.success;
     }
   }
 
@@ -69,9 +72,8 @@ class StoreExport {
   ///
   /// It is recommended to use [withGUI] instead. This is only provided for finer control.
   Future<void> manual(File outputFile) async {
-    final String path = _access.absolute.path;
-    await compute(_export, path);
-    await File('$path.zip').rename(outputFile.absolute.path);
+    await compute(_export, _access.absolute.path);
+    await File('${_access.absolute.path}.zip').rename(outputFile.absolute.path);
   }
 }
 

@@ -6,7 +6,14 @@
 
 ---
 
-## [5.0.0] - 2022/08/XX
+## [5.1.0] - 2022/08/XX
+
+* Added import/export functionality
+* Improved example application
+* Improved documentation
+* Fixed bugs
+
+## [5.0.0] - 2022/08/03
 
 * Renamed and refactored internal and public APIs, ready for release
 * Added `successfulSize` statistic to `DownloadProgress`

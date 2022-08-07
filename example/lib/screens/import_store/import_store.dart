@@ -48,7 +48,7 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
                       title: Text(importingStores.keys.toList()[i]),
                       subtitle: successful.data ?? true
                           ? null
-                          : const Text('Failed to import'),
+                          : const Text('Invalid input format'),
                     ),
                   ),
             separatorBuilder: (context, i) => i == importingStores.length - 1

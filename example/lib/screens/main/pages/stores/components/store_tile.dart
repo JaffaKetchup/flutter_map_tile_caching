@@ -140,12 +140,6 @@ class _StoreTileState extends State<StoreTile> {
                                       _deletingProgress = true;
                                       _emptyingProgress = true;
                                     });
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Deleting...'),
-                                      ),
-                                    );
-
                                     await _store.manage.deleteAsync();
                                   },
                           ),
@@ -160,12 +154,6 @@ class _StoreTileState extends State<StoreTile> {
                                 ? null
                                 : () async {
                                     setState(() => _emptyingProgress = true);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Emptying...'),
-                                      ),
-                                    );
-
                                     await _store.manage.resetAsync();
 
                                     setState(() => _emptyingProgress = false);
@@ -192,21 +180,19 @@ class _StoreTileState extends State<StoreTile> {
                                 ? null
                                 : () async {
                                     setState(() => _exportingProgress = true);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Exporting...'),
-                                      ),
-                                    );
-
-                                    await _store.export
+                                    final bool result = await _store.export
                                         .withGUI(context: context);
 
                                     setState(() => _exportingProgress = false);
                                     if (mounted) {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Finished Exporting'),
+                                        SnackBar(
+                                          content: Text(
+                                            result
+                                                ? 'Exported Sucessfully'
+                                                : 'Export Cancelled',
+                                          ),
                                         ),
                                       );
                                     }
