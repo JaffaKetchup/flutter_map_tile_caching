@@ -7,6 +7,7 @@ import '../settings/fmtc_settings.dart';
 import '../settings/tile_provider_settings.dart';
 import 'access.dart';
 import 'download.dart';
+import 'export.dart';
 import 'manage.dart';
 import 'metadata.dart';
 import 'statistics.dart';
@@ -45,12 +46,12 @@ class StoreDirectory {
     if (autoCreate && !manage.ready) manage.create();
   }
 
-  /// Get direct filesystem access paths
+  /// Get direct filesystem access paths for this store
   ///
   /// This should only be used in special cases, when modifying the store manually for example.
   StoreAccess get access => StoreAccess(this);
 
-  /// Manage the store's representation on the filesystem
+  /// Manage this store's representation on the filesystem
   ///
   /// Provides access to methods to:
   ///  * Create
@@ -64,19 +65,22 @@ class StoreDirectory {
   /// Does not statistics about the root/all stores
   StoreStats get stats => StoreStats(this);
 
-  /// Manage custom miscellaneous information tied to a [StoreDirectory]
+  /// Manage custom miscellaneous information tied to this store
   ///
   /// Uses a key-value format where both key and value must be [String]. There is no validation or sanitisation on any keys or values; note that keys form part of filenames.
   StoreMetadata get metadata => StoreMetadata(this);
+
+  /// Provides export functionality for this store
+  StoreExport get export => StoreExport(this);
+
+  /// Get tools to manage bulk downloading to this store
+  DownloadManagement get download => DownloadManagement(this);
 
   /// Get 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayerOptions], specific to this store
   ///
   /// Uses [FMTCSettings.defaultTileProviderSettings] by default (and it's default if unspecified). Alternatively, override [settings] for this get only.
   FMTCTileProvider getTileProvider([FMTCTileProviderSettings? settings]) =>
       FMTCTileProvider(storeDirectory: this, settings: settings);
-
-  /// Get tools to manage bulk downloading to this store
-  DownloadManagement get download => DownloadManagement(this);
 
   @override
   String toString() =>

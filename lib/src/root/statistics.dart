@@ -107,7 +107,11 @@ class RootStats {
       .listSync()
       .map(
         (e) => e is Directory
-            ? StoreDirectory(_rootDirectory, p.split(e.absolute.path).last)
+            ? StoreDirectory(
+                _rootDirectory,
+                p.split(e.absolute.path).last,
+                autoCreate: false,
+              )
             : null,
       )
       .whereType<StoreDirectory>()
@@ -124,6 +128,7 @@ class RootStats {
                     ? StoreDirectory(
                         _rootDirectory,
                         p.split(e.absolute.path).last,
+                        autoCreate: false,
                       )
                     : null,
               )

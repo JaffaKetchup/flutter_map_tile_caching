@@ -45,24 +45,27 @@ class StoreManagement {
   }
 
   /// Create all of the directories asynchronously
-  Future<void> createAsync() async {
-    final List<Future<Directory>> jobs = [
-      _access.tiles.create(recursive: true),
-      _access.stats.create(recursive: true),
-      _access.metadata.create(recursive: true),
-    ];
-    await Future.wait(jobs);
-  }
+  Future<void> createAsync() => Future.wait([
+        _access.tiles.create(recursive: true),
+        _access.stats.create(recursive: true),
+        _access.metadata.create(recursive: true),
+      ]);
 
   /// Delete all of the directories synchronously
   ///
   /// This will remove all traces of this store from the user's device. Use with caution!
-  void delete() => _access.real.deleteSync(recursive: true);
+  void delete() {
+    reset();
+    _access.real.deleteSync(recursive: true);
+  }
 
   /// Delete all of the directories asynchronously
   ///
   /// This will remove all traces of this store from the user's device. Use with caution!
-  Future<void> deleteAsync() => _access.real.delete(recursive: true);
+  Future<void> deleteAsync() async {
+    await resetAsync();
+    await _access.real.delete(recursive: true);
+  }
 
   /// Resets this store synchronously
   ///

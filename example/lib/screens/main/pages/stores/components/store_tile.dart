@@ -29,6 +29,8 @@ class _StoreTileState extends State<StoreTile> {
   Future<Image?>? _image;
 
   bool _deletingProgress = false;
+  bool _emptyingProgress = false;
+  bool _exportingProgress = false;
 
   late final _store = FMTC.instance(widget.storeName);
 
@@ -117,32 +119,84 @@ class _StoreTileState extends State<StoreTile> {
                   child: Column(
                     children: [
                       statistics!,
-                      const SizedBox(height: 5),
+                      const SizedBox(height: 15),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           IconButton(
-                            icon: Icon(
-                              Icons.delete_forever,
-                              color: isCurrentStore ? null : Colors.red,
-                            ),
+                            icon: _deletingProgress
+                                ? const CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                  )
+                                : Icon(
+                                    Icons.delete_forever,
+                                    color: isCurrentStore ? null : Colors.red,
+                                  ),
                             tooltip: 'Delete Store',
-                            onPressed: isCurrentStore
+                            onPressed: isCurrentStore || _deletingProgress
                                 ? null
                                 : () async {
-                                    setState(() => _deletingProgress = true);
+                                    setState(() {
+                                      _deletingProgress = true;
+                                      _emptyingProgress = true;
+                                    });
                                     await _store.manage.deleteAsync();
                                   },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete),
+                            icon: _emptyingProgress
+                                ? const CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                  )
+                                : const Icon(Icons.delete),
                             tooltip: 'Empty Store',
-                            onPressed: () async {
-                              setState(() => _deletingProgress = true);
-                              await _store.manage.resetAsync();
-                              setState(() => _deletingProgress = false);
-                              _loadStatistics();
-                            },
+                            onPressed: _emptyingProgress
+                                ? null
+                                : () async {
+                                    setState(() => _emptyingProgress = true);
+                                    await _store.manage.resetAsync();
+
+                                    setState(() => _emptyingProgress = false);
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Finished Emptying'),
+                                        ),
+                                      );
+                                    }
+
+                                    _loadStatistics();
+                                  },
+                          ),
+                          IconButton(
+                            icon: _exportingProgress
+                                ? const CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                  )
+                                : const Icon(Icons.upload_file_rounded),
+                            tooltip: 'Export Store',
+                            onPressed: _exportingProgress
+                                ? null
+                                : () async {
+                                    setState(() => _exportingProgress = true);
+                                    final bool result = await _store.export
+                                        .withGUI(context: context);
+
+                                    setState(() => _exportingProgress = false);
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            result
+                                                ? 'Exported Sucessfully'
+                                                : 'Export Cancelled',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
                           ),
                           IconButton(
                             icon: const Icon(Icons.edit),

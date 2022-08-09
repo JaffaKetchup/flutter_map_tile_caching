@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'access.dart';
 import 'directory.dart';
 
@@ -39,14 +37,11 @@ class RootManagement {
   }
 
   /// Create all of the directories asynchronously
-  Future<void> createAsync() async {
-    final List<Future<Directory>> jobs = [
-      _access.stores.create(recursive: true),
-      _access.stats.create(recursive: true),
-      _access.recovery.create(recursive: true),
-    ];
-    await Future.wait(jobs);
-  }
+  Future<void> createAsync() => Future.wait([
+        _access.stores.create(recursive: true),
+        _access.stats.create(recursive: true),
+        _access.recovery.create(recursive: true),
+      ]);
 
   /// Delete all of the directories synchronously
   ///
