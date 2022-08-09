@@ -6,7 +6,7 @@
 
 ---
 
-## [5.1.0] - 2022/08/XX
+## [5.1.0] - 2022/08/09
 
 * Added import/export functionality
 * Improved example application
