@@ -1,14 +1,7 @@
-// ignore_for_file: deprecated_member_use_from_same_package
-
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:battery_info/battery_info_plugin.dart';
-import 'package:battery_info/enums/charging_status.dart';
-import 'package:battery_info/model/android_battery_info.dart';
-import 'package:battery_info/model/iso_battery_info.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -26,7 +19,6 @@ import '../bulk_download/tile_loops.dart';
 import '../bulk_download/tile_progress.dart';
 import '../internal/exts.dart';
 import '../internal/tile_provider.dart';
-import '../misc/typedefs.dart';
 import '../regions/downloadable_region.dart';
 import '../settings/tile_provider_settings.dart';
 import 'directory.dart';
@@ -74,53 +66,12 @@ class DownloadManagement {
   ///
   /// Unless otherwise specified, also starts a recovery session.
   ///
-  /// _[preDownloadChecksCallback] has been deprecated without replacement or alternative. Usage will continue to function until the next minor release, at which time this functionality will be removed._
-  ///
   /// Streams a [DownloadProgress] object containing lots of handy information about the download's progression status; unless the pre-download checks fail, in which case the stream's `.isEmpty` will be `true` and no new events will be emitted. If you get messages about 'Bad State' after dealing with the checks, just add `.asBroadcastStream()` on the end of [startForeground].
   Stream<DownloadProgress> startForeground({
     required DownloadableRegion region,
     FMTCTileProviderSettings? tileProviderSettings,
     bool disableRecovery = false,
-    @Deprecated(
-      '`preDownloadChecksCallback` has been deprecated without replacement or alternative. Usage will continue to function until the next minor release, at which time this functionality will be removed.',
-    )
-        PreDownloadChecksCallback preDownloadChecksCallback,
   }) async* {
-    if (preDownloadChecksCallback != null) {
-      final ConnectivityResult connectivity =
-          await Connectivity().checkConnectivity();
-
-      late final int? batteryLevel;
-      late final ChargingStatus? chargingStatus;
-      if (Platform.isAndroid) {
-        final AndroidBatteryInfo? info =
-            await BatteryInfoPlugin().androidBatteryInfo;
-        batteryLevel = info?.batteryLevel;
-        chargingStatus = info?.chargingStatus;
-      } else if (Platform.isIOS) {
-        final IosBatteryInfo? info = await BatteryInfoPlugin().iosBatteryInfo;
-        batteryLevel = info?.batteryLevel;
-        chargingStatus = info?.chargingStatus;
-      } else {
-        throw FallThroughError();
-      }
-
-      final bool? result = await preDownloadChecksCallback(
-        connectivity,
-        batteryLevel,
-        chargingStatus,
-      );
-
-      if ((result == null &&
-              (connectivity == ConnectivityResult.mobile ||
-                  connectivity == ConnectivityResult.none ||
-                  !((batteryLevel ?? 50) > 15 ||
-                      chargingStatus == ChargingStatus.Charging))) ||
-          result == false) {
-        return;
-      }
-    }
-
     _recoveryId = hashValues(
           region,
           tileProviderSettings,
@@ -185,10 +136,6 @@ class DownloadManagement {
     String progressNotificationIcon = '@mipmap/ic_notification_icon',
     String progressNotificationTitle = 'Downloading Map...',
     String Function(DownloadProgress)? progressNotificationBody,
-    @Deprecated(
-      '`preDownloadChecksCallback` has been deprecated without replacement or alternative. Usage will no longer have any effect. This functionality will be removed in the next minor release',
-    )
-        PreDownloadChecksCallback preDownloadChecksCallback,
   }) async {
     if (Platform.isAndroid) {
       final bool initSuccess = await FlutterBackground.initialize(
@@ -222,7 +169,6 @@ class DownloadManagement {
         region: region,
         tileProviderSettings: tileProviderSettings,
         disableRecovery: disableRecovery,
-        preDownloadChecksCallback: preDownloadChecksCallback,
       ).asBroadcastStream();
       if (await downloadStream.isEmpty) return cancel();
 
