@@ -19,10 +19,12 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentPageIndex = 0;
+  static const Color backgroundColor = Color(0xFFeaf6f5);
   late final PageController _pageController;
+  int _currentPageIndex = 0;
+  bool extended = false;
 
-  List<Widget> get _destinations => [
+  List<NavigationDestination> get _destinations => [
         const NavigationDestination(
           icon: Icon(Icons.map),
           label: 'Map',
@@ -52,14 +54,8 @@ class _MainScreenState extends State<MainScreen> {
           ),
           label: 'Recover',
         ),
-        NavigationDestination(
-          icon: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.settings),
-              Icon(Icons.info),
-            ],
-          ),
+        const NavigationDestination(
+          icon: Icon(Icons.settings),
           label: 'Settings',
         ),
       ];
@@ -100,19 +96,74 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) => FMTCBackgroundDownload(
         child: Scaffold(
-          backgroundColor: Colors.white,
-          bottomNavigationBar: NavigationBar(
-            onDestinationSelected: _onDestinationSelected,
-            selectedIndex: _currentPageIndex,
-            destinations: _destinations,
-            labelBehavior: MediaQuery.of(context).size.width > 450
-                ? null
-                : NavigationDestinationLabelBehavior.onlyShowSelected,
-          ),
-          body: PageView(
-            controller: _pageController,
-            physics: const NeverScrollableScrollPhysics(),
-            children: _pages,
+          backgroundColor: backgroundColor,
+          bottomNavigationBar: MediaQuery.of(context).size.width > 950
+              ? null
+              : NavigationBar(
+                  backgroundColor:
+                      Theme.of(context).navigationBarTheme.backgroundColor,
+                  onDestinationSelected: _onDestinationSelected,
+                  selectedIndex: _currentPageIndex,
+                  destinations: _destinations,
+                  labelBehavior: MediaQuery.of(context).size.width > 450
+                      ? null
+                      : NavigationDestinationLabelBehavior.onlyShowSelected,
+                ),
+          body: Row(
+            children: [
+              if (MediaQuery.of(context).size.width > 950)
+                NavigationRail(
+                  onDestinationSelected: _onDestinationSelected,
+                  selectedIndex: _currentPageIndex,
+                  groupAlignment: 0,
+                  extended: extended,
+                  backgroundColor: backgroundColor,
+                  destinations: _destinations
+                      .map(
+                        (d) => NavigationRailDestination(
+                          icon: d.icon,
+                          label: Text(d.label),
+                          padding: const EdgeInsets.all(10),
+                        ),
+                      )
+                      .toList(),
+                  leading: Row(
+                    children: [
+                      AnimatedContainer(
+                        width: extended ? 205 : 0,
+                        duration: kThemeAnimationDuration,
+                        curve: Curves.easeInOut,
+                      ),
+                      IconButton(
+                        icon: AnimatedSwitcher(
+                          duration: kThemeAnimationDuration,
+                          switchInCurve: Curves.easeInOut,
+                          switchOutCurve: Curves.easeInOut,
+                          child: Icon(
+                            extended ? Icons.menu_open : Icons.menu,
+                            key: UniqueKey(),
+                          ),
+                        ),
+                        onPressed: () => setState(() => extended = !extended),
+                        tooltip: !extended ? 'Extend Menu' : 'Collapse Menu',
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: _pages,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );
