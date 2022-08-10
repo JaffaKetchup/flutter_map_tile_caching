@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:badges/badges.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -10,6 +12,7 @@ import 'pages/map/map_view.dart';
 import 'pages/recovery/recovery.dart';
 import 'pages/settingsAndAbout/settings_and_about.dart';
 import 'pages/stores/stores.dart';
+import 'pages/update/update.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -56,8 +59,13 @@ class _MainScreenState extends State<MainScreen> {
         ),
         const NavigationDestination(
           icon: Icon(Icons.settings),
-          label: 'Settings',
+          label: 'Settings & About',
         ),
+        if (Platform.isWindows || Platform.isAndroid)
+          const NavigationDestination(
+            icon: Icon(Icons.system_update_alt),
+            label: 'Update App',
+          ),
       ];
 
   List<Widget> get _pages => [
@@ -70,6 +78,7 @@ class _MainScreenState extends State<MainScreen> {
         ),
         RecoveryPage(moveToDownloadPage: () => _onDestinationSelected(2)),
         const SettingsAndAboutPage(),
+        if (Platform.isWindows || Platform.isAndroid) const UpdatePage(),
       ];
 
   void _onDestinationSelected(int index) {
@@ -105,9 +114,9 @@ class _MainScreenState extends State<MainScreen> {
                   onDestinationSelected: _onDestinationSelected,
                   selectedIndex: _currentPageIndex,
                   destinations: _destinations,
-                  labelBehavior: MediaQuery.of(context).size.width > 450
+                  labelBehavior: MediaQuery.of(context).size.width > 650
                       ? null
-                      : NavigationDestinationLabelBehavior.onlyShowSelected,
+                      : NavigationDestinationLabelBehavior.alwaysHide,
                 ),
           body: Row(
             children: [
