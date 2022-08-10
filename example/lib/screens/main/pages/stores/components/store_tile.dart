@@ -34,11 +34,14 @@ class _StoreTileState extends State<StoreTile> {
 
   late final _store = FMTC.instance(widget.storeName);
 
-  void _loadStatistics() {
-    _tiles = _store.stats.storeLengthAsync.then((l) => l.toString());
-    _size = _store.stats.storeSizeAsync.then((s) => (s * 1024).asReadableSize);
-    _cacheHits = _store.stats.cacheHitsAsync.then((h) => h.toString());
-    _cacheMisses = _store.stats.cacheMissesAsync.then((m) => m.toString());
+  void _loadStatistics({bool withoutCachedStatistics = false}) {
+    final stats =
+        !withoutCachedStatistics ? _store.stats : _store.stats.noCache;
+
+    _tiles = stats.storeLengthAsync.then((l) => l.toString());
+    _size = stats.storeSizeAsync.then((s) => (s * 1024).asReadableSize);
+    _cacheHits = stats.cacheHitsAsync.then((h) => h.toString());
+    _cacheMisses = stats.cacheMissesAsync.then((m) => m.toString());
     _image = _store.manage.tileImageAsync(randomRange: 20, size: 125);
 
     setState(() {});
@@ -48,28 +51,36 @@ class _StoreTileState extends State<StoreTile> {
         FutureBuilder<String>(
           future: _tiles,
           builder: (context, snapshot) => StatDisplay(
-            statistic: snapshot.data,
+            statistic: snapshot.connectionState != ConnectionState.done
+                ? null
+                : snapshot.data,
             description: 'Total Tiles',
           ),
         ),
         FutureBuilder<String>(
           future: _size,
           builder: (context, snapshot) => StatDisplay(
-            statistic: snapshot.data,
+            statistic: snapshot.connectionState != ConnectionState.done
+                ? null
+                : snapshot.data,
             description: 'Total Size',
           ),
         ),
         FutureBuilder<String>(
           future: _cacheHits,
           builder: (context, snapshot) => StatDisplay(
-            statistic: snapshot.data,
+            statistic: snapshot.connectionState != ConnectionState.done
+                ? null
+                : snapshot.data,
             description: 'Cache Hits',
           ),
         ),
         FutureBuilder<String>(
           future: _cacheMisses,
           builder: (context, snapshot) => StatDisplay(
-            statistic: snapshot.data,
+            statistic: snapshot.connectionState != ConnectionState.done
+                ? null
+                : snapshot.data,
             description: 'Cache Misses',
           ),
         ),
@@ -214,8 +225,9 @@ class _StoreTileState extends State<StoreTile> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.refresh),
-                            tooltip: 'Refresh Statistics',
-                            onPressed: _loadStatistics,
+                            tooltip: 'Force Refresh Statistics',
+                            onPressed: () =>
+                                _loadStatistics(withoutCachedStatistics: true),
                           ),
                           IconButton(
                             icon: Icon(
