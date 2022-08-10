@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -56,6 +59,14 @@ void main() async {
       value: 'cacheFirst',
     );
   }
+
+  final File newAppVersionFile = File(
+    p.join(
+      FMTC.instance.rootDirectory.access.real.path,
+      'newAppVersion.${Platform.isWindows ? 'exe' : 'apk'}',
+    ),
+  );
+  if (await newAppVersionFile.exists()) await newAppVersionFile.delete();
 
   runApp(const AppContainer());
 }
