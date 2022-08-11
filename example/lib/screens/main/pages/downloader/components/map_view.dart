@@ -46,29 +46,20 @@ class _MapViewState extends State<MapView> {
     super.initState();
     _mapController = MapController();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _manualPolygonRecalcTriggerStream =
-          Provider.of<DownloadProvider>(context, listen: false)
-              .manualPolygonRecalcTrigger
-              .stream
-              .listen((_) {
-        _updatePointLatLng();
-        _countTiles();
-      });
-
-      _polygonVisualizerStream =
-          _mapController.mapEventStream.listen((_) => _updatePointLatLng());
-      _tileCounterTriggerStream = _mapController.mapEventStream
-          .debounce(const Duration(seconds: 1))
-          .listen((_) => _countTiles());
-
-      // TODO: REMOVE
-      //await _mapController.onReady;
-
-      //if (!mounted) return;
+    _manualPolygonRecalcTriggerStream =
+        Provider.of<DownloadProvider>(context, listen: false)
+            .manualPolygonRecalcTrigger
+            .stream
+            .listen((_) {
       _updatePointLatLng();
       _countTiles();
     });
+
+    _polygonVisualizerStream =
+        _mapController.mapEventStream.listen((_) => _updatePointLatLng());
+    _tileCounterTriggerStream = _mapController.mapEventStream
+        .debounce(const Duration(seconds: 1))
+        .listen((_) => _countTiles());
   }
 
   @override
@@ -84,116 +75,114 @@ class _MapViewState extends State<MapView> {
       Consumer2<GeneralProvider, DownloadProvider>(
         key: _mapKey,
         builder: (context, generalProvider, downloadProvider, _) =>
-            LayoutBuilder(
-          builder: (context, constraints) =>
-              FutureBuilder<Map<String, String>?>(
-            future: generalProvider.currentStore == null
-                ? Future.sync(() => {})
-                : FMTC
-                    .instance(generalProvider.currentStore!)
-                    .metadata
-                    .readAsync,
-            builder: (context, metadata) {
-              if (!metadata.hasData ||
-                  metadata.data == null ||
-                  (generalProvider.currentStore != null &&
-                      (metadata.data ?? {}).isEmpty)) {
-                return const LoadingIndicator(
-                  message:
-                      'Loading Settings...\n\nSeeing this screen for a long time?\nThere may be a misconfiguration of the\nstore. Try disabling caching and deleting\n faulty stores.',
-                );
-              }
-
-              final String urlTemplate =
-                  generalProvider.currentStore != null && metadata.data != null
-                      ? metadata.data!['sourceURL']!
-                      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-
-              return Stack(
-                children: [
-                  FlutterMap(
-                    mapController: _mapController,
-                    options: MapOptions(
-                      center: LatLng(51.509364, -0.128928),
-                      zoom: 9.2,
-                      interactiveFlags:
-                          InteractiveFlag.all & ~InteractiveFlag.rotate,
-                      keepAlive: true,
-                    ),
-                    nonRotatedChildren: [
-                      AttributionWidget.defaultWidget(
-                        source: Uri.parse(urlTemplate).host,
-                      ),
-                    ],
-                    children: [
-                      TileLayer(
-                        urlTemplate: urlTemplate,
-                        maxZoom: 20,
-                        reset: generalProvider.resetController.stream,
-                        keepBuffer: 5,
-                        backgroundColor: const Color(0xFFaad3df),
-                        tileBuilder: (context, widget, tile) =>
-                            FutureBuilder<bool?>(
-                          future: generalProvider.currentStore == null
-                              ? Future.sync(() => null)
-                              : FMTC
-                                  .instance(generalProvider.currentStore!)
-                                  .getTileProvider()
-                                  .checkTileCachedAsync(
-                                    coords: tile.coords,
-                                    options: TileLayer(
-                                      urlTemplate: urlTemplate,
-                                    ),
-                                  ),
-                          builder: (context, snapshot) => DecoratedBox(
-                            position: DecorationPosition.foreground,
-                            decoration: BoxDecoration(
-                              color: (snapshot.data ?? false)
-                                  ? Colors.deepOrange.withOpacity(0.33)
-                                  : Colors.transparent,
-                            ),
-                            child: widget,
-                          ),
-                        ),
-                      ),
-                      if (_coordsTopLeft != null &&
-                          _coordsBottomRight != null &&
-                          downloadProvider.regionMode != RegionMode.circle)
-                        RectangleRegion(
-                          LatLngBounds(
-                            _coordsTopLeft,
-                            _coordsBottomRight,
-                          ),
-                        ).toDrawable(
-                          fillColor: Colors.green.withOpacity(0.5),
-                        )
-                      else if (_center != null &&
-                          _radius != null &&
-                          downloadProvider.regionMode == RegionMode.circle)
-                        CircleRegion(
-                          _center!,
-                          _radius!,
-                        ).toDrawable(
-                          fillColor: Colors.green.withOpacity(0.5),
-                        ),
-                    ],
-                  ),
-                  if (_crosshairsTop != null && _crosshairsBottom != null) ...[
-                    Positioned(
-                      top: _crosshairsTop!.y,
-                      left: _crosshairsTop!.x,
-                      child: const Crosshairs(),
-                    ),
-                    Positioned(
-                      top: _crosshairsBottom!.y,
-                      left: _crosshairsBottom!.x,
-                      child: const Crosshairs(),
-                    ),
-                  ]
-                ],
+            FutureBuilder<Map<String, String>?>(
+          future: generalProvider.currentStore == null
+              ? Future.sync(() => {})
+              : FMTC.instance(generalProvider.currentStore!).metadata.readAsync,
+          builder: (context, metadata) {
+            if (!metadata.hasData ||
+                metadata.data == null ||
+                (generalProvider.currentStore != null &&
+                    (metadata.data ?? {}).isEmpty)) {
+              return const LoadingIndicator(
+                message:
+                    'Loading Settings...\n\nSeeing this screen for a long time?\nThere may be a misconfiguration of the\nstore. Try disabling caching and deleting\n faulty stores.',
               );
-            },
-          ),
+            }
+
+            final String urlTemplate =
+                generalProvider.currentStore != null && metadata.data != null
+                    ? metadata.data!['sourceURL']!
+                    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+            return Stack(
+              children: [
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    center: LatLng(51.509364, -0.128928),
+                    zoom: 9.2,
+                    interactiveFlags:
+                        InteractiveFlag.all & ~InteractiveFlag.rotate,
+                    keepAlive: true,
+                    onMapReady: () {
+                      _updatePointLatLng();
+                      _countTiles();
+                    },
+                  ),
+                  nonRotatedChildren: [
+                    AttributionWidget.defaultWidget(
+                      source: Uri.parse(urlTemplate).host,
+                    ),
+                  ],
+                  children: [
+                    TileLayer(
+                      urlTemplate: urlTemplate,
+                      maxZoom: 20,
+                      reset: generalProvider.resetController.stream,
+                      keepBuffer: 5,
+                      backgroundColor: const Color(0xFFaad3df),
+                      tileBuilder: (context, widget, tile) =>
+                          FutureBuilder<bool?>(
+                        future: generalProvider.currentStore == null
+                            ? Future.sync(() => null)
+                            : FMTC
+                                .instance(generalProvider.currentStore!)
+                                .getTileProvider()
+                                .checkTileCachedAsync(
+                                  coords: tile.coords,
+                                  options: TileLayer(
+                                    urlTemplate: urlTemplate,
+                                  ),
+                                ),
+                        builder: (context, snapshot) => DecoratedBox(
+                          position: DecorationPosition.foreground,
+                          decoration: BoxDecoration(
+                            color: (snapshot.data ?? false)
+                                ? Colors.deepOrange.withOpacity(0.33)
+                                : Colors.transparent,
+                          ),
+                          child: widget,
+                        ),
+                      ),
+                    ),
+                    if (_coordsTopLeft != null &&
+                        _coordsBottomRight != null &&
+                        downloadProvider.regionMode != RegionMode.circle)
+                      RectangleRegion(
+                        LatLngBounds(
+                          _coordsTopLeft,
+                          _coordsBottomRight,
+                        ),
+                      ).toDrawable(
+                        fillColor: Colors.green.withOpacity(0.5),
+                      )
+                    else if (_center != null &&
+                        _radius != null &&
+                        downloadProvider.regionMode == RegionMode.circle)
+                      CircleRegion(
+                        _center!,
+                        _radius!,
+                      ).toDrawable(
+                        fillColor: Colors.green.withOpacity(0.5),
+                      ),
+                  ],
+                ),
+                if (_crosshairsTop != null && _crosshairsBottom != null) ...[
+                  Positioned(
+                    top: _crosshairsTop!.y,
+                    left: _crosshairsTop!.x,
+                    child: const Crosshairs(),
+                  ),
+                  Positioned(
+                    top: _crosshairsBottom!.y,
+                    left: _crosshairsBottom!.x,
+                    child: const Crosshairs(),
+                  ),
+                ]
+              ],
+            );
+          },
         ),
       );
 
