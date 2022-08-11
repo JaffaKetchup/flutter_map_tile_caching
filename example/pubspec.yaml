@@ -31,6 +31,11 @@ dependencies:
   validators: ^3.0.0
   version: ^3.0.2
 
+dependency_overrides:
+  flutter_map:
+    git:
+      url: https://github.com/MooNag/flutter_map.git
+
 dev_dependencies:
   flutter_launcher_icons: ^0.10.0
   flutter_test:

@@ -105,7 +105,7 @@ class RecoveredRegion {
 
   /// Convert this region into a downloadable region
   DownloadableRegion toDownloadable(
-    TileLayerOptions options, {
+    TileLayer options, {
     Crs crs = const Epsg3857(),
     Function(Object?)? errorHandler,
   }) {

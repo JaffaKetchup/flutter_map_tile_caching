@@ -45,8 +45,13 @@ class _MapPageState extends State<MapPage> {
                 interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                 keepAlive: true,
               ),
-              layers: [
-                TileLayerOptions(
+              nonRotatedChildren: [
+                AttributionWidget.defaultWidget(
+                  source: Uri.parse(urlTemplate).host,
+                ),
+              ],
+              children: [
+                TileLayer(
                   urlTemplate: urlTemplate,
                   tileProvider: provider.currentStore != null
                       ? FMTC.instance(provider.currentStore!).getTileProvider(
@@ -72,11 +77,6 @@ class _MapPageState extends State<MapPage> {
                   keepBuffer: 5,
                   backgroundColor: const Color(0xFFaad3df),
                   overrideTilesWhenUrlChanges: true,
-                ),
-              ],
-              nonRotatedChildren: [
-                AttributionWidget.defaultWidget(
-                  source: Uri.parse(urlTemplate).host,
                 ),
               ],
             );

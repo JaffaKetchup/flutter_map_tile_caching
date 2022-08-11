@@ -41,6 +41,11 @@ dependencies:
   vector_math: ^2.1.1
   watcher: ^1.0.1
 
+dependency_overrides:
+  flutter_map:
+    git:
+      url: https://github.com/MooNag/flutter_map.git
+
 dev_dependencies:
   flutter_lints: ^2.0.1
   flutter_test:

@@ -46,13 +46,7 @@ class _MapViewState extends State<MapView> {
     super.initState();
     _mapController = MapController();
 
-    _polygonVisualizerStream =
-        _mapController.mapEventStream.listen((_) => _updatePointLatLng());
-    _tileCounterTriggerStream = _mapController.mapEventStream
-        .debounce(const Duration(seconds: 1))
-        .listen((_) => _countTiles());
-
-    Future.delayed(Duration.zero, () async {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       _manualPolygonRecalcTriggerStream =
           Provider.of<DownloadProvider>(context, listen: false)
               .manualPolygonRecalcTrigger
@@ -62,11 +56,18 @@ class _MapViewState extends State<MapView> {
         _countTiles();
       });
 
-      await _mapController.onReady;
+      _polygonVisualizerStream =
+          _mapController.mapEventStream.listen((_) => _updatePointLatLng());
+      _tileCounterTriggerStream = _mapController.mapEventStream
+          .debounce(const Duration(seconds: 1))
+          .listen((_) => _countTiles());
 
-      if (!mounted) return;
+      // TODO: REMOVE
+      //await _mapController.onReady;
+
+      //if (!mounted) return;
       _updatePointLatLng();
-      unawaited(_countTiles());
+      _countTiles();
     });
   }
 
@@ -125,61 +126,55 @@ class _MapViewState extends State<MapView> {
                       ),
                     ],
                     children: [
-                      TileLayerWidget(
-                        options: TileLayerOptions(
-                          urlTemplate: urlTemplate,
-                          maxZoom: 20,
-                          reset: generalProvider.resetController.stream,
-                          keepBuffer: 5,
-                          backgroundColor: const Color(0xFFaad3df),
-                          tileBuilder: (context, widget, tile) =>
-                              FutureBuilder<bool?>(
-                            future: generalProvider.currentStore == null
-                                ? Future.sync(() => null)
-                                : FMTC
-                                    .instance(generalProvider.currentStore!)
-                                    .getTileProvider()
-                                    .checkTileCachedAsync(
-                                      coords: tile.coords,
-                                      options: TileLayerOptions(
-                                        urlTemplate: urlTemplate,
-                                      ),
+                      TileLayer(
+                        urlTemplate: urlTemplate,
+                        maxZoom: 20,
+                        reset: generalProvider.resetController.stream,
+                        keepBuffer: 5,
+                        backgroundColor: const Color(0xFFaad3df),
+                        tileBuilder: (context, widget, tile) =>
+                            FutureBuilder<bool?>(
+                          future: generalProvider.currentStore == null
+                              ? Future.sync(() => null)
+                              : FMTC
+                                  .instance(generalProvider.currentStore!)
+                                  .getTileProvider()
+                                  .checkTileCachedAsync(
+                                    coords: tile.coords,
+                                    options: TileLayer(
+                                      urlTemplate: urlTemplate,
                                     ),
-                            builder: (context, snapshot) => DecoratedBox(
-                              position: DecorationPosition.foreground,
-                              decoration: BoxDecoration(
-                                color: (snapshot.data ?? false)
-                                    ? Colors.deepOrange.withOpacity(0.33)
-                                    : Colors.transparent,
-                              ),
-                              child: widget,
+                                  ),
+                          builder: (context, snapshot) => DecoratedBox(
+                            position: DecorationPosition.foreground,
+                            decoration: BoxDecoration(
+                              color: (snapshot.data ?? false)
+                                  ? Colors.deepOrange.withOpacity(0.33)
+                                  : Colors.transparent,
                             ),
+                            child: widget,
                           ),
                         ),
                       ),
                       if (_coordsTopLeft != null &&
                           _coordsBottomRight != null &&
                           downloadProvider.regionMode != RegionMode.circle)
-                        PolygonLayerWidget(
-                          options: RectangleRegion(
-                            LatLngBounds(
-                              _coordsTopLeft,
-                              _coordsBottomRight,
-                            ),
-                          ).toDrawable(
-                            fillColor: Colors.green.withOpacity(0.5),
+                        RectangleRegion(
+                          LatLngBounds(
+                            _coordsTopLeft,
+                            _coordsBottomRight,
                           ),
+                        ).toDrawable(
+                          fillColor: Colors.green.withOpacity(0.5),
                         )
                       else if (_center != null &&
                           _radius != null &&
                           downloadProvider.regionMode == RegionMode.circle)
-                        PolygonLayerWidget(
-                          options: CircleRegion(
-                            _center!,
-                            _radius!,
-                          ).toDrawable(
-                            fillColor: Colors.green.withOpacity(0.5),
-                          ),
+                        CircleRegion(
+                          _center!,
+                          _radius!,
+                        ).toDrawable(
+                          fillColor: Colors.green.withOpacity(0.5),
                         ),
                     ],
                   ),
@@ -315,7 +310,7 @@ class _MapViewState extends State<MapView> {
               provider.region!.toDownloadable(
                 provider.minZoom,
                 provider.maxZoom,
-                TileLayerOptions(),
+                TileLayer(),
               ),
             );
     }

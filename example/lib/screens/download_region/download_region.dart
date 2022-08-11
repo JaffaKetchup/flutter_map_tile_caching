@@ -102,7 +102,7 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                                 widget.region.toDownloadable(
                                               downloadProvider.minZoom,
                                               downloadProvider.maxZoom,
-                                              TileLayerOptions(
+                                              TileLayer(
                                                 urlTemplate:
                                                     metadata['sourceURL'],
                                               ),
@@ -148,7 +148,7 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                       region: widget.region.toDownloadable(
                                         downloadProvider.minZoom,
                                         downloadProvider.maxZoom,
-                                        TileLayerOptions(
+                                        TileLayer(
                                           urlTemplate: metadata['sourceURL'],
                                         ),
                                         preventRedownload:

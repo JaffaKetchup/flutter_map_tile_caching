@@ -23,7 +23,7 @@ class RecoveryStartButton extends StatelessWidget {
           future: FMTC
               .instance('')
               .download
-              .check(region.toDownloadable(TileLayerOptions())),
+              .check(region.toDownloadable(TileLayer())),
           builder: (context, tiles) => tiles.hasData
               ? IconButton(
                   icon: Icon(
@@ -39,7 +39,7 @@ class RecoveryStartButton extends StatelessWidget {
                             listen: false,
                           )
                                 ..region = region
-                                    .toDownloadable(TileLayerOptions())
+                                    .toDownloadable(TileLayer())
                                     .originalRegion
                                 ..minZoom = region.minZoom
                                 ..maxZoom = region.maxZoom

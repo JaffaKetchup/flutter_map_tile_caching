@@ -22,7 +22,7 @@ class CircleRegion implements BaseRegion {
   DownloadableRegion toDownloadable(
     int minZoom,
     int maxZoom,
-    TileLayerOptions options, {
+    TileLayer options, {
     int parallelThreads = 10,
     bool preventRedownload = false,
     bool seaTileRemoval = false,
@@ -48,7 +48,7 @@ class CircleRegion implements BaseRegion {
       );
 
   @override
-  PolygonLayerOptions toDrawable({
+  PolygonLayer toDrawable({
     Color? fillColor,
     Color borderColor = const Color(0x00000000),
     double borderStrokeWidth = 3.0,
@@ -57,7 +57,7 @@ class CircleRegion implements BaseRegion {
     TextStyle labelStyle = const TextStyle(),
     PolygonLabelPlacement labelPlacement = PolygonLabelPlacement.polylabel,
   }) =>
-      PolygonLayerOptions(
+      PolygonLayer(
         polygons: [
           Polygon(
             isFilled: fillColor != null,

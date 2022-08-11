@@ -19,8 +19,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// An instance of the [FMTCTileProvider] in use
   final FMTCTileProvider provider;
 
-  /// An instance of the [TileLayerOptions] in use
-  final TileLayerOptions options;
+  /// An instance of the [TileLayer] in use
+  final TileLayer options;
 
   /// The coordinates of the tile to be fetched
   final Coords<num> coords;
