@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:stream_transform/stream_transform.dart';
 
+import '../internal/exts.dart';
 import '../internal/recovery/decode.dart';
 import '../internal/recovery/encode.dart';
 import '../regions/downloadable_region.dart';
@@ -42,15 +43,15 @@ class RootRecovery {
   /// Get a list of all recoverable regions
   ///
   /// See [failedRegions] for regions that correspond to failed/stopped downloads.
-  Future<List<Future<RecoveredRegion>>> get recoverableRegions => _metadata
-      .list()
-      .map(
-        (e) => e is File && p.extension(e.path, 2) == '.recovery.ini'
-            ? decode(e)
-            : null,
-      )
-      .whereType<Future<RecoveredRegion>>()
-      .toList();
+  Future<List<Future<RecoveredRegion>>> get recoverableRegions async =>
+      (await _metadata.listWithExists())
+          .map(
+            (e) => e is File && p.extension(e.path, 2) == '.recovery.ini'
+                ? decode(e)
+                : null,
+          )
+          .whereType<Future<RecoveredRegion>>()
+          .toList();
 
   /// Get a list of all recoverable regions that correspond to failed/stopped downloads
   ///

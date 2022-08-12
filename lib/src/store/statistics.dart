@@ -118,7 +118,8 @@ class StoreStats {
   /// For asynchronous version, see [storeSizeAsync].
   ///
   /// Includes all files beneath the store, not necessarily just tiles.
-  double get storeSize => double.parse(
+  double get storeSize =>
+      double.tryParse(
         _csgSync(
           'size',
           () => _access.real
@@ -126,14 +127,16 @@ class StoreStats {
               .map((e) => e is File ? e.lengthSync() / 1024 : 0)
               .sum,
         ),
-      );
+      ) ??
+      0;
 
   /// Retrieve the size of the store in kibibytes (KiB)
   ///
   /// For asynchronous version, see [storeSize].
   ///
   /// Includes all files beneath the store, not necessarily just tiles.
-  Future<double> get storeSizeAsync async => double.parse(
+  Future<double> get storeSizeAsync async =>
+      double.tryParse(
         await _csgAsync(
           'size',
           () async => (await _access.real
@@ -144,79 +147,65 @@ class StoreStats {
                   .toList())
               .sum,
         ),
-      );
+      ) ??
+      0;
 
   /// Retrieve the number of stored tiles in a store
   ///
   /// For asynchronous version, see [storeLengthAsync].
   ///
   /// Only includes tiles stored, not necessarily all files.
-  int get storeLength => int.parse(
-        _csgSync(
-          'length',
-          () => _access.tiles.listSync().length,
-        ),
-      );
+  int get storeLength =>
+      int.tryParse(_csgSync('length', () => _access.tiles.listSync().length)) ??
+      0;
 
   /// Retrieve the number of stored tiles in a store
   ///
   /// For synchronous version, see [storeLength].
   ///
   /// Only includes tiles stored, not necessarily all files.
-  Future<int> get storeLengthAsync async => int.parse(
+  Future<int> get storeLengthAsync async =>
+      int.tryParse(
         await _csgAsync(
           'length',
-          () => _access.tiles.list().length,
+          () async => (await _access.tiles.listWithExists()).length,
         ),
-      );
+      ) ??
+      0;
 
   /// Retrieve the number of tiles that were successfully retrieved from the store during browsing
   ///
   /// For asynchronous version, see [cacheHitsAsync].
   ///
   /// If using [noCache], this will always return 0.
-  int get cacheHits => int.parse(
-        _csgSync(
-          'cacheHits',
-          () => 0,
-        ),
-      );
+  int get cacheHits => int.tryParse(_csgSync('cacheHits', () => 0)) ?? 0;
 
   /// Retrieve the number of tiles that were successfully retrieved from the store during browsing
   ///
   /// For synchronous version, see [cacheHits].
   ///
   /// If using [noCache], this will always return 0.
-  Future<int> get cacheHitsAsync async => int.parse(
-        await _csgAsync(
-          'cacheHits',
-          () => Future.sync(() => 0),
-        ),
-      );
+  Future<int> get cacheHitsAsync async =>
+      int.tryParse(await _csgAsync('cacheHits', () => Future.sync(() => 0))) ??
+      0;
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the store during browsing
   ///
   /// For asynchronous version, see [cacheMissesAsync].
   ///
   /// Includes tiles that needed updating. If using [noCache], this will always return 0.
-  int get cacheMisses => int.parse(
-        _csgSync(
-          'cacheMisses',
-          () => 0,
-        ),
-      );
+  int get cacheMisses => int.tryParse(_csgSync('cacheMisses', () => 0)) ?? 0;
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the store during browsing
   ///
   /// For synchronous version, see [cacheMisses].
   ///
   /// Includes tiles that needed updating. If using [noCache], this will always return 0.
-  Future<int> get cacheMissesAsync async => int.parse(
-        await _csgAsync(
-          'cacheMisses',
-          () => Future.sync(() => 0),
-        ),
-      );
+  Future<int> get cacheMissesAsync async =>
+      int.tryParse(
+        await _csgAsync('cacheMisses', () => Future.sync(() => 0)),
+      ) ??
+      0;
 
   /// Watch for changes in the current store
   ///

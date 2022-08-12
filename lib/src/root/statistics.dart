@@ -121,8 +121,7 @@ class RootStats {
   ///
   /// For synchronous version, see [storesAvailable]. Note that this statistic is not cached for performance, as the effect would be negligible.
   Future<List<StoreDirectory>> get storesAvailableAsync async =>
-      (await _access.stores
-              .list()
+      (await (await _access.stores.listWithExists())
               .map(
                 (e) => e is Directory
                     ? StoreDirectory(
@@ -143,12 +142,14 @@ class RootStats {
   /// Technically just sums up the size of all sub-stores, thus ignoring any cached root statistics, etc.
   ///
   /// Includes all files in all stores, not necessarily just tiles.
-  double get rootSize => double.parse(
+  double get rootSize =>
+      double.tryParse(
         _csgSync(
           'size',
           () => storesAvailable.map((e) => e.stats.storeSize).sum,
         ),
-      );
+      ) ??
+      0;
 
   /// Retrieve the size of the root in kibibytes (KiB)
   ///
@@ -157,7 +158,8 @@ class RootStats {
   /// Technically just sums up the size of all sub-stores, thus ignoring any cached root statistics, etc.
   ///
   /// Includes all files in all stores, not necessarily just tiles.
-  Future<double> get rootSizeAsync async => double.parse(
+  Future<double> get rootSizeAsync async =>
+      double.tryParse(
         await _csgAsync(
           'size',
           () async => (await Future.wait(
@@ -165,26 +167,30 @@ class RootStats {
           ))
               .sum,
         ),
-      );
+      ) ??
+      0;
 
   /// Retrieve the number of stored tiles in all sub-stores
   ///
   /// For asynchronous version, see [rootLengthAsync].
   ///
   /// Only includes tiles stored, not necessarily all files.
-  int get rootLength => int.parse(
+  int get rootLength =>
+      int.tryParse(
         _csgSync(
           'length',
           () => storesAvailable.map((e) => e.stats.storeLength).sum,
         ),
-      );
+      ) ??
+      0;
 
   /// Retrieve the number of stored tiles in all sub-stores
   ///
   /// For synchronous version, see [rootLength].
   ///
   /// Only includes tiles stored, not necessarily all files.
-  Future<int> get rootLengthAsync async => int.parse(
+  Future<int> get rootLengthAsync async =>
+      int.tryParse(
         await _csgAsync(
           'length',
           () async => (await Future.wait(
@@ -192,7 +198,8 @@ class RootStats {
           ))
               .sum,
         ),
-      );
+      ) ??
+      0;
 
   /// Watch for changes in the current cache
   ///

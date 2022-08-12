@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p;
 
+import '../internal/exts.dart';
 import '../internal/filesystem_sanitiser_private.dart';
 import 'access.dart';
 import 'directory.dart';
@@ -84,7 +85,9 @@ class StoreManagement {
   /// For a full reset, manually [deleteAsync] then [createAsync] the store.
   Future<void> resetAsync() async {
     await Future.wait(
-      await _access.tiles.list().map((e) => e.delete()).toList(),
+      await (await _access.tiles.listWithExists())
+          .map((e) => e.delete())
+          .toList(),
     );
     await _storeDirectory.stats
         .invalidateCachedStatisticsAsync(statTypes: null);
@@ -192,7 +195,8 @@ class StoreManagement {
             randomRange <= 0 ? storeLen : randomRange.clamp(0, storeLen),
           );
 
-    await for (final FileSystemEntity e in _access.tiles.list()) {
+    await for (final FileSystemEntity e
+        in await _access.tiles.listWithExists()) {
       if (i >= randomNumber) {
         return Image.file(
           File(e.absolute.path),

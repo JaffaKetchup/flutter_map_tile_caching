@@ -6,6 +6,12 @@
 
 ---
 
+## [5.1.1] - 2022/09/12
+
+* Fixed bugs
+* Updated dependencies
+* Improved example application
+
 ## [5.1.0] - 2022/08/09
 
 * Added import/export functionality
