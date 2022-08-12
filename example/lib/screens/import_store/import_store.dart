@@ -37,14 +37,11 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
                 : FutureBuilder<bool>(
                     future: importingStores.values.toList()[i],
                     builder: (context, successful) => ListTile(
-                      leading: FutureBuilder<bool>(
-                        future: importingStores.values.toList()[i],
-                        builder: (context, successful) => !successful.hasData
-                            ? const CircularProgressIndicator()
-                            : successful.data!
-                                ? const Icon(Icons.done, color: Colors.green)
-                                : const Icon(Icons.error, color: Colors.red),
-                      ),
+                      leading: !successful.hasData
+                          ? const CircularProgressIndicator()
+                          : successful.data!
+                              ? const Icon(Icons.done, color: Colors.green)
+                              : const Icon(Icons.error, color: Colors.red),
                       title: Text(importingStores.keys.toList()[i]),
                       subtitle: successful.data ?? true
                           ? null

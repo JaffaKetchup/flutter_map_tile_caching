@@ -40,7 +40,9 @@ class RootMigrator {
     if (root == null) return false;
 
     try {
-      await root.list().whereType<Directory>().asyncMap((e) async {
+      await (await root.listWithExists())
+          .whereType<Directory>()
+          .asyncMap((e) async {
         final StoreDirectory store = StoreDirectory(
           _rootDirectory,
           p.basename(e.absolute.path),
