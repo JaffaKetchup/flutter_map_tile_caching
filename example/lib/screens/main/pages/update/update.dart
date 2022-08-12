@@ -1,10 +1,10 @@
 import 'dart:io';
 
+import 'package:better_open_file/better_open_file.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:http/http.dart' as http;
-import 'package:open_file/open_file.dart';
 import 'package:path/path.dart' as p;
 import 'package:version/version.dart';
 

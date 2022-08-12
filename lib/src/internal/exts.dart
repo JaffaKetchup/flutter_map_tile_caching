@@ -25,6 +25,20 @@ extension DirectoryExtensions on Directory {
           name,
         ),
       );
+
+  /// A safer version of [exists], but checks that the directory exists before listing it's contents
+  ///
+  /// Returns same result as [list] in future.
+  Future<Stream<FileSystemEntity>> listWithExists({
+    bool recursive = false,
+    bool followLinks = true,
+  }) async {
+    if (!await exists()) return const Stream.empty();
+    return list(
+      recursive: recursive,
+      followLinks: followLinks,
+    );
+  }
 }
 
 extension IterableNumExts on Iterable<num> {

@@ -60,8 +60,7 @@ class StoreMetadata {
 
   /// Remove all the key-value pairs from the store asynchronously
   Future<void> resetAsync() async {
-    for (final File f in await _access
-        .list()
+    for (final File f in await (await _access.listWithExists())
         .map(
           (e) => p.extension(e.absolute.path) == _metadataExtension ? e : null,
         )
@@ -84,8 +83,8 @@ class StoreMetadata {
     }
   }
 
-  Future<Map<String, String>> get readAsync async => (await _access
-              .list()
+  Future<Map<String, String>> get readAsync async =>
+      (await (await _access.listWithExists())
               .asyncMap(
                 (e) async =>
                     e is File && p.extension(e.absolute.path) == '.metadata'
