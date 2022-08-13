@@ -24,11 +24,11 @@ class MapView extends StatefulWidget {
 }
 
 class _MapViewState extends State<MapView> {
-  static const double shapePadding = 15;
-  static const crosshairsMovement = Point<double>(10, 10);
+  static const double _shapePadding = 15;
+  static const _crosshairsMovement = Point<double>(10, 10);
 
   final _mapKey = GlobalKey<State<StatefulWidget>>();
-  late final MapController _mapController;
+  final MapController _mapController = MapController();
 
   late final StreamSubscription _polygonVisualizerStream;
   late final StreamSubscription _tileCounterTriggerStream;
@@ -41,10 +41,27 @@ class _MapViewState extends State<MapView> {
   LatLng? _center;
   double? _radius;
 
+  PolygonLayer _buildTargetPolygon(BaseRegion region) => PolygonLayer(
+        polygons: [
+          Polygon(
+            points: [
+              LatLng(-90, 180),
+              LatLng(90, 180),
+              LatLng(90, -180),
+              LatLng(-90, -180),
+            ],
+            holePointsList: [region.toList()],
+            isFilled: true,
+            borderColor: Colors.black,
+            borderStrokeWidth: 2,
+            color: Colors.white.withOpacity(2 / 3),
+          ),
+        ],
+      );
+
   @override
   void initState() {
     super.initState();
-    _mapController = MapController();
 
     _manualPolygonRecalcTriggerStream =
         Provider.of<DownloadProvider>(context, listen: false)
@@ -65,6 +82,7 @@ class _MapViewState extends State<MapView> {
   @override
   void dispose() {
     super.dispose();
+
     _polygonVisualizerStream.cancel();
     _tileCounterTriggerStream.cancel();
     _manualPolygonRecalcTriggerStream.cancel();
@@ -149,23 +167,15 @@ class _MapViewState extends State<MapView> {
                     if (_coordsTopLeft != null &&
                         _coordsBottomRight != null &&
                         downloadProvider.regionMode != RegionMode.circle)
-                      RectangleRegion(
-                        LatLngBounds(
-                          _coordsTopLeft,
-                          _coordsBottomRight,
+                      _buildTargetPolygon(
+                        RectangleRegion(
+                          LatLngBounds(_coordsTopLeft, _coordsBottomRight),
                         ),
-                      ).toDrawable(
-                        fillColor: Colors.green.withOpacity(0.5),
                       )
                     else if (_center != null &&
                         _radius != null &&
                         downloadProvider.regionMode == RegionMode.circle)
-                      CircleRegion(
-                        _center!,
-                        _radius!,
-                      ).toDrawable(
-                        fillColor: Colors.green.withOpacity(0.5),
-                      ),
+                      _buildTargetPolygon(CircleRegion(_center!, _radius!))
                   ],
                 ),
                 if (_crosshairsTop != null && _crosshairsBottom != null) ...[
@@ -201,7 +211,7 @@ class _MapViewState extends State<MapView> {
 
     switch (downloadProvider.regionMode) {
       case RegionMode.square:
-        final double offset = (mapSize.shortestSide - (shapePadding * 2)) / 2;
+        final double offset = (mapSize.shortestSide - (_shapePadding * 2)) / 2;
 
         calculatedTopLeft = Point<double>(
           centerNormal.x - offset,
@@ -214,39 +224,39 @@ class _MapViewState extends State<MapView> {
         break;
       case RegionMode.rectangleVertical:
         final allowedArea = Size(
-          mapSize.width - (shapePadding * 2),
-          (mapSize.height - (shapePadding * 2)) / 1.5 - 50,
+          mapSize.width - (_shapePadding * 2),
+          (mapSize.height - (_shapePadding * 2)) / 1.5 - 50,
         );
 
         calculatedTopLeft = Point<double>(
           centerInversed.y - allowedArea.shortestSide / 2,
-          shapePadding,
+          _shapePadding,
         );
         calculatedBottomRight = Point<double>(
           centerInversed.y + allowedArea.shortestSide / 2,
-          mapSize.height - shapePadding - 25,
+          mapSize.height - _shapePadding - 25,
         );
         break;
       case RegionMode.rectangleHorizontal:
         final allowedArea = Size(
-          mapSize.width - (shapePadding * 2),
+          mapSize.width - (_shapePadding * 2),
           (mapSize.width < mapSize.height + 250)
-              ? (mapSize.width - (shapePadding * 2)) / 1.75
-              : (mapSize.height - (shapePadding * 2) - 0),
+              ? (mapSize.width - (_shapePadding * 2)) / 1.75
+              : (mapSize.height - (_shapePadding * 2) - 0),
         );
 
         calculatedTopLeft = Point<double>(
-          shapePadding,
+          _shapePadding,
           centerNormal.y - allowedArea.height / 2,
         );
         calculatedBottomRight = Point<double>(
-          mapSize.width - shapePadding,
+          mapSize.width - _shapePadding,
           centerNormal.y + allowedArea.height / 2 - 25,
         );
         break;
       case RegionMode.circle:
         final allowedArea =
-            Size.square(mapSize.shortestSide - (shapePadding * 2));
+            Size.square(mapSize.shortestSide - (_shapePadding * 2));
 
         final calculatedTop = Point<double>(
           centerNormal.x,
@@ -254,8 +264,8 @@ class _MapViewState extends State<MapView> {
               allowedArea.width / 2,
         );
 
-        _crosshairsTop = calculatedTop - crosshairsMovement;
-        _crosshairsBottom = centerNormal - crosshairsMovement;
+        _crosshairsTop = calculatedTop - _crosshairsMovement;
+        _crosshairsBottom = centerNormal - _crosshairsMovement;
 
         _center =
             _mapController.pointToLatLng(_customPointFromPoint(centerNormal));
@@ -270,8 +280,8 @@ class _MapViewState extends State<MapView> {
     }
 
     if (downloadProvider.regionMode != RegionMode.circle) {
-      _crosshairsTop = calculatedTopLeft - crosshairsMovement;
-      _crosshairsBottom = calculatedBottomRight - crosshairsMovement;
+      _crosshairsTop = calculatedTopLeft - _crosshairsMovement;
+      _crosshairsBottom = calculatedBottomRight - _crosshairsMovement;
 
       _coordsTopLeft = _mapController
           .pointToLatLng(_customPointFromPoint(calculatedTopLeft));

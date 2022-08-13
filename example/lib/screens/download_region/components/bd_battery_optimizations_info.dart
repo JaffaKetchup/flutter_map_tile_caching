@@ -33,12 +33,13 @@ class _BackgroundDownloadBatteryOptimizationsInfoState
             const SizedBox(width: 15),
             Expanded(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
                     "Apps that support background downloading can request extra permissions to help prevent the background process being stopped by the system. Specifically, the 'ignore battery optimisations' permission helps most. The API has a method to manage this permission.",
                     textAlign: TextAlign.justify,
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 10),
                   Text(
                     snapshot.hasError
                         ? 'This platform currently does not support this API: it is only supported on Android.'

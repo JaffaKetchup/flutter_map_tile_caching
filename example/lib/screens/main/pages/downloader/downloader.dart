@@ -17,8 +17,8 @@ class _DownloaderPageState extends State<DownloaderPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         body: Column(
-          children: const [
-            SafeArea(
+          children: [
+            const SafeArea(
               child: Padding(
                 padding: EdgeInsets.all(12),
                 child: Header(),
@@ -28,10 +28,12 @@ class _DownloaderPageState extends State<DownloaderPage> {
               child: SizedBox.expand(
                 child: ClipRRect(
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
+                    topLeft: const Radius.circular(20),
+                    topRight: MediaQuery.of(context).size.width <= 950
+                        ? const Radius.circular(20)
+                        : Radius.zero,
                   ),
-                  child: MapView(),
+                  child: const MapView(),
                 ),
               ),
             ),

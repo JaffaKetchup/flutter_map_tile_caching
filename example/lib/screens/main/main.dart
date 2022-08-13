@@ -165,8 +165,7 @@ class _MainScreenState extends State<MainScreen> {
                     topLeft: MediaQuery.of(context).size.width > 950
                         ? const Radius.circular(16)
                         : Radius.zero,
-                    bottomLeft: const Radius.circular(16),
-                    bottomRight: MediaQuery.of(context).size.width <= 950
+                    bottomLeft: MediaQuery.of(context).size.width > 950
                         ? const Radius.circular(16)
                         : Radius.zero,
                   ),
