@@ -131,6 +131,7 @@ class _MapViewState extends State<MapView> {
                   nonRotatedChildren: [
                     AttributionWidget.defaultWidget(
                       source: Uri.parse(urlTemplate).host,
+                      alignment: Alignment.bottomLeft,
                     ),
                   ],
                   children: [

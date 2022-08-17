@@ -70,7 +70,7 @@ class _UpdatePageState extends State<UpdatePage> {
                   child: updating
                       ? const LoadingIndicator(
                           message:
-                              'Downloading New Application Installer...\nWill automatically exit application and run installer once downloaded',
+                              'Downloading New Application Installer...\nThe app will automatically exit and run installer once downloaded',
                         )
                       : FutureBuilder<String>(
                           future: rootBundle.loadString(

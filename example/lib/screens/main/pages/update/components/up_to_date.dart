@@ -19,6 +19,11 @@ class UpToDate extends StatelessWidget {
               'Up To Date',
               textAlign: TextAlign.center,
             ),
+            Text(
+              "with the latest example app from the 'main' branch",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontStyle: FontStyle.italic),
+            ),
           ],
         ),
       );

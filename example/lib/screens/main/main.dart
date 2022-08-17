@@ -51,7 +51,7 @@ class _MainScreenState extends State<MainScreen> {
                 animationDuration: const Duration(milliseconds: 100),
                 showBadge: _currentPageIndex != 3 &&
                     (snapshot.data?.isNotEmpty ?? false),
-                child: const Icon(Icons.history),
+                child: const Icon(Icons.running_with_errors),
               ),
             ),
           ),
@@ -59,12 +59,12 @@ class _MainScreenState extends State<MainScreen> {
         ),
         const NavigationDestination(
           icon: Icon(Icons.settings),
-          label: 'Settings & About',
+          label: 'Settings',
         ),
         if (Platform.isWindows || Platform.isAndroid)
           const NavigationDestination(
-            icon: Icon(Icons.system_update_alt),
-            label: 'Update App',
+            icon: Icon(Icons.update),
+            label: 'Update',
           ),
       ];
 
@@ -114,9 +114,10 @@ class _MainScreenState extends State<MainScreen> {
                   onDestinationSelected: _onDestinationSelected,
                   selectedIndex: _currentPageIndex,
                   destinations: _destinations,
-                  labelBehavior: MediaQuery.of(context).size.width > 650
+                  labelBehavior: MediaQuery.of(context).size.width > 450
                       ? null
                       : NavigationDestinationLabelBehavior.alwaysHide,
+                  height: 70,
                 ),
           body: Row(
             children: [
