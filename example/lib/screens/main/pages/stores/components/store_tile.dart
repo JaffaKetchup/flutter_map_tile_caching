@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../../shared/components/size_formatter.dart';
 import '../../../../../shared/state/general_provider.dart';
+import '../../../../../shared/vars/size_formatter.dart';
 import '../../../../store_editor/store_editor.dart';
 import 'stat_display.dart';
 

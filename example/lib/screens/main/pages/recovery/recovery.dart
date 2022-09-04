@@ -25,15 +25,15 @@ class _RecoveryPageState extends State<RecoveryPage> {
   void initState() {
     super.initState();
 
-    void _listRecoverableRegions() => _recoverableRegions =
+    void listRecoverableRegions() => _recoverableRegions =
         FMTC.instance.rootDirectory.recovery.recoverableRegions;
 
-    _listRecoverableRegions();
+    listRecoverableRegions();
     FMTC.instance.rootDirectory.stats.watchChanges(
       rootParts: [RootParts.recovery],
     ).listen((_) {
       if (mounted) {
-        _listRecoverableRegions();
+        listRecoverableRegions();
         setState(() {});
       }
     });

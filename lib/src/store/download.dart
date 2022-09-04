@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -72,12 +71,7 @@ class DownloadManagement {
     FMTCTileProviderSettings? tileProviderSettings,
     bool disableRecovery = false,
   }) async* {
-    _recoveryId = hashValues(
-          region,
-          tileProviderSettings,
-          _storeDirectory.getTileProvider(tileProviderSettings),
-        ) *
-        DateTime.now().millisecondsSinceEpoch;
+    _recoveryId = DateTime.now().millisecondsSinceEpoch;
 
     if (!disableRecovery) {
       await _storeDirectory.rootDirectory.recovery.start(

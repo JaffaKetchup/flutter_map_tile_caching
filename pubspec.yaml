@@ -6,6 +6,10 @@ repository: https://github.com/JaffaKetchup/flutter_map_tile_caching
 issue_tracker: https://github.com/JaffaKetchup/flutter_map_tile_caching/issues
 documentation: https://fmtc.jaffaketchup.dev
 
+funding:
+  - https://github.com/sponsors/JaffaKetchup
+  - https://ko-fi.com/jaffaketchup
+
 platforms:
   android:
   ios:
@@ -38,7 +42,7 @@ dependencies:
   queue: ^3.1.0+1
   share_plus: ^4.0.10
   stream_transform: ^2.0.0
-  vector_math: ^2.1.1
+  vector_math: ^2.1.2
   watcher: ^1.0.1
 
 dev_dependencies:
