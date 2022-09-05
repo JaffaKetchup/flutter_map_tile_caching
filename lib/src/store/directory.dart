@@ -76,7 +76,7 @@ class StoreDirectory {
   /// Get tools to manage bulk downloading to this store
   DownloadManagement get download => DownloadManagement(this);
 
-  /// Get 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayerOptions], specific to this store
+  /// Get 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayer], specific to this store
   ///
   /// Uses [FMTCSettings.defaultTileProviderSettings] by default (and it's default if unspecified). Alternatively, override [settings] for this get only.
   FMTCTileProvider getTileProvider([FMTCTileProviderSettings? settings]) =>

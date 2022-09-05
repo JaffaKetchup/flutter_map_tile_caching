@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
-import '../../../../../shared/components/size_formatter.dart';
+import '../../../../../shared/vars/size_formatter.dart';
 import 'stat_display.dart';
 
 class VerticalLayout extends StatelessWidget {

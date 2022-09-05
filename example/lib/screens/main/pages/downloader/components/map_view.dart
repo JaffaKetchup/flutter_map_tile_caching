@@ -24,11 +24,11 @@ class MapView extends StatefulWidget {
 }
 
 class _MapViewState extends State<MapView> {
-  static const double shapePadding = 15;
-  static const crosshairsMovement = Point<double>(10, 10);
+  static const double _shapePadding = 15;
+  static const _crosshairsMovement = Point<double>(10, 10);
 
   final _mapKey = GlobalKey<State<StatefulWidget>>();
-  late final MapController _mapController;
+  final MapController _mapController = MapController();
 
   late final StreamSubscription _polygonVisualizerStream;
   late final StreamSubscription _tileCounterTriggerStream;
@@ -41,38 +41,48 @@ class _MapViewState extends State<MapView> {
   LatLng? _center;
   double? _radius;
 
+  PolygonLayer _buildTargetPolygon(BaseRegion region) => PolygonLayer(
+        polygons: [
+          Polygon(
+            points: [
+              LatLng(-90, 180),
+              LatLng(90, 180),
+              LatLng(90, -180),
+              LatLng(-90, -180),
+            ],
+            holePointsList: [region.toList()],
+            isFilled: true,
+            borderColor: Colors.black,
+            borderStrokeWidth: 2,
+            color: Colors.white.withOpacity(2 / 3),
+          ),
+        ],
+      );
+
   @override
   void initState() {
     super.initState();
-    _mapController = MapController();
+
+    _manualPolygonRecalcTriggerStream =
+        Provider.of<DownloadProvider>(context, listen: false)
+            .manualPolygonRecalcTrigger
+            .stream
+            .listen((_) {
+      _updatePointLatLng();
+      _countTiles();
+    });
 
     _polygonVisualizerStream =
         _mapController.mapEventStream.listen((_) => _updatePointLatLng());
     _tileCounterTriggerStream = _mapController.mapEventStream
         .debounce(const Duration(seconds: 1))
         .listen((_) => _countTiles());
-
-    Future.delayed(Duration.zero, () async {
-      _manualPolygonRecalcTriggerStream =
-          Provider.of<DownloadProvider>(context, listen: false)
-              .manualPolygonRecalcTrigger
-              .stream
-              .listen((_) {
-        _updatePointLatLng();
-        _countTiles();
-      });
-
-      await _mapController.onReady;
-
-      if (!mounted) return;
-      _updatePointLatLng();
-      unawaited(_countTiles());
-    });
   }
 
   @override
   void dispose() {
     super.dispose();
+
     _polygonVisualizerStream.cancel();
     _tileCounterTriggerStream.cancel();
     _manualPolygonRecalcTriggerStream.cancel();
@@ -83,122 +93,107 @@ class _MapViewState extends State<MapView> {
       Consumer2<GeneralProvider, DownloadProvider>(
         key: _mapKey,
         builder: (context, generalProvider, downloadProvider, _) =>
-            LayoutBuilder(
-          builder: (context, constraints) =>
-              FutureBuilder<Map<String, String>?>(
-            future: generalProvider.currentStore == null
-                ? Future.sync(() => {})
-                : FMTC
-                    .instance(generalProvider.currentStore!)
-                    .metadata
-                    .readAsync,
-            builder: (context, metadata) {
-              if (!metadata.hasData ||
-                  metadata.data == null ||
-                  (generalProvider.currentStore != null &&
-                      (metadata.data ?? {}).isEmpty)) {
-                return const LoadingIndicator(
-                  message:
-                      'Loading Settings...\n\nSeeing this screen for a long time?\nThere may be a misconfiguration of the\nstore. Try disabling caching and deleting\n faulty stores.',
-                );
-              }
-
-              final String urlTemplate =
-                  generalProvider.currentStore != null && metadata.data != null
-                      ? metadata.data!['sourceURL']!
-                      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-
-              return Stack(
-                children: [
-                  FlutterMap(
-                    mapController: _mapController,
-                    options: MapOptions(
-                      center: LatLng(51.509364, -0.128928),
-                      zoom: 9.2,
-                      interactiveFlags:
-                          InteractiveFlag.all & ~InteractiveFlag.rotate,
-                      keepAlive: true,
-                    ),
-                    nonRotatedChildren: [
-                      AttributionWidget.defaultWidget(
-                        source: Uri.parse(urlTemplate).host,
-                      ),
-                    ],
-                    children: [
-                      TileLayerWidget(
-                        options: TileLayerOptions(
-                          urlTemplate: urlTemplate,
-                          maxZoom: 20,
-                          reset: generalProvider.resetController.stream,
-                          keepBuffer: 5,
-                          backgroundColor: const Color(0xFFaad3df),
-                          tileBuilder: (context, widget, tile) =>
-                              FutureBuilder<bool?>(
-                            future: generalProvider.currentStore == null
-                                ? Future.sync(() => null)
-                                : FMTC
-                                    .instance(generalProvider.currentStore!)
-                                    .getTileProvider()
-                                    .checkTileCachedAsync(
-                                      coords: tile.coords,
-                                      options: TileLayerOptions(
-                                        urlTemplate: urlTemplate,
-                                      ),
-                                    ),
-                            builder: (context, snapshot) => DecoratedBox(
-                              position: DecorationPosition.foreground,
-                              decoration: BoxDecoration(
-                                color: (snapshot.data ?? false)
-                                    ? Colors.deepOrange.withOpacity(0.33)
-                                    : Colors.transparent,
-                              ),
-                              child: widget,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (_coordsTopLeft != null &&
-                          _coordsBottomRight != null &&
-                          downloadProvider.regionMode != RegionMode.circle)
-                        PolygonLayerWidget(
-                          options: RectangleRegion(
-                            LatLngBounds(
-                              _coordsTopLeft,
-                              _coordsBottomRight,
-                            ),
-                          ).toDrawable(
-                            fillColor: Colors.green.withOpacity(0.5),
-                          ),
-                        )
-                      else if (_center != null &&
-                          _radius != null &&
-                          downloadProvider.regionMode == RegionMode.circle)
-                        PolygonLayerWidget(
-                          options: CircleRegion(
-                            _center!,
-                            _radius!,
-                          ).toDrawable(
-                            fillColor: Colors.green.withOpacity(0.5),
-                          ),
-                        ),
-                    ],
-                  ),
-                  if (_crosshairsTop != null && _crosshairsBottom != null) ...[
-                    Positioned(
-                      top: _crosshairsTop!.y,
-                      left: _crosshairsTop!.x,
-                      child: const Crosshairs(),
-                    ),
-                    Positioned(
-                      top: _crosshairsBottom!.y,
-                      left: _crosshairsBottom!.x,
-                      child: const Crosshairs(),
-                    ),
-                  ]
-                ],
+            FutureBuilder<Map<String, String>?>(
+          future: generalProvider.currentStore == null
+              ? Future.sync(() => {})
+              : FMTC.instance(generalProvider.currentStore!).metadata.readAsync,
+          builder: (context, metadata) {
+            if (!metadata.hasData ||
+                metadata.data == null ||
+                (generalProvider.currentStore != null &&
+                    (metadata.data ?? {}).isEmpty)) {
+              return const LoadingIndicator(
+                message:
+                    'Loading Settings...\n\nSeeing this screen for a long time?\nThere may be a misconfiguration of the\nstore. Try disabling caching and deleting\n faulty stores.',
               );
-            },
-          ),
+            }
+
+            final String urlTemplate =
+                generalProvider.currentStore != null && metadata.data != null
+                    ? metadata.data!['sourceURL']!
+                    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+            return Stack(
+              children: [
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    center: LatLng(51.509364, -0.128928),
+                    zoom: 9.2,
+                    interactiveFlags:
+                        InteractiveFlag.all & ~InteractiveFlag.rotate,
+                    keepAlive: true,
+                    onMapReady: () {
+                      _updatePointLatLng();
+                      _countTiles();
+                    },
+                  ),
+                  nonRotatedChildren: [
+                    AttributionWidget.defaultWidget(
+                      source: Uri.parse(urlTemplate).host,
+                      alignment: Alignment.bottomLeft,
+                    ),
+                  ],
+                  children: [
+                    TileLayer(
+                      urlTemplate: urlTemplate,
+                      maxZoom: 20,
+                      reset: generalProvider.resetController.stream,
+                      keepBuffer: 5,
+                      backgroundColor: const Color(0xFFaad3df),
+                      tileBuilder: (context, widget, tile) =>
+                          FutureBuilder<bool?>(
+                        future: generalProvider.currentStore == null
+                            ? Future.sync(() => null)
+                            : FMTC
+                                .instance(generalProvider.currentStore!)
+                                .getTileProvider()
+                                .checkTileCachedAsync(
+                                  coords: tile.coords,
+                                  options: TileLayer(
+                                    urlTemplate: urlTemplate,
+                                  ),
+                                ),
+                        builder: (context, snapshot) => DecoratedBox(
+                          position: DecorationPosition.foreground,
+                          decoration: BoxDecoration(
+                            color: (snapshot.data ?? false)
+                                ? Colors.deepOrange.withOpacity(0.33)
+                                : Colors.transparent,
+                          ),
+                          child: widget,
+                        ),
+                      ),
+                    ),
+                    if (_coordsTopLeft != null &&
+                        _coordsBottomRight != null &&
+                        downloadProvider.regionMode != RegionMode.circle)
+                      _buildTargetPolygon(
+                        RectangleRegion(
+                          LatLngBounds(_coordsTopLeft, _coordsBottomRight),
+                        ),
+                      )
+                    else if (_center != null &&
+                        _radius != null &&
+                        downloadProvider.regionMode == RegionMode.circle)
+                      _buildTargetPolygon(CircleRegion(_center!, _radius!))
+                  ],
+                ),
+                if (_crosshairsTop != null && _crosshairsBottom != null) ...[
+                  Positioned(
+                    top: _crosshairsTop!.y,
+                    left: _crosshairsTop!.x,
+                    child: const Crosshairs(),
+                  ),
+                  Positioned(
+                    top: _crosshairsBottom!.y,
+                    left: _crosshairsBottom!.x,
+                    child: const Crosshairs(),
+                  ),
+                ]
+              ],
+            );
+          },
         ),
       );
 
@@ -217,7 +212,7 @@ class _MapViewState extends State<MapView> {
 
     switch (downloadProvider.regionMode) {
       case RegionMode.square:
-        final double offset = (mapSize.shortestSide - (shapePadding * 2)) / 2;
+        final double offset = (mapSize.shortestSide - (_shapePadding * 2)) / 2;
 
         calculatedTopLeft = Point<double>(
           centerNormal.x - offset,
@@ -230,39 +225,39 @@ class _MapViewState extends State<MapView> {
         break;
       case RegionMode.rectangleVertical:
         final allowedArea = Size(
-          mapSize.width - (shapePadding * 2),
-          (mapSize.height - (shapePadding * 2)) / 1.5 - 50,
+          mapSize.width - (_shapePadding * 2),
+          (mapSize.height - (_shapePadding * 2)) / 1.5 - 50,
         );
 
         calculatedTopLeft = Point<double>(
           centerInversed.y - allowedArea.shortestSide / 2,
-          shapePadding,
+          _shapePadding,
         );
         calculatedBottomRight = Point<double>(
           centerInversed.y + allowedArea.shortestSide / 2,
-          mapSize.height - shapePadding - 25,
+          mapSize.height - _shapePadding - 25,
         );
         break;
       case RegionMode.rectangleHorizontal:
         final allowedArea = Size(
-          mapSize.width - (shapePadding * 2),
+          mapSize.width - (_shapePadding * 2),
           (mapSize.width < mapSize.height + 250)
-              ? (mapSize.width - (shapePadding * 2)) / 1.75
-              : (mapSize.height - (shapePadding * 2) - 0),
+              ? (mapSize.width - (_shapePadding * 2)) / 1.75
+              : (mapSize.height - (_shapePadding * 2) - 0),
         );
 
         calculatedTopLeft = Point<double>(
-          shapePadding,
+          _shapePadding,
           centerNormal.y - allowedArea.height / 2,
         );
         calculatedBottomRight = Point<double>(
-          mapSize.width - shapePadding,
+          mapSize.width - _shapePadding,
           centerNormal.y + allowedArea.height / 2 - 25,
         );
         break;
       case RegionMode.circle:
         final allowedArea =
-            Size.square(mapSize.shortestSide - (shapePadding * 2));
+            Size.square(mapSize.shortestSide - (_shapePadding * 2));
 
         final calculatedTop = Point<double>(
           centerNormal.x,
@@ -270,8 +265,8 @@ class _MapViewState extends State<MapView> {
               allowedArea.width / 2,
         );
 
-        _crosshairsTop = calculatedTop - crosshairsMovement;
-        _crosshairsBottom = centerNormal - crosshairsMovement;
+        _crosshairsTop = calculatedTop - _crosshairsMovement;
+        _crosshairsBottom = centerNormal - _crosshairsMovement;
 
         _center =
             _mapController.pointToLatLng(_customPointFromPoint(centerNormal));
@@ -286,8 +281,8 @@ class _MapViewState extends State<MapView> {
     }
 
     if (downloadProvider.regionMode != RegionMode.circle) {
-      _crosshairsTop = calculatedTopLeft - crosshairsMovement;
-      _crosshairsBottom = calculatedBottomRight - crosshairsMovement;
+      _crosshairsTop = calculatedTopLeft - _crosshairsMovement;
+      _crosshairsBottom = calculatedBottomRight - _crosshairsMovement;
 
       _coordsTopLeft = _mapController
           .pointToLatLng(_customPointFromPoint(calculatedTopLeft));
@@ -315,7 +310,7 @@ class _MapViewState extends State<MapView> {
               provider.region!.toDownloadable(
                 provider.minZoom,
                 provider.maxZoom,
-                TileLayerOptions(),
+                TileLayer(),
               ),
             );
     }

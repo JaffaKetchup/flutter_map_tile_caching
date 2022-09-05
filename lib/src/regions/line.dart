@@ -72,7 +72,7 @@ class LineRegion implements BaseRegion {
   DownloadableRegion toDownloadable(
     int minZoom,
     int maxZoom,
-    TileLayerOptions options, {
+    TileLayer options, {
     int parallelThreads = 10,
     bool preventRedownload = false,
     bool seaTileRemoval = false,
@@ -110,9 +110,9 @@ class LineRegion implements BaseRegion {
   ///
   /// Disabling [prettyPaint] will increase speed and is recommended on slower devices. Decreasing the [curveSmoothening] will also increase speed - set to a smaller value if corners are likely to be small (for example along a route).
   ///
-  /// Returns a [PolygonLayerOptions] to be added to the `layer` property of a [FlutterMap].
+  /// Returns a [PolygonLayer] to be added to the `layer` property of a [FlutterMap].
   @override
-  PolygonLayerOptions toDrawable({
+  PolygonLayer toDrawable({
     Color? fillColor,
     Color borderColor = const Color(0x00000000),
     double borderStrokeWidth = 3.0,
@@ -259,7 +259,7 @@ class LineRegion implements BaseRegion {
       );
     }
 
-    return PolygonLayerOptions(polygons: returnable);
+    return PolygonLayer(polygons: returnable);
   }
 
   /// This method is unavailable for this region type: use [toOutlines] instead

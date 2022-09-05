@@ -16,7 +16,7 @@ import 'tile_progress.dart';
 Stream<TileProgress> bulkDownloader({
   required List<Coords<num>> tiles,
   required FMTCTileProvider provider,
-  required TileLayerOptions options,
+  required TileLayer options,
   required http.Client client,
   required Function(Object?)? errorHandler,
   required int parallelThreads,
@@ -55,7 +55,7 @@ Stream<TileProgress> bulkDownloader({
 Future<TileProgress> _getAndSaveTile({
   required FMTCTileProvider provider,
   required Coords<num> coord,
-  required TileLayerOptions options,
+  required TileLayer options,
   required http.Client client,
   required void Function(Object)? errorHandler,
   required bool preventRedownload,

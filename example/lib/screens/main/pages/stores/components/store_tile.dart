@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../../shared/components/size_formatter.dart';
 import '../../../../../shared/state/general_provider.dart';
+import '../../../../../shared/vars/size_formatter.dart';
 import '../../../../store_editor/store_editor.dart';
 import 'stat_display.dart';
 
@@ -47,7 +47,7 @@ class _StoreTileState extends State<StoreTile> {
     setState(() {});
   }
 
-  List<Widget> get stats => [
+  List<FutureBuilder<String>> get stats => [
         FutureBuilder<String>(
           future: _tiles,
           builder: (context, snapshot) => StatDisplay(
@@ -86,6 +86,27 @@ class _StoreTileState extends State<StoreTile> {
         ),
       ];
 
+  IconButton deleteStoreButton({required bool isCurrentStore}) => IconButton(
+        icon: _deletingProgress
+            ? const CircularProgressIndicator(
+                strokeWidth: 3,
+              )
+            : Icon(
+                Icons.delete_forever,
+                color: isCurrentStore ? null : Colors.red,
+              ),
+        tooltip: 'Delete Store',
+        onPressed: isCurrentStore || _deletingProgress
+            ? null
+            : () async {
+                setState(() {
+                  _deletingProgress = true;
+                  _emptyingProgress = true;
+                });
+                await _store.manage.deleteAsync();
+              },
+      );
+
   @override
   Widget build(BuildContext context) => Consumer<GeneralProvider>(
         child: Row(
@@ -110,146 +131,179 @@ class _StoreTileState extends State<StoreTile> {
         builder: (context, provider, statistics) {
           final bool isCurrentStore = provider.currentStore == widget.storeName;
 
-          return ExpansionTile(
-            title: Text(
-              widget.storeName,
-              style: TextStyle(
-                fontWeight:
-                    isCurrentStore ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-            subtitle: _deletingProgress ? const Text('Deleting...') : null,
-            onExpansionChanged: (e) {
-              if (e) _loadStatistics();
-            },
-            children: [
-              SizedBox(
-                width: double.infinity,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 18, bottom: 10),
-                  child: Column(
-                    children: [
-                      statistics!,
-                      const SizedBox(height: 15),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          IconButton(
-                            icon: _deletingProgress
-                                ? const CircularProgressIndicator(
-                                    strokeWidth: 3,
-                                  )
-                                : Icon(
-                                    Icons.delete_forever,
-                                    color: isCurrentStore ? null : Colors.red,
-                                  ),
-                            tooltip: 'Delete Store',
-                            onPressed: isCurrentStore || _deletingProgress
-                                ? null
-                                : () async {
-                                    setState(() {
-                                      _deletingProgress = true;
-                                      _emptyingProgress = true;
-                                    });
-                                    await _store.manage.deleteAsync();
-                                  },
-                          ),
-                          IconButton(
-                            icon: _emptyingProgress
-                                ? const CircularProgressIndicator(
-                                    strokeWidth: 3,
-                                  )
-                                : const Icon(Icons.delete),
-                            tooltip: 'Empty Store',
-                            onPressed: _emptyingProgress
-                                ? null
-                                : () async {
-                                    setState(() => _emptyingProgress = true);
-                                    await _store.manage.resetAsync();
-
-                                    setState(() => _emptyingProgress = false);
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Finished Emptying'),
-                                        ),
-                                      );
-                                    }
-
-                                    _loadStatistics();
-                                  },
-                          ),
-                          IconButton(
-                            icon: _exportingProgress
-                                ? const CircularProgressIndicator(
-                                    strokeWidth: 3,
-                                  )
-                                : const Icon(Icons.upload_file_rounded),
-                            tooltip: 'Export Store',
-                            onPressed: _exportingProgress
-                                ? null
-                                : () async {
-                                    setState(() => _exportingProgress = true);
-                                    final bool result = await _store.export
-                                        .withGUI(context: context);
-
-                                    setState(() => _exportingProgress = false);
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            result
-                                                ? 'Exported Sucessfully'
-                                                : 'Export Cancelled',
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            tooltip: 'Edit Store',
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute<String>(
-                                builder: (BuildContext context) =>
-                                    StoreEditorPopup(
-                                  existingStoreName: widget.storeName,
-                                  isStoreInUse: isCurrentStore,
-                                ),
-                                fullscreenDialog: true,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.refresh),
-                            tooltip: 'Force Refresh Statistics',
-                            onPressed: () =>
-                                _loadStatistics(withoutCachedStatistics: true),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.done,
-                              color: isCurrentStore ? Colors.green : null,
-                            ),
-                            tooltip: 'Use Store',
-                            onPressed: isCurrentStore
-                                ? null
-                                : () {
-                                    provider
-                                      ..currentStore = widget.storeName
-                                      ..resetMap();
-                                  },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+          return FutureBuilder<bool>(
+            future: _store.manage.readyAsync,
+            builder: (context, ready) => ExpansionTile(
+              title: Text(
+                widget.storeName,
+                style: TextStyle(
+                  fontWeight:
+                      isCurrentStore ? FontWeight.bold : FontWeight.normal,
+                  color: ready.data == false ? Colors.red : null,
                 ),
               ),
-            ],
+              subtitle: _deletingProgress ? const Text('Deleting...') : null,
+              leading: ready.data == false
+                  ? const Icon(
+                      Icons.error,
+                      color: Colors.red,
+                    )
+                  : null,
+              onExpansionChanged: (e) {
+                if (e) _loadStatistics();
+              },
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 18, bottom: 10),
+                    child: ready.data ?? false
+                        ? Column(
+                            children: [
+                              statistics!,
+                              const SizedBox(height: 15),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  deleteStoreButton(
+                                    isCurrentStore: isCurrentStore,
+                                  ),
+                                  IconButton(
+                                    icon: _emptyingProgress
+                                        ? const CircularProgressIndicator(
+                                            strokeWidth: 3,
+                                          )
+                                        : const Icon(Icons.delete),
+                                    tooltip: 'Empty Store',
+                                    onPressed: _emptyingProgress
+                                        ? null
+                                        : () async {
+                                            setState(
+                                              () => _emptyingProgress = true,
+                                            );
+                                            await _store.manage.resetAsync();
+
+                                            setState(
+                                              () => _emptyingProgress = false,
+                                            );
+                                            if (mounted) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  content:
+                                                      Text('Finished Emptying'),
+                                                ),
+                                              );
+                                            }
+
+                                            _loadStatistics();
+                                          },
+                                  ),
+                                  IconButton(
+                                    icon: _exportingProgress
+                                        ? const CircularProgressIndicator(
+                                            strokeWidth: 3,
+                                          )
+                                        : const Icon(Icons.upload_file_rounded),
+                                    tooltip: 'Export Store',
+                                    onPressed: _exportingProgress
+                                        ? null
+                                        : () async {
+                                            setState(
+                                              () => _exportingProgress = true,
+                                            );
+                                            final bool result = await _store
+                                                .export
+                                                .withGUI(context: context);
+
+                                            setState(
+                                              () => _exportingProgress = false,
+                                            );
+                                            if (mounted) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    result
+                                                        ? 'Exported Sucessfully'
+                                                        : 'Export Cancelled',
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit),
+                                    tooltip: 'Edit Store',
+                                    onPressed: () => Navigator.of(context).push(
+                                      MaterialPageRoute<String>(
+                                        builder: (BuildContext context) =>
+                                            StoreEditorPopup(
+                                          existingStoreName: widget.storeName,
+                                          isStoreInUse: isCurrentStore,
+                                        ),
+                                        fullscreenDialog: true,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.refresh),
+                                    tooltip: 'Force Refresh Statistics',
+                                    onPressed: () => _loadStatistics(
+                                      withoutCachedStatistics: true,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.done,
+                                      color:
+                                          isCurrentStore ? Colors.green : null,
+                                    ),
+                                    tooltip: 'Use Store',
+                                    onPressed: isCurrentStore
+                                        ? null
+                                        : () {
+                                            provider
+                                              ..currentStore = widget.storeName
+                                              ..resetMap();
+                                          },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )
+                        : Column(
+                            children: [
+                              const SizedBox(height: 10),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(Icons.broken_image, size: 34),
+                                  Icon(Icons.error, size: 34),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Invalid Store',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              const Text(
+                                "This store's directory structure appears to have been corrupted. You must delete the store to resolve the issue.",
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 5),
+                              deleteStoreButton(isCurrentStore: isCurrentStore),
+                            ],
+                          ),
+                  ),
+                ),
+              ],
+            ),
           );
         },
       );

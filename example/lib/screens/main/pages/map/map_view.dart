@@ -42,11 +42,22 @@ class _MapPageState extends State<MapPage> {
               options: MapOptions(
                 center: LatLng(51.509364, -0.128928),
                 zoom: 9.2,
+                maxBounds: LatLngBounds.fromPoints([
+                  LatLng(-90, 180),
+                  LatLng(90, 180),
+                  LatLng(90, -180),
+                  LatLng(-90, -180),
+                ]),
                 interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                 keepAlive: true,
               ),
-              layers: [
-                TileLayerOptions(
+              nonRotatedChildren: [
+                AttributionWidget.defaultWidget(
+                  source: Uri.parse(urlTemplate).host,
+                ),
+              ],
+              children: [
+                TileLayer(
                   urlTemplate: urlTemplate,
                   tileProvider: provider.currentStore != null
                       ? FMTC.instance(provider.currentStore!).getTileProvider(
@@ -67,16 +78,9 @@ class _MapPageState extends State<MapPage> {
                           )
                       : NetworkNoRetryTileProvider(),
                   maxZoom: 20,
-                  reset: provider.resetController.stream,
                   userAgentPackageName: 'dev.org.fmtc.example.app',
                   keepBuffer: 5,
                   backgroundColor: const Color(0xFFaad3df),
-                  overrideTilesWhenUrlChanges: true,
-                ),
-              ],
-              nonRotatedChildren: [
-                AttributionWidget.defaultWidget(
-                  source: Uri.parse(urlTemplate).host,
                 ),
               ],
             );
