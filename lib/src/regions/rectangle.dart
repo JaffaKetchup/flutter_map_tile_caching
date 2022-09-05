@@ -17,7 +17,7 @@ class RectangleRegion implements BaseRegion {
   DownloadableRegion toDownloadable(
     int minZoom,
     int maxZoom,
-    TileLayerOptions options, {
+    TileLayer options, {
     int parallelThreads = 10,
     bool preventRedownload = false,
     bool seaTileRemoval = false,
@@ -43,7 +43,7 @@ class RectangleRegion implements BaseRegion {
       );
 
   @override
-  PolygonLayerOptions toDrawable({
+  PolygonLayer toDrawable({
     Color? fillColor,
     Color borderColor = const Color(0x00000000),
     double borderStrokeWidth = 3.0,
@@ -52,7 +52,7 @@ class RectangleRegion implements BaseRegion {
     TextStyle labelStyle = const TextStyle(),
     PolygonLabelPlacement labelPlacement = PolygonLabelPlacement.polylabel,
   }) =>
-      PolygonLayerOptions(
+      PolygonLayer(
         polygons: [
           Polygon(
             isFilled: fillColor != null,

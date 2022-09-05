@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -19,8 +18,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// An instance of the [FMTCTileProvider] in use
   final FMTCTileProvider provider;
 
-  /// An instance of the [TileLayerOptions] in use
-  final TileLayerOptions options;
+  /// An instance of the [TileLayer] in use
+  final TileLayer options;
 
   /// The coordinates of the tile to be fetched
   final Coords<num> coords;
@@ -54,7 +53,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   }) : settings = provider.settings;
 
   @override
-  ImageStreamCompleter load(FMTCImageProvider key, DecoderCallback decode) {
+  ImageStreamCompleter loadBuffer(
+    FMTCImageProvider key,
+    DecoderBufferCallback decode,
+  ) {
     // ignore: close_sinks
     final StreamController<ImageChunkEvent> chunkEvents =
         StreamController<ImageChunkEvent>();
@@ -72,7 +74,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
   Future<Codec> _loadAsync({
     required FMTCImageProvider key,
-    required DecoderCallback decode,
+    required DecoderBufferCallback decode,
     required StreamController<ImageChunkEvent> chunkEvents,
   }) async {
     Future<void> cacheHitMiss({
@@ -94,12 +96,15 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       Uint8List? bytes,
       String? throwError,
       bool? cacheHit,
-    }) {
+    }) async {
       scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
       unawaited(chunkEvents.close());
       if (cacheHit != null) unawaited(cacheHitMiss(hit: cacheHit));
       if (throwError != null) throw _FMTCBrowsingError(throwError);
-      if (bytes != null) return decode(bytes);
+      if (bytes != null) {
+        return decode(await ImmutableBuffer.fromUint8List(bytes));
+      }
+
       throw FallThroughError();
     }
 

@@ -39,7 +39,7 @@ class DownloadableRegion {
   final int maxZoom;
 
   /// The options used to fetch tiles
-  final TileLayerOptions options;
+  final TileLayer options;
 
   /// The number of download threads allowed to run simultaneously
   ///

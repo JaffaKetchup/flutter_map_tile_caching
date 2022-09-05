@@ -134,7 +134,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                                     Uri.parse(
                                       NetworkTileProvider().getTileUrl(
                                         Coords(1, 1)..z = 1,
-                                        TileLayerOptions(urlTemplate: i),
+                                        TileLayer(urlTemplate: i),
                                       ),
                                     ),
                                   )

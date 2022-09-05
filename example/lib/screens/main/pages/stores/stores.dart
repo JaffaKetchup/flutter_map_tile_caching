@@ -23,15 +23,15 @@ class _StoresPageState extends State<StoresPage> {
   void initState() {
     super.initState();
 
-    void _listStores() =>
+    void listStores() =>
         _stores = FMTC.instance.rootDirectory.stats.storesAvailableAsync;
 
-    _listStores();
+    listStores();
     FMTC.instance.rootDirectory.stats.watchChanges(
       rootParts: [RootParts.stores],
     ).listen((_) {
       if (mounted) {
-        _listStores();
+        listStores();
         setState(() {});
       }
     });

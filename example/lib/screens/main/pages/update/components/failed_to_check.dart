@@ -17,7 +17,7 @@ class FailedToCheck extends StatelessWidget {
             ),
             SizedBox(height: 10),
             Text(
-              'Failed To Check For Updates',
+              'Failed To Check For Updates\nThe remote URL could not be reached',
               textAlign: TextAlign.center,
             ),
           ],

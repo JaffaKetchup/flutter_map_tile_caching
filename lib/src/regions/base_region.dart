@@ -11,7 +11,7 @@ abstract class BaseRegion {
   DownloadableRegion toDownloadable(
     int minZoom,
     int maxZoom,
-    TileLayerOptions options, {
+    TileLayer options, {
     int parallelThreads = 10,
     bool preventRedownload = false,
     bool seaTileRemoval = false,
@@ -23,8 +23,8 @@ abstract class BaseRegion {
 
   /// Create a drawable area for a [FlutterMap] out of this region
   ///
-  /// Returns a [PolygonLayerOptions] to be added to the `layer` property of a [FlutterMap].
-  PolygonLayerOptions toDrawable({
+  /// Returns a [PolygonLayer] to be added to the `layer` property of a [FlutterMap].
+  PolygonLayer toDrawable({
     Color? fillColor,
     Color borderColor = const Color(0x00000000),
     double borderStrokeWidth = 3,

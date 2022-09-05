@@ -12,7 +12,7 @@ import 'exts.dart';
 import 'filesystem_sanitiser_private.dart';
 import 'image_provider.dart';
 
-/// 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayerOptions]
+/// 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayer]
 class FMTCTileProvider extends TileProvider {
   /// The store directory attached to this provider
   final StoreDirectory storeDirectory;
@@ -25,7 +25,7 @@ class FMTCTileProvider extends TileProvider {
   /// Used internally for browsing-caused tile requests
   final HttpClient httpClient;
 
-  /// 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayerOptions]
+  /// 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayer]
   ///
   /// Usually created from the store directory chain, eg. [StoreDirectory.getTileProvider].
   ///
@@ -49,7 +49,7 @@ class FMTCTileProvider extends TileProvider {
 
   /// Get a browsed tile as an image, paint it on the map and save it's bytes to cache for later (dependent on the [CacheBehavior])
   @override
-  ImageProvider getImage(Coords<num> coords, TileLayerOptions options) =>
+  ImageProvider getImage(Coords<num> coords, TileLayer options) =>
       FMTCImageProvider(
         provider: this,
         options: options,
@@ -66,7 +66,7 @@ class FMTCTileProvider extends TileProvider {
   /// Check whether a specified tile is cached in the current store synchronously
   bool checkTileCached({
     required Coords<num> coords,
-    required TileLayerOptions options,
+    required TileLayer options,
     String? customURL,
   }) =>
       (storeDirectory.access.tiles >>>
@@ -79,7 +79,7 @@ class FMTCTileProvider extends TileProvider {
   /// Check whether a specified tile is cached in the current store asynchronously
   Future<bool> checkTileCachedAsync({
     required Coords<num> coords,
-    required TileLayerOptions options,
+    required TileLayer options,
     String? customURL,
   }) async =>
       (storeDirectory.access.tiles >>>

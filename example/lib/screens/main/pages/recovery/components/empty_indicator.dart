@@ -10,7 +10,7 @@ class EmptyIndicator extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(Icons.done_all, size: 36),
+            Icon(Icons.done, size: 38),
             SizedBox(height: 10),
             Text('No Recoverable Regions Found'),
           ],
