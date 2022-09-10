@@ -72,8 +72,7 @@ class StoreStats {
       'length',
       'size',
     ],
-  }) {
-    try {
+  }) =>
       (statTypes ??
               [
                 'length',
@@ -82,10 +81,7 @@ class StoreStats {
                 'cacheMisses',
               ])
           .map((e) => _access.stats >>> '$e.cache')
-          .forEach((e) => e.deleteSync());
-      // ignore: empty_catches
-    } catch (e) {}
-  }
+          .forEach((e) => e.existsSync() ? e.deleteSync() : null);
 
   /// Remove the cached statistics asynchronously
   ///
@@ -97,9 +93,8 @@ class StoreStats {
       'length',
       'size',
     ],
-  }) async {
-    try {
-      await Future.wait(
+  }) =>
+      Future.wait(
         (statTypes ??
                 [
                   'length',
@@ -107,11 +102,11 @@ class StoreStats {
                   'cacheHits',
                   'cacheMisses',
                 ])
-            .map((e) => (_access.stats >>> '$e.cache').delete()),
+            .map((e) async {
+          final File file = _access.stats >>> '$e.cache';
+          return await file.exists() ? file.delete() : null;
+        }),
       );
-      // ignore: empty_catches
-    } catch (e) {}
-  }
 
   /// Retrieve the size of the store in kibibytes (KiB)
   ///
