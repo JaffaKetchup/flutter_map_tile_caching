@@ -43,30 +43,10 @@ jobs:
       - name: Check Lints
         run: dart analyze --fatal-infos --fatal-warnings
 
-  check-example-changes:
-    name: "Check Example/Config For Changes"
-    runs-on: "ubuntu-20.04"
-    outputs:
-      example_changed: ${{ steps.check_file_changed.outputs.example_changed }}
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-      - name: Compare Commit Diffs
-        shell: pwsh
-        id: check_file_changed
-        run: |
-          $diff = git diff --name-only HEAD^ HEAD
-          $SourceDiff = $diff | Where-Object { $_ -match '^example/' -or $_ -match '.iss$'}
-          $HasDiff = $SourceDiff.Length -gt 0
-          Write-Host "::set-output name=example_changed::$HasDiff"
-
   build-example:
     name: "Build Example Applications"
     runs-on: windows-latest
-    needs: [check-example-changes, content-analysis, package-analysis]
-    if: needs.check-example-changes.outputs.example_changed == 'True'
+    needs: [content-analysis, package-analysis]
     defaults:
       run:
         working-directory: ./example
@@ -78,7 +58,6 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "17"
-          cache: "gradle"
       - name: Setup Flutter Environment
         uses: subosito/flutter-action@v2
         with:
