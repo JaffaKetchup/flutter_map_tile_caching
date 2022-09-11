@@ -6,7 +6,12 @@
 
 ---
 
-## [6.0.0] - 2022/XX/XX
+## [6.0.1] - 2022/09/11
+
+* Improved stability
+* Updated dependencies
+
+## [6.0.0] - 2022/09/05
 
 * Added support for flutter_map v3
 * Fixed bugs
