@@ -6,7 +6,7 @@
 
 ---
 
-## [6.0.1] - 2022/09/XX
+## [6.0.1] - 2022/09/11
 
 * Improved stability
 * Updated dependencies
