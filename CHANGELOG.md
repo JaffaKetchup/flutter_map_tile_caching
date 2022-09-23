@@ -4,7 +4,20 @@
 2. Minor version releases change the second digit and signify minor (breaking with deprecation warnings, or non-breaking) API changes or internal refactoring
 3. Revision version releases change the third digit and signify bug fixes or documentation changes
 
+Many thanks to my sponsors, no matter how much or how little they donated:
+
+* @tonyshkurenko
+* @Mmisiek
+* @huulbaek
+
 ---
+
+## [6.1.0] - 2022/09/23
+
+* Fixed bugs within import functionality
+* Added support for notifications on Android 13+
+* Improved performance
+* Updated dependencies
 
 ## [6.0.1] - 2022/09/11
 

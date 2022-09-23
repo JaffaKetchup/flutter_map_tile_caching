@@ -76,39 +76,27 @@ class RootImport {
     final StoreManagement storeManagement =
         StoreDirectory(_rootDirectory, storeName, autoCreate: false).manage;
 
-    if (!await compute(_import, {
+    await compute(_import, {
       _rootDirectory.access.stores > storeName:
           await File(inputFile.absolute.path).readAsBytes(),
-    })) return error(storeManagement);
+    });
 
     if (await storeManagement.readyAsync) return true;
     return error(storeManagement);
   }
 }
 
-Future<bool> _import(Map<String, Uint8List> data) async {
-  try {
-    final Directory baseDirectory = Directory(data.keys.toList()[0]);
-    final Archive archive = ZipDecoder().decodeBytes(
-      data.values.toList()[0],
-      verify: true,
-    );
+void _import(Map<String, Uint8List> data) {
+  final Directory dir = Directory(data.keys.toList()[0]);
+  final Archive archive = ZipDecoder().decodeBytes(data.values.toList()[0]);
 
-    await Future.wait(
-      [
-        archive
-            .where((f) => !f.isFile)
-            .map((f) => (baseDirectory >> f.name).create(recursive: true)),
-        archive.where((f) => f.isFile).map(
-              (f) async =>
-                  (await (baseDirectory >>> f.name).create(recursive: true))
-                      .writeAsBytes(f.content),
-            ),
-      ].expand((e) => e),
-    );
-
-    return true;
-  } catch (_) {
-    return false;
+  for (final f in archive) {
+    if (f.isFile) {
+      (dir >>> f.name)
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(f.content);
+    } else {
+      (dir >> f.name).createSync(recursive: true);
+    }
   }
 }

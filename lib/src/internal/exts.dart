@@ -82,7 +82,7 @@ extension AndroidNotificationDetailsExts on AndroidNotificationDetails {
     AndroidNotificationChannelAction? channelAction,
     NotificationVisibility? visibility,
     int? timeoutAfter,
-    String? category,
+    AndroidNotificationCategory? category,
     bool? fullScreenIntent,
     String? shortcutId,
     Int32List? additionalFlags,
