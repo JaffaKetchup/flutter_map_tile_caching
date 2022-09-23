@@ -158,6 +158,10 @@ class DownloadManagement {
           android: AndroidInitializationSettings(progressNotificationIcon),
         ),
       );
+      await notification
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()!
+          .requestPermission();
 
       final Stream<DownloadProgress> downloadStream = startForeground(
         region: region,
