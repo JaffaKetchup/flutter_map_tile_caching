@@ -47,7 +47,7 @@ jobs:
     name: "Build Example Applications"
     runs-on: windows-latest
     needs: [content-analysis, package-analysis]
-    if: github.event.head_commit.message != "Built Example Applications"
+    if: github.event.head_commit.message != 'Built Example Applications'
     defaults:
       run:
         working-directory: ./example
