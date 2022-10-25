@@ -1,3 +1,6 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 import 'package:flutter_map/flutter_map.dart';
 import 'package:meta/meta.dart';
 

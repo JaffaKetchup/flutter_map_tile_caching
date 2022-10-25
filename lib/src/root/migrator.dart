@@ -1,3 +1,6 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:stream_transform/stream_transform.dart';

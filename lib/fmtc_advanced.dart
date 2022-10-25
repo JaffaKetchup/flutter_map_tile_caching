@@ -1,3 +1,6 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 /// Secondary advanced import point for 'flutter_map_tile_caching'
 ///
 /// Checkout the README for more documentation.

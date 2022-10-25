@@ -1,3 +1,6 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 import 'dart:async';
 
 /// Object containing the [timestamp] of the measurement and the percentage [progress] (0-1) of the applicable tile
@@ -75,7 +78,7 @@ class InternalProgressTimingManagement {
   double _calculateAverage({
     required List<double> downloadSpeeds,
     int? latestSamples,
-    double smoothing = 0.02,
+    double smoothing = 0.05,
   }) {
     if (downloadSpeeds.length == 1) return downloadSpeeds[0];
 

@@ -1,7 +1,9 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 import 'dart:io';
 
 import '../internal/exts.dart';
-
 import 'directory.dart';
 
 /// Provides direct filesystem access paths to a [RootDirectory] - use with caution
