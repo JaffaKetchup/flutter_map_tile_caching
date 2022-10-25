@@ -15,7 +15,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_foreground_task: ^3.9.0
-  flutter_map: ^3.0.0-beta.1
+  flutter_map: ^3.0.0
   flutter_map_tile_caching:
     path: ../
   flutter_speed_dial: ^6.0.0

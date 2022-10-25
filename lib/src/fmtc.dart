@@ -1,3 +1,6 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 import 'root/directory.dart';
 import 'root/manage.dart';
 import 'settings/fmtc_settings.dart';

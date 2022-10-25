@@ -1,3 +1,6 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 /// Multiple behaviors dictating how browse caching should be carried out
 ///
 /// Check documentation on each value for more information.

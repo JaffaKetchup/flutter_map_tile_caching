@@ -16,8 +16,12 @@ Alternatively, for the API reference, look at the [auto generated 'dartdoc'](htt
 
 ## Supporting Me
 
-I'm an under-18 currently living in the UK, and I am in full-time education. I work on this project and all of my others in my spare time, and I currently have no stable income due to my age - although I aspire to work in software/mobile development in the future.  
-If you have any change to spare, I'd be grateful for any amount, big or small :D. Every donation gives me 'mental fuel' to continue this project, and lets me know that I'm doing a good job. I'll be happy to give you a place on the documentation website's credits, and a shoutout in every release/CHANGELOG.
+I work on all of my projects in my spare time, including maintaining (along with a team) Flutter's № 1 (non-commercially maintained) mapping library 'flutter_map', bringing it back from the brink of abandonment, as well as my own plugin for it ('flutter_map_tile_caching') that extends it with advanced caching and downloading.  
+Additionally, I also own the Dart encoder/decoder for the QOI image format ('dqoi') - and I am slowly working on 'flutter_osrm', a wrapper for the Open Source Routing Machine.
+
+Sponsorships & donations allow me to continue my projects and upgrade my hardware/setup, as well as allowing me to have some starting amount for further education and such-like.
+And of course, a small amount will find its way into my Jaffa Cakes fund (<https://en.wikipedia.org/wiki/Jaffa_Cakes>) - why do you think my username has "Jaffa" in it?
+Many thanks for any amount you can spare, it means a lot to me!
 
 You can read more about me and what I do on my [GitHub Sponsors](https://github.com/sponsors/JaffaKetchup) page, where you can donate as well.
 
