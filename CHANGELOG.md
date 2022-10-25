@@ -1,16 +1,23 @@
-# Changelog
+# Sponsors
 
-1. Major version releases change the first digit and signify major (breaking) API changes, with or without deprecation warnings
-2. Minor version releases change the second digit and signify minor (breaking with deprecation warnings, or non-breaking) API changes or internal refactoring
-3. Revision version releases change the third digit and signify bug fixes or documentation changes
-
-Many thanks to my sponsors, no matter how much or how little they donated:
+Many thanks to my sponsors, no matter how much or how little they donated. Sponsorships & donations allow me to continue my projects and upgrade my hardware/setup, as well as allowing me to have some starting amount for further education and such-like.
 
 * @tonyshkurenko
 * @Mmisiek
 * @huulbaek
+* @andrewames
+* @ozzy1873
+* Anonymous Donor (via Ko-Fi, no username provided)
+* Private Donor (via GitHub, chosen private)
+* Private Donor (via GitHub, chosen private)
 
----
+# Changelog
+
+## [6.2.0] - 2022/10/XX
+
+* Performance improvements
+* Changed license to GPL v3
+* Updated dependencies
 
 ## [6.1.0] - 2022/09/23
 

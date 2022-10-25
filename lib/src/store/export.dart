@@ -1,6 +1,10 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 import 'dart:io';
 
 import 'package:archive/archive_io.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -58,8 +62,8 @@ class StoreExport {
       final box = context!.findRenderObject() as RenderBox?;
 
       await manual(exportFile);
-      final ShareResult result = await Share.shareFilesWithResult(
-        [exportFile.absolute.path],
+      final ShareResult result = await Share.shareXFiles(
+        [XFile(exportFile.absolute.path)],
         sharePositionOrigin: box!.localToGlobal(Offset.zero) & box.size,
       );
       await exportFile.delete();

@@ -1,3 +1,6 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 import 'dart:math';
 
 import 'package:flutter_map/flutter_map.dart' hide Polygon;
@@ -10,25 +13,36 @@ List<Coords<num>> rectangleTiles(Map<String, dynamic> input) {
   final Crs crs = input['crs'];
   final CustomPoint<num> tileSize = input['tileSize'];
 
-  final List<Coords<num>> coords = [];
-  for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-    final CustomPoint<num> nwCustomPoint = crs
-        .latLngToPoint(bounds.northWest, zoomLvl.toDouble())
-        .unscaleBy(tileSize)
-        .floor();
-    final CustomPoint<num> seCustomPoint = crs
-            .latLngToPoint(bounds.southEast, zoomLvl.toDouble())
-            .unscaleBy(tileSize)
-            .ceil() -
-        const CustomPoint(1, 1);
+  return List.generate(
+    maxZoom - (minZoom - 1),
+    (z) {
+      final zoomLevel = minZoom + z;
 
-    for (num x = nwCustomPoint.x; x <= seCustomPoint.x; x++) {
-      for (num y = nwCustomPoint.y; y <= seCustomPoint.y; y++) {
-        coords.add(Coords(x, y)..z = zoomLvl);
-      }
-    }
-  }
-  return coords;
+      final nwt = crs
+          .latLngToPoint(bounds.northWest, zoomLevel.toDouble())
+          .unscaleBy(tileSize)
+          .floor();
+      final nw = CustomPoint<int>(nwt.x, nwt.y);
+
+      final set = crs
+              .latLngToPoint(bounds.southEast, zoomLevel.toDouble())
+              .unscaleBy(tileSize)
+              .ceil() -
+          const CustomPoint(1, 1);
+      final se = CustomPoint<int>(set.x, set.y);
+
+      return List.generate(
+        se.x - (nw.x - 1),
+        (x) => List.generate(
+          se.y - (nw.y - 1),
+          (y) => Coords(nw.x + x, nw.y + y)..z = zoomLevel,
+          growable: false,
+        ),
+        growable: false,
+      );
+    },
+    growable: false,
+  ).expand((e) => e).expand((e) => e).toList(growable: false);
 }
 
 List<Coords<num>> circleTiles(Map<String, dynamic> input) {
