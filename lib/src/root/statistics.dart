@@ -73,15 +73,16 @@ class RootStats {
   ///
   /// If [statType] is `null`, all statistic caches are deleted, otherwise only the specified cache is deleted.
   void invalidateCachedStatistics(String? statType) {
-    try {
-      if (statType != null) {
-        (_access.stats >>> '$statType.cache').deleteSync();
-      } else {
-        (_access.stats >>> 'length.cache').deleteSync();
-        (_access.stats >>> 'size.cache').deleteSync();
-      }
-      // ignore: empty_catches
-    } catch (e) {}
+    if (statType != null) {
+      final file = _access.stats >>> '$statType.cache';
+      if (file.existsSync()) file.deleteSync();
+    } else {
+      final length = _access.stats >>> 'length.cache';
+      if (length.existsSync()) length.deleteSync();
+
+      final size = _access.stats >>> 'size.cache';
+      if (size.existsSync()) size.deleteSync();
+    }
   }
 
   /// Remove the cached statistics asynchronously
@@ -90,17 +91,21 @@ class RootStats {
   ///
   /// If [statType] is `null`, all statistic caches are deleted, otherwise only the specified cache is deleted.
   Future<void> invalidateCachedStatisticsAsync(String? statType) async {
-    try {
-      if (statType != null) {
-        await (_access.stats >>> '$statType.cache').delete();
-      } else {
-        await Future.wait([
-          (_access.stats >>> 'length.cache').delete(),
-          (_access.stats >>> 'size.cache').delete(),
-        ]);
-      }
-      // ignore: empty_catches
-    } catch (e) {}
+    if (statType != null) {
+      final file = _access.stats >>> '$statType.cache';
+      if (await file.exists()) await file.delete();
+    } else {
+      await Future.wait([
+        (() async {
+          final length = _access.stats >>> 'length.cache';
+          if (await length.exists()) return length.delete();
+        })(),
+        (() async {
+          final size = _access.stats >>> 'size.cache';
+          if (await size.exists()) return size.delete();
+        })(),
+      ]);
+    }
   }
 
   /// Retrieve all the available [StoreDirectory]s
