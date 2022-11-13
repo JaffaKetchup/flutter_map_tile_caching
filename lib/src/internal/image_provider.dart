@@ -185,7 +185,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         },
       );
 
-      // Cache the tile in a separate isolate
+      // Cache the tile asynchronously
       unawaited(file.create().then((_) => file.writeAsBytes(bytes!)));
       if (needsCreating) {
         unawaited(
@@ -256,13 +256,21 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
 /// An [Exception] indicating that there was an error retrieving tiles to be displayed on the map
 ///
-/// Always thrown from within [FMTCImageProvider] generated from [FMTCTileProvider]. The [message] further indicates the reason, and may depend on the current caching behaviour.
+/// These can usually be safely ignored, as they simply represent a fall through of all valid/possible cases, but you may wish to handle them anyway.
+///
+/// For example, "Failed to load the tile from the cache because it was missing" might be thrown in [CacheBehavior.cacheOnly] mode - there is simply nothing else that can be done, but it isn't really critical to catch.
+///
+/// Always thrown from within [FMTCImageProvider] generated from [FMTCTileProvider]. The [message] further indicates the reason, and will depend on the current caching behaviour.
 class _FMTCBrowsingError implements Exception {
   final String message;
 
   /// An [Exception] indicating that there was an error retrieving tiles to be displayed on the map
   ///
-  /// Always thrown from within [FMTCImageProvider] generated from [FMTCTileProvider]. The [message] further indicates the reason, and may depend on the current caching behaviour.
+  /// These can usually be safely ignored, as they simply represent a fall through of all valid/possible cases, but you may wish to handle them anyway.
+  ///
+  /// For example, "Failed to load the tile from the cache because it was missing" might be thrown in [CacheBehavior.cacheOnly] mode - there is simply nothing else that can be done, but it isn't really critical to catch.
+  ///
+  /// Always thrown from within [FMTCImageProvider] generated from [FMTCTileProvider]. The [message] further indicates the reason, and will depend on the current caching behaviour.
   _FMTCBrowsingError(this.message);
 
   @override
