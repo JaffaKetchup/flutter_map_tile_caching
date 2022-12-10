@@ -1,35 +1,38 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:io';
+part of 'directory.dart';
 
-import '../internal/exts.dart';
-import 'directory.dart';
+class _RootAccess {
+  Directory get directory => FMTC.instance.rootDirectory.rootDirectory;
 
-/// Provides direct filesystem access paths to a [RootDirectory] - use with caution
-class RootAccess {
-  /// The store directory to provide access paths to
-  final RootDirectory _rootDirectory;
+  late final Isar rootDb;
+  final Map<String, Isar> storeDbs = {};
 
-  /// Provides direct filesystem access paths to a [RootDirectory] - use with caution
-  RootAccess(this._rootDirectory) {
-    real = _rootDirectory.rootDirectory;
-    stores = real >> 'stores';
-    stats = real >> 'stats';
-    recovery = real >> 'recovery';
+  Future<void> rescan() async {
+    storeDbs
+      ..clear()
+      ..addEntries(
+        (await Future.wait(
+          (await rootDb.stores.where().findAll()).map(
+            (s) => Isar.open(
+              [TileSchema],
+              name: s.name,
+              directory: directory.absolute.path,
+            ),
+          ),
+        ))
+            .map((e) => MapEntry(e.name, e)),
+      );
   }
 
-  /// The real [Directory] of the [RootDirectory]
-  ///
-  /// Note that this is equivalent to just using [RootDirectory.rootDirectory], but is provided for consistency. It is recommended to use this whenever possible.
-  late final Directory real;
+  Future<void> createStore(String name) async {
+    await rootDb.writeTxn(() => rootDb.stores.put(Store(name: name)));
+    await rescan();
+  }
 
-  /// The sub[Directory] used to store stores
-  late final Directory stores;
-
-  /// The sub[Directory] used to store cached statistics
-  late final Directory stats;
-
-  /// The sub[Directory] used to store recovery information
-  late final Directory recovery;
+  Future<void> deleteStore(String name) async {
+    await rootDb.writeTxn(() => rootDb.stores.delete(databaseHash(name)));
+    await rescan();
+  }
 }

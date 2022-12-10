@@ -12,6 +12,7 @@ import 'package:path/path.dart' as p;
 import '../../flutter_map_tile_caching.dart';
 import '../internal/exts.dart';
 import '../store/manage.dart';
+import 'directory.dart';
 
 /// Provides store import functionality for a [RootDirectory]
 class RootImport {

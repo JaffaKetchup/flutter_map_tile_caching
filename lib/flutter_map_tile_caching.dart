@@ -28,7 +28,6 @@ export 'src/regions/downloadable_region.dart';
 export 'src/regions/line.dart';
 export 'src/regions/recovered_region.dart';
 export 'src/regions/rectangle.dart';
-export 'src/root/directory.dart';
 export 'src/settings/filesystem_sanitiser_public.dart';
 export 'src/settings/fmtc_settings.dart';
 export 'src/settings/tile_provider_settings.dart';

@@ -5,8 +5,12 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/widgets.dart';
+import 'package:isar/isar.dart';
 import 'package:path/path.dart' as p;
 
+import '../db/defs/store.dart';
+import '../db/defs/tile.dart';
+import '../fmtc.dart';
 import '../internal/exts.dart';
 import '../internal/filesystem_sanitiser_private.dart';
 import 'access.dart';
@@ -19,19 +23,12 @@ class StoreManagement {
   /// The store directory to manage
   final StoreDirectory _storeDirectory;
 
+  String get _storeName => _storeDirectory.storeName;
+  Directory get _rootDirectory => FMTC.instance.rootDirectory.rootDirectory;
+  Map<String, Isar> get _databases => FMTC.instance.databases;
+
   /// Manages a [StoreDirectory]'s representation on the filesystem, such as creation and deletion
-  StoreManagement(this._storeDirectory)
-      : _access = StoreAccess(_storeDirectory);
-
-  /// Shorthand for [StoreDirectory.access], used commonly throughout
-  final StoreAccess _access;
-
-  /// Check whether all directories exist synchronously
-  bool get ready => [
-        _access.tiles.existsSync(),
-        _access.stats.existsSync(),
-        _access.metadata.existsSync(),
-      ].every((e) => e);
+  StoreManagement(this._storeDirectory);
 
   /// Check whether all directories exist asynchronously
   Future<bool> get readyAsync async => (await Future.wait<bool>([
@@ -41,26 +38,15 @@ class StoreManagement {
       ]))
           .every((e) => e);
 
-  /// Create all of the directories synchronously
-  void create() {
-    _access.tiles.createSync(recursive: true);
-    _access.stats.createSync(recursive: true);
-    _access.metadata.createSync(recursive: true);
-  }
-
   /// Create all of the directories asynchronously
-  Future<void> createAsync() => Future.wait([
-        _access.tiles.create(recursive: true),
-        _access.stats.create(recursive: true),
-        _access.metadata.create(recursive: true),
-      ]);
-
-  /// Delete all of the directories synchronously
-  ///
-  /// This will remove all traces of this store from the user's device. Use with caution!
-  void delete() {
-    reset();
-    _access.real.deleteSync(recursive: true);
+  Future<void> createAsync() async {
+    _databases[_storeName] = await Isar.open(
+      [TileSchema],
+      name: _storeName,
+      directory: _rootDirectory.absolute.path,
+    );
+    await _databases['']!
+        .writeTxn(() => _databases['']!.stores.put(Store(name: _storeName)));
   }
 
   /// Delete all of the directories asynchronously
@@ -69,16 +55,6 @@ class StoreManagement {
   Future<void> deleteAsync() async {
     await resetAsync();
     await _access.real.delete(recursive: true);
-  }
-
-  /// Resets this store synchronously
-  ///
-  /// Deletes all files within the [StoreAccess.tiles] directory, and invalidates any cached statistics ([StoreStats.invalidateCachedStatisticsAsync]). Therefore, custom metadata ([StoreMetadata]) is not deleted.
-  ///
-  /// For a full reset, manually [delete] then [create] the store.
-  void reset() {
-    _access.tiles.listSync().forEach((e) => e.deleteSync());
-    _storeDirectory.stats.invalidateCachedStatistics(statTypes: null);
   }
 
   /// Resets this store synchronously

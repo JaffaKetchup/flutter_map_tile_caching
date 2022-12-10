@@ -1,5 +1,9 @@
 include: jaffa_lints.yaml
 
+analyzer:
+  exclude:
+    - lib/src/db/defs/*.g.dart
+
 linter:
   rules:
     avoid_slow_async_io: false
