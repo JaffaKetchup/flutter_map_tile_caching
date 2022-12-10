@@ -3,16 +3,22 @@
 
 import 'dart:io';
 
+import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../db/defs/store.dart';
+import '../db/defs/tile.dart';
+import '../db/misc/hash.dart';
+import '../fmtc.dart';
 import '../internal/exts.dart';
 import '../store/directory.dart';
-import 'access.dart';
 import 'import.dart';
 import 'manage.dart';
 import 'migrator.dart';
 import 'recovery.dart';
 import 'statistics.dart';
+
+part 'access.dart';
 
 /// Access point to a root
 ///
@@ -71,7 +77,7 @@ class RootDirectory {
   /// Get direct filesystem access paths
   ///
   /// This should only be used in special cases, when modifying the root manually for example.
-  RootAccess get access => RootAccess(this);
+  _RootAccess get access => _RootAccess();
 
   /// Manage the root's representation on the filesystem
   ///
@@ -79,7 +85,7 @@ class RootDirectory {
   ///  * Create
   ///  * Delete
   ///  * Reset
-  RootManagement get manage => RootManagement(this);
+  RootManagement get manage => RootManagement();
 
   /// Get statistics about this root (and all sub-stores)
   RootStats get stats => RootStats(this);
