@@ -1,6 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
+/*
 import 'dart:io';
 
 import 'package:collection/collection.dart';
@@ -102,3 +103,4 @@ class RootRecovery {
     await (await getRecoverableRegion(id))?.file.delete();
   }
 }
+*/

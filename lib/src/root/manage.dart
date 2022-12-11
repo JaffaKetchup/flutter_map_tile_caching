@@ -1,25 +1,18 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:io';
-
-import 'package:isar/isar.dart';
-
-import '../db/defs/store.dart';
-import '../fmtc.dart';
-import '../internal/exts.dart';
-import 'directory.dart';
+part of 'directory.dart';
 
 /// Manages a [RootDirectory]'s representation on the filesystem, such as
 /// creation and deletion
 class RootManagement {
   Directory get _rootDirectory => FMTC.instance.rootDirectory.rootDirectory;
-  Map<String, Isar> get _databases => FMTC.instance.databases;
+  _RootAccess get _access => FMTC.instance.rootDirectory._access;
 
   /// Check whether the root directory exists and the root database is ready
   Future<bool> get readyAsync async => (await Future.wait<bool>([
         _rootDirectory.exists(),
-        (_rootDirectory >>> 'fmtcRoot.isar').exists(),
+        (_rootDirectory >>> 'registry.isar').exists(),
       ]))
           .every((e) => e);
 
@@ -28,19 +21,18 @@ class RootManagement {
     if (await readyAsync) return;
 
     await _rootDirectory.create(recursive: true);
-    _databases[''] = await Isar.open(
+    _access.rootDb = await Isar.open(
       [StoreSchema],
-      name: 'fmtcRoot',
+      name: 'registry',
       directory: _rootDirectory.absolute.path,
     );
+    await _access.rescan();
 
     // TODO: REMOVE FOR PRODUCTION
-    await FMTC.instance.databases['']!.writeTxn(() async {
-      await FMTC.instance.databases['']!.clear();
-      await FMTC.instance.databases['']!.stores
-          .put(Store(name: 'OpenStreetMap'));
-      await FMTC.instance.databases['']!.stores
-          .put(Store(name: 'Thunderforest Outdoors'));
+    await _access.rootDb.writeTxn(() async {
+      await _access.rootDb.clear();
+      await _access.createStore('OpenStreetMap');
+      await _access.createStore('Thunderforest Outdoors');
     });
   }
 
@@ -51,13 +43,14 @@ class RootManagement {
   ///
   /// Returns an indicator as to whether the operation was successful.
   Future<bool> deleteAsync() async {
+    await _access.rescan();
     if (!(await Future.wait(
-      _databases.values.map((i) => i.close(deleteFromDisk: true)),
+      _access.storeDbs.values.map((i) => i.close(deleteFromDisk: true)),
     ))
         .every((e) => e)) return false;
-
+    if (!await _access.rootDb.close(deleteFromDisk: true)) return false;
     await _rootDirectory.delete(recursive: true);
-    _databases.clear();
+    await _access.rescan();
     return true;
   }
 

@@ -1,10 +1,6 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'package:isar/isar.dart';
-
-import 'db/defs/store.dart';
-import 'db/defs/tile.dart';
 import 'root/directory.dart';
 import 'settings/fmtc_settings.dart';
 import 'store/directory.dart';
@@ -34,14 +30,6 @@ class FlutterMapTileCaching {
   /// See [FMTCSettings]' properties for more information
   final FMTCSettings settings;
 
-  final Isar rootDb;
-
-  /// A key-value pairing, where the keys are the store name, and the value is
-  /// the [Isar] database
-  ///
-  /// The '' key always refers to the root database files/definitions.
-  Map<String, Isar> databases = {};
-
   /// Internal constructor, to be used by [initialise]
   FlutterMapTileCaching._({
     required this.rootDirectory,
@@ -62,23 +50,9 @@ class FlutterMapTileCaching {
     FMTCSettings? settings,
   }) async {
     await rootDirectory.manage.createAsync();
-
-    _instance = FMTC._(
+    return _instance = FMTC._(
       rootDirectory: rootDirectory,
       settings: settings ?? FMTCSettings(),
-    );
-
-    _instance!.databases.addEntries(
-      (await Future.wait(
-        (await _instance!.databases['']!.stores.where().findAll()).map(
-          (s) => Isar.open(
-            [TileSchema],
-            name: s.name,
-            directory: directory.absolute.path,
-          ),
-        ),
-      ))
-          .map((e) => MapEntry(e.name, e)),
     );
   }
 

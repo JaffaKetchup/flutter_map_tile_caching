@@ -7,6 +7,7 @@ import 'package:stream_transform/stream_transform.dart';
 
 import '../../flutter_map_tile_caching.dart';
 import '../internal/exts.dart';
+import 'directory.dart';
 
 /// Manage migration for file structure across FMTC versions
 class RootMigrator {

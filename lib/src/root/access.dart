@@ -4,35 +4,52 @@
 part of 'directory.dart';
 
 class _RootAccess {
-  Directory get directory => FMTC.instance.rootDirectory.rootDirectory;
+  /// Store registry database
+  late Isar rootDb;
 
-  late final Isar rootDb;
+  /// Tiles databases
   final Map<String, Isar> storeDbs = {};
 
+  /// Ensure that [storeDbs] contains the (open) stores that are in the [rootDb]
+  /// registry
+  ///
+  /// If a store is not found in the registry, it is closed, deleted, and
+  /// removed. If a new store is found in the registry, it is opened and added.
   Future<void> rescan() async {
-    storeDbs
-      ..clear()
-      ..addEntries(
-        (await Future.wait(
-          (await rootDb.stores.where().findAll()).map(
-            (s) => Isar.open(
-              [TileSchema],
-              name: s.name,
-              directory: directory.absolute.path,
-            ),
-          ),
-        ))
-            .map((e) => MapEntry(e.name, e)),
-      );
+    if (!await FMTC.instance.rootDirectory.manage.readyAsync) {
+      return storeDbs.clear();
+    }
+
+    await Future.wait<void>(
+      storeDbs.values.map((s) async {
+        if (await rootDb.stores.get(databaseHash(s.name)) == null) {
+          storeDbs.remove(s.name);
+          await s.close(deleteFromDisk: true);
+        }
+      }),
+    );
+    await Future.wait<void>(
+      (await rootDb.stores.where().findAll()).map((s) async {
+        if (!storeDbs.containsKey(s.name)) {
+          storeDbs[s.name] = await Isar.open(
+            [TileSchema],
+            name: s.name,
+            directory: FMTC.instance.rootDirectory.rootDirectory.absolute.path,
+          );
+        }
+      }),
+    );
   }
 
-  Future<void> createStore(String name) async {
+  /// Register a store and rescan to create its tile database
+  Future<void> createStore(String name, {bool autoRescan = true}) async {
     await rootDb.writeTxn(() => rootDb.stores.put(Store(name: name)));
-    await rescan();
+    if (autoRescan) await rescan();
   }
 
-  Future<void> deleteStore(String name) async {
+  /// Unregister a store and rescan to delete its tile database
+  Future<void> deleteStore(String name, {bool autoRescan = true}) async {
     await rootDb.writeTxn(() => rootDb.stores.delete(databaseHash(name)));
-    await rescan();
+    if (autoRescan) await rescan();
   }
 }
