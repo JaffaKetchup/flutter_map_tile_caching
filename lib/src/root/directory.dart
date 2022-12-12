@@ -45,7 +45,7 @@ class RootDirectory {
   //RootMigrator get migrator => RootMigrator(this);
 
   /// Provides store import functionality for this root
-  //RootImport get import => RootImport(this);
+  RootImport get import => RootImport._();
 
   @override
   bool operator ==(Object other) =>

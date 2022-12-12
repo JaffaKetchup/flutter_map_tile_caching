@@ -4,6 +4,7 @@
 part of '../fmtc.dart';
 
 /// Provides statistics about a [RootDirectory]
+@internal
 class RootStats {
   RootStats._();
 
