@@ -36,7 +36,7 @@ class RootDirectory {
   RootManagement get manage => RootManagement._();
 
   /// Get statistics about this root (and all sub-stores)
-  //RootStats get stats => RootStats(this);
+  RootStats get stats => RootStats._();
 
   /// Manage the download recovery of all sub-stores
   //RootRecovery get recovery => RootRecovery.instance ?? RootRecovery(this);

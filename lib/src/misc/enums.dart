@@ -17,30 +17,29 @@ enum CacheBehavior {
   onlineFirst,
 }
 
-/// Parts of the root cache which can be watched
-enum RootParts {
-  /// Watch changes within the recovery directory
-  recovery,
-
-  /// Watch changes about root statistics
-  stats,
-
-  /// Watch changes about sub-stores
-  ///
-  /// Note that this will not recursively watch within each store. For example, additions of new stores will be caught, but changes in statistics in each store will not.
-  stores,
-}
-
 /// Parts of a store which can be watched
 enum StoreParts {
-  /// Watch changes within the metadata directory
+  /// 'metadata' is deprecated and shouldn't be used. Prefer [storeEntry] and
+  /// This remnant will be removed in a future update, and is currently non-
+  /// functional.
+  @Deprecated(
+    "Prefer 'storeEntry'. This redirect will be removed in a future update",
+  )
   metadata,
 
-  /// Watch changes about statistics
+  /// 'stats' is deprecated and shouldn't be used. Prefer [tiles] and
+  /// [storeEntry]. This remnant will be removed in a future update, and is
+  /// currently non-functional.
+  @Deprecated(
+    "Prefer 'tiles' and 'storeEntry'. This redirect will be removed in a future update",
+  )
   stats,
 
-  /// Watch changes within the tiles directory
-  ///
-  /// Usually not recommended to watch, due to the high frequency of changes.
+  /// Includes changes found directly in the store entry in the registry,
+  /// including those which will make some statistics change (eg. cache hits)
+  storeEntry,
+
+  /// Includes changes within the tiles database, including those which will make
+  /// some statistics change (eg. store size)
   tiles,
 }

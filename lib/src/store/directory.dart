@@ -34,9 +34,7 @@ class StoreDirectory {
   StoreManagement get manage => StoreManagement._(this);
 
   /// Get statistics about this store
-  ///
-  /// Does not statistics about the root/all stores
-  //StoreStats get stats => StoreStats(this);
+  StoreStats get stats => StoreStats._(this);
 
   /// Manage custom miscellaneous information tied to this store
   ///

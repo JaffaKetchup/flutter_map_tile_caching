@@ -6,13 +6,10 @@ part of '../fmtc.dart';
 /// Manages a [StoreDirectory]'s representation on the filesystem, such as creation and deletion
 @internal
 class StoreManagement {
-  /// The store directory to manage
+  StoreManagement._(this._storeDirectory);
   final StoreDirectory _storeDirectory;
 
   FMTCRegistry get _registry => FMTCRegistry.instance;
-
-  /// Manages a [StoreDirectory]'s representation on the filesystem, such as creation and deletion
-  StoreManagement._(this._storeDirectory);
 
   /// Create all of the directories asynchronously
   Future<void> create() async {

@@ -3,22 +3,27 @@
 
 import 'dart:io';
 
-import 'package:flutter_map/flutter_map.dart';
+import 'package:isar/isar.dart';
 import 'package:meta/meta.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:stream_transform/stream_transform.dart';
 
 import 'db/defs/store.dart';
+import 'db/defs/tile.dart';
 import 'db/registry.dart';
 import 'db/tools.dart';
 import 'internal/exts.dart';
 import 'internal/tile_provider.dart';
+import 'misc/enums.dart';
 import 'settings/fmtc_settings.dart';
 import 'settings/tile_provider_settings.dart';
 
 part 'root/directory.dart';
 part 'root/manage.dart';
+part 'root/statistics.dart';
 part 'store/directory.dart';
 part 'store/manage.dart';
+part 'store/statistics.dart';
 
 /// Direct alias of [FlutterMapTileCaching] for easier development
 ///
