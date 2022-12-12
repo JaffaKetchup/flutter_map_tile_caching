@@ -1,6 +1,6 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
-
+/*
 import 'dart:io';
 
 import 'package:flutter_map/plugin_api.dart';
@@ -75,3 +75,4 @@ Future<void> encode({
 
   await file.writeAsString(cfg.toString(), flush: true);
 }
+*/

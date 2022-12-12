@@ -10,8 +10,6 @@ import '../fmtc.dart';
 import '../misc/enums.dart';
 import '../settings/fmtc_settings.dart';
 import '../settings/tile_provider_settings.dart';
-import '../store/directory.dart';
-import 'exts.dart';
 import 'filesystem_sanitiser_private.dart';
 import 'image_provider.dart';
 
@@ -66,6 +64,7 @@ class FMTCTileProvider extends TileProvider {
         },
       );
 
+/*
   /// Check whether a specified tile is cached in the current store synchronously
   bool checkTileCached({
     required Coords<num> coords,
@@ -91,4 +90,5 @@ class FMTCTileProvider extends TileProvider {
                 throwIfInvalid: false,
               ))
           .exists();
+          */
 }

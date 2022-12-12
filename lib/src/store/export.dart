@@ -1,6 +1,6 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
-
+/*
 import 'dart:io';
 
 import 'package:archive/archive_io.dart';
@@ -82,3 +82,4 @@ class StoreExport {
 }
 
 void _export(String path) => ZipFileEncoder().zipDirectory(Directory(path));
+*/

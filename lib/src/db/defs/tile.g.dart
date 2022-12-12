@@ -9,13 +9,13 @@ part of 'tile.dart';
 // coverage:ignore-file
 // ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters
 
-extension GetTileCollection on Isar {
-  IsarCollection<Tile> get tiles => this.collection();
+extension GetDbTileCollection on Isar {
+  IsarCollection<DbTile> get tiles => this.collection();
 }
 
-const TileSchema = CollectionSchema(
-  name: r'Tile',
-  id: 7333498075616056013,
+const DbTileSchema = CollectionSchema(
+  name: r'DbTile',
+  id: -5030120948284417748,
   properties: {
     r'bytes': PropertySchema(
       id: 0,
@@ -48,10 +48,10 @@ const TileSchema = CollectionSchema(
       type: IsarType.int,
     )
   },
-  estimateSize: _tileEstimateSize,
-  serialize: _tileSerialize,
-  deserialize: _tileDeserialize,
-  deserializeProp: _tileDeserializeProp,
+  estimateSize: _dbTileEstimateSize,
+  serialize: _dbTileSerialize,
+  deserialize: _dbTileDeserialize,
+  deserializeProp: _dbTileDeserializeProp,
   idName: r'id',
   indexes: {
     r'created': IndexSchema(
@@ -70,14 +70,14 @@ const TileSchema = CollectionSchema(
   },
   links: {},
   embeddedSchemas: {},
-  getId: _tileGetId,
-  getLinks: _tileGetLinks,
-  attach: _tileAttach,
+  getId: _dbTileGetId,
+  getLinks: _dbTileGetLinks,
+  attach: _dbTileAttach,
   version: '3.0.5',
 );
 
-int _tileEstimateSize(
-  Tile object,
+int _dbTileEstimateSize(
+  DbTile object,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
@@ -86,8 +86,8 @@ int _tileEstimateSize(
   return bytesCount;
 }
 
-void _tileSerialize(
-  Tile object,
+void _dbTileSerialize(
+  DbTile object,
   IsarWriter writer,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
@@ -100,13 +100,13 @@ void _tileSerialize(
   writer.writeInt(offsets[5], object.z);
 }
 
-Tile _tileDeserialize(
+DbTile _dbTileDeserialize(
   Id id,
   IsarReader reader,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  final object = Tile(
+  final object = DbTile(
     bytes: reader.readByteList(offsets[0]) ?? [],
     x: reader.readInt(offsets[3]),
     y: reader.readInt(offsets[4]),
@@ -115,7 +115,7 @@ Tile _tileDeserialize(
   return object;
 }
 
-P _tileDeserializeProp<P>(
+P _dbTileDeserializeProp<P>(
   IsarReader reader,
   int propertyId,
   int offset,
@@ -139,24 +139,24 @@ P _tileDeserializeProp<P>(
   }
 }
 
-Id _tileGetId(Tile object) {
+Id _dbTileGetId(DbTile object) {
   return object.id;
 }
 
-List<IsarLinkBase<dynamic>> _tileGetLinks(Tile object) {
+List<IsarLinkBase<dynamic>> _dbTileGetLinks(DbTile object) {
   return [];
 }
 
-void _tileAttach(IsarCollection<dynamic> col, Id id, Tile object) {}
+void _dbTileAttach(IsarCollection<dynamic> col, Id id, DbTile object) {}
 
-extension TileQueryWhereSort on QueryBuilder<Tile, Tile, QWhere> {
-  QueryBuilder<Tile, Tile, QAfterWhere> anyId() {
+extension DbTileQueryWhereSort on QueryBuilder<DbTile, DbTile, QWhere> {
+  QueryBuilder<DbTile, DbTile, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterWhere> anyCreated() {
+  QueryBuilder<DbTile, DbTile, QAfterWhere> anyCreated() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'created'),
@@ -165,8 +165,8 @@ extension TileQueryWhereSort on QueryBuilder<Tile, Tile, QWhere> {
   }
 }
 
-extension TileQueryWhere on QueryBuilder<Tile, Tile, QWhereClause> {
-  QueryBuilder<Tile, Tile, QAfterWhereClause> idEqualTo(Id id) {
+extension DbTileQueryWhere on QueryBuilder<DbTile, DbTile, QWhereClause> {
+  QueryBuilder<DbTile, DbTile, QAfterWhereClause> idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IdWhereClause.between(
         lower: id,
@@ -175,7 +175,7 @@ extension TileQueryWhere on QueryBuilder<Tile, Tile, QWhereClause> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterWhereClause> idNotEqualTo(Id id) {
+  QueryBuilder<DbTile, DbTile, QAfterWhereClause> idNotEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -197,7 +197,7 @@ extension TileQueryWhere on QueryBuilder<Tile, Tile, QWhereClause> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterWhereClause> idGreaterThan(Id id,
+  QueryBuilder<DbTile, DbTile, QAfterWhereClause> idGreaterThan(Id id,
       {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
@@ -206,7 +206,7 @@ extension TileQueryWhere on QueryBuilder<Tile, Tile, QWhereClause> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterWhereClause> idLessThan(Id id,
+  QueryBuilder<DbTile, DbTile, QAfterWhereClause> idLessThan(Id id,
       {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
@@ -215,7 +215,7 @@ extension TileQueryWhere on QueryBuilder<Tile, Tile, QWhereClause> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterWhereClause> idBetween(
+  QueryBuilder<DbTile, DbTile, QAfterWhereClause> idBetween(
     Id lowerId,
     Id upperId, {
     bool includeLower = true,
@@ -231,7 +231,8 @@ extension TileQueryWhere on QueryBuilder<Tile, Tile, QWhereClause> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterWhereClause> createdEqualTo(DateTime created) {
+  QueryBuilder<DbTile, DbTile, QAfterWhereClause> createdEqualTo(
+      DateTime created) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
         indexName: r'created',
@@ -240,7 +241,7 @@ extension TileQueryWhere on QueryBuilder<Tile, Tile, QWhereClause> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterWhereClause> createdNotEqualTo(
+  QueryBuilder<DbTile, DbTile, QAfterWhereClause> createdNotEqualTo(
       DateTime created) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
@@ -275,7 +276,7 @@ extension TileQueryWhere on QueryBuilder<Tile, Tile, QWhereClause> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterWhereClause> createdGreaterThan(
+  QueryBuilder<DbTile, DbTile, QAfterWhereClause> createdGreaterThan(
     DateTime created, {
     bool include = false,
   }) {
@@ -289,7 +290,7 @@ extension TileQueryWhere on QueryBuilder<Tile, Tile, QWhereClause> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterWhereClause> createdLessThan(
+  QueryBuilder<DbTile, DbTile, QAfterWhereClause> createdLessThan(
     DateTime created, {
     bool include = false,
   }) {
@@ -303,7 +304,7 @@ extension TileQueryWhere on QueryBuilder<Tile, Tile, QWhereClause> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterWhereClause> createdBetween(
+  QueryBuilder<DbTile, DbTile, QAfterWhereClause> createdBetween(
     DateTime lowerCreated,
     DateTime upperCreated, {
     bool includeLower = true,
@@ -321,8 +322,8 @@ extension TileQueryWhere on QueryBuilder<Tile, Tile, QWhereClause> {
   }
 }
 
-extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> bytesElementEqualTo(
+extension DbTileQueryFilter on QueryBuilder<DbTile, DbTile, QFilterCondition> {
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> bytesElementEqualTo(
       int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -332,7 +333,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> bytesElementGreaterThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> bytesElementGreaterThan(
     int value, {
     bool include = false,
   }) {
@@ -345,7 +346,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> bytesElementLessThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> bytesElementLessThan(
     int value, {
     bool include = false,
   }) {
@@ -358,7 +359,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> bytesElementBetween(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> bytesElementBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -375,7 +376,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> bytesLengthEqualTo(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> bytesLengthEqualTo(
       int length) {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
@@ -388,7 +389,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> bytesIsEmpty() {
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> bytesIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
         r'bytes',
@@ -400,7 +401,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> bytesIsNotEmpty() {
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> bytesIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
         r'bytes',
@@ -412,7 +413,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> bytesLengthLessThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> bytesLengthLessThan(
     int length, {
     bool include = false,
   }) {
@@ -427,7 +428,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> bytesLengthGreaterThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> bytesLengthGreaterThan(
     int length, {
     bool include = false,
   }) {
@@ -442,7 +443,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> bytesLengthBetween(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> bytesLengthBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -459,7 +460,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> createdEqualTo(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> createdEqualTo(
       DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -469,7 +470,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> createdGreaterThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> createdGreaterThan(
     DateTime value, {
     bool include = false,
   }) {
@@ -482,7 +483,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> createdLessThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> createdLessThan(
     DateTime value, {
     bool include = false,
   }) {
@@ -495,7 +496,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> createdBetween(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> createdBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
@@ -512,7 +513,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> idEqualTo(Id value) {
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'id',
@@ -521,7 +522,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> idGreaterThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> idGreaterThan(
     Id value, {
     bool include = false,
   }) {
@@ -534,7 +535,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> idLessThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> idLessThan(
     Id value, {
     bool include = false,
   }) {
@@ -547,7 +548,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> idBetween(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> idBetween(
     Id lower,
     Id upper, {
     bool includeLower = true,
@@ -564,7 +565,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> lengthEqualTo(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> lengthEqualTo(
     double value, {
     double epsilon = Query.epsilon,
   }) {
@@ -577,7 +578,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> lengthGreaterThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> lengthGreaterThan(
     double value, {
     bool include = false,
     double epsilon = Query.epsilon,
@@ -592,7 +593,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> lengthLessThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> lengthLessThan(
     double value, {
     bool include = false,
     double epsilon = Query.epsilon,
@@ -607,7 +608,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> lengthBetween(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> lengthBetween(
     double lower,
     double upper, {
     bool includeLower = true,
@@ -626,7 +627,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> xEqualTo(int value) {
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> xEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'x',
@@ -635,7 +636,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> xGreaterThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> xGreaterThan(
     int value, {
     bool include = false,
   }) {
@@ -648,7 +649,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> xLessThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> xLessThan(
     int value, {
     bool include = false,
   }) {
@@ -661,7 +662,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> xBetween(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> xBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -678,7 +679,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> yEqualTo(int value) {
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> yEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'y',
@@ -687,7 +688,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> yGreaterThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> yGreaterThan(
     int value, {
     bool include = false,
   }) {
@@ -700,7 +701,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> yLessThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> yLessThan(
     int value, {
     bool include = false,
   }) {
@@ -713,7 +714,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> yBetween(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> yBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -730,7 +731,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> zEqualTo(int value) {
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> zEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'z',
@@ -739,7 +740,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> zGreaterThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> zGreaterThan(
     int value, {
     bool include = false,
   }) {
@@ -752,7 +753,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> zLessThan(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> zLessThan(
     int value, {
     bool include = false,
   }) {
@@ -765,7 +766,7 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterFilterCondition> zBetween(
+  QueryBuilder<DbTile, DbTile, QAfterFilterCondition> zBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -783,222 +784,222 @@ extension TileQueryFilter on QueryBuilder<Tile, Tile, QFilterCondition> {
   }
 }
 
-extension TileQueryObject on QueryBuilder<Tile, Tile, QFilterCondition> {}
+extension DbTileQueryObject on QueryBuilder<DbTile, DbTile, QFilterCondition> {}
 
-extension TileQueryLinks on QueryBuilder<Tile, Tile, QFilterCondition> {}
+extension DbTileQueryLinks on QueryBuilder<DbTile, DbTile, QFilterCondition> {}
 
-extension TileQuerySortBy on QueryBuilder<Tile, Tile, QSortBy> {
-  QueryBuilder<Tile, Tile, QAfterSortBy> sortByCreated() {
+extension DbTileQuerySortBy on QueryBuilder<DbTile, DbTile, QSortBy> {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> sortByCreated() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'created', Sort.asc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> sortByCreatedDesc() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> sortByCreatedDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'created', Sort.desc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> sortByLength() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> sortByLength() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'length', Sort.asc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> sortByLengthDesc() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> sortByLengthDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'length', Sort.desc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> sortByX() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> sortByX() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'x', Sort.asc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> sortByXDesc() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> sortByXDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'x', Sort.desc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> sortByY() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> sortByY() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'y', Sort.asc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> sortByYDesc() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> sortByYDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'y', Sort.desc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> sortByZ() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> sortByZ() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'z', Sort.asc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> sortByZDesc() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> sortByZDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'z', Sort.desc);
     });
   }
 }
 
-extension TileQuerySortThenBy on QueryBuilder<Tile, Tile, QSortThenBy> {
-  QueryBuilder<Tile, Tile, QAfterSortBy> thenByCreated() {
+extension DbTileQuerySortThenBy on QueryBuilder<DbTile, DbTile, QSortThenBy> {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> thenByCreated() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'created', Sort.asc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> thenByCreatedDesc() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> thenByCreatedDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'created', Sort.desc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> thenById() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> thenByIdDesc() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> thenByLength() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> thenByLength() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'length', Sort.asc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> thenByLengthDesc() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> thenByLengthDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'length', Sort.desc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> thenByX() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> thenByX() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'x', Sort.asc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> thenByXDesc() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> thenByXDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'x', Sort.desc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> thenByY() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> thenByY() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'y', Sort.asc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> thenByYDesc() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> thenByYDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'y', Sort.desc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> thenByZ() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> thenByZ() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'z', Sort.asc);
     });
   }
 
-  QueryBuilder<Tile, Tile, QAfterSortBy> thenByZDesc() {
+  QueryBuilder<DbTile, DbTile, QAfterSortBy> thenByZDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'z', Sort.desc);
     });
   }
 }
 
-extension TileQueryWhereDistinct on QueryBuilder<Tile, Tile, QDistinct> {
-  QueryBuilder<Tile, Tile, QDistinct> distinctByBytes() {
+extension DbTileQueryWhereDistinct on QueryBuilder<DbTile, DbTile, QDistinct> {
+  QueryBuilder<DbTile, DbTile, QDistinct> distinctByBytes() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'bytes');
     });
   }
 
-  QueryBuilder<Tile, Tile, QDistinct> distinctByCreated() {
+  QueryBuilder<DbTile, DbTile, QDistinct> distinctByCreated() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'created');
     });
   }
 
-  QueryBuilder<Tile, Tile, QDistinct> distinctByLength() {
+  QueryBuilder<DbTile, DbTile, QDistinct> distinctByLength() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'length');
     });
   }
 
-  QueryBuilder<Tile, Tile, QDistinct> distinctByX() {
+  QueryBuilder<DbTile, DbTile, QDistinct> distinctByX() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'x');
     });
   }
 
-  QueryBuilder<Tile, Tile, QDistinct> distinctByY() {
+  QueryBuilder<DbTile, DbTile, QDistinct> distinctByY() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'y');
     });
   }
 
-  QueryBuilder<Tile, Tile, QDistinct> distinctByZ() {
+  QueryBuilder<DbTile, DbTile, QDistinct> distinctByZ() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'z');
     });
   }
 }
 
-extension TileQueryProperty on QueryBuilder<Tile, Tile, QQueryProperty> {
-  QueryBuilder<Tile, int, QQueryOperations> idProperty() {
+extension DbTileQueryProperty on QueryBuilder<DbTile, DbTile, QQueryProperty> {
+  QueryBuilder<DbTile, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
     });
   }
 
-  QueryBuilder<Tile, List<int>, QQueryOperations> bytesProperty() {
+  QueryBuilder<DbTile, List<int>, QQueryOperations> bytesProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'bytes');
     });
   }
 
-  QueryBuilder<Tile, DateTime, QQueryOperations> createdProperty() {
+  QueryBuilder<DbTile, DateTime, QQueryOperations> createdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'created');
     });
   }
 
-  QueryBuilder<Tile, double, QQueryOperations> lengthProperty() {
+  QueryBuilder<DbTile, double, QQueryOperations> lengthProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'length');
     });
   }
 
-  QueryBuilder<Tile, int, QQueryOperations> xProperty() {
+  QueryBuilder<DbTile, int, QQueryOperations> xProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'x');
     });
   }
 
-  QueryBuilder<Tile, int, QQueryOperations> yProperty() {
+  QueryBuilder<DbTile, int, QQueryOperations> yProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'y');
     });
   }
 
-  QueryBuilder<Tile, int, QQueryOperations> zProperty() {
+  QueryBuilder<DbTile, int, QQueryOperations> zProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'z');
     });

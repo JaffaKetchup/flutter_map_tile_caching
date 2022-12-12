@@ -19,7 +19,7 @@ export 'package:flutter_local_notifications/flutter_local_notifications.dart'
 export 'package:watcher/watcher.dart' show ChangeType;
 
 export 'src/bulk_download/download_progress.dart';
-export 'src/fmtc.dart';
+export 'src/fmtc.dart' show FlutterMapTileCaching, FMTC;
 export 'src/misc/background_download_widget.dart';
 export 'src/misc/enums.dart';
 export 'src/regions/base_region.dart';
@@ -31,4 +31,3 @@ export 'src/regions/rectangle.dart';
 export 'src/settings/filesystem_sanitiser_public.dart';
 export 'src/settings/fmtc_settings.dart';
 export 'src/settings/tile_provider_settings.dart';
-export 'src/store/directory.dart';

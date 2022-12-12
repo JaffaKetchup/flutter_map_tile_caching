@@ -69,7 +69,7 @@ Future<TileProgress> _getAndSaveTile({
   final Coords<double> coordDouble =
       Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
   final String url = provider.getTileUrl(coordDouble, options);
-  final File file = provider.storeDirectory.access.tiles >>>
+  final File file = Directory('') >>>
       filesystemSanitiseValidate(
         inputString: url,
         throwIfInvalid: false,

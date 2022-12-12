@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
+import 'package:meta/meta.dart';
 
 part 'tile.g.dart';
 
@@ -10,11 +11,12 @@ const _maxTileNumber = 4294967296;
 
 /// Representation of a map tile, containing its postition, image bytes, and
 /// other important metadata
+@internal
 @Collection(accessor: 'tiles')
-class Tile {
+class DbTile {
   /// Generated automatically on creation by the formula: `z + y * m + x * m * m`,
   /// where `m` is the maximum number in one dimension at zoom level 32
-  final Id id;
+  Id get id => z + y * _maxTileNumber + x * _maxTileNumber * _maxTileNumber;
 
   /// x position of tile
   final short x;
@@ -40,12 +42,11 @@ class Tile {
 
   /// Create a map tile using its postition, image bytes, and other important
   /// metadata
-  Tile({
+  DbTile({
     required this.x,
     required this.y,
     required this.z,
     required this.bytes,
-  })  : id = z + y * _maxTileNumber + x * _maxTileNumber * _maxTileNumber,
-        created = DateTime.now(),
+  })  : created = DateTime.now(),
         length = Uint8List.fromList(bytes).lengthInBytes / 1024;
 }

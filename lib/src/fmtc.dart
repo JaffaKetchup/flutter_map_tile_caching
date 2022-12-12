@@ -1,9 +1,24 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'root/directory.dart';
+import 'dart:io';
+
+import 'package:flutter_map/flutter_map.dart';
+import 'package:meta/meta.dart';
+import 'package:path_provider/path_provider.dart';
+
+import 'db/defs/store.dart';
+import 'db/registry.dart';
+import 'db/tools.dart';
+import 'internal/exts.dart';
+import 'internal/tile_provider.dart';
 import 'settings/fmtc_settings.dart';
-import 'store/directory.dart';
+import 'settings/tile_provider_settings.dart';
+
+part 'root/directory.dart';
+part 'root/manage.dart';
+part 'store/directory.dart';
+part 'store/manage.dart';
 
 /// Direct alias of [FlutterMapTileCaching] for easier development
 ///
@@ -20,9 +35,7 @@ typedef FMTC = FlutterMapTileCaching;
 ///
 /// [FMTC] is an alias for this object.
 class FlutterMapTileCaching {
-  /// The cache's root directory
-  ///
-  /// See [initialise]'s documentation for more information
+  /// The directory which contains all databases required to use FMTC
   final RootDirectory rootDirectory;
 
   /// Custom global 'flutter_map_tile_caching' settings
@@ -39,19 +52,43 @@ class FlutterMapTileCaching {
   /// Initialise and prepare FMTC, by creating all neccessary directories/files
   /// and configuring the [FlutterMapTileCaching] singleton
   ///
+  /// Prefer to leave [customRootDirectory] as `null`, which will use
+  /// `getApplicationDocumentsDirectory()`. Alternativley, pass a custom
+  /// directory - it is recommended to not use a cache directory, as the OS can
+  /// clear these without notice at any time.
+  ///
   /// You must construct using this before using [FlutterMapTileCaching.instance],
   /// otherwise a [StateError] will be thrown.
   ///
   /// This returns a configured [FlutterMapTileCaching], the same object as
   /// [FlutterMapTileCaching.instance]. Note that [FMTC] is an alias for this
   /// object.
-  static Future<FlutterMapTileCaching> initialise(
-    RootDirectory rootDirectory, {
+  static Future<FlutterMapTileCaching> initialise({
+    String? customRootDirectory,
     FMTCSettings? settings,
   }) async {
-    await rootDirectory.manage.createAsync();
+    final directory = await ((customRootDirectory == null
+                ? await getApplicationDocumentsDirectory()
+                : Directory(customRootDirectory)) >>
+            'fmtc')
+        .create(recursive: true);
+
+    final registry = await FMTCRegistry.initialise(dirReal: directory);
+
+    // TODO: REMOVE FOR PRODUCTION
+    await registry.registryDatabase.writeTxn(() async {
+      await registry.registryDatabase.clear();
+      await registry.registryDatabase.stores
+          .put(DbStore(name: 'OpenStreetMap'));
+      await registry.registryDatabase.stores
+          .put(DbStore(name: 'OpenStreetMap'));
+      await registry.registryDatabase.stores
+          .put(DbStore(name: r'assssssssssssssss\'));
+    });
+    await registry.synchronise();
+
     return _instance = FMTC._(
-      rootDirectory: rootDirectory,
+      rootDirectory: RootDirectory._(directory),
       settings: settings ?? FMTCSettings(),
     );
   }
@@ -74,17 +111,6 @@ class FlutterMapTileCaching {
     return _instance!;
   }
 
-  /// Get a [StoreDirectory] by store name
-  ///
-  /// Automatically creates the appropriate store **synchronously**, unlike `()`.
-  /// Prefer [call] wherever possible.
-  StoreDirectory operator [](String storeName) =>
-      StoreDirectory(rootDirectory, storeName);
-
-  /// Get a [StoreDirectory] by store name
-  ///
-  /// Does not automatically create the appropriate store, unlike `[]`.
-  /// Therefore, use `.manage.createAsync()` afterward if necessary.
-  StoreDirectory call(String storeName) =>
-      StoreDirectory(rootDirectory, storeName, autoCreate: false);
+  /// Get a [StoreDirectory] representation by store name, without creating it
+  StoreDirectory call(String storeName) => StoreDirectory._(storeName);
 }

@@ -10,7 +10,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:queue/queue.dart';
 
-import '../internal/exts.dart';
 import '../misc/enums.dart';
 import '../settings/tile_provider_settings.dart';
 import 'filesystem_sanitiser_private.dart';
@@ -80,6 +79,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required DecoderBufferCallback decode,
     required StreamController<ImageChunkEvent> chunkEvents,
   }) async {
+    return decode(await ImmutableBuffer.fromUint8List(Uint8List(0)));
+
+    // TODO
+    /*
     Future<void> cacheHitMiss({
       required bool hit,
     }) async {
@@ -235,6 +238,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     // IF tile exists & does not need updating THEN return the existing tile
     return finish(bytes: bytes, cacheHit: true);
+    */
   }
 
   @override

@@ -1,18 +1,19 @@
 import 'package:isar/isar.dart';
+import 'package:meta/meta.dart';
 
-import '../misc/hash.dart';
+import '../tools.dart';
+
 part 'store.g.dart';
 
+@internal
 @Collection(accessor: 'stores')
-class Store {
-  final Id id;
+class DbStore {
+  Id get id => DatabaseTools.hash(name);
 
   final String name;
 
   int hits = 0;
   int misses = 0;
 
-  Store({
-    required this.name,
-  }) : id = databaseHash(name);
+  DbStore({required this.name});
 }
