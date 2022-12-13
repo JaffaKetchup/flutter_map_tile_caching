@@ -4,6 +4,7 @@
 part of '../fmtc.dart';
 
 /// Provides store import functionality for a [RootDirectory]
+@internal
 class RootImport {
   RootImport._();
 
@@ -58,7 +59,8 @@ class RootImport {
 
   /// Import a store from a specified [inputFile]
   ///
-  /// It is recommended to use [withGUI] instead. This is only provided for finer control.
+  /// It is recommended to use [withGUI] instead. This is only provided for finer
+  /// control.
   ///
   /// The output specifies whether the import was successful or unsuccessful.
   Future<void> manual(File inputFile) async {
@@ -69,9 +71,7 @@ class RootImport {
 
     await inputFile.copy(
       FMTC.instance.rootDirectory.directory >
-          '${await registry.registryDatabase.writeTxn(
-            () => registry.registryDatabase.stores.put(DbStore(name: filename)),
-          )}.isar',
+          '${await FMTC.instance(filename).manage._advancedCreate(synchronise: false)}.isar',
     );
     await registry.synchronise();
   }

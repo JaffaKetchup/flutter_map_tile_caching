@@ -4,8 +4,7 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FlutterMapTileCaching.initialise();
-  await Future.delayed(Duration(seconds: 15));
-  FMTC.instance('OpenStreetMap').manage.rename('hey');
+  // BROKEN: await FMTC.instance.rootDirectory.migrator.fromV6();
 }
 
 /*void main() async {

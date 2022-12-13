@@ -1,3 +1,6 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 import 'package:isar/isar.dart';
 import 'package:meta/meta.dart';
 
@@ -13,15 +16,12 @@ class DatabaseTools {
 
     while (i < str.length) {
       final codeUnit = str.codeUnitAt(i++);
-      print('$str: $codeUnit - ${String.fromCharCode(codeUnit)}');
       hash ^= codeUnit >> 8;
       hash *= 0x100000001b3;
       hash ^= codeUnit & 0xFF;
       hash *= 0x100000001b3;
     }
 
-    print('$str: $hash');
-    print('-----------');
     return hash;
   }
 }

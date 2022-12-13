@@ -1,10 +1,13 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:meta/meta.dart';
 
 import '../fmtc.dart';
+import 'defs/metadata.dart';
 import 'defs/store.dart';
 import 'defs/tile.dart';
 
@@ -20,13 +23,16 @@ import 'defs/tile.dart';
 /// See [synchronise]'s documentation for more information.
 @internal
 class FMTCRegistry {
+  FMTCRegistry._(this._directory, this.registryDatabase);
   final String _directory;
 
-  final Isar registryDatabase;
-  final Map<int, Isar> tileDatabases = {};
-
-  FMTCRegistry._(this._directory, this.registryDatabase);
   static late FMTCRegistry instance;
+
+  /// Primary registry database
+  final Isar registryDatabase;
+
+  /// Database that primarily includes tiles, but also metadata
+  final Map<int, Isar> tileDatabases = {};
 
   static Future<FMTCRegistry> initialise({
     Directory? dirReal,
@@ -41,7 +47,7 @@ class FMTCRegistry {
     instance = FMTCRegistry._(
       directory,
       await Isar.open(
-        [DbStoreSchema, if (kDebugMode) DbTileSchema],
+        [DbStoreSchema],
         name: 'registry',
         directory: directory,
       ),
@@ -80,7 +86,7 @@ class FMTCRegistry {
         ...(await registryDatabase.stores.where().findAll()).map((s) async {
           if (!tileDatabases.containsKey(s.id)) {
             tileDatabases[s.id] = await Isar.open(
-              [DbTileSchema],
+              [DbTileSchema, DbMetadataSchema],
               name: s.id.toString(),
               directory: _directory,
             );

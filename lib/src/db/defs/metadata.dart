@@ -6,17 +6,18 @@ import 'package:meta/meta.dart';
 
 import '../tools.dart';
 
-part 'store.g.dart';
+part 'metadata.g.dart';
 
 @internal
-@Collection(accessor: 'stores')
-class DbStore {
+@Collection(accessor: 'metadata')
+class DbMetadata {
   Id get id => DatabaseTools.hash(name);
 
   final String name;
+  final String data;
 
-  int hits = 0;
-  int misses = 0;
-
-  DbStore({required this.name});
+  DbMetadata({
+    required this.name,
+    required this.data,
+  });
 }

@@ -19,21 +19,8 @@ enum CacheBehavior {
 
 /// Parts of a store which can be watched
 enum StoreParts {
-  /// 'metadata' is deprecated and shouldn't be used. Prefer [storeEntry] and
-  /// This remnant will be removed in a future update, and is currently non-
-  /// functional.
-  @Deprecated(
-    "Prefer 'storeEntry'. This redirect will be removed in a future update",
-  )
+  /// Include changes to the store's metadata objects
   metadata,
-
-  /// 'stats' is deprecated and shouldn't be used. Prefer [tiles] and
-  /// [storeEntry]. This remnant will be removed in a future update, and is
-  /// currently non-functional.
-  @Deprecated(
-    "Prefer 'tiles' and 'storeEntry'. This redirect will be removed in a future update",
-  )
-  stats,
 
   /// Includes changes found directly in the store entry in the registry,
   /// including those which will make some statistics change (eg. cache hits)
@@ -42,4 +29,12 @@ enum StoreParts {
   /// Includes changes within the tiles database, including those which will make
   /// some statistics change (eg. store size)
   tiles,
+
+  /// 'stats' is deprecated and shouldn't be used. Prefer [tiles] and
+  /// [storeEntry]. This remnant will be removed in a future update, and is
+  /// currently non-functional.
+  @Deprecated(
+    "Prefer 'tiles' and 'storeEntry'. This redirect will be removed in a future update",
+  )
+  stats,
 }

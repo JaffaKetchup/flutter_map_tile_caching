@@ -19,11 +19,6 @@ class StoreDirectory {
   /// The user-friendly name of the store directory
   final String storeName;
 
-  /// Get direct filesystem access paths for this store
-  ///
-  /// This should only be used in special cases, when modifying the store manually for example.
-  //StoreAccess get access => StoreAccess(this);
-
   /// Manage this store's representation on the filesystem
   ///
   /// Provides access to methods to:
@@ -38,8 +33,10 @@ class StoreDirectory {
 
   /// Manage custom miscellaneous information tied to this store
   ///
-  /// Uses a key-value format where both key and value must be [String]. There is no validation or sanitisation on any keys or values; note that keys form part of filenames.
-  //StoreMetadata get metadata => StoreMetadata(this);
+  /// Uses a key-value format where both key and value must be [String]. More
+  /// advanced requirements should use another package, as this is a basic
+  /// implementation.
+  StoreMetadata get metadata => StoreMetadata._(this);
 
   /// Provides export functionality for this store
   //StoreExport get export => StoreExport(this);

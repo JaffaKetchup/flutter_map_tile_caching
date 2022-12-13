@@ -42,7 +42,7 @@ class RootDirectory {
   //RootRecovery get recovery => RootRecovery.instance ?? RootRecovery(this);
 
   /// Manage migration for file structure across FMTC versions
-  //RootMigrator get migrator => RootMigrator(this);
+  RootMigrator get migrator => RootMigrator._();
 
   /// Provides store import functionality for this root
   RootImport get import => RootImport._();

@@ -59,8 +59,7 @@ class RootStats {
   ///
   /// Internally sums up the length of all stores (using
   /// [StoreStats.storeLength]).
-  int get rootLength =>
-      storesAvailable.map((e) => e.stats.storeLength).sum as int;
+  int get rootLength => storesAvailable.map((e) => e.stats.storeLength).sum;
 
   /// Retrieve the number of all stored tiles
   ///
@@ -68,7 +67,7 @@ class RootStats {
   /// [StoreStats.storeLengthAsync]).
   Future<int> get rootLengthAsync async =>
       (await Future.wait(storesAvailable.map((e) => e.stats.storeLengthAsync)))
-          .sum as int;
+          .sum;
 
   /// Watch for changes in the current root
   ///
@@ -97,6 +96,7 @@ class RootStats {
     bool fireImmediately = false,
     List<StoreDirectory> recursive = const [],
     List<StoreParts> storeParts = const [
+      StoreParts.metadata,
       StoreParts.tiles,
       StoreParts.storeEntry,
     ],

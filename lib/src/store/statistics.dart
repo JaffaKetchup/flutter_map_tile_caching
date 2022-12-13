@@ -10,21 +10,20 @@ class StoreStats {
       : _id = DatabaseTools.hash(storeDirectory.storeName);
   final int _id;
 
-  IsarCollection<DbTile> get _tiles =>
-      FMTCRegistry.instance.tileDatabases[_id]!.tiles;
+  Isar get _tiles => FMTCRegistry.instance.tileDatabases[_id]!;
+
   IsarCollection<DbStore> get _stores =>
       FMTCRegistry.instance.registryDatabase.stores;
-
   DbStore get _store => _stores.getSync(_id)!;
   Future<DbStore> get _storeAsync async => (await _stores.get(_id))!;
 
-  /// Retrieve the total size of the stored tiles in kibibytes (KiB)
+  /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
   ///
   /// Prefer [storeSizeAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
   double get storeSize => _tiles.getSizeSync(includeIndexes: true) / 1024;
 
-  /// Retrieve the total size of the stored tiles in kibibytes (KiB)
+  /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
   Future<double> get storeSizeAsync async =>
       await _tiles.getSize(includeIndexes: true) / 1024;
 
@@ -32,10 +31,10 @@ class StoreStats {
   ///
   /// Prefer [storeLengthAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  int get storeLength => _tiles.countSync();
+  int get storeLength => _tiles.tiles.countSync();
 
   /// Retrieve the number of stored tiles
-  Future<int> get storeLengthAsync => _tiles.count();
+  Future<int> get storeLengthAsync => _tiles.tiles.count();
 
   /// Retrieve the number of tiles that were successfully retrieved from the
   /// store during browsing
@@ -80,13 +79,16 @@ class StoreStats {
     Duration? debounce = const Duration(milliseconds: 200),
     bool fireImmediately = false,
     List<StoreParts> storeParts = const [
+      StoreParts.metadata,
       StoreParts.tiles,
       StoreParts.storeEntry,
     ],
   }) =>
       [
+        if (storeParts.contains(StoreParts.metadata))
+          _tiles.metadata.watchLazy(fireImmediately: fireImmediately),
         if (storeParts.contains(StoreParts.tiles))
-          _tiles.watchLazy(fireImmediately: fireImmediately),
+          _tiles.tiles.watchLazy(fireImmediately: fireImmediately),
         if (storeParts.contains(StoreParts.storeEntry))
           _stores.watchObjectLazy(_id, fireImmediately: fireImmediately),
       ].reduce((v, e) => v.merge(e)).debounce(debounce ?? Duration.zero);
