@@ -1,14 +1,13 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../fmtc.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// Manage custom miscellaneous information tied to a [StoreDirectory]
 ///
 /// Uses a key-value format where both key and value must be [String]. More
 /// advanced requirements should use another package, as this is a basic
 /// implementation.
-@internal
 class StoreMetadata {
   StoreMetadata._(StoreDirectory storeDirectory)
       : _id = DatabaseTools.hash(storeDirectory.storeName);

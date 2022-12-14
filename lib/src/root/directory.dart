@@ -1,14 +1,16 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../fmtc.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// Represents the root directory and root databases
 ///
 /// Note that this does not provide direct access to any [StoreDirectory]s.
 ///
+/// The name originates from previous versions of this library, where it
+/// represented a real directory instead of a database.
+///
 /// Reach through [FlutterMapTileCaching.rootDirectory].
-@internal
 class RootDirectory {
   RootDirectory._(this.directory);
 
@@ -39,7 +41,7 @@ class RootDirectory {
   RootStats get stats => RootStats._();
 
   /// Manage the download recovery of all sub-stores
-  //RootRecovery get recovery => RootRecovery.instance ?? RootRecovery(this);
+  RootRecovery get recovery => RootRecovery.instance ?? RootRecovery._();
 
   /// Manage migration for file structure across FMTC versions
   RootMigrator get migrator => RootMigrator._();

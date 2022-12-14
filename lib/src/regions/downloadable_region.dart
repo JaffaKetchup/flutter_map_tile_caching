@@ -1,12 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:meta/meta.dart';
-
-import 'base_region.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// Describes what shape, and therefore rules, a [DownloadableRegion] conforms to
 enum RegionType {
@@ -83,9 +78,7 @@ class DownloadableRegion {
   /// A function that takes any type of error as an argument to be called in the event a tile fetch fails
   final Function(Object?)? errorHandler;
 
-  /// Avoid construction using this method. Use [BaseRegion.toDownloadable] to generate [DownloadableRegion]s from other regions.
-  @internal
-  DownloadableRegion.internal({
+  DownloadableRegion._({
     required this.points,
     required this.minZoom,
     required this.maxZoom,

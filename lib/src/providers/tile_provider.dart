@@ -5,12 +5,12 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:isar/isar.dart';
 
-import '../fmtc.dart';
-import '../misc/enums.dart';
-import '../settings/fmtc_settings.dart';
-import '../settings/tile_provider_settings.dart';
-import 'filesystem_sanitiser_private.dart';
+import '../../flutter_map_tile_caching.dart';
+import '../db/defs/tile.dart';
+import '../db/registry.dart';
+import '../db/tools.dart';
 import 'image_provider.dart';
 
 /// 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayer]
@@ -64,31 +64,30 @@ class FMTCTileProvider extends TileProvider {
         },
       );
 
-/*
+  IsarCollection<DbTile> get _tiles => FMTCRegistry.instance
+      .tileDatabases[DatabaseTools.hash(storeDirectory.storeName)]!.tiles;
+
   /// Check whether a specified tile is cached in the current store synchronously
   bool checkTileCached({
     required Coords<num> coords,
     required TileLayer options,
-    String? customURL,
   }) =>
-      (storeDirectory.access.tiles >>>
-              filesystemSanitiseValidate(
-                inputString: customURL ?? getTileUrl(coords, options),
-                throwIfInvalid: false,
-              ))
-          .existsSync();
+      _tiles.getSync(
+        DatabaseTools.hash(
+          options.tileProvider.getTileUrl(coords, options),
+        ),
+      ) !=
+      null;
 
   /// Check whether a specified tile is cached in the current store asynchronously
   Future<bool> checkTileCachedAsync({
     required Coords<num> coords,
     required TileLayer options,
-    String? customURL,
   }) async =>
-      (storeDirectory.access.tiles >>>
-              filesystemSanitiseValidate(
-                inputString: customURL ?? getTileUrl(coords, options),
-                throwIfInvalid: false,
-              ))
-          .exists();
-          */
+      (await _tiles.get(
+        DatabaseTools.hash(
+          options.tileProvider.getTileUrl(coords, options),
+        ),
+      )) !=
+      null;
 }

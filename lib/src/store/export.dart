@@ -1,10 +1,9 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../fmtc.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// Provides import and export functionality for a [StoreDirectory]
-@internal
 class StoreExport {
   StoreExport._(this._storeDirectory);
   final StoreDirectory _storeDirectory;

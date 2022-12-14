@@ -1,18 +1,17 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../fmtc.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// Represents a store of tiles
 ///
 /// The tile store itself is a database referred to in the registry
-/// (see [FMTCRegistry]).
+/// (see [FMTCRegistry]). The database contains tiles, as well as metadata.
 ///
 /// The name originates from previous versions of this library, where it
 /// represented a real directory instead of a database.
 ///
 /// Reach through [FlutterMapTileCaching.call].
-@internal
 class StoreDirectory {
   StoreDirectory._(this.storeName);
 
@@ -39,14 +38,17 @@ class StoreDirectory {
   StoreMetadata get metadata => StoreMetadata._(this);
 
   /// Provides export functionality for this store
-  //StoreExport get export => StoreExport(this);
+  StoreExport get export => StoreExport._(this);
 
   /// Get tools to manage bulk downloading to this store
-  //DownloadManagement get download => DownloadManagement(this);
+  DownloadManagement get download => DownloadManagement._(this);
 
-  /// Get 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayer], specific to this store
+  /// Get 'flutter_map_tile_caching's custom [TileProvider] for use in a
+  /// [TileLayer], specific to this store
   ///
-  /// Uses [FMTCSettings.defaultTileProviderSettings] by default (and it's default if unspecified). Alternatively, override [settings] for this get only.
+  /// Uses [FMTCSettings.defaultTileProviderSettings] by default (and it's
+  /// default if unspecified). Alternatively, override [settings] for this get
+  /// only.
   FMTCTileProvider getTileProvider([FMTCTileProviderSettings? settings]) =>
       FMTCTileProvider(storeDirectory: this, settings: settings);
 
@@ -63,9 +65,6 @@ class StoreDirectory {
   @override
   int get hashCode => storeName.hashCode;
 
-  StoreDirectory copyWith({
-    RootDirectory? rootDirectory,
-    String? storeName,
-  }) =>
+  StoreDirectory copyWith(String? storeName) =>
       StoreDirectory._(storeName ?? this.storeName);
 }

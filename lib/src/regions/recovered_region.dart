@@ -1,17 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:io';
-
-import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:meta/meta.dart';
-
-import 'base_region.dart';
-import 'circle.dart';
-import 'downloadable_region.dart';
-import 'line.dart';
-import 'rectangle.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// A mixture between [BaseRegion] and [DownloadableRegion] containing all the salvaged data from a recovered download
 ///
@@ -21,11 +11,6 @@ import 'rectangle.dart';
 ///
 /// Should avoid manual construction. Use [toDownloadable] to restore a valid [DownloadableRegion].
 class RecoveredRegion {
-  /// The file that this region was contained in
-  ///
-  /// Not actually used when converting to [DownloadableRegion].
-  final File file;
-
   /// A unique ID created for every bulk download operation
   ///
   /// Not actually used when converting to [DownloadableRegion].
@@ -85,10 +70,7 @@ class RecoveredRegion {
   /// This is a storage saving feature, not a time saving or data saving feature: tiles still have to be fully downloaded before they can be checked.
   final bool seaTileRemoval;
 
-  /// Avoid construction using this method
-  @internal
-  RecoveredRegion.internal({
-    required this.file,
+  RecoveredRegion._({
     required this.id,
     required this.storeName,
     required this.time,
@@ -118,7 +100,7 @@ class RecoveredRegion {
             ? CircleRegion(center!, radius!)
             : LineRegion(line!, radius!);
 
-    return DownloadableRegion.internal(
+    return DownloadableRegion._(
       points: region.toList(),
       minZoom: minZoom,
       maxZoom: maxZoom,

@@ -1,11 +1,10 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../fmtc.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// Manages a [RootDirectory]'s representation on the filesystem, such as
 /// creation and deletion
-@internal
 class RootManagement {
   RootManagement._();
 
@@ -30,10 +29,13 @@ class RootManagement {
     final settings = FMTC.instance.settings;
 
     await delete();
-    await FMTC.initialise(customRootDirectory: directory, settings: settings);
+    await FMTC.initialise(
+      customRootDirectory: directory,
+      customSettings: settings,
+    );
   }
 
-  //! DEPRECATED METHODS
+  //! DEPRECATED METHODS !//
 
   /// 'deleteAsync' is deprecated and shouldn't be used. Prefer [delete]. This
   /// redirect will be removed in a future update.

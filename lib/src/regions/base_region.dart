@@ -1,12 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:ui';
-
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-
-import 'downloadable_region.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// A region that can be downloaded, drawn on a map, or converted to a list of points, that forms a particular shape
 abstract class BaseRegion {

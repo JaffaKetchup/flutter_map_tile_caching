@@ -1,11 +1,22 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'dart:io';
 
-void main() async {
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:path/path.dart' as p;
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'screens/main/main.dart';
+import 'shared/state/download_provider.dart';
+import 'shared/state/general_provider.dart';
+
+/*void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FlutterMapTileCaching.initialise();
-  // BROKEN: await FMTC.instance.rootDirectory.migrator.fromV6();
-}
+  await FMTC.instance.rootDirectory.migrator.fromV6();
+}*/
 
 /*void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,9 +33,9 @@ void main() async {
   //await FMTC.instance.directory.migrator.fromV4();
 
   if (prefs.getBool('reset') ?? false) {
-    await FMTC.instance.rootDirectory.manage.resetAsync();
+    await FMTC.instance.rootDirectory.manage.reset();
 
-    final StoreDirectory instanceA = FMTC.instance('OpenStreetMap (A)');
+    final instanceA = FMTC.instance('OpenStreetMap (A)');
     await instanceA.manage.create();
     await instanceA.metadata.addAsync(
       key: 'sourceURL',
@@ -39,8 +50,8 @@ void main() async {
       value: 'cacheFirst',
     );
 
-    final StoreDirectory instanceB = FMTC.instance('OpenStreetMap (B)');
-    await instanceB.manage.createAsync();
+    final instanceB = FMTC.instance('OpenStreetMap (B)');
+    await instanceB.manage.create();
     await instanceB.metadata.addAsync(
       key: 'sourceURL',
       value: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',

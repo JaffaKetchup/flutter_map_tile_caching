@@ -8,11 +8,15 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:isar/isar.dart';
 import 'package:queue/queue.dart';
 
+import '../db/defs/store.dart';
+import '../db/defs/tile.dart';
+import '../db/registry.dart';
+import '../db/tools.dart';
 import '../misc/enums.dart';
 import '../settings/tile_provider_settings.dart';
-import 'filesystem_sanitiser_private.dart';
 import 'tile_provider.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
@@ -52,7 +56,11 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required this.coords,
     required this.httpClient,
     required this.headers,
-  }) : settings = provider.settings;
+  })  : settings = provider.settings,
+        _storeId = DatabaseTools.hash(provider.storeDirectory.storeName);
+
+  final int _storeId;
+  Isar get _tiles => FMTCRegistry.instance.tileDatabases[_storeId]!;
 
   @override
   ImageStreamCompleter loadBuffer(
@@ -79,34 +87,42 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required DecoderBufferCallback decode,
     required StreamController<ImageChunkEvent> chunkEvents,
   }) async {
-    return decode(await ImmutableBuffer.fromUint8List(Uint8List(0)));
-
-    // TODO
-    /*
     Future<void> cacheHitMiss({
       required bool hit,
-    }) async {
-      final File file = provider.storeDirectory.access.stats >>>
-          (hit ? 'cacheHits.cache' : 'cacheMisses.cache');
-
-      await (hit ? cacheHitsQueue : cacheMissesQueue).add(() async {
-        await file.create(recursive: true);
-        await file.writeAsString(
-          ((int.tryParse(await file.readAsString()) ?? 0) + 1).toString(),
-          flush: true,
-        );
-      });
-    }
+    }) =>
+        (hit ? cacheHitsQueue : cacheMissesQueue).add(() async {
+          final stores = FMTCRegistry.instance.registryDatabase;
+          await stores.writeTxn(() async {
+            final store = (await stores.stores.get(_storeId))!;
+            if (hit) store.hits += 1;
+            if (!hit) store.misses += 1;
+            await stores.stores.put(store);
+          });
+        });
 
     Future<Codec> finish({
       Uint8List? bytes,
       String? throwError,
+      FMTCBrowsingErrorType? throwErrorType,
       bool? cacheHit,
     }) async {
       scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
       unawaited(chunkEvents.close());
+
       if (cacheHit != null) unawaited(cacheHitMiss(hit: cacheHit));
-      if (throwError != null) throw _FMTCBrowsingError(throwError);
+
+      if (throwError != null) {
+        try {
+          throw FMTCBrowsingError(throwError, throwErrorType!);
+        } on FMTCBrowsingError catch (e) {
+          if (settings.errorHandler != null) {
+            settings.errorHandler!(e);
+          } else {
+            rethrow;
+          }
+        }
+      }
+
       if (bytes != null) {
         return decode(await ImmutableBuffer.fromUint8List(bytes));
       }
@@ -115,31 +131,29 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     }
 
     final String url = provider.getTileUrl(coords, options);
-    final File file = provider.storeDirectory.access.tiles >>>
-        filesystemSanitiseValidate(
-          inputString: url,
-          throwIfInvalid: false,
-        );
+    final DbTile? existingTile =
+        await _tiles.tiles.get(DatabaseTools.hash(url));
 
     // Logic to check whether the tile needs creating or updating
-    final bool needsCreating = !(await file.exists());
+    final bool needsCreating = existingTile == null;
     final bool needsUpdating = needsCreating
         ? false
         : settings.behavior == CacheBehavior.onlineFirst ||
             (settings.cachedValidDuration != Duration.zero &&
                 DateTime.now().millisecondsSinceEpoch -
-                        (await file.lastModified()).millisecondsSinceEpoch >
+                        existingTile.lastModified.millisecondsSinceEpoch >
                     settings.cachedValidDuration.inMilliseconds);
 
-    // Read the tile file if it exists
+    // Get any existing bytes from the tile, if it exists
     Uint8List? bytes;
-    if (!needsCreating) bytes = await file.readAsBytes();
+    if (!needsCreating) bytes = Uint8List.fromList(existingTile.bytes);
 
     // IF network is disabled & the tile does not exist THEN throw an error
     if (settings.behavior == CacheBehavior.cacheOnly && needsCreating) {
       return finish(
         throwError:
             'Failed to load the tile from the cache because it was missing.',
+        throwErrorType: FMTCBrowsingErrorType.missingInCacheOnlyMode,
         cacheHit: false,
       );
     }
@@ -160,6 +174,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
           throwError: needsCreating
               ? 'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.'
               : null,
+          throwErrorType: FMTCBrowsingErrorType.noConnectionDuringFetch,
           cacheHit: false,
         );
       }
@@ -171,6 +186,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
           throwError: needsCreating
               ? 'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.'
               : null,
+          throwErrorType: FMTCBrowsingErrorType.negativeFetchResponse,
           cacheHit: false,
         );
       }
@@ -189,47 +205,29 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       );
 
       // Cache the tile asynchronously
-      unawaited(file.create().then((_) => file.writeAsBytes(bytes!)));
-      if (needsCreating) {
-        unawaited(
-          provider.storeDirectory.stats.invalidateCachedStatisticsAsync(),
-        );
-      }
+      unawaited(
+        _tiles
+            .writeTxn(() => _tiles.tiles.put(DbTile(url: url, bytes: bytes!))),
+      );
 
       // If an new tile was created over the tile limit, delete the oldest tile
       if (needsCreating && settings.maxStoreLength != 0) {
         unawaited(
-          removeOldestQueue.add(() async {
-            int currentIteration = 0;
-            bool needToDelete = false;
-
-            File? currentOldestFile;
-            DateTime? currentOldestDateTime;
-
-            await for (final FileSystemEntity e in await provider
-                .storeDirectory.access.tiles
-                .listWithExists()) {
-              if (e is! File) break;
-
-              currentIteration++;
-              if (currentIteration >= settings.maxStoreLength) {
-                needToDelete = true;
-                continue;
-              }
-
-              final DateTime modified = (await e.stat()).modified;
-
-              if (modified.isBefore(currentOldestDateTime ?? DateTime.now())) {
-                currentOldestFile = e;
-                currentOldestDateTime = modified;
-              }
-            }
-
-            if (!needToDelete) return;
-            await currentOldestFile?.delete();
-            await provider.storeDirectory.stats
-                .invalidateCachedStatisticsAsync();
-          }),
+          removeOldestQueue.add(
+            () => _tiles.writeTxn(
+              () async => _tiles.tiles.deleteAll(
+                (await _tiles.tiles
+                        .where()
+                        .anyLastModified()
+                        .limit(
+                          await _tiles.tiles.count() - settings.maxStoreLength,
+                        )
+                        .findAll())
+                    .map((t) => t.id)
+                    .toList(),
+              ),
+            ),
+          ),
         );
       }
 
@@ -238,7 +236,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     // IF tile exists & does not need updating THEN return the existing tile
     return finish(bytes: bytes, cacheHit: true);
-    */
   }
 
   @override
@@ -246,37 +243,66 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       SynchronousFuture<FMTCImageProvider>(this);
 
   @override
-  bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) return false;
-    return other is FMTCImageProvider &&
-        other.coords == coords &&
-        other.provider.storeDirectory.storeName ==
-            provider.storeDirectory.storeName;
-  }
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FMTCImageProvider && other.coords == coords);
 
   @override
   int get hashCode => coords.hashCode;
 }
 
-/// An [Exception] indicating that there was an error retrieving tiles to be displayed on the map
+/// An [Exception] indicating that there was an error retrieving tiles to be
+/// displayed on the map
 ///
-/// These can usually be safely ignored, as they simply represent a fall through of all valid/possible cases, but you may wish to handle them anyway.
+/// These can usually be safely ignored, as they simply represent a fall
+/// through of all valid/possible cases, but you may wish to handle them
+/// anyway using [FMTCTileProviderSettings.errorHandler].
 ///
-/// For example, "Failed to load the tile from the cache because it was missing" might be thrown in [CacheBehavior.cacheOnly] mode - there is simply nothing else that can be done, but it isn't really critical to catch.
-///
-/// Always thrown from within [FMTCImageProvider] generated from [FMTCTileProvider]. The [message] further indicates the reason, and will depend on the current caching behaviour.
-class _FMTCBrowsingError implements Exception {
+/// Always thrown from within [FMTCImageProvider] generated from
+/// [FMTCTileProvider]. The [message] further indicates the reason, and will
+/// depend on the current caching behaviour. The [type] represents the same
+/// message in a way that is easy to parse/handle.
+class FMTCBrowsingError implements Exception {
+  /// Friendly message
   final String message;
 
-  /// An [Exception] indicating that there was an error retrieving tiles to be displayed on the map
+  /// Programmatic error descriptor
+  final FMTCBrowsingErrorType type;
+
+  /// An [Exception] indicating that there was an error retrieving tiles to be
+  /// displayed on the map
   ///
-  /// These can usually be safely ignored, as they simply represent a fall through of all valid/possible cases, but you may wish to handle them anyway.
+  /// These can usually be safely ignored, as they simply represent a fall
+  /// through of all valid/possible cases, but you may wish to handle them
+  /// anyway using [FMTCTileProviderSettings.errorHandler].
   ///
-  /// For example, "Failed to load the tile from the cache because it was missing" might be thrown in [CacheBehavior.cacheOnly] mode - there is simply nothing else that can be done, but it isn't really critical to catch.
-  ///
-  /// Always thrown from within [FMTCImageProvider] generated from [FMTCTileProvider]. The [message] further indicates the reason, and will depend on the current caching behaviour.
-  _FMTCBrowsingError(this.message);
+  /// Always thrown from within [FMTCImageProvider] generated from
+  /// [FMTCTileProvider]. The [message] further indicates the reason, and will
+  /// depend on the current caching behaviour. The [type] represents the same
+  /// message in a way that is easy to parse/handle.
+  FMTCBrowsingError(this.message, this.type);
 
   @override
   String toString() => 'FMTCBrowsingError: $message';
+}
+
+/// Programmatic error descriptor for a [FMTCBrowsingError.message]
+///
+/// See documentation on that object for more information.
+enum FMTCBrowsingErrorType {
+  /// Paired with friendly message:
+  /// "Failed to load the tile from the cache because it was missing."
+  missingInCacheOnlyMode,
+
+  /// Paired with friendly message:
+  /// "Failed to load the tile from the cache or the network because it was
+  /// missing from the cache and a connection to the server could not be
+  /// established."
+  noConnectionDuringFetch,
+
+  /// Paired with friendly message:
+  /// "Failed to load the tile from the cache or the network because it was
+  /// missing from the cache and the server responded with a HTTP code other than
+  /// 200 OK."
+  negativeFetchResponse,
 }

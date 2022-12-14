@@ -1,13 +1,9 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:io';
+import 'package:isar/isar.dart';
 
-import 'package:flutter/widgets.dart';
-
-import '../internal/filesystem_sanitiser_private.dart';
-import '../internal/tile_provider.dart';
-import 'filesystem_sanitiser_public.dart';
+import '../providers/tile_provider.dart';
 import 'tile_provider_settings.dart';
 
 /// Global 'flutter_map_tile_caching' settings
@@ -17,42 +13,24 @@ class FMTCSettings {
   /// Can be overridden on a case-to-case basis when actually creating the tile provider.
   final FMTCTileProviderSettings defaultTileProviderSettings;
 
-  /// Method to sanitise any potentially unsafe [String] that will appear as a name of a [FileSystemEntity]
+  /// Sets a strict upper limit on every database file (defaults to 1GiB)
   ///
-  /// Takes a single [String] input. Must return a valid [FilesystemSanitiserResult], as below.
+  /// Prefer to set a limit on the number of tiles instead, using
+  /// [FMTCTileProviderSettings.maxStoreLength].
   ///
-  /// [FilesystemSanitiserResult.validOutput] must be sanitised to be safe enough to be used in the filesystem. [FilesystemSanitiserResult.errorMessages] can be empty if there were no changes to the input. Alternatively, it can be one or more messages describing the issue with the input.
+  /// Note that there is more than one database file, and this value applies
+  /// independently to each of them.
   ///
-  /// If the method is used internally in a validation situation, the output must be equal to the input, otherwise the error messages are thrown. This is, for example, the situation when managing stores and names. If the method is used internally in a sanitisation situation, error messages are ignored. This is, for example, the situation when storing map tiles.
-  ///
-  /// Defaults to [defaultFilesystemSanitiser] - not perfect, but OK for most uses. Recommended to override, for example, if you need to remove the API key from a tile filename, which is not done by default.
-  final FilesystemSanitiserResult Function(String input) filesystemSanitiser;
+  /// Setting this value too low may cause errors. Setting this value too high
+  /// and not limiting the number of tiles may result in slower operations and
+  /// a negative user experience: a large, unknown file may be deleted by a user,
+  /// causing significant data loss.
+  final int databaseMaxSize;
 
   /// Create custom global 'flutter_map_tile_caching' settings
   FMTCSettings({
     FMTCTileProviderSettings? defaultTileProviderSettings,
-    this.filesystemSanitiser = defaultFilesystemSanitiser,
+    this.databaseMaxSize = Isar.defaultMaxSizeMiB,
   }) : defaultTileProviderSettings =
             defaultTileProviderSettings ?? FMTCTileProviderSettings();
-
-  /// Use [filesystemSanitiser] publicly, in a validation situation such as in [FormField]
-  ///
-  /// This is useful to validate user-facing input for store names (such as in [FormField]s), and ensure that they:
-  /// * comply with limitations of the filesystem
-  /// * don't cause problems where sanitised input causes duplication
-  ///
-  /// Therefore, to prevent unexpected errors on construction, it is recommended to use this as a validator for user inputted store names: it can be put right in the `validator` property!
-  ///
-  /// A `null` output means the string is valid, otherwise appropriate error text is outputted (in English).
-  String? filesystemFormFieldValidator(String? storeName) {
-    try {
-      filesystemSanitiseValidate(
-        inputString: storeName ?? '',
-        throwIfInvalid: true,
-      );
-      return null;
-    } on InvalidFilesystemString catch (e) {
-      return e.toStringUserFriendly();
-    }
-  }
 }

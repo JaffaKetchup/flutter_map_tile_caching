@@ -1,18 +1,25 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../fmtc.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// Manages a [StoreDirectory]'s representation on the filesystem, such as
 /// creation and deletion
-@internal
 class StoreManagement {
   StoreManagement._(this._storeDirectory);
   final StoreDirectory _storeDirectory;
 
   FMTCRegistry get _registry => FMTCRegistry.instance;
 
-  /// Create all of the directories asynchronously
+  /// Check whether this store is ready for use
+  Future<bool> get ready async {
+    await _registry.synchronise();
+    return await _registry.registryDatabase.stores
+            .get(DatabaseTools.hash(_storeDirectory.storeName)) !=
+        null;
+  }
+
+  /// Create this store
   Future<void> create() async {
     await _registry.registryDatabase.writeTxn(
       () => _registry.registryDatabase.stores
@@ -21,7 +28,7 @@ class StoreManagement {
     await _registry.synchronise();
   }
 
-  /// Create all of the directories asynchronously
+  /// Create this store
   ///
   /// Advanced version of [create] intended for internal usage in certain
   /// circumstances only.
@@ -34,7 +41,7 @@ class StoreManagement {
     return id;
   }
 
-  /// Delete all of the directories asynchronously
+  /// Delete this store
   ///
   /// This will remove all traces of this store from the user's device. Use with
   /// caution!
@@ -46,13 +53,13 @@ class StoreManagement {
     await _registry.synchronise();
   }
 
-  /// Resets this store asynchronously
+  /// Resets this store (deletes then creates)
   ///
   /// This will remove all traces of this store from the user's device. Use with
   /// caution!
   Future<void> reset() async {
-    await create();
     await delete();
+    await create();
   }
 
   /// Rename the store directory asynchronously
@@ -80,87 +87,166 @@ class StoreManagement {
     });
     await _registry.synchronise();
 
-    return _storeDirectory.copyWith(storeName: storeName);
+    return _storeDirectory.copyWith(storeName);
   }
 
-  /// Retrieves a tile from the store and extracts it's [Image] synchronously
+  /// Retrieves the most recently modified tile from the store, extracts it's
+  /// bytes, and renders them to an [Image]
   ///
-  /// [randomRange] controls the randomness of the tile chosen (defaults to `null`):
-  /// * null                  : no randomness - the first tile is chosen
-  /// * value <= 0            : any tile may be chosen
-  /// * value >= store length : any tile may be chosen
-  /// * value < store length  : any tile up to this range may be chosen, enforcing an iteration limit internally
+  /// Prefer [tileImageAsync] to avoid blocking the UI thread. Otherwise, this
+  /// has slightly better performance.
   ///
-  /// Note that tiles are not necessarily ordered chronologically. They are usually ordered alphabetically.
-  ///
-  /// Returns `null` if there are no cached tiles in this store, otherwise an [Image] with [size] height and width.
-  /*Image? tileImage({
-    int? randomRange,
+  /// Eventually returns `null` if there are no cached tiles in this store,
+  /// otherwise an [Image] with [size] height and width.
+  Image? tileImage({
     double? size,
-  }) {
-    final int storeLen = _storeDirectory.stats.storeLength;
-    if (storeLen == 0) return null;
+    Key? key,
+    double scale = 1.0,
+    Widget Function(BuildContext, Widget, int?, bool)? frameBuilder,
+    Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
+    String? semanticLabel,
+    bool excludeFromSemantics = false,
+    Color? color,
+    Animation<double>? opacity,
+    BlendMode? colorBlendMode,
+    BoxFit? fit,
+    AlignmentGeometry alignment = Alignment.center,
+    ImageRepeat repeat = ImageRepeat.noRepeat,
+    Rect? centerSlice,
+    bool matchTextDirection = false,
+    bool gaplessPlayback = false,
+    bool isAntiAlias = false,
+    FilterQuality filterQuality = FilterQuality.low,
+    int? cacheWidth,
+    int? cacheHeight,
+  }) =>
+      Image.memory(
+        Uint8List.fromList(
+          _registry
+              .tileDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!
+              .tiles
+              .where(sort: Sort.desc)
+              .anyLastModified()
+              .findFirstSync()!
+              .bytes,
+        ),
+        key: key,
+        scale: scale,
+        frameBuilder: frameBuilder,
+        errorBuilder: errorBuilder,
+        semanticLabel: semanticLabel,
+        excludeFromSemantics: excludeFromSemantics,
+        width: size,
+        height: size,
+        color: color,
+        opacity: opacity,
+        colorBlendMode: colorBlendMode,
+        fit: fit,
+        alignment: alignment,
+        repeat: repeat,
+        centerSlice: centerSlice,
+        matchTextDirection: matchTextDirection,
+        gaplessPlayback: gaplessPlayback,
+        isAntiAlias: isAntiAlias,
+        filterQuality: filterQuality,
+        cacheWidth: cacheWidth,
+        cacheHeight: cacheHeight,
+      );
 
-    int i = 0;
-
-    final int randomNumber = randomRange == null
-        ? 0
-        : Random().nextInt(
-            randomRange <= 0 ? storeLen : randomRange.clamp(0, storeLen),
-          );
-
-    for (final FileSystemEntity e in _access.tiles.listSync()) {
-      if (i >= randomNumber) {
-        return Image.file(
-          File(e.absolute.path),
-          width: size,
-          height: size,
-        );
-      }
-      i++;
-    }
-
-    return null;
-  }
-
-  /// Retrieves a tile from the store and extracts it's [Image] asynchronously
+  /// Retrieves the most recently modified tile from the store, extracts it's
+  /// bytes, and renders them to an [Image]
   ///
-  /// [randomRange] controls the randomness of the tile chosen (defaults to `null`):
-  /// * null                  : no randomness - the first tile is chosen
-  /// * value <= 0            : any tile may be chosen
-  /// * value >= store length : any tile may be chosen
-  /// * value < store length  : any tile up to this range may be chosen, enforcing an iteration limit internally
-  ///
-  /// Note that tiles are not necessarily ordered chronologically. They are usually ordered alphabetically.
-  ///
-  /// Eventually returns `null` if there are no cached tiles in this store, otherwise an [Image] with [size] height and width.
+  /// Eventually returns `null` if there are no cached tiles in this store,
+  /// otherwise an [Image] with [size] height and width.
   Future<Image?> tileImageAsync({
-    int? randomRange,
     double? size,
-  }) async {
-    final int storeLen = await _storeDirectory.stats.storeLengthAsync;
-    if (storeLen == 0) return null;
+    Key? key,
+    double scale = 1.0,
+    Widget Function(BuildContext, Widget, int?, bool)? frameBuilder,
+    Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
+    String? semanticLabel,
+    bool excludeFromSemantics = false,
+    Color? color,
+    Animation<double>? opacity,
+    BlendMode? colorBlendMode,
+    BoxFit? fit,
+    AlignmentGeometry alignment = Alignment.center,
+    ImageRepeat repeat = ImageRepeat.noRepeat,
+    Rect? centerSlice,
+    bool matchTextDirection = false,
+    bool gaplessPlayback = false,
+    bool isAntiAlias = false,
+    FilterQuality filterQuality = FilterQuality.low,
+    int? cacheWidth,
+    int? cacheHeight,
+  }) async =>
+      Image.memory(
+        Uint8List.fromList(
+          (await _registry
+                  .tileDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!
+                  .tiles
+                  .where(sort: Sort.desc)
+                  .anyLastModified()
+                  .findFirst())!
+              .bytes,
+        ),
+        key: key,
+        scale: scale,
+        frameBuilder: frameBuilder,
+        errorBuilder: errorBuilder,
+        semanticLabel: semanticLabel,
+        excludeFromSemantics: excludeFromSemantics,
+        width: size,
+        height: size,
+        color: color,
+        opacity: opacity,
+        colorBlendMode: colorBlendMode,
+        fit: fit,
+        alignment: alignment,
+        repeat: repeat,
+        centerSlice: centerSlice,
+        matchTextDirection: matchTextDirection,
+        gaplessPlayback: gaplessPlayback,
+        isAntiAlias: isAntiAlias,
+        filterQuality: filterQuality,
+        cacheWidth: cacheWidth,
+        cacheHeight: cacheHeight,
+      );
 
-    int i = 0;
+  //! DEPRECATED METHODS !//
 
-    final int randomNumber = randomRange == null
-        ? 0
-        : Random().nextInt(
-            randomRange <= 0 ? storeLen : randomRange.clamp(0, storeLen),
-          );
+  /// 'readyAsync' is deprecated and shouldn't be used. Prefer [ready]. This
+  /// redirect will be removed in a future update.
+  @Deprecated(
+    "Prefer 'ready'. This redirect will be removed in a future update",
+  )
+  Future<bool> get readyAsync => ready;
 
-    await for (final FileSystemEntity e
-        in await _access.tiles.listWithExists()) {
-      if (i >= randomNumber) {
-        return Image.file(
-          File(e.absolute.path),
-          width: size,
-          height: size,
-        );
-      }
-      i++;
-    }
+  /// 'createAsync' is deprecated and shouldn't be used. Prefer [create]. This
+  /// redirect will be removed in a future update.
+  @Deprecated(
+    "Prefer 'create'. This redirect will be removed in a future update",
+  )
+  Future<void> createAsync() => create();
 
-    return null;
-  }*/
+  /// 'deleteAsync' is deprecated and shouldn't be used. Prefer [delete]. This
+  /// redirect will be removed in a future update.
+  @Deprecated(
+    "Prefer 'delete'. This redirect will be removed in a future update",
+  )
+  Future<void> deleteAsync() => delete();
+
+  /// 'resetAsync' is deprecated and shouldn't be used. Prefer [reset]. This
+  /// redirect will be removed in a future update.
+  @Deprecated(
+    "Prefer 'reset'. This redirect will be removed in a future update",
+  )
+  Future<void> resetAsync() => reset();
+
+  /// 'renameAsync' is deprecated and shouldn't be used. Prefer [rename]. This
+  /// redirect will be removed in a future update.
+  @Deprecated(
+    "Prefer 'rename'. This redirect will be removed in a future update",
+  )
+  Future<StoreDirectory> renameAsync(String storeName) => rename(storeName);
 }

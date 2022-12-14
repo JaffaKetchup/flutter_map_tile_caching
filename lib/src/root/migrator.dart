@@ -1,10 +1,11 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../fmtc.dart';
+// ignore_for_file: avoid_print, comment_references
+
+part of '../../flutter_map_tile_caching.dart';
 
 /// Manage migration for file structure across FMTC versions
-@internal
 class RootMigrator {
   RootMigrator._();
 
@@ -18,7 +19,7 @@ class RootMigrator {
       );
 
   /*
-  inal Map<String, String> matchables = {
+  final Map<String, String> matchables = {
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png': {
         RegExp('{(.*?)}'): RegExp('([0-9]+)'),
       },
@@ -118,14 +119,91 @@ class RootMigrator {
       await (tiles >> 'tiles').list().whereType<File>().asyncMap(
         (f) async {
           for (final e in matchables.entries) {
-            final filename = p.basename(f.absolute.path);
+            final filename = path.basename(f.absolute.path);
 
             if (!RegExp('^${e.key}\$', multiLine: true).hasMatch(filename)) {
               continue;
             }
 
-            final splitFilename = filename.split('')..add('');
+            final templateSplit = e.value.split('')..add('');
+            final filenameSplit = filename.split('')..add('');
 
+            print(templateSplit.join());
+            print(filename);
+
+            final Map<String, String> recordedValues = {};
+
+            for (int templatePos = 0;
+                templatePos < templateSplit.length;
+                templatePos++) {
+              final templateChar = templateSplit[templatePos];
+
+              if (templateChar == '{') {
+                int mTemplatePos = templatePos;
+                final StringBuffer mTemplateValue = StringBuffer();
+                while (true) {
+                  final mTemplateChar = templateSplit[mTemplatePos];
+                  if (mTemplateChar == '}') break;
+                  if (mTemplatePos != templatePos) {
+                    mTemplateValue.write(mTemplateChar);
+                  }
+                  mTemplatePos++;
+                }
+
+                final startPos = templatePos;
+                final exitPos = templateSplit[mTemplatePos + 1];
+                print(exitPos);
+
+                final StringBuffer mFilenameValue = StringBuffer();
+                int i = 0;
+                while (true) {
+                  if (filenameSplit[i] == exitPos || filenameSplit[i] == '')
+                    break;
+                  mFilenameValue.write(filenameSplit[i + startPos]);
+                  i++;
+                }
+
+                recordedValues[mTemplateValue.toString()] =
+                    mFilenameValue.toString();
+              }
+            }
+
+            /*int posTemplate = 0;
+            int posFilename = 0;
+            bool recording = false;
+            String recordingCacheKey = '';
+            String recordingCacheValue = '';
+            while (true) {
+              if (posTemplate >= templateSplit.length) break;
+              if (templateSplit[posTemplate] == '{') {
+                recording = true;
+                posTemplate++;
+                continue;
+              }
+              if (filenameSplit[posFilename + 1] ==
+                  templateSplit[posTemplate + 1]) {
+                recording = false;
+                recordedValues[recordingCacheKey] = recordingCacheValue;
+                recordingCacheKey = '';
+                recordingCacheValue = '';
+                posTemplate++;
+                continue;
+              }
+              if (recording) {
+                recordingCacheKey += templateSplit[posTemplate++];
+                recordingCacheValue += filenameSplit[posFilename++];
+                continue;
+              }
+
+              posTemplate++;
+              posFilename++;
+            }*/
+
+            print(recordedValues);
+            print('------');
+
+            /*
+            final splitFilename = filename.split('')..add('');
             final matches = RegExp('{(.*?)}').allMatches(e.value);
             final matchesString =
                 matches.map((m) => e.value.substring(m.start, m.end)).toList();
@@ -153,13 +231,14 @@ class RootMigrator {
               for (int i = match.start - 2 - replaceLengths;
                   splitFilename[i] != afterChar;
                   i++) {
+                // ignore: use_string_buffers
                 val += splitFilename[i];
                 print(val);
               }
               replaceLengths += -(match.end - match.start) + val.length;
             }
 
-            print('---------');
+            print('---------');*/
 
             /*late String z;
             late String x;
@@ -220,4 +299,119 @@ class RootMigrator {
 
     return true;*/
   }
+}
+
+//! OLD FILESYSTEM SANITISER CODE !//
+
+FilesystemSanitiserResult defaultFilesystemSanitiser(String input) {
+  final List<String> errorMessages = [];
+  String validOutput = input;
+
+  // Apply other character rules with general RegExp
+  validOutput = validOutput.replaceAll(RegExp(r'[\\\\/\:\*\?\"\<\>\|]'), '_');
+  if (validOutput != input) {
+    errorMessages
+        .add('The name cannot contain invalid characters: \'[NUL]\\/:*?"<>|\'');
+  }
+
+  // Trim
+  validOutput = validOutput.trim();
+  if (validOutput != input) {
+    errorMessages.add('The name cannot contain leading and/or trailing spaces');
+  }
+
+  // Ensure is not empty
+  if (validOutput.isEmpty) {
+    errorMessages.add('The name cannot be empty');
+    validOutput = '_';
+  }
+
+  // Ensure is not just '.'
+  if (validOutput.replaceAll('.', '').isEmpty) {
+    errorMessages.add('The name cannot consist of only periods (.)');
+    validOutput = validOutput.replaceAll('.', '_');
+  }
+
+  // Reduce string to under 255 chars (keeps end)
+  if (validOutput.length > 255) {
+    validOutput = validOutput.substring(validOutput.length - 255);
+    if (validOutput != input) {
+      errorMessages.add('The name cannot contain more than 255 characters');
+    }
+  }
+
+  return FilesystemSanitiserResult(
+    validOutput: validOutput,
+    errorMessages: errorMessages,
+  );
+}
+
+/// An [Exception] thrown by [FMTCSettings.filesystemSanitiser] indicating that the supplied string was invalid
+///
+/// The [_message] gives a reason and more information.
+class InvalidFilesystemString implements Exception {
+  final String _message;
+
+  /// An [Exception] thrown by [FMTCSettings.filesystemSanitiser] indicating that the supplied string was invalid
+  ///
+  /// The [_message] gives a reason and more information.
+  InvalidFilesystemString(this._message);
+
+  @override
+  String toString() => 'InvalidFilesystemString: $_message';
+  String toStringUserFriendly() => _message;
+}
+
+String filesystemSanitiseValidate({
+  required String inputString,
+  required bool throwIfInvalid,
+}) {
+  final FilesystemSanitiserResult output =
+      defaultFilesystemSanitiser(inputString);
+
+  if (throwIfInvalid && output.errorMessages.isNotEmpty) {
+    throw InvalidFilesystemString(
+      'The input string was unsuitable for filesystem use, due to the following reasons:\n${output.errorMessages.map((e) => ' - $e').join('\n')}',
+    );
+  }
+  return output.validOutput;
+}
+
+/// Object to return from any filesystem sanitiser defined in [FMTCSettings.filesystemSanitiser]
+///
+/// [FilesystemSanitiserResult.validOutput] must be sanitised to be safe enough to be used in the filesystem. [FilesystemSanitiserResult.errorMessages] can be empty if there were no changes to the input. Alternatively, it can be one or more messages describing the issue with the input.
+///
+/// If the method is used internally in a validation situation, the output must be equal to the input, otherwise the error messages are thrown. This is, for example, the situation when managing stores and names. If the method is used internally in a sanitisation situation, error messages are ignored. This is, for example, the situation when storing map tiles.
+class FilesystemSanitiserResult {
+  /// Must be sanitised to be safe enough to be used in the filesystem
+  final String validOutput;
+
+  /// Can be empty (default) if there were no changes to the input. Alternatively, it can be one or more messages describing the issue with the input.
+  final List<String> errorMessages;
+
+  /// Object to return from any filesystem sanitiser defined in [FMTCSettings.filesystemSanitiser]
+  ///
+  /// [FilesystemSanitiserResult.validOutput] must be sanitised to be safe enough to be used in the filesystem. [FilesystemSanitiserResult.errorMessages] can be empty if there were no changes to the input. Alternatively, it can be one or more messages describing the issue with the input.
+  ///
+  /// If the method is used internally in a validation situation, the output must be equal to the input, otherwise the error messages are thrown. This is, for example, the situation when managing stores and names. If the method is used internally in a sanitisation situation, error messages are ignored. This is, for example, the situation when storing map tiles.
+  FilesystemSanitiserResult({
+    required this.validOutput,
+    this.errorMessages = const [],
+  });
+
+  @override
+  String toString() =>
+      'FilesystemSanitiserResult(validOutput: $validOutput, errorMessages: $errorMessages)';
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is FilesystemSanitiserResult &&
+        other.validOutput == validOutput &&
+        listEquals(other.errorMessages, errorMessages);
+  }
+
+  @override
+  int get hashCode => validOutput.hashCode ^ errorMessages.hashCode;
 }

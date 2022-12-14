@@ -1,17 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:math' as math;
-
-import 'package:bezier/bezier.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:meta/meta.dart';
-import 'package:vector_math/vector_math.dart' hide Colors;
-
-import 'base_region.dart';
-import 'downloadable_region.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// A region with the border as the locus of a line at it's center
 class LineRegion implements BaseRegion {
@@ -84,7 +74,7 @@ class LineRegion implements BaseRegion {
     Crs crs = const Epsg3857(),
     void Function(Object?)? errorHandler,
   }) =>
-      DownloadableRegion.internal(
+      DownloadableRegion._(
         points: toOutlines(1).expand((x) => x).toList(),
         minZoom: minZoom,
         maxZoom: maxZoom,

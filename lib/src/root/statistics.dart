@@ -1,10 +1,9 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../fmtc.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// Provides statistics about a [RootDirectory]
-@internal
 class RootStats {
   RootStats._();
 
@@ -75,6 +74,9 @@ class RootStats {
   /// Whenever this has an event, it is likely the other statistics will have
   /// changed.
   ///
+  /// Control where changes are caught from using [rootParts]. See documentation
+  /// on those parts for their scope.
+  ///
   /// Recursively watch specific stores (using [StoreStats.watchChanges]) by
   /// providing them as a list of [StoreDirectory]s to [recursive]. To watch all
   /// stores, use the [storesAvailable]/[storesAvailableAsync] getter as the
@@ -95,6 +97,10 @@ class RootStats {
     Duration? debounce = const Duration(milliseconds: 200),
     bool fireImmediately = false,
     List<StoreDirectory> recursive = const [],
+    List<RootParts> rootParts = const [
+      RootParts.stores,
+      RootParts.recovery,
+    ],
     List<StoreParts> storeParts = const [
       StoreParts.metadata,
       StoreParts.tiles,
@@ -102,8 +108,12 @@ class RootStats {
     ],
   }) =>
       [
-        _registry.registryDatabase.stores
-            .watchLazy(fireImmediately: fireImmediately),
+        if (rootParts.contains(RootParts.stores))
+          _registry.registryDatabase.stores
+              .watchLazy(fireImmediately: fireImmediately),
+        if (rootParts.contains(RootParts.recovery))
+          _registry.recoveryDatabase.stores
+              .watchLazy(fireImmediately: fireImmediately),
         ...recursive.map(
           (s) => s.stats.watchChanges(
             fireImmediately: fireImmediately,

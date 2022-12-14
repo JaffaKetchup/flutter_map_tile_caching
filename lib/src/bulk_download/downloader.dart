@@ -2,17 +2,18 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
+import 'package:isar/isar.dart';
 import 'package:queue/queue.dart';
 
-import '../internal/exts.dart';
-import '../internal/filesystem_sanitiser_private.dart';
-import '../internal/tile_provider.dart';
+import '../db/defs/tile.dart';
+import '../db/registry.dart';
+import '../db/tools.dart';
+import '../providers/tile_provider.dart';
 import 'internal_timing_progress_management.dart';
 import 'tile_progress.dart';
 
@@ -66,19 +67,16 @@ Future<TileProgress> _getAndSaveTile({
   required int downloadID,
   required InternalProgressTimingManagement progressManagement,
 }) async {
-  final Coords<double> coordDouble =
-      Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
-  final String url = provider.getTileUrl(coordDouble, options);
-  final File file = Directory('') >>>
-      filesystemSanitiseValidate(
-        inputString: url,
-        throwIfInvalid: false,
-      );
+  final Isar tiles = FMTCRegistry.instance
+      .tileDatabases[DatabaseTools.hash(provider.storeDirectory.storeName)]!;
+
+  final String url = provider.getTileUrl(coord, options);
+  final DbTile? existingTile = await tiles.tiles.get(DatabaseTools.hash(url));
 
   final List<int> bytes = [];
 
   try {
-    if (preventRedownload && await file.exists()) {
+    if (preventRedownload && existingTile != null) {
       return TileProgress(
         failedUrl: null,
         wasSeaTile: false,
@@ -92,7 +90,6 @@ Future<TileProgress> _getAndSaveTile({
     final int totalBytes = response.contentLength ?? 0;
 
     int received = 0;
-
     await for (final List<int> evt in response.stream) {
       bytes.addAll(evt);
       received += evt.length;
@@ -102,14 +99,9 @@ Future<TileProgress> _getAndSaveTile({
       );
     }
 
-    file.writeAsBytesSync(
-      bytes,
-      flush: true,
-    );
-
-    if (seaTileBytes != null &&
-        const ListEquality().equals(await file.readAsBytes(), seaTileBytes)) {
-      await file.delete();
+    if (existingTile != null &&
+        seaTileBytes != null &&
+        const ListEquality().equals(bytes, seaTileBytes)) {
       return TileProgress(
         failedUrl: null,
         wasSeaTile: true,
@@ -117,6 +109,8 @@ Future<TileProgress> _getAndSaveTile({
         tileImage: Uint8List.fromList(bytes),
       );
     }
+
+    await tiles.writeTxn(() => tiles.tiles.put(DbTile(url: url, bytes: bytes)));
   } catch (e) {
     if (errorHandler != null) errorHandler(e);
     return TileProgress(

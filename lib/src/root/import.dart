@@ -1,10 +1,9 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../fmtc.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// Provides store import functionality for a [RootDirectory]
-@internal
 class RootImport {
   RootImport._();
 
@@ -50,7 +49,7 @@ class RootImport {
     return Map.fromEntries(
       importPaths.files.where((f) => f.extension == fileExtension).map(
             (pf) => MapEntry(
-              p.basenameWithoutExtension(pf.name),
+              path.basenameWithoutExtension(pf.name),
               manual(File(pf.path!)),
             ),
           ),
@@ -64,7 +63,7 @@ class RootImport {
   ///
   /// The output specifies whether the import was successful or unsuccessful.
   Future<void> manual(File inputFile) async {
-    String filename = p.basenameWithoutExtension(inputFile.path);
+    String filename = path.basenameWithoutExtension(inputFile.path);
     if (filename.startsWith('export_')) filename = filename.substring(8);
 
     final registry = FMTCRegistry.instance;

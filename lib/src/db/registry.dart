@@ -6,8 +6,9 @@ import 'dart:io';
 import 'package:isar/isar.dart';
 import 'package:meta/meta.dart';
 
-import '../fmtc.dart';
+import '../../flutter_map_tile_caching.dart';
 import 'defs/metadata.dart';
+import 'defs/recovery.dart';
 import 'defs/store.dart';
 import 'defs/tile.dart';
 
@@ -23,20 +24,23 @@ import 'defs/tile.dart';
 /// See [synchronise]'s documentation for more information.
 @internal
 class FMTCRegistry {
-  FMTCRegistry._(this._directory, this.registryDatabase);
+  FMTCRegistry._({
+    required String directory,
+    required this.registryDatabase,
+    required this.recoveryDatabase,
+  }) : _directory = directory;
   final String _directory;
 
   static late FMTCRegistry instance;
 
-  /// Primary registry database
   final Isar registryDatabase;
-
-  /// Database that primarily includes tiles, but also metadata
+  final Isar recoveryDatabase;
   final Map<int, Isar> tileDatabases = {};
 
   static Future<FMTCRegistry> initialise({
     Directory? dirReal,
     String? dirString,
+    required int databaseMaxSize,
   }) async {
     if (dirReal == null && dirString == null) {
       throw ArgumentError('Either `dirReal` or `dirString` should be provided');
@@ -45,14 +49,21 @@ class FMTCRegistry {
     final String directory = dirString ?? dirReal!.absolute.path;
 
     instance = FMTCRegistry._(
-      directory,
-      await Isar.open(
+      directory: directory,
+      registryDatabase: await Isar.open(
         [DbStoreSchema],
         name: 'registry',
         directory: directory,
+        maxSizeMiB: databaseMaxSize,
+      ),
+      recoveryDatabase: await Isar.open(
+        [DbRecoverableRegionSchema],
+        name: 'recovery',
+        directory: directory,
+        maxSizeMiB: databaseMaxSize,
       ),
     );
-    await instance.synchronise();
+    await instance.synchronise(databaseMaxSize: databaseMaxSize);
 
     return instance;
   }
@@ -65,6 +76,7 @@ class FMTCRegistry {
         tileDatabases.remove(e.key);
       }),
       registryDatabase.close(deleteFromDisk: delete),
+      recoveryDatabase.close(deleteFromDisk: delete),
     ]);
   }
 
@@ -76,7 +88,7 @@ class FMTCRegistry {
   ///
   /// Note that calling this method can lead to data loss - a tile store without
   /// a corresponding registry entry will be deleted without warning.
-  Future<void> synchronise() async => Future.wait<void>([
+  Future<void> synchronise({int? databaseMaxSize}) async => Future.wait<void>([
         ...tileDatabases.entries.map((e) async {
           if (await registryDatabase.stores.get(e.key) == null) {
             tileDatabases.remove(e.key);
@@ -89,6 +101,8 @@ class FMTCRegistry {
               [DbTileSchema, DbMetadataSchema],
               name: s.id.toString(),
               directory: _directory,
+              maxSizeMiB:
+                  databaseMaxSize ?? FMTC.instance.settings.databaseMaxSize,
             );
           }
         }),

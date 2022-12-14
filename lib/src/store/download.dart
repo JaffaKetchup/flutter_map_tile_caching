@@ -1,30 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-/*
-import 'dart:async';
-import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_background/flutter_background.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_map/plugin_api.dart';
-import 'package:http/http.dart' as http;
-import 'package:permission_handler/permission_handler.dart';
-import 'package:queue/queue.dart';
-
-import '../bulk_download/download_progress.dart';
-import '../bulk_download/downloader.dart';
-import '../bulk_download/internal_timing_progress_management.dart';
-import '../bulk_download/tile_loops.dart';
-import '../bulk_download/tile_progress.dart';
-import '../internal/exts.dart';
-import '../internal/tile_provider.dart';
-import '../regions/downloadable_region.dart';
-import '../settings/tile_provider_settings.dart';
-import 'directory.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
 ///
@@ -48,9 +25,9 @@ class DownloadManagement {
   /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
   ///
   /// Is a singleton to ensure functioning as expected.
-  factory DownloadManagement(StoreDirectory storeDirectory) {
+  factory DownloadManagement._(StoreDirectory storeDirectory) {
     if (!_instances.keys.contains(storeDirectory)) {
-      _instances[storeDirectory] = DownloadManagement._(storeDirectory);
+      _instances[storeDirectory] = DownloadManagement.__(storeDirectory);
     }
     return _instances[storeDirectory]!;
   }
@@ -58,7 +35,7 @@ class DownloadManagement {
   /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
   ///
   /// Is a singleton to ensure functioning as expected.
-  DownloadManagement._(this._storeDirectory);
+  DownloadManagement.__(this._storeDirectory);
 
   /// Contains the intialised instances of [DownloadManagement]s
   static final Map<StoreDirectory, DownloadManagement> _instances = {};
@@ -78,11 +55,10 @@ class DownloadManagement {
     _recoveryId = DateTime.now().millisecondsSinceEpoch;
 
     if (!disableRecovery) {
-      await _storeDirectory.rootDirectory.recovery.start(
+      await FMTC.instance.rootDirectory.recovery._start(
         id: _recoveryId!,
         storeName: _storeDirectory.storeName,
         region: region,
-        storeDirectory: _storeDirectory,
       );
     }
 
@@ -249,7 +225,7 @@ class DownloadManagement {
     unawaited(_progressManagement.stopTracking());
 
     if (_recoveryId != null) {
-      await _storeDirectory.rootDirectory.recovery.cancel(_recoveryId!);
+      await FMTC.instance.rootDirectory.recovery.cancel(_recoveryId!);
     }
 
     if (FlutterBackground.isBackgroundExecutionEnabled) {
@@ -342,7 +318,6 @@ class DownloadManagement {
     await for (final TileProgress evt in downloadStream) {
       if (evt.failedUrl == null) {
         successfulTiles++;
-        unawaited(_storeDirectory.stats.invalidateCachedStatisticsAsync());
       } else {
         failedTiles.add(evt.failedUrl!);
       }
@@ -406,4 +381,3 @@ extension _ListExtensionsE<E> on List<E> {
     }
   }
 }
-*/

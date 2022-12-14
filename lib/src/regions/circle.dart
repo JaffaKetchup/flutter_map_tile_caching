@@ -1,14 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:math' as math;
-
-import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong2/latlong.dart';
-
-import 'base_region.dart';
-import 'downloadable_region.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// A circular region with a center point and a radius
 class CircleRegion implements BaseRegion {
@@ -34,7 +27,7 @@ class CircleRegion implements BaseRegion {
     Crs crs = const Epsg3857(),
     void Function(Object?)? errorHandler,
   }) =>
-      DownloadableRegion.internal(
+      DownloadableRegion._(
         points: toList(),
         minZoom: minZoom,
         maxZoom: maxZoom,

@@ -17,6 +17,17 @@ enum CacheBehavior {
   onlineFirst,
 }
 
+/// Parts of the root which can be watched
+enum RootParts {
+  /// Includes changes within the recovery database
+  recovery,
+
+  /// Includes changes within the registry database
+  ///
+  /// Does not necessarily recursivley watch into stores.
+  stores,
+}
+
 /// Parts of a store which can be watched
 enum StoreParts {
   /// Include changes to the store's metadata objects

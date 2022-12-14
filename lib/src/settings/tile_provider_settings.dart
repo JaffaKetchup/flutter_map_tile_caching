@@ -1,50 +1,68 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import '../internal/tile_provider.dart';
+import 'package:isar/isar.dart';
+
 import '../misc/enums.dart';
+import '../providers/image_provider.dart';
+import '../providers/tile_provider.dart';
 
 /// Settings for an [FMTCTileProvider]
 class FMTCTileProviderSettings {
   /// The behavior method to get and cache a tile
   ///
-  /// Defaults to [CacheBehavior.cacheFirst] - get tiles from the local cache, going on the Internet to update the cached tile if it has expired ([cachedValidDuration] has passed).
+  /// Defaults to [CacheBehavior.cacheFirst] - get tiles from the local cache,
+  /// going on the Internet to update the cached tile if it has expired
+  /// ([cachedValidDuration] has passed).
   final CacheBehavior behavior;
 
-  /// The duration until a tile expires and needs to be fetched again when browsing. Also called `validDuration`.
+  /// The duration until a tile expires and needs to be fetched again when
+  /// browsing. Also called `validDuration`.
   ///
   /// Defaults to 16 days, set to [Duration.zero] to disable.
   final Duration cachedValidDuration;
 
-  /// The maximum number of tiles allowed in a cache store (only whilst 'browsing' - see below) before the oldest tile gets deleted. Also called `maxTiles`.
+  /// The maximum number of tiles allowed in a cache store (only whilst
+  /// 'browsing' - see below) before the oldest tile gets deleted. Also called
+  /// `maxTiles`.
   ///
-  /// Only applies to 'browse caching', ie. downloading regions will bypass this limit. This can be computationally expensive as it potentially involves sorting through this many files to find the oldest file.
+  /// Only applies to 'browse caching', ie. downloading regions will bypass this
+  /// limit.
   ///
-  /// Please note that this limit is a 'suggestion'. Due to the nature of the application, it is difficult to set a hard limit on a the store's length. Therefore, fast browsing may go above this limit.
+  /// Note that the actual store has an un-modifiable maximum size limit of
+  /// [Isar.defaultMaxSizeMiB] (1GB). It is unspecified what will happen if this
+  /// limit is reached, however it is likely that an error will be thrown.
   ///
   /// Defaults to 0 disabled.
   final int maxStoreLength;
+
+  /// A custom callback that will be called when an [FMTCBrowsingError] is raised
+  ///
+  /// Prevents the error being printed to the console, and only captures this
+  /// type of error, unlike 'flutter_map's native solution.
+  void Function(FMTCBrowsingError exception)? errorHandler;
 
   /// Create settings for an [FMTCTileProvider]
   FMTCTileProviderSettings({
     this.behavior = CacheBehavior.cacheFirst,
     this.cachedValidDuration = const Duration(days: 16),
     this.maxStoreLength = 0,
+    this.errorHandler,
   });
 
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-
-    return other is FMTCTileProviderSettings &&
-        other.behavior == behavior &&
-        other.cachedValidDuration == cachedValidDuration &&
-        other.maxStoreLength == maxStoreLength;
-  }
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FMTCTileProviderSettings &&
+          other.behavior == behavior &&
+          other.cachedValidDuration == cachedValidDuration &&
+          other.maxStoreLength == maxStoreLength &&
+          other.errorHandler == errorHandler);
 
   @override
   int get hashCode =>
       behavior.hashCode ^
       cachedValidDuration.hashCode ^
-      maxStoreLength.hashCode;
+      maxStoreLength.hashCode ^
+      errorHandler.hashCode;
 }

@@ -1,41 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:io';
-import 'package:collection/collection.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
-import 'package:isar/isar.dart';
-import 'package:meta/meta.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:stream_transform/stream_transform.dart';
-
-import 'db/defs/metadata.dart';
-import 'db/defs/store.dart';
-import 'db/defs/tile.dart';
-import 'db/registry.dart';
-import 'db/tools.dart';
-import 'internal/exts.dart';
-import 'internal/filesystem_sanitiser_private.dart';
-import 'internal/tile_provider.dart';
-import 'misc/enums.dart';
-import 'settings/fmtc_settings.dart';
-import 'settings/tile_provider_settings.dart';
-
-part 'root/directory.dart';
-part 'root/import.dart';
-part 'root/manage.dart';
-part 'root/migrator.dart';
-part 'root/statistics.dart';
-
-part 'store/directory.dart';
-part 'store/export.dart';
-part 'store/manage.dart';
-part 'store/statistics.dart';
-part 'store/metadata.dart';
+part of '../flutter_map_tile_caching.dart';
 
 /// Direct alias of [FlutterMapTileCaching] for easier development
 ///
@@ -82,15 +48,19 @@ class FlutterMapTileCaching {
   /// object.
   static Future<FlutterMapTileCaching> initialise({
     String? customRootDirectory,
-    FMTCSettings? settings,
+    FMTCSettings? customSettings,
   }) async {
     final directory = await ((customRootDirectory == null
                 ? await getApplicationDocumentsDirectory()
                 : Directory(customRootDirectory)) >>
             'fmtc')
         .create(recursive: true);
+    final settings = customSettings ?? FMTCSettings();
 
-    final registry = await FMTCRegistry.initialise(dirReal: directory);
+    final registry = await FMTCRegistry.initialise(
+      dirReal: directory,
+      databaseMaxSize: settings.databaseMaxSize,
+    );
 
     // TODO: REMOVE FOR PRODUCTION
     await registry.registryDatabase.writeTxn(() async {
@@ -98,15 +68,13 @@ class FlutterMapTileCaching {
       await registry.registryDatabase.stores
           .put(DbStore(name: 'OpenStreetMap'));
       await registry.registryDatabase.stores
-          .put(DbStore(name: 'OpenStreetMap'));
-      await registry.registryDatabase.stores
-          .put(DbStore(name: r'assssssssssssssss\'));
+          .put(DbStore(name: 'Thunderforest Outdoors'));
     });
-    await registry.synchronise();
+    await registry.synchronise(databaseMaxSize: settings.databaseMaxSize);
 
     return _instance = FMTC._(
       rootDirectory: RootDirectory._(directory),
-      settings: settings ?? FMTCSettings(),
+      settings: settings,
     );
   }
 
