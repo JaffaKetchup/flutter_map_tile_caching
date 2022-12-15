@@ -64,7 +64,7 @@ class RootImport {
   /// The output specifies whether the import was successful or unsuccessful.
   Future<void> manual(File inputFile) async {
     String filename = path.basenameWithoutExtension(inputFile.path);
-    if (filename.startsWith('export_')) filename = filename.substring(8);
+    if (filename.startsWith('export_')) filename = filename.substring(7);
 
     final registry = FMTCRegistry.instance;
 

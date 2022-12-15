@@ -1,22 +1,15 @@
-import 'dart:io';
-
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:path/path.dart' as p;
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'screens/main/main.dart';
-import 'shared/state/download_provider.dart';
-import 'shared/state/general_provider.dart';
-
-/*void main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FlutterMapTileCaching.initialise();
-  await FMTC.instance.rootDirectory.migrator.fromV6();
-}*/
+  await FMTC.instance.rootDirectory.migrator.fromV6(
+    urlTemplates: null,
+  );
+  await FMTC.instance.rootDirectory.import.withGUI();
+  print('Complete');
+}
 
 /*void main() async {
   WidgetsFlutterBinding.ensureInitialized();

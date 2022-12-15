@@ -51,7 +51,7 @@ class FMTCRegistry {
     instance = FMTCRegistry._(
       directory: directory,
       registryDatabase: await Isar.open(
-        [DbStoreSchema],
+        [DbStoreSchema, DbTileSchema],
         name: 'registry',
         directory: directory,
         maxSizeMiB: databaseMaxSize,

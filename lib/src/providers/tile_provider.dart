@@ -72,22 +72,12 @@ class FMTCTileProvider extends TileProvider {
     required Coords<num> coords,
     required TileLayer options,
   }) =>
-      _tiles.getSync(
-        DatabaseTools.hash(
-          options.tileProvider.getTileUrl(coords, options),
-        ),
-      ) !=
-      null;
+      _tiles.getSync(DatabaseTools.hash(getTileUrl(coords, options))) != null;
 
   /// Check whether a specified tile is cached in the current store asynchronously
   Future<bool> checkTileCachedAsync({
     required Coords<num> coords,
     required TileLayer options,
   }) async =>
-      (await _tiles.get(
-        DatabaseTools.hash(
-          options.tileProvider.getTileUrl(coords, options),
-        ),
-      )) !=
-      null;
+      await _tiles.get(DatabaseTools.hash(getTileUrl(coords, options))) != null;
 }

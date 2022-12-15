@@ -57,21 +57,10 @@ class FlutterMapTileCaching {
         .create(recursive: true);
     final settings = customSettings ?? FMTCSettings();
 
-    final registry = await FMTCRegistry.initialise(
+    await FMTCRegistry.initialise(
       dirReal: directory,
       databaseMaxSize: settings.databaseMaxSize,
     );
-
-    // TODO: REMOVE FOR PRODUCTION
-    await registry.registryDatabase.writeTxn(() async {
-      await registry.registryDatabase.clear();
-      await registry.registryDatabase.stores
-          .put(DbStore(name: 'OpenStreetMap'));
-      await registry.registryDatabase.stores
-          .put(DbStore(name: 'Thunderforest Outdoors'));
-    });
-    await registry.synchronise(databaseMaxSize: settings.databaseMaxSize);
-
     return _instance = FMTC._(
       rootDirectory: RootDirectory._(directory),
       settings: settings,
