@@ -1,7 +1,18 @@
-import 'package:flutter/widgets.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'dart:io';
 
-void main() async {
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:path/path.dart' as p;
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'screens/main/main.dart';
+import 'shared/state/download_provider.dart';
+import 'shared/state/general_provider.dart';
+
+/*void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FlutterMapTileCaching.initialise();
   await FMTC.instance.rootDirectory.migrator.fromV6(
@@ -10,8 +21,9 @@ void main() async {
   await FMTC.instance.rootDirectory.import.withGUI();
   print('Complete');
 }
+*/
 
-/*void main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -61,7 +73,8 @@ void main() async {
 
   final File newAppVersionFile = File(
     p.join(
-      FMTC.instance.rootDirectory.access.real.path,
+      // ignore: invalid_use_of_internal_member, invalid_use_of_protected_member
+      FMTC.instance.rootDirectory.directory.absolute.path,
       'newAppVersion.${Platform.isWindows ? 'exe' : 'apk'}',
     ),
   );
@@ -98,4 +111,3 @@ class AppContainer extends StatelessWidget {
         ),
       );
 }
-*/

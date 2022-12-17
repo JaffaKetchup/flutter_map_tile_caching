@@ -29,7 +29,7 @@ You can read more about me and what I do on my [GitHub Sponsors](https://github.
 
 Alternatively, if you prefer not to use GitHub Sponsors, please feel free to use my [Ko-fi](https://ko-fi.com/jaffaketchup). Note that the PayPal backend will take a small percentage amount of donations made through this method.
 
-## (Commercial) Licensing
+## (Proprietary) Licensing
 
 _I am not a lawyer, and this information is to the best of my understanding._
 

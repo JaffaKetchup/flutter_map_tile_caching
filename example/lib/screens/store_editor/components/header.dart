@@ -47,9 +47,9 @@ AppBar buildHeader({
                   : await FMTC
                       .instance(widget.existingStoreName!)
                       .manage
-                      .renameAsync(newStoreName);
+                      .rename(newStoreName);
 
-              await instance.manage.createAsync();
+              await instance.manage.create();
               await instance.metadata.addAsync(
                 key: 'sourceURL',
                 value: newValues['sourceURL']!,

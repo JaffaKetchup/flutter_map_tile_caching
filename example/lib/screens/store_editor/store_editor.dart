@@ -95,22 +95,11 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                                   .contains(FMTC.instance(input));
                               setState(() {});
                             },
-                            validator: (input) {
-                              if (input == null || input.isEmpty) {
-                                return 'Required';
-                              }
-
-                              final String? nameValidation = FMTC
-                                  .instance.settings
-                                  .filesystemFormFieldValidator(input);
-                              if (nameValidation != null) {
-                                return nameValidation;
-                              }
-
-                              return _storeNameIsDuplicate
-                                  ? 'Store already exists'
-                                  : null;
-                            },
+                            validator: (input) => input == null || input.isEmpty
+                                ? 'Required'
+                                : _storeNameIsDuplicate
+                                    ? 'Store already exists'
+                                    : null,
                             onSaved: (input) =>
                                 _newValues['storeName'] = input!,
                             autovalidateMode:

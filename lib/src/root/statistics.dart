@@ -9,7 +9,7 @@ class RootStats {
 
   FMTCRegistry get _registry => FMTCRegistry.instance;
 
-  /// Retrieve all the available [StoreDirectory]s
+  /// List all the available [StoreDirectory]s
   ///
   /// Prefer [storesAvailableAsync] to avoid blocking the UI thread. Otherwise,
   /// this has slightly better performance.
@@ -19,7 +19,7 @@ class RootStats {
       .map((s) => StoreDirectory._(s.name))
       .toList();
 
-  /// Retrieve all the available [StoreDirectory]s
+  /// List all the available [StoreDirectory]s
   Future<List<StoreDirectory>> get storesAvailableAsync async =>
       (await _registry.registryDatabase.stores.where().findAll())
           .map((s) => StoreDirectory._(s.name))

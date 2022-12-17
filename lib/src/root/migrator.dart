@@ -38,7 +38,7 @@ class RootMigrator {
   /// the RegEx: `\{ *([\w_-]+) *\}`. Only supports tiles that were sanitised
   /// with the default sanitiser included in FMTC.
   ///
-  /// Recovery files and cached statistics will be lost.
+  /// Metadata, recovery information, and cached statistics will be lost.
   ///
   /// Returns `null` if no structure was found or migration failed, otherwise
   /// the number of tiles that could not be matched to any of the [urlTemplates].

@@ -19,7 +19,7 @@ class RecoveryPage extends StatefulWidget {
 }
 
 class _RecoveryPageState extends State<RecoveryPage> {
-  late Future<List<Future<RecoveredRegion>>> _recoverableRegions;
+  late Future<List<RecoveredRegion>> _recoverableRegions;
 
   @override
   void initState() {
@@ -50,7 +50,7 @@ class _RecoveryPageState extends State<RecoveryPage> {
                 const Header(),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: FutureBuilder<List<Future<RecoveredRegion>>>(
+                  child: FutureBuilder<List<RecoveredRegion>>(
                     future: _recoverableRegions,
                     builder: (context, all) => all.hasData
                         ? all.data!.isEmpty

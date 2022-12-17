@@ -18,10 +18,9 @@ class RootImport {
   /// files, which may yield unexpected results. This is only effective on
   /// Android and iOS - other platforms cannot use caching.
   ///
-  /// If any files are selected, a [Map] is returned: where the keys are the the
-  /// selected filenames (without extensions), and the values will resolve when
-  /// complete. Otherwise `null` will be returned.
-  Future<Map<String, Future<void>>?> withGUI({
+  /// If any files are selected, a map of the selected filenames to whether that
+  /// store was imported successfully is returned.
+  Future<Map<String, Future<bool>>?> withGUI({
     String fileExtension = 'fmtc',
     bool emptyCacheBeforePicking = true,
   }) async {
@@ -62,16 +61,19 @@ class RootImport {
   /// control.
   ///
   /// The output specifies whether the import was successful or unsuccessful.
-  Future<void> manual(File inputFile) async {
-    String filename = path.basenameWithoutExtension(inputFile.path);
-    if (filename.startsWith('export_')) filename = filename.substring(7);
+  Future<bool> manual(File inputFile) async {
+    final filename = path.basenameWithoutExtension(inputFile.path);
+    final storeName =
+        filename.substring(filename.startsWith('export_') ? 7 : 0);
 
     final registry = FMTCRegistry.instance;
 
     await inputFile.copy(
       FMTC.instance.rootDirectory.directory >
-          '${await FMTC.instance(filename).manage._advancedCreate(synchronise: false)}.isar',
+          '${await FMTC.instance(storeName).manage._advancedCreate(synchronise: false)}.isar',
     );
     await registry.synchronise();
+
+    return FMTC.instance(storeName).manage.ready;
   }
 }

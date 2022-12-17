@@ -34,15 +34,12 @@ class _StoreTileState extends State<StoreTile> {
 
   late final _store = FMTC.instance(widget.storeName);
 
-  void _loadStatistics({bool withoutCachedStatistics = false}) {
-    final stats =
-        !withoutCachedStatistics ? _store.stats : _store.stats.noCache;
-
-    _tiles = stats.storeLengthAsync.then((l) => l.toString());
-    _size = stats.storeSizeAsync.then((s) => (s * 1024).asReadableSize);
-    _cacheHits = stats.cacheHitsAsync.then((h) => h.toString());
-    _cacheMisses = stats.cacheMissesAsync.then((m) => m.toString());
-    _image = _store.manage.tileImageAsync(randomRange: 20, size: 125);
+  void _loadStatistics() {
+    _tiles = _store.stats.storeLengthAsync.then((l) => l.toString());
+    _size = _store.stats.storeSizeAsync.then((s) => (s * 1024).asReadableSize);
+    _cacheHits = _store.stats.cacheHitsAsync.then((h) => h.toString());
+    _cacheMisses = _store.stats.cacheMissesAsync.then((m) => m.toString());
+    _image = _store.manage.tileImageAsync(size: 125);
 
     setState(() {});
   }
@@ -103,7 +100,7 @@ class _StoreTileState extends State<StoreTile> {
                   _deletingProgress = true;
                   _emptyingProgress = true;
                 });
-                await _store.manage.deleteAsync();
+                await _store.manage.delete();
               },
       );
 
@@ -132,7 +129,7 @@ class _StoreTileState extends State<StoreTile> {
           final bool isCurrentStore = provider.currentStore == widget.storeName;
 
           return FutureBuilder<bool>(
-            future: _store.manage.readyAsync,
+            future: _store.manage.ready,
             builder: (context, ready) => ExpansionTile(
               title: Text(
                 widget.storeName,
@@ -182,7 +179,7 @@ class _StoreTileState extends State<StoreTile> {
                                             setState(
                                               () => _emptyingProgress = true,
                                             );
-                                            await _store.manage.resetAsync();
+                                            await _store.manage.reset();
 
                                             setState(
                                               () => _emptyingProgress = false,
@@ -251,9 +248,7 @@ class _StoreTileState extends State<StoreTile> {
                                   IconButton(
                                     icon: const Icon(Icons.refresh),
                                     tooltip: 'Force Refresh Statistics',
-                                    onPressed: () => _loadStatistics(
-                                      withoutCachedStatistics: true,
-                                    ),
+                                    onPressed: _loadStatistics,
                                   ),
                                   IconButton(
                                     icon: Icon(
