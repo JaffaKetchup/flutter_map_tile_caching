@@ -119,39 +119,39 @@ class StoreManagement {
     FilterQuality filterQuality = FilterQuality.low,
     int? cacheWidth,
     int? cacheHeight,
-  }) =>
-      Image.memory(
-        Uint8List.fromList(
-          _registry
-              .tileDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!
-              .tiles
-              .where(sort: Sort.desc)
-              .anyLastModified()
-              .findFirstSync()!
-              .bytes,
-        ),
-        key: key,
-        scale: scale,
-        frameBuilder: frameBuilder,
-        errorBuilder: errorBuilder,
-        semanticLabel: semanticLabel,
-        excludeFromSemantics: excludeFromSemantics,
-        width: size,
-        height: size,
-        color: color,
-        opacity: opacity,
-        colorBlendMode: colorBlendMode,
-        fit: fit,
-        alignment: alignment,
-        repeat: repeat,
-        centerSlice: centerSlice,
-        matchTextDirection: matchTextDirection,
-        gaplessPlayback: gaplessPlayback,
-        isAntiAlias: isAntiAlias,
-        filterQuality: filterQuality,
-        cacheWidth: cacheWidth,
-        cacheHeight: cacheHeight,
-      );
+  }) {
+    final latestTile = _registry
+        .tileDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!.tiles
+        .where(sort: Sort.desc)
+        .anyLastModified()
+        .findFirstSync();
+    if (latestTile == null) return null;
+
+    return Image.memory(
+      Uint8List.fromList(latestTile.bytes),
+      key: key,
+      scale: scale,
+      frameBuilder: frameBuilder,
+      errorBuilder: errorBuilder,
+      semanticLabel: semanticLabel,
+      excludeFromSemantics: excludeFromSemantics,
+      width: size,
+      height: size,
+      color: color,
+      opacity: opacity,
+      colorBlendMode: colorBlendMode,
+      fit: fit,
+      alignment: alignment,
+      repeat: repeat,
+      centerSlice: centerSlice,
+      matchTextDirection: matchTextDirection,
+      gaplessPlayback: gaplessPlayback,
+      isAntiAlias: isAntiAlias,
+      filterQuality: filterQuality,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
+    );
+  }
 
   /// Retrieves the most recently modified tile from the store, extracts it's
   /// bytes, and renders them to an [Image]
@@ -179,39 +179,39 @@ class StoreManagement {
     FilterQuality filterQuality = FilterQuality.low,
     int? cacheWidth,
     int? cacheHeight,
-  }) async =>
-      Image.memory(
-        Uint8List.fromList(
-          (await _registry
-                  .tileDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!
-                  .tiles
-                  .where(sort: Sort.desc)
-                  .anyLastModified()
-                  .findFirst())!
-              .bytes,
-        ),
-        key: key,
-        scale: scale,
-        frameBuilder: frameBuilder,
-        errorBuilder: errorBuilder,
-        semanticLabel: semanticLabel,
-        excludeFromSemantics: excludeFromSemantics,
-        width: size,
-        height: size,
-        color: color,
-        opacity: opacity,
-        colorBlendMode: colorBlendMode,
-        fit: fit,
-        alignment: alignment,
-        repeat: repeat,
-        centerSlice: centerSlice,
-        matchTextDirection: matchTextDirection,
-        gaplessPlayback: gaplessPlayback,
-        isAntiAlias: isAntiAlias,
-        filterQuality: filterQuality,
-        cacheWidth: cacheWidth,
-        cacheHeight: cacheHeight,
-      );
+  }) async {
+    final latestTile = await _registry
+        .tileDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!.tiles
+        .where(sort: Sort.desc)
+        .anyLastModified()
+        .findFirst();
+    if (latestTile == null) return null;
+
+    return Image.memory(
+      Uint8List.fromList(latestTile.bytes),
+      key: key,
+      scale: scale,
+      frameBuilder: frameBuilder,
+      errorBuilder: errorBuilder,
+      semanticLabel: semanticLabel,
+      excludeFromSemantics: excludeFromSemantics,
+      width: size,
+      height: size,
+      color: color,
+      opacity: opacity,
+      colorBlendMode: colorBlendMode,
+      fit: fit,
+      alignment: alignment,
+      repeat: repeat,
+      centerSlice: centerSlice,
+      matchTextDirection: matchTextDirection,
+      gaplessPlayback: gaplessPlayback,
+      isAntiAlias: isAntiAlias,
+      filterQuality: filterQuality,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
+    );
+  }
 
   //! DEPRECATED METHODS !//
 

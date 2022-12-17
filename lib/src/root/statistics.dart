@@ -112,7 +112,7 @@ class RootStats {
           _registry.registryDatabase.stores
               .watchLazy(fireImmediately: fireImmediately),
         if (rootParts.contains(RootParts.recovery))
-          _registry.recoveryDatabase.stores
+          _registry.recoveryDatabase.recovery
               .watchLazy(fireImmediately: fireImmediately),
         ...recursive.map(
           (s) => s.stats.watchChanges(

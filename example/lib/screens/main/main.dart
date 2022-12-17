@@ -43,7 +43,7 @@ class _MainScreenState extends State<MainScreen> {
         NavigationDestination(
           icon: StreamBuilder(
             stream: FMTC.instance.rootDirectory.stats
-                .watchChanges(rootParts: [RootParts.recovery]),
+                .watchChanges(rootParts: [RootParts.stores]),
             builder: (context, _) => FutureBuilder<List<RecoveredRegion>>(
               future: FMTC.instance.rootDirectory.recovery.failedRegions,
               builder: (context, snapshot) => Badge(
