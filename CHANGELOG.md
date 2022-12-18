@@ -7,13 +7,19 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 * @huulbaek
 * @andrewames
 * @ozzy1873
-* Anonymous Donor (via Ko-Fi, no username provided)
-* Private Donor (via GitHub, chosen private)
-* Private Donor (via GitHub, chosen private)
+* @mohammedX6
+* @weishuhn
+* and 3 anonymous or private donors
 
 # Changelog
 
-## [6.2.0] - 2022/10/XX
+## [7.0.0] - 2022/12/XX
+
+* Performance improvements (migrated to Isar)
+* Multiple bug fixes
+* Added method to catch tile retrieval errors
+
+## [6.2.0] - 2022/10/25
 
 * Performance improvements
 * Changed license to GPL v3
