@@ -53,13 +53,24 @@ class StoreManagement {
     await _registry.synchronise();
   }
 
-  /// Resets this store (deletes then creates)
+  /// Removes all tiles from this store
   ///
-  /// This will remove all traces of this store from the user's device. Use with
-  /// caution!
+  /// Also deletes the cache hits & misses statistic. Metadata is not deleted.
+  ///
+  /// To fully reset this store, manually call [delete] then [create].
   Future<void> reset() async {
-    await delete();
-    await create();
+    final storeId = DatabaseTools.hash(_storeDirectory.storeName);
+    final tiles = _registry.tileDatabases[storeId]!;
+
+    await _registry.registryDatabase.writeTxn(
+      () async => _registry.registryDatabase.stores.put(
+        (await _registry.registryDatabase.stores.get(storeId))!
+          ..misses = 0
+          ..hits = 0,
+      ),
+    );
+
+    return tiles.writeTxn(tiles.tiles.clear);
   }
 
   /// Rename the store directory asynchronously

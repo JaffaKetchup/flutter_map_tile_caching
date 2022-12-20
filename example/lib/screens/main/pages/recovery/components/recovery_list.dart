@@ -54,7 +54,7 @@ class _RecoveryListState extends State<RecoveryList> {
                 addressDetails: true,
               ),
               builder: (context, response) => Text(
-                'Started at ${region.time} (~${DateTime.now().difference(region.time).inMinutes} minutes ago)\n${response.hasData ? 'Center near ${response..data!.address!['postcode']}, ${response.data!.address!['country']}' : response.hasError ? 'Unable To Reverse Geocode Location' : 'Please Wait...'}',
+                'Started at ${region.time} (~${DateTime.now().difference(region.time).inMinutes} minutes ago)\n${response.hasData ? 'Center near ${response.data!.address!['postcode']}, ${response.data!.address!['country']}' : response.hasError ? 'Unable To Reverse Geocode Location' : 'Please Wait...'}',
               ),
             ),
             onTap: () {},

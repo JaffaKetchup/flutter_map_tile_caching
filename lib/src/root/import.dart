@@ -3,6 +3,41 @@
 
 part of '../../flutter_map_tile_caching.dart';
 
+/// Describes the result of a store's import
+///
+/// Property of [ImportResult].
+enum ImportResultCategory {
+  /// The store was imported successfully
+  successful,
+
+  /// There was an existing store with the same name and `overwriteExistingStore`
+  /// was `false`
+  collision,
+
+  /// There was an unknown error during importing
+  ///
+  /// The database system should be in a stable state.
+  unknown,
+}
+
+/// Describes a store import entity after success/failure
+class ImportResult {
+  ImportResult._({
+    required this.path,
+    required this.storeName,
+    required this.result,
+  });
+
+  /// The path to the selected file
+  final String path;
+
+  /// The store name of the selected file (parsed from filename)
+  final String storeName;
+
+  /// Describes the status of the import
+  final Future<ImportResultCategory> result;
+}
+
 /// Provides store import functionality for a [RootDirectory]
 class RootImport {
   RootImport._();
@@ -18,11 +53,15 @@ class RootImport {
   /// files, which may yield unexpected results. This is only effective on
   /// Android and iOS - other platforms cannot use caching.
   ///
+  /// [overwriteExistingStore] (defaults to `false`) will cause the import to
+  /// overwrite any store of the same name.
+  ///
   /// If any files are selected, a map of the selected filenames to whether that
   /// store was imported successfully is returned.
-  Future<Map<String, Future<bool>>?> withGUI({
+  Future<Iterable<ImportResult>?> withGUI({
     String fileExtension = 'fmtc',
     bool emptyCacheBeforePicking = true,
+    bool overwriteExistingStore = false,
   }) async {
     if (emptyCacheBeforePicking && (Platform.isAndroid || Platform.isIOS)) {
       await FilePicker.platform.clearTemporaryFiles();
@@ -45,35 +84,51 @@ class RootImport {
 
     if (importPaths == null) return null;
 
-    return Map.fromEntries(
-      importPaths.files.where((f) => f.extension == fileExtension).map(
-            (pf) => MapEntry(
-              path.basenameWithoutExtension(pf.name),
-              manual(File(pf.path!)),
-            ),
+    return importPaths.files.where((f) => f.extension == fileExtension).map(
+          (p) => manual(
+            File(p.path!),
+            overwriteExistingStore: overwriteExistingStore,
           ),
-    );
+        );
   }
 
   /// Import a store from a specified [inputFile]
   ///
-  /// It is recommended to use [withGUI] instead. This is only provided for finer
-  /// control.
+  /// Also see [withGUI] for a prebuilt solution to allow the user to select
+  /// files to import.
   ///
-  /// The output specifies whether the import was successful or unsuccessful.
-  Future<bool> manual(File inputFile) async {
+  /// [overwriteExistingStore] (defaults to `false`) will cause the import to
+  /// overwrite any store of the same name.
+  ImportResult manual(
+    File inputFile, {
+    bool overwriteExistingStore = false,
+  }) {
     final filename = path.basenameWithoutExtension(inputFile.path);
     final storeName =
         filename.substring(filename.startsWith('export_') ? 7 : 0);
 
-    final registry = FMTCRegistry.instance;
+    return ImportResult._(
+      path: inputFile.absolute.path,
+      storeName: storeName,
+      result: (() async {
+        if (await FMTC.instance(storeName).manage.ready) {
+          if (!overwriteExistingStore) return ImportResultCategory.collision;
+          await FMTC.instance(storeName).manage.delete();
+        }
 
-    await inputFile.copy(
-      FMTC.instance.rootDirectory.directory >
-          '${await FMTC.instance(storeName).manage._advancedCreate(synchronise: false)}.isar',
+        final newStorePath = FMTC.instance.rootDirectory.directory >
+            '${await FMTC.instance(storeName).manage._advancedCreate(synchronise: false)}.isar';
+        try {
+          await inputFile.copy(newStorePath);
+          await FMTCRegistry.instance.synchronise();
+        } catch (_) {
+          await File(newStorePath).delete();
+          await FMTCRegistry.instance.synchronise();
+          return ImportResultCategory.unknown;
+        }
+
+        return ImportResultCategory.successful;
+      })(),
     );
-    await registry.synchronise();
-
-    return FMTC.instance(storeName).manage.ready;
   }
 }

@@ -12,17 +12,6 @@ import 'screens/main/main.dart';
 import 'shared/state/download_provider.dart';
 import 'shared/state/general_provider.dart';
 
-/*void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await FlutterMapTileCaching.initialise();
-  await FMTC.instance.rootDirectory.migrator.fromV6(
-    urlTemplates: null,
-  );
-  await FMTC.instance.rootDirectory.import.withGUI();
-  print('Complete');
-}
-*/
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(
@@ -35,40 +24,9 @@ void main() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
 
   await FlutterMapTileCaching.initialise();
-  //await FMTC.instance.directory.migrator.fromV4();
 
   if (prefs.getBool('reset') ?? false) {
     await FMTC.instance.rootDirectory.manage.reset();
-
-    final instanceA = FMTC.instance('OpenStreetMap (A)');
-    await instanceA.manage.create();
-    await instanceA.metadata.addAsync(
-      key: 'sourceURL',
-      value: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    );
-    await instanceA.metadata.addAsync(
-      key: 'validDuration',
-      value: '14',
-    );
-    await instanceA.metadata.addAsync(
-      key: 'behaviour',
-      value: 'cacheFirst',
-    );
-
-    final instanceB = FMTC.instance('OpenStreetMap (B)');
-    await instanceB.manage.create();
-    await instanceB.metadata.addAsync(
-      key: 'sourceURL',
-      value: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    );
-    await instanceB.metadata.addAsync(
-      key: 'validDuration',
-      value: '14',
-    );
-    await instanceB.metadata.addAsync(
-      key: 'behaviour',
-      value: 'cacheFirst',
-    );
   }
 
   final File newAppVersionFile = File(

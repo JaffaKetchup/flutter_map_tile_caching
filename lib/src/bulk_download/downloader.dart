@@ -1,6 +1,8 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
+// Why is this file so convoluted? To maximise write performance.
+
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -8,8 +10,11 @@ import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:isar/isar.dart';
+import 'package:meta/meta.dart';
 import 'package:queue/queue.dart';
+import 'package:stream_isolate/stream_isolate.dart';
 
+import '../db/defs/metadata.dart';
 import '../db/defs/tile.dart';
 import '../db/registry.dart';
 import '../db/tools.dart';
@@ -17,6 +22,9 @@ import '../providers/tile_provider.dart';
 import 'internal_timing_progress_management.dart';
 import 'tile_progress.dart';
 
+//! ENTRY POINT !//
+
+@internal
 Stream<TileProgress> bulkDownloader({
   required List<Coords<num>> tiles,
   required FMTCTileProvider provider,
@@ -46,15 +54,15 @@ Stream<TileProgress> bulkDownloader({
         progressManagement: progressManagement,
       ),
     )
-        .then(
-      (e) {
-        if (!streamController.isClosed) streamController.add(e);
-      },
-    );
+        .then((e) {
+      if (!streamController.isClosed) streamController.add(e);
+    });
   }
 
   return streamController.stream;
 }
+
+//! DOWNLOAD AND SAVE TILE !//
 
 Future<TileProgress> _getAndSaveTile({
   required FMTCTileProvider provider,
@@ -110,7 +118,7 @@ Future<TileProgress> _getAndSaveTile({
       );
     }
 
-    await tiles.writeTxn(() => tiles.tiles.put(DbTile(url: url, bytes: bytes)));
+    BulkTileWriter.instance!.isolate.send([url, bytes]);
   } catch (e) {
     if (errorHandler != null) errorHandler(e);
     return TileProgress(
@@ -127,4 +135,51 @@ Future<TileProgress> _getAndSaveTile({
     wasExistingTile: false,
     tileImage: Uint8List.fromList(bytes),
   );
+}
+
+//! BULK TILE WRITER !//
+
+@internal
+class BulkTileWriter {
+  BulkTileWriter._();
+  static BulkTileWriter? instance;
+
+  late BidirectionalStreamIsolate<List<Object>, void> isolate;
+
+  static Future<void> start(FMTCTileProvider provider) async {
+    instance = BulkTileWriter._();
+    instance!.isolate =
+        await StreamIsolate.spawnBidirectional(_bulkTileWriterWorker);
+    instance!.isolate.send([provider.storeDirectory.storeName]);
+  }
+
+  static void stop() {
+    instance!.isolate.close();
+    instance = null;
+  }
+}
+
+Stream<void> _bulkTileWriterWorker(
+  Stream<List<Object>> stream,
+  _,
+) async* {
+  Isar? db;
+
+  await for (final info in stream) {
+    if (db == null) {
+      db = Isar.openSync(
+        [DbTileSchema, DbMetadataSchema],
+        name: DatabaseTools.hash(info[0].toString()).toString(),
+      );
+    } else {
+      db.writeTxnSync(
+        () => db!.tiles.putSync(
+          DbTile(
+            url: info[0] as String,
+            bytes: info[1] as List<int>,
+          ),
+        ),
+      );
+    }
+  }
 }

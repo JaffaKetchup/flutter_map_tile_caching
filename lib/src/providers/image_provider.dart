@@ -11,6 +11,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:isar/isar.dart';
 import 'package:queue/queue.dart';
 
+import '../db/defs/metadata.dart';
 import '../db/defs/store.dart';
 import '../db/defs/tile.dart';
 import '../db/registry.dart';
@@ -214,18 +215,9 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       if (needsCreating && settings.maxStoreLength != 0) {
         unawaited(
           removeOldestQueue.add(
-            () => _tiles.writeTxn(
-              () async => _tiles.tiles.deleteAll(
-                (await _tiles.tiles
-                        .where()
-                        .anyLastModified()
-                        .limit(
-                          await _tiles.tiles.count() - settings.maxStoreLength,
-                        )
-                        .findAll())
-                    .map((t) => t.id)
-                    .toList(),
-              ),
+            () => compute(
+              _removeOldestTile,
+              [provider.storeDirectory.storeName, settings.maxStoreLength],
             ),
           ),
         );
@@ -249,6 +241,29 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
   @override
   int get hashCode => coords.hashCode;
+}
+
+Future<void> _removeOldestTile(List<Object> args) async {
+  final db = Isar.openSync(
+    [DbTileSchema, DbMetadataSchema],
+    name: DatabaseTools.hash(args[0] as String).toString(),
+  );
+
+  db.writeTxnSync(
+    () => db.tiles.deleteAllSync(
+      db.tiles
+          .where()
+          .anyLastModified()
+          .limit(
+            (db.tiles.countSync() - (args[1] as int))
+                .clamp(0, double.maxFinite)
+                .toInt(),
+          )
+          .findAllSync()
+          .map((t) => t.id)
+          .toList(),
+    ),
+  );
 }
 
 /// An [Exception] indicating that there was an error retrieving tiles to be

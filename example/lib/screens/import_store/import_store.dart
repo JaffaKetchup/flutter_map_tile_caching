@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
@@ -9,7 +11,7 @@ class ImportStorePopup extends StatefulWidget {
 }
 
 class _ImportStorePopupState extends State<ImportStorePopup> {
-  final Map<String, Future<bool>> importingStores = {};
+  final List<ImportResult> importingStores = [];
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -29,24 +31,80 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
                     onTap: () async {
                       importingStores.addAll(
                         await FMTC.instance.rootDirectory.import.withGUI() ??
-                            {},
+                            [],
                       );
                       setState(() {});
                     },
                   )
-                : FutureBuilder<bool>(
-                    future: importingStores.values.toList()[i],
-                    builder: (context, successful) => ListTile(
-                      leading: !successful.hasData
-                          ? const CircularProgressIndicator()
-                          : successful.data!
-                              ? const Icon(Icons.done, color: Colors.green)
-                              : const Icon(Icons.error, color: Colors.red),
-                      title: Text(importingStores.keys.toList()[i]),
-                      subtitle: successful.data ?? true
-                          ? null
-                          : const Text('Invalid input format'),
-                    ),
+                : FutureBuilder<ImportResultCategory>(
+                    future: importingStores[i].result,
+                    builder: (context, resultCategory) {
+                      final result = importingStores[i];
+                      return ListTile(
+                        leading: resultCategory.data == null
+                            ? const CircularProgressIndicator()
+                            : resultCategory.data ==
+                                    ImportResultCategory.successful
+                                ? const Icon(
+                                    Icons.done,
+                                    color: Colors.green,
+                                  )
+                                : resultCategory.data ==
+                                        ImportResultCategory.collision
+                                    ? const Icon(
+                                        Icons.merge_type,
+                                        color: Colors.amber,
+                                      )
+                                    : const Icon(
+                                        Icons.error,
+                                        color: Colors.red,
+                                      ),
+                        title: Text(result.storeName),
+                        subtitle: resultCategory.data ==
+                                    ImportResultCategory.successful ||
+                                resultCategory.data == null
+                            ? null
+                            : resultCategory.data ==
+                                    ImportResultCategory.collision
+                                ? const Text(
+                                    'A store with the same name already exists. What would you like to do?',
+                                  )
+                                : const Text(
+                                    'Unknown error. The database file may have been corrupted.',
+                                  ),
+                        trailing: resultCategory.data ==
+                                ImportResultCategory.collision
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    onPressed: () => setState(
+                                      () => importingStores
+                                        ..remove(importingStores[i])
+                                        ..add(
+                                          FMTC.instance.rootDirectory.import
+                                              .manual(
+                                            File(result.path),
+                                            overwriteExistingStore: true,
+                                          ),
+                                        ),
+                                    ),
+                                    icon: const Icon(Icons.edit),
+                                    tooltip: 'Overwrite store',
+                                  ),
+                                  IconButton(
+                                    onPressed: () => setState(
+                                      () => importingStores
+                                          .remove(importingStores[i]),
+                                    ),
+                                    icon: const Icon(Icons.cancel),
+                                    tooltip: 'Cancel import',
+                                  ),
+                                ],
+                              )
+                            : null,
+                      );
+                    },
                   ),
             separatorBuilder: (context, i) => i == importingStores.length - 1
                 ? const Divider()

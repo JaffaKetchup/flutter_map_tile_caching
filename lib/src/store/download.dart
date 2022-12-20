@@ -223,6 +223,7 @@ class DownloadManagement {
     _queue?.dispose();
     unawaited(_streamController?.close());
     unawaited(_progressManagement.stopTracking());
+    BulkTileWriter.stop();
 
     if (_recoveryId != null) {
       await FMTC.instance.rootDirectory.recovery.cancel(_recoveryId!);
@@ -299,6 +300,7 @@ class DownloadManagement {
     final DateTime startTime = DateTime.now();
 
     _progressManagement = InternalProgressTimingManagement()..startTracking();
+    await BulkTileWriter.start(tileProvider);
 
     final Stream<TileProgress> downloadStream = bulkDownloader(
       tiles: tiles,
