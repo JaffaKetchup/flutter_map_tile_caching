@@ -7,7 +7,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:bezier/bezier.dart';
 import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -27,7 +26,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:queue/queue.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:stream_transform/stream_transform.dart';
-import 'package:vector_math/vector_math.dart' show Vector2;
 
 import 'src/bulk_download/download_progress.dart';
 import 'src/bulk_download/downloader.dart';

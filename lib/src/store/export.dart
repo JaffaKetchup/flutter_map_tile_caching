@@ -8,22 +8,25 @@ class StoreExport {
   StoreExport._(this._storeDirectory);
   final StoreDirectory _storeDirectory;
 
-  /// Export the store with a graphical user interface (uses [manual] internally)
+  /// Export the store with the platform specifc file picker interface or share
+  /// sheet/dialog
   ///
   /// Set [forceFilePicker] to:
+  ///
+  /// * `null` (default): uses the platform specific file picker on desktop
+  /// platforms, and the share dialog/sheet on mobile platforms.
   /// * `true`: always force an attempt at using the file picker. This will cause
   /// an error on unsupported platforms, and so is not recommended.
   /// * `false`: always force an attempt at using the share sheet. This will
   /// cause an error on unsupported platforms, and so is not recommended.
-  /// * `null`: uses the platform specific file picker on desktop platforms, and
-  /// the share dialog/sheet on mobile platforms.
   ///
   /// [context] ([BuildContext]) must be specified if using the share sheet, so
   /// it is necessary to pass it unless [forceFilePicker] is `true`. Will cause
   /// an unhandled null error if not passed when necessary.
   ///
-  /// Exported files are named as the store name plus the [fileExtension] ('fmtc'
-  /// by default).
+  /// Exported files are named in the format:
+  /// `export_<storeName>.<fileExtension>`. The 'export' prefix will be removed
+  /// automatically if present during importing.
   ///
   /// Returns `true` when successful, otherwise `false` when unsuccessful or
   /// unknown.

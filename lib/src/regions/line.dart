@@ -18,7 +18,7 @@ class LineRegion implements BaseRegion {
   ///
   /// Use the optional `overlap` argument to set the rectangle joint(s) behaviours. -1 is reduced, 0 is normal (default), 1 is full (as downloaded).
   List<List<LatLng>> toOutlines([int overlap = 0]) {
-    if (overlap >= -1 && overlap <= 1) {
+    if (overlap < -1 || overlap > 1) {
       throw ArgumentError('`overlap` must be between -1 and 1 inclusive');
     }
 
@@ -92,168 +92,62 @@ class LineRegion implements BaseRegion {
 
   /// Create a drawable area for a [FlutterMap] out of this region
   ///
-  /// Configurable options besides those available normally in [Polygon] :
-  ///  - [prettyPaint] - controls whether the rectangles formed by the line are joined nicely, whether they are just joined by the closest corners, or whether they are just left as rectangles - defaults to `true`
-  ///  - [curveSmoothening] - controls the amount of curve segments per curve, if [prettyPaint] is enabled - defaults to 50
-  ///  - [overlap] - usually controls the rendering if [prettyPaint] is disabled - defaults to 0
+  /// [prettyPaint] controls what type of shape will be output. If `false`,
+  /// multiple overlapping rectangular [Polygon]s will be output, representing
+  /// the area that will actually be downloaded. If `true` (default), a
+  /// [Polyline] will be output, which handles all the nice rounding and some
+  /// other stuff that makes it more suitable to present to the user.
   ///
-  /// Set [prettyPaint] to `false` and [overlap] to `-1` to get the 'reduced' appearance. Or, set to `0` to get the normal appearance, and `1` to get the rectangles that are actually downloaded.
+  /// Some parameters will only have an effect depending whether a [Polygon] or
+  /// [Polyline] is being output.
   ///
-  /// Set [prettyPaint] to `true` and [overlap] to `-1` to get the rectangles joined by their nearest corners. Setting to `0` will show the line with joining curves - the default. Setting to `1` will cause an error.
-  ///
-  /// Disabling [prettyPaint] will increase speed and is recommended on slower devices. Decreasing the [curveSmoothening] will also increase speed - set to a smaller value if corners are likely to be small (for example along a route).
-  ///
-  /// Returns a [PolygonLayer] to be added to the `layer` property of a [FlutterMap].
+  /// Returns a layer to be added to the `layer` property of a [FlutterMap].
   @override
-  PolygonLayer toDrawable({
+  Widget toDrawable({
     Color? fillColor,
-    Color borderColor = const Color(0x00000000),
-    double borderStrokeWidth = 3.0,
+    Color? borderColor,
+    double borderStrokeWidth = 3,
     bool isDotted = false,
     bool prettyPaint = true,
-    int curveSmoothening = 50,
-    int overlap = 0,
-  }) {
-    if (overlap >= -1 && overlap <= 1) {
-      throw ArgumentError('`overlap` must be between -1 and 1 inclusive');
-    }
-    if (prettyPaint ? overlap == 0 || overlap == -1 : true) {
-      throw ArgumentError(
-        '`overlap` must be either -1 or 0 when `prettyPaint` is enabled',
-      );
-    }
-
-    final List<List<LatLng>> rects = toOutlines(prettyPaint ? -1 : overlap);
-
-    final List<List<LatLng>> curves = [];
-
-    if (prettyPaint) {
-      final double diameter = (radius * math.pi / 4).round() * 2;
-
-      List<double> intersectLine(LatLng p1, LatLng p2) {
-        final double a = p1.latitude - p2.latitude;
-        final double b = p2.longitude - p1.longitude;
-        final double c =
-            p1.longitude * p2.latitude - p2.longitude * p1.latitude;
-        return [a, b, -c];
-      }
-
-      LatLng? intersectPoint(List<double> l1, List<double> l2) {
-        final double d = l1[0] * l2[1] - l1[1] * l2[0];
-        final double dx = l1[2] * l2[1] - l1[1] * l2[2];
-        final double dy = l1[0] * l2[2] - l1[2] * l2[0];
-        if (d != 0) {
-          return LatLng(dy / d, dx / d);
-        } else {
-          return null;
-        }
-      }
-
-      for (int i = 0; i <= rects.length - 2; i++) {
-        final List<LatLng> topLineCurrent = [rects[i][3], rects[i][2]];
-        final List<LatLng> bottomLineCurrent = [rects[i][0], rects[i][1]];
-
-        final List<LatLng> topLineNext = [rects[i + 1][3], rects[i + 1][2]];
-        final List<LatLng> bottomLineNext = [rects[i + 1][0], rects[i + 1][1]];
-
-        final LatLng? intersectionA = intersectPoint(
-          intersectLine(topLineCurrent[0], topLineCurrent[1]),
-          intersectLine(topLineNext[0], topLineNext[1]),
-        );
-        final LatLng? intersectionB = intersectPoint(
-          intersectLine(bottomLineCurrent[0], bottomLineCurrent[1]),
-          intersectLine(bottomLineNext[0], bottomLineNext[1]),
-        );
-
-        if (intersectionA == null || intersectionB == null) {
-          throw StateError(
-            "Well done! You seemed to have create a rectangle exactly parallel to your previous one. Needless to say, this is extremely unlikely, and I haven't handled this. If this happened honestly, please report an error.",
-          );
-        }
-
-        const Distance distance = Distance();
-
-        final bool aCurve = distance.distance(rects[i][2], intersectionA) >
-            distance.distance(rects[i][1], intersectionB);
-
-        final LatLng old1 = rects[i][aCurve ? 1 : 2];
-        rects[i][aCurve ? 1 : 2] = aCurve ? intersectionB : intersectionA;
-        rects[i][aCurve ? 2 : 1] = distance.offset(
-          rects[i][aCurve ? 1 : 2],
-          diameter,
-          distance.bearing(old1, rects[i][aCurve ? 2 : 1]),
-        );
-        final LatLng old2 = rects[i + 1][aCurve ? 0 : 3];
-        rects[i + 1][aCurve ? 0 : 3] = aCurve ? intersectionB : intersectionA;
-        rects[i + 1][aCurve ? 3 : 0] = distance.offset(
-          rects[i + 1][aCurve ? 0 : 3],
-          diameter,
-          distance.bearing(old2, rects[i + 1][aCurve ? 3 : 0]),
-        );
-
-        if (overlap != -1) {
-          final QuadraticBezier curve = QuadraticBezier(
-            [
-              Vector2(
-                rects[i][aCurve ? 2 : 1].longitude,
-                rects[i][aCurve ? 2 : 1].latitude,
-              ),
-              aCurve
-                  ? Vector2(intersectionA.longitude, intersectionA.latitude)
-                  : Vector2(intersectionB.longitude, intersectionB.latitude),
-              Vector2(
-                rects[i + 1][aCurve ? 3 : 0].longitude,
-                rects[i + 1][aCurve ? 3 : 0].latitude,
-              ),
-            ],
-          );
-
-          curves.add([]);
-
-          for (var ii = 0; ii <= curveSmoothening; ii++) {
-            curves[i].add(
-              LatLng(
-                curve.pointAt(ii / curveSmoothening).y,
-                curve.pointAt(ii / curveSmoothening).x,
-              ),
+    StrokeCap strokeCap = StrokeCap.round,
+    StrokeJoin strokeJoin = StrokeJoin.round,
+    List<Color>? gradientColors,
+    List<double>? colorsStop,
+  }) =>
+      prettyPaint
+          ? PolylineLayer(
+              polylines: [
+                Polyline(
+                  points: line,
+                  strokeWidth: radius,
+                  useStrokeWidthInMeter: true,
+                  color: fillColor ?? const Color(0x00000000),
+                  borderColor: borderColor ?? const Color(0x00000000),
+                  borderStrokeWidth: borderStrokeWidth,
+                  isDotted: isDotted,
+                  gradientColors: gradientColors,
+                  colorsStop: colorsStop,
+                  strokeCap: strokeCap,
+                  strokeJoin: strokeJoin,
+                ),
+              ],
+            )
+          : PolygonLayer(
+              polygons: toOutlines(1)
+                  .map(
+                    (rect) => Polygon(
+                      points: rect,
+                      isFilled: fillColor != null,
+                      color: fillColor ?? Colors.transparent,
+                      borderColor: borderColor ?? const Color(0x00000000),
+                      borderStrokeWidth: borderStrokeWidth,
+                      isDotted: isDotted,
+                      strokeCap: strokeCap,
+                      strokeJoin: strokeJoin,
+                    ),
+                  )
+                  .toList(),
             );
-          }
-
-          curves[i].add(aCurve ? intersectionB : intersectionA);
-        }
-      }
-    }
-
-    final List<Polygon> returnable = rects
-        .map(
-          (rect) => Polygon(
-            isFilled: fillColor != null,
-            color: fillColor ?? Colors.transparent,
-            borderColor: borderColor,
-            borderStrokeWidth: borderStrokeWidth,
-            isDotted: isDotted,
-            points: rect,
-          ),
-        )
-        .toList();
-
-    if (prettyPaint && overlap != -1) {
-      returnable.addAll(
-        curves.map(
-          (curve) => Polygon(
-            isFilled: fillColor != null,
-            color: fillColor ?? Colors.transparent,
-            borderColor: borderColor,
-            borderStrokeWidth: borderStrokeWidth,
-            isDotted: isDotted,
-            points: curve,
-          ),
-        ),
-      );
-    }
-
-    return PolygonLayer(polygons: returnable);
-  }
 
   /// This method is unavailable for this region type: use [toOutlines] instead
   @alwaysThrows

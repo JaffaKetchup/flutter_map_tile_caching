@@ -21,8 +21,8 @@ abstract class BaseRegion {
 
   /// Create a drawable area for a [FlutterMap] out of this region
   ///
-  /// Returns a [PolygonLayer] to be added to the `layer` property of a [FlutterMap].
-  PolygonLayer toDrawable({
+  /// Returns a layer to be added to the `layer` property of a [FlutterMap].
+  Widget toDrawable({
     Color? fillColor,
     Color borderColor = const Color(0x00000000),
     double borderStrokeWidth = 3,

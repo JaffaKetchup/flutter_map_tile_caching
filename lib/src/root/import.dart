@@ -42,26 +42,27 @@ class ImportResult {
 class RootImport {
   RootImport._();
 
-  /// Import store(s) with a graphical user interface (uses [manual] internally)
+  /// Import store(s) with the platform specifc file picker interface
   ///
-  /// Uses the platform specifc file picker. Where supported, limits file
-  /// extension to [fileExtension] ('fmtc' by default), otherwise any file can
-  /// be selected as a fallback.
+  /// Where supported, the user will only be able to pick files with the
+  /// [fileExtension] extension ('fmtc' by default). If not supported, any file
+  /// can be picked, but only those with the [fileExtension] extension will be
+  /// processed.
   ///
-  /// It is recommended to leave [emptyCacheBeforePicking] as the default
-  /// (`true`). Otherwise, the picker may use cached files as opposed to the real
-  /// files, which may yield unexpected results. This is only effective on
+  /// Enabling [overwriteExistingStore] (defaults to `false`) will cause the
+  /// import to overwrite any store of the same name.
+  ///
+  /// Disabling [emptyCacheBeforePicking] is not recommended (defaults to
+  /// `true`). When disabled, the picker may use cached files as opposed to the
+  /// real files, which may yield unexpected results. This is only effective on
   /// Android and iOS - other platforms cannot use caching.
-  ///
-  /// [overwriteExistingStore] (defaults to `false`) will cause the import to
-  /// overwrite any store of the same name.
   ///
   /// If any files are selected, a map of the selected filenames to whether that
   /// store was imported successfully is returned.
   Future<Iterable<ImportResult>?> withGUI({
     String fileExtension = 'fmtc',
-    bool emptyCacheBeforePicking = true,
     bool overwriteExistingStore = false,
+    bool emptyCacheBeforePicking = true,
   }) async {
     if (emptyCacheBeforePicking && (Platform.isAndroid || Platform.isIOS)) {
       await FilePicker.platform.clearTemporaryFiles();
@@ -97,8 +98,8 @@ class RootImport {
   /// Also see [withGUI] for a prebuilt solution to allow the user to select
   /// files to import.
   ///
-  /// [overwriteExistingStore] (defaults to `false`) will cause the import to
-  /// overwrite any store of the same name.
+  /// Enabling [overwriteExistingStore] (defaults to `false`) will cause the
+  /// import to overwrite any store of the same name.
   ImportResult manual(
     File inputFile, {
     bool overwriteExistingStore = false,
