@@ -11,14 +11,12 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:isar/isar.dart';
 import 'package:queue/queue.dart';
 
+import '../../flutter_map_tile_caching.dart';
 import '../db/defs/metadata.dart';
 import '../db/defs/store.dart';
 import '../db/defs/tile.dart';
 import '../db/registry.dart';
 import '../db/tools.dart';
-import '../misc/enums.dart';
-import '../settings/tile_provider_settings.dart';
-import 'tile_provider.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
 class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {

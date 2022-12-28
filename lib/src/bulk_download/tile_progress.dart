@@ -3,41 +3,24 @@
 
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
+
+@internal
 class TileProgress {
   final String? failedUrl;
+  final Uint8List? tileImage;
+
   final bool wasSeaTile;
   final bool wasExistingTile;
-  final Uint8List? tileImage;
   final int sizeBytes;
+
+  final List<int>? bulkTileWriterResponse;
 
   TileProgress({
     required this.failedUrl,
+    required this.tileImage,
     required this.wasSeaTile,
     required this.wasExistingTile,
-    required this.tileImage,
+    required this.bulkTileWriterResponse,
   }) : sizeBytes = tileImage?.lengthInBytes ?? 0;
-
-  @override
-  String toString() =>
-      'TileProgress(failedUrl: $failedUrl, wasSeaTile: $wasSeaTile, wasExistingTile: $wasExistingTile, tileImage: $tileImage, sizeBytes: $sizeBytes)';
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-
-    return other is TileProgress &&
-        other.failedUrl == failedUrl &&
-        other.wasSeaTile == wasSeaTile &&
-        other.wasExistingTile == wasExistingTile &&
-        other.tileImage == tileImage &&
-        other.sizeBytes == sizeBytes;
-  }
-
-  @override
-  int get hashCode =>
-      failedUrl.hashCode ^
-      wasSeaTile.hashCode ^
-      wasExistingTile.hashCode ^
-      tileImage.hashCode ^
-      sizeBytes.hashCode;
 }

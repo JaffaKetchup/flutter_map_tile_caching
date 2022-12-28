@@ -123,6 +123,9 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                             ),
                                             disableRecovery: downloadProvider
                                                 .disableRecovery,
+                                            bufferMode:
+                                                DownloadBufferMode.tiles,
+                                            bufferLimit: 100,
                                           )
                                           .asBroadcastStream(),
                                     );

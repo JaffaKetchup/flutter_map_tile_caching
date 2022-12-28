@@ -92,3 +92,25 @@ class StoreStats {
           _stores.watchObjectLazy(_id, fireImmediately: fireImmediately),
       ].reduce((v, e) => v.merge(e)).debounce(debounce ?? Duration.zero);
 }
+
+/// Parts of a store which can be watched
+enum StoreParts {
+  /// Include changes to the store's metadata objects
+  metadata,
+
+  /// Includes changes found directly in the store entry in the registry,
+  /// including those which will make some statistics change (eg. cache hits)
+  storeEntry,
+
+  /// Includes changes within the tiles database, including those which will make
+  /// some statistics change (eg. store size)
+  tiles,
+
+  /// 'stats' is deprecated and shouldn't be used. Prefer [tiles] and
+  /// [storeEntry]. This remnant will be removed in a future update, and is
+  /// currently non-functional.
+  @Deprecated(
+    "Prefer 'tiles' and 'storeEntry'. This redirect will be removed in a future update",
+  )
+  stats,
+}

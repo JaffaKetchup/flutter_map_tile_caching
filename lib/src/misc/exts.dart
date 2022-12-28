@@ -6,9 +6,11 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:meta/meta.dart';
 
 import 'package:path/path.dart' as p;
 
+@internal
 extension DirectoryExtensions on Directory {
   String operator >(String sub) => p.join(
         absolute.path,

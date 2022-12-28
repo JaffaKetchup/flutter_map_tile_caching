@@ -42,15 +42,36 @@ class DownloadManagement {
 
   /// Download a specified [DownloadableRegion] in the foreground
   ///
-  /// To check the number of tiles that need to be downloaded before using this function, use [check].
+  /// To check the number of tiles that need to be downloaded before using this
+  /// function, use [check].
   ///
-  /// Unless otherwise specified, also starts a recovery session.
+  /// Unless otherwise specified in [disableRecovery], a recovery session is
+  /// started.
   ///
-  /// Streams a [DownloadProgress] object containing lots of handy information about the download's progression status; unless the pre-download checks fail, in which case the stream's `.isEmpty` will be `true` and no new events will be emitted. If you get messages about 'Bad State' after dealing with the checks, just add `.asBroadcastStream()` on the end of [startForeground].
+  /// [bufferMode] and [bufferLimit] control how this download will use
+  /// buffering. For information about buffering, and it's advantages and
+  /// disadvantages, see
+  /// [this docs page](https://fmtc.jaffaketchup.dev/bulk-downloading/foreground/buffering).
+  /// Also see [DownloadBufferMode]'s documentation.
+  ///
+  /// - If [bufferMode] is [DownloadBufferMode.disabled] (default), [bufferLimit]
+  /// will be ignored
+  /// - If [bufferMode] is [DownloadBufferMode.tiles], [bufferLimit] will default
+  /// to 500
+  /// - If [bufferMode] is [DownloadBufferMode.bytes], [bufferLimit] will default
+  /// to 2000000 (2 MB)
+  ///
+  /// Note that these defaults may not be suitable for your user's devices, and
+  /// you should adjust them to be suitable to your usecase.
+  ///
+  /// Streams a [DownloadProgress] object containing statistics and information
+  /// about the download's progression status.
   Stream<DownloadProgress> startForeground({
     required DownloadableRegion region,
     FMTCTileProviderSettings? tileProviderSettings,
     bool disableRecovery = false,
+    DownloadBufferMode bufferMode = DownloadBufferMode.disabled,
+    int? bufferLimit,
   }) async* {
     _recoveryId = DateTime.now().millisecondsSinceEpoch;
 
@@ -62,41 +83,61 @@ class DownloadManagement {
       );
     }
 
-    _queue = Queue(parallel: region.parallelThreads);
-    _streamController = StreamController();
-
     yield* _startDownload(
       tileProviderSettings: tileProviderSettings,
       region: region,
       tiles: await _generateTilesComputer(region),
+      bufferMode: bufferMode,
+      bufferLimit: bufferLimit,
     );
   }
 
-  /// Download a specified [DownloadableRegion] in the background, and show a progress notification (by default)
+  /// Download a specified [DownloadableRegion] in the background, and show a
+  /// progress notification (by default)
   ///
-  /// To check the number of tiles that need to be downloaded before using this function, use [check].
+  /// To check the number of tiles that need to be downloaded before using this
+  /// function, use [check].
   ///
-  /// Only available on Android devices, due to limitations with other operating systems. Background downloading is complicated: see the documentation website for more information.
+  /// Only available on Android devices, due to limitations with other operating
+  /// systems. Background downloading is complicated: see the documentation
+  /// website for more information.
   ///
-  /// Calling this method will automatically request the necessary permissions. You may want to call [requestIgnoreBatteryOptimizations] beforehand, as this will allow you more control.
+  /// Calling this method will automatically request the necessary permissions.
+  /// You may want to call [requestIgnoreBatteryOptimizations] beforehand, as
+  /// this will allow you more control.
   ///
-  /// Uses a foreground service internally, meaning the process should be stable unless the application is force stopped/fully closed. However, you should still read the Limitations page, available in the online documentation.
+  /// Uses a foreground service internally, meaning the process should be stable
+  /// unless the application is force stopped/fully closed. However, you should
+  /// still read the Limitations page, available in the online documentation.
   ///
   /// Displays two notifications:
-  /// * A service notification, informing the user that the process is running. This is unavoidable due to the system limitations, however it can be easily hidden by the user. The default text explains this process roughly.
-  /// * A progress notification, informing the user of the current state of the download. Includes a progress bar and time estimate by default.
+  /// * A service notification, informing the user that the process is running.
+  /// This is unavoidable due to the system limitations, however it can be easily
+  /// hidden by the user. The default text explains this process roughly.
+  /// * A progress notification, informing the user of the current state of the
+  /// download. Includes a progress bar and time estimate by default.
   ///
   /// Configure the progress notification using:
-  /// * `showProgressNotification`: set to `false` to disable the progress notification - not recommended
-  /// * `progressNotificationIcon`: set to a string in the format '@\<type\>/\<name\>' (found in the 'android\app\src\main\res') to override the default icon ('@mipmap/ic_notification_icon': only available in the example application)
-  /// * `progressNotificationTitle`: set to a `String` to override the default title
-  /// * `progressNotificationText`: set to a `String` to override the default body text
-  /// * `progressNotificationConfig`: use to further customise the notification properties
+  /// * `showProgressNotification`: set to `false` to disable the progress
+  /// notification - not recommended
+  /// * `progressNotificationIcon`: set to a string in the format
+  /// '@\<type\>/\<name\>' (found in the 'android\app\src\main\res') to override
+  /// the default icon ('@mipmap/ic_notification_icon': only available in the
+  /// example application)
+  /// * `progressNotificationTitle`: set to a `String` to override the default
+  /// title
+  /// * `progressNotificationText`: set to a `String` to override the default
+  /// body text
+  /// * `progressNotificationConfig`: use to further customise the notification
+  /// properties
   ///
   /// Configure the background notification using:
-  /// * `backgroundNotificationIcon`: set to an `AndroidResource` to override the default icon ('@mipmap/ic_launcher': the app's launcher icon)
-  /// * `backgroundNotificationTitle`: set to a `String` to override the default title
-  /// * `backgroundNotificationText`: set to a `String` to override the default body text
+  /// * `backgroundNotificationIcon`: set to an `AndroidResource` to override the
+  /// default icon ('@mipmap/ic_launcher': the app's launcher icon)
+  /// * `backgroundNotificationTitle`: set to a `String` to override the default
+  /// title
+  /// * `backgroundNotificationText`: set to a `String` to override the default
+  /// body text
   Future<void> startBackground({
     required DownloadableRegion region,
     FMTCTileProviderSettings? tileProviderSettings,
@@ -208,22 +249,31 @@ class DownloadManagement {
     }
   }
 
-  /// Check approximately how many downloadable tiles are within a specified [DownloadableRegion]
+  /// Check approximately how many downloadable tiles are within a specified
+  /// [DownloadableRegion]
   ///
-  /// This does not take into account sea tile removal or redownload prevention, as these are handled in the download area of the code.
+  /// This does not take into account sea tile removal or redownload prevention,
+  /// as these are handled in the download area of the code.
   ///
   /// Returns an `int` which is the number of tiles.
   Future<int> check(DownloadableRegion region) async =>
       (await _generateTilesComputer(region)).length;
 
-  /// Cancels the ongoing foreground download and recovery session (within the current object)
+  /// Cancels the ongoing foreground download and recovery session (within the
+  /// current object)
   ///
-  /// Do not use to cancel background downloads, return `true` from the background download callback to cancel a background download. Background download cancellations require a few more 'shut-down' steps that can create unexpected issues and memory leaks if not carried out.
-  Future<void> cancel() async {
+  /// Do not use to cancel background downloads, return `true` from the
+  /// background download callback to cancel a background download. Background
+  /// download cancellations require a few more 'shut-down' steps that can create
+  /// unexpected issues and memory leaks if not carried out.
+  ///
+  /// Note that another instance of this object must be retrieved before another
+  /// download is attempted, as this one is destroyed.
+  Future<void> cancel({Uint8List? latestTileImage}) async {
+    await BulkTileWriter.stop(latestTileImage);
     _queue?.dispose();
     unawaited(_streamController?.close());
-    unawaited(_progressManagement.stopTracking());
-    BulkTileWriter.stop();
+    await _progressManagement.stopTracking();
 
     if (_recoveryId != null) {
       await FMTC.instance.rootDirectory.recovery.cancel(_recoveryId!);
@@ -232,17 +282,25 @@ class DownloadManagement {
     if (FlutterBackground.isBackgroundExecutionEnabled) {
       await FlutterBackground.disableBackgroundExecution();
     }
+
+    _instances.remove(_storeDirectory);
   }
 
-  /// Requests for app to be excluded from battery optimizations to aid running a background process
+  /// Requests for app to be excluded from battery optimizations to aid running
+  /// a background process
   ///
-  /// Only available on Android devices, due to limitations with other operating systems.
+  /// Only available on Android devices, due to limitations with other operating
+  /// systems.
   ///
-  /// Background downloading is complicated: see the documentation website for more information.
+  /// Background downloading is complicated: see the documentation website for
+  /// more information.
   ///
-  /// If [requestIfDenied] is `true` (default), and the permission has not been granted, an intrusive system dialog/screen will be displayed. If `false`, this method will only check whether it has been granted or not.
+  /// If [requestIfDenied] is `true` (default), and the permission has not been
+  /// granted, an intrusive system dialog/screen will be displayed. If `false`,
+  /// this method will only check whether it has been granted or not.
   ///
-  /// Will return `true` if permission was granted, `false` if the permission was denied.
+  /// Will return `true` if permission was granted, `false` if the permission was
+  /// denied.
   Future<bool> requestIgnoreBatteryOptimizations({
     bool requestIfDenied = true,
   }) async {
@@ -273,7 +331,12 @@ class DownloadManagement {
     required FMTCTileProviderSettings? tileProviderSettings,
     required DownloadableRegion region,
     required List<Coords<num>> tiles,
+    required DownloadBufferMode bufferMode,
+    required int? bufferLimit,
   }) async* {
+    _queue = Queue(parallel: region.parallelThreads);
+    _streamController = StreamController();
+
     final FMTCTileProvider tileProvider =
         _storeDirectory.getTileProvider(tileProviderSettings);
     final http.Client client = http.Client();
@@ -292,15 +355,25 @@ class DownloadManagement {
       }
     }
 
-    int successfulTiles = 0;
-    int successfulSize = 0;
+    int bufferedTiles = 0;
+    int bufferedSize = 0;
+    int persistedTiles = 0;
+    int persistedSize = 0;
+
     int seaTiles = 0;
     int existingTiles = 0;
+
     final List<String> failedTiles = [];
+
     final DateTime startTime = DateTime.now();
 
     _progressManagement = InternalProgressTimingManagement()..startTracking();
-    await BulkTileWriter.start(tileProvider);
+    await BulkTileWriter.start(
+      provider: tileProvider,
+      bufferMode: bufferMode,
+      bufferLimit: bufferLimit,
+      downloadStream: _streamController!,
+    );
 
     final Stream<TileProgress> downloadStream = bulkDownloader(
       tiles: tiles,
@@ -319,31 +392,39 @@ class DownloadManagement {
 
     await for (final TileProgress evt in downloadStream) {
       if (evt.failedUrl == null) {
-        successfulTiles++;
+        bufferedTiles++;
+        bufferedSize += evt.sizeBytes;
+        if (evt.bulkTileWriterResponse != null) {
+          persistedTiles = evt.bulkTileWriterResponse![0];
+          persistedSize = evt.bulkTileWriterResponse![1];
+        }
       } else {
         failedTiles.add(evt.failedUrl!);
       }
 
-      successfulSize += evt.sizeBytes;
-
       seaTiles += evt.wasSeaTile ? 1 : 0;
       existingTiles += evt.wasExistingTile ? 1 : 0;
 
-      final DownloadProgress prog = DownloadProgress.internal(
+      final DownloadProgress prog = DownloadProgress._(
         downloadID: _recoveryId!,
         maxTiles: tiles.length,
-        successfulTiles: successfulTiles,
+        successfulTiles: bufferedTiles,
+        persistedTiles: persistedTiles,
         failedTiles: failedTiles,
-        successfulSize: successfulSize / 1024,
+        successfulSize: bufferedSize / 1024,
+        persistedSize: persistedSize / 1024,
         seaTiles: seaTiles,
         existingTiles: existingTiles,
         duration: DateTime.now().difference(startTime),
         tileImage: evt.tileImage == null ? null : MemoryImage(evt.tileImage!),
+        bufferMode: bufferMode,
         progressManagement: _progressManagement,
       );
 
       yield prog;
-      if (prog.percentageProgress >= 100) await cancel();
+      if (prog.percentageProgress >= 100) {
+        await cancel(latestTileImage: evt.tileImage);
+      }
     }
 
     client.close();
@@ -374,6 +455,30 @@ class DownloadManagement {
     if (!applyRange) return tiles;
     return tiles.getRange(region.start, region.end ?? tiles.length).toList();
   }
+}
+
+/// Describes the buffering mode during a bulk download
+///
+/// For information about buffering, and it's advantages and disadvantages, see
+/// [this docs page](https://fmtc.jaffaketchup.dev/bulk-downloading/foreground/buffering).
+enum DownloadBufferMode {
+  /// Disable the buffer (use direct writing)
+  ///
+  /// Tiles will be written directly to the database as soon as they are
+  /// downloaded.
+  disabled,
+
+  /// Set the limit of the buffer in terms of the number of tiles it holds
+  ///
+  /// Tiles will be written to an intermediate memory buffer, then bulk written
+  /// to the database once there are more tiles than specified.
+  tiles,
+
+  /// Set the limit of the buffer in terms of the number of bytes it holds
+  ///
+  /// Tiles will be written to an intermediate memory buffer, then bulk written
+  /// to the database once there are more bytes than specified.
+  bytes,
 }
 
 extension _ListExtensionsE<E> on List<E> {

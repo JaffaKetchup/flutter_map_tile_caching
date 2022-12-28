@@ -24,6 +24,7 @@ void main() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
 
   await FlutterMapTileCaching.initialise();
+  await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: null);
 
   if (prefs.getBool('reset') ?? false) {
     await FMTC.instance.rootDirectory.manage.reset();

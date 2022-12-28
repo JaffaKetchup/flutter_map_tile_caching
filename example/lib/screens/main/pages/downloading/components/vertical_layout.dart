@@ -61,9 +61,25 @@ class VerticalLayout extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 15),
-          LinearProgressIndicator(
-            value: data.percentageProgress / 100,
-            minHeight: 8,
+          Stack(
+            children: [
+              LinearProgressIndicator(
+                value: data.percentageProgress / 100,
+                minHeight: 8,
+                backgroundColor: Colors.grey[300],
+                valueColor: AlwaysStoppedAnimation(
+                  Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                ),
+              ),
+              LinearProgressIndicator(
+                value: data.persistedTiles / data.maxTiles,
+                minHeight: 8,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 15),
           Expanded(

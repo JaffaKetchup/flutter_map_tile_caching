@@ -1,17 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:io';
-
-import 'package:flutter/widgets.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:isar/isar.dart';
-
-import '../../flutter_map_tile_caching.dart';
-import '../db/defs/tile.dart';
-import '../db/registry.dart';
-import '../db/tools.dart';
-import 'image_provider.dart';
+part of '../../flutter_map_tile_caching.dart';
 
 /// 'flutter_map_tile_caching's custom [TileProvider] for use in a [TileLayer]
 class FMTCTileProvider extends TileProvider {

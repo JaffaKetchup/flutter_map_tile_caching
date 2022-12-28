@@ -1,8 +1,6 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-// Why is this file so convoluted? To maximise write performance.
-
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -12,13 +10,12 @@ import 'package:http/http.dart' as http;
 import 'package:isar/isar.dart';
 import 'package:meta/meta.dart';
 import 'package:queue/queue.dart';
-import 'package:stream_isolate/stream_isolate.dart';
 
-import '../db/defs/metadata.dart';
+import '../../flutter_map_tile_caching.dart';
 import '../db/defs/tile.dart';
 import '../db/registry.dart';
 import '../db/tools.dart';
-import '../providers/tile_provider.dart';
+import 'bulk_tile_writer.dart';
 import 'internal_timing_progress_management.dart';
 import 'tile_progress.dart';
 
@@ -82,14 +79,16 @@ Future<TileProgress> _getAndSaveTile({
   final DbTile? existingTile = await tiles.tiles.get(DatabaseTools.hash(url));
 
   final List<int> bytes = [];
+  final List<int>? bulkTileWriterResponse;
 
   try {
     if (preventRedownload && existingTile != null) {
       return TileProgress(
         failedUrl: null,
+        tileImage: null,
         wasSeaTile: false,
         wasExistingTile: true,
-        tileImage: null,
+        bulkTileWriterResponse: null,
       );
     }
 
@@ -112,74 +111,31 @@ Future<TileProgress> _getAndSaveTile({
         const ListEquality().equals(bytes, seaTileBytes)) {
       return TileProgress(
         failedUrl: null,
+        tileImage: Uint8List.fromList(bytes),
         wasSeaTile: true,
         wasExistingTile: false,
-        tileImage: Uint8List.fromList(bytes),
+        bulkTileWriterResponse: null,
       );
     }
 
-    BulkTileWriter.instance!.isolate.send([url, bytes]);
+    BulkTileWriter.instance.sendPort.send(List.unmodifiable([url, bytes]));
+    bulkTileWriterResponse = await BulkTileWriter.instance.events.next;
   } catch (e) {
     if (errorHandler != null) errorHandler(e);
     return TileProgress(
       failedUrl: url,
+      tileImage: null,
       wasSeaTile: false,
       wasExistingTile: false,
-      tileImage: null,
+      bulkTileWriterResponse: null,
     );
   }
 
   return TileProgress(
     failedUrl: null,
+    tileImage: Uint8List.fromList(bytes),
     wasSeaTile: false,
     wasExistingTile: false,
-    tileImage: Uint8List.fromList(bytes),
+    bulkTileWriterResponse: bulkTileWriterResponse,
   );
-}
-
-//! BULK TILE WRITER !//
-
-@internal
-class BulkTileWriter {
-  BulkTileWriter._();
-  static BulkTileWriter? instance;
-
-  late BidirectionalStreamIsolate<List<Object>, void> isolate;
-
-  static Future<void> start(FMTCTileProvider provider) async {
-    instance = BulkTileWriter._();
-    instance!.isolate =
-        await StreamIsolate.spawnBidirectional(_bulkTileWriterWorker);
-    instance!.isolate.send([provider.storeDirectory.storeName]);
-  }
-
-  static void stop() {
-    instance!.isolate.close();
-    instance = null;
-  }
-}
-
-Stream<void> _bulkTileWriterWorker(
-  Stream<List<Object>> stream,
-  _,
-) async* {
-  Isar? db;
-
-  await for (final info in stream) {
-    if (db == null) {
-      db = Isar.openSync(
-        [DbTileSchema, DbMetadataSchema],
-        name: DatabaseTools.hash(info[0].toString()).toString(),
-      );
-    } else {
-      db.writeTxnSync(
-        () => db!.tiles.putSync(
-          DbTile(
-            url: info[0] as String,
-            bytes: info[1] as List<int>,
-          ),
-        ),
-      );
-    }
-  }
 }

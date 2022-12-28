@@ -60,6 +60,7 @@ class FlutterMapTileCaching {
     await FMTCRegistry.initialise(
       dirReal: directory,
       databaseMaxSize: settings.databaseMaxSize,
+      databaseCompactCondition: settings.databaseCompactCondition,
     );
     return _instance = FMTC._(
       rootDirectory: RootDirectory._(directory),

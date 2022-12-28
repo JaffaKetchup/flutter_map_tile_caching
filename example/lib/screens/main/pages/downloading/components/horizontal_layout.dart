@@ -92,9 +92,25 @@ class HorizontalLayout extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 30),
-          LinearProgressIndicator(
-            value: data.percentageProgress / 100,
-            minHeight: 12,
+          Stack(
+            children: [
+              LinearProgressIndicator(
+                value: data.percentageProgress / 100,
+                minHeight: 12,
+                backgroundColor: Colors.grey[300],
+                valueColor: AlwaysStoppedAnimation(
+                  Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                ),
+              ),
+              LinearProgressIndicator(
+                value: data.persistedTiles / data.maxTiles,
+                minHeight: 12,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 30),
           Expanded(

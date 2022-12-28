@@ -122,3 +122,14 @@ class RootStats {
         ),
       ].reduce((v, e) => v.merge(e)).debounce(debounce ?? Duration.zero);
 }
+
+/// Parts of the root which can be watched
+enum RootParts {
+  /// Includes changes within the recovery database
+  recovery,
+
+  /// Includes changes within the registry database
+  ///
+  /// Does not necessarily recursivley watch into stores.
+  stores,
+}

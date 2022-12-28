@@ -38,7 +38,7 @@ class RootMigrator {
   /// the RegEx: `\{ *([\w_-]+) *\}`. Only supports tiles that were sanitised
   /// with the default sanitiser included in FMTC.
   ///
-  /// Metadata, recovery information, and cached statistics will be lost.
+  /// Recovery information and cached statistics will be lost.
   ///
   /// Returns `null` if no structure was found or migration failed, otherwise
   /// the number of tiles that could not be matched to any of the [urlTemplates].
@@ -85,9 +85,6 @@ class RootMigrator {
                     : null;
     if (root == null) return null;
 
-    final oldTiles = root >> 'tiles';
-    if (!await oldTiles.exists()) return null;
-
     // Delete recovery files and cached statistics
     if (deleteOldStructure) {
       final oldRecovery = root >> 'recovery';
@@ -96,19 +93,23 @@ class RootMigrator {
       if (await oldStats.exists()) await oldStats.delete(recursive: true);
     }
 
-    int failedTiles = 0;
+    // Don't continue migration if there are no stores
+    final oldStores = root >> 'stores';
+    if (!await oldStores.exists()) return null;
 
-    // Migrate tiles
-    await for (final tiles
-        in (root >> 'stores').list().whereType<Directory>()) {
+    // Migrate stores
+    int failedTiles = 0;
+    await for (final storeDirectory
+        in oldStores.list().whereType<Directory>()) {
       final store = FMTCRegistry.instance.tileDatabases[await FMTC
-          .instance(path.basename(tiles.absolute.path))
+          .instance(path.basename(storeDirectory.absolute.path))
           .manage
           ._advancedCreate()]!;
 
+      // Migrate tiles
       await store.writeTxn(
         () async => store.tiles.putAll(
-          await (tiles >> 'tiles')
+          await (storeDirectory >> 'tiles')
               .list()
               .whereType<File>()
               .asyncMap(
@@ -163,10 +164,26 @@ class RootMigrator {
               .toList(),
         ),
       );
+
+      // Migrate metadata
+      await store.writeTxn(
+        () async => store.metadata.putAll(
+          await (storeDirectory >> 'metadata')
+              .list()
+              .whereType<File>()
+              .asyncMap(
+                (f) async => DbMetadata(
+                  name: path.basename(f.absolute.path).split('.metadata')[0],
+                  data: await f.readAsString(),
+                ),
+              )
+              .toList(),
+        ),
+      );
     }
 
-    // Delete tile files
-    await oldTiles.delete(recursive: true);
+    // Delete store files
+    await oldStores.delete(recursive: true);
 
     return failedTiles;
   }

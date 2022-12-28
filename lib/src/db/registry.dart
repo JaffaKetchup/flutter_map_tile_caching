@@ -41,6 +41,7 @@ class FMTCRegistry {
     Directory? dirReal,
     String? dirString,
     required int databaseMaxSize,
+    required CompactCondition? databaseCompactCondition,
   }) async {
     if (dirReal == null && dirString == null) {
       throw ArgumentError('Either `dirReal` or `dirString` should be provided');
@@ -55,15 +56,20 @@ class FMTCRegistry {
         name: 'registry',
         directory: directory,
         maxSizeMiB: databaseMaxSize,
+        compactOnLaunch: databaseCompactCondition,
       ),
       recoveryDatabase: await Isar.open(
         [DbRecoverableRegionSchema],
         name: 'recovery',
         directory: directory,
         maxSizeMiB: databaseMaxSize,
+        compactOnLaunch: databaseCompactCondition,
       ),
     );
-    await instance.synchronise(databaseMaxSize: databaseMaxSize);
+    await instance.synchronise(
+      databaseMaxSize: databaseMaxSize,
+      databaseCompactCondition: databaseCompactCondition,
+    );
 
     return instance;
   }
@@ -88,7 +94,11 @@ class FMTCRegistry {
   ///
   /// Note that calling this method can lead to data loss - a tile store without
   /// a corresponding registry entry will be deleted without warning.
-  Future<void> synchronise({int? databaseMaxSize}) async => Future.wait<void>([
+  Future<void> synchronise({
+    int? databaseMaxSize,
+    CompactCondition? databaseCompactCondition,
+  }) async =>
+      Future.wait<void>([
         ...tileDatabases.entries.map((e) async {
           if (await registryDatabase.stores.get(e.key) == null) {
             tileDatabases.remove(e.key);
@@ -103,6 +113,8 @@ class FMTCRegistry {
               directory: _directory,
               maxSizeMiB:
                   databaseMaxSize ?? FMTC.instance.settings.databaseMaxSize,
+              compactOnLaunch: databaseCompactCondition ??
+                  FMTC.instance.settings.databaseCompactCondition,
             );
           }
         }),
