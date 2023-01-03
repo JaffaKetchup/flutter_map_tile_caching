@@ -101,7 +101,7 @@ class RootMigrator {
     int failedTiles = 0;
     await for (final storeDirectory
         in oldStores.list().whereType<Directory>()) {
-      final store = FMTCRegistry.instance.tileDatabases[await FMTC
+      final store = FMTCRegistry.instance.storeDatabases[await FMTC
           .instance(path.basename(storeDirectory.absolute.path))
           .manage
           ._advancedCreate()]!;

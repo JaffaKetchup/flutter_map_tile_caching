@@ -112,19 +112,25 @@ class RootImport {
       path: inputFile.absolute.path,
       storeName: storeName,
       result: (() async {
-        if (await FMTC.instance(storeName).manage.ready) {
+        if (FMTC.instance(storeName).manage.ready) {
           if (!overwriteExistingStore) return ImportResultCategory.collision;
           await FMTC.instance(storeName).manage.delete();
         }
 
-        final newStorePath = FMTC.instance.rootDirectory.directory >
-            '${await FMTC.instance(storeName).manage._advancedCreate(synchronise: false)}.isar';
+        final id = DatabaseTools.hash(storeName);
+        final newStorePath = FMTC.instance.rootDirectory.directory > '$id.isar';
         try {
           await inputFile.copy(newStorePath);
-          await FMTCRegistry.instance.synchronise();
+          FMTCRegistry.instance.storeDatabases[id] = await Isar.open(
+            [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
+            name: id.toString(),
+            directory: FMTC.instance.rootDirectory.directory.path,
+            maxSizeMiB: FMTC.instance.settings.databaseMaxSize,
+            compactOnLaunch: FMTC.instance.settings.databaseCompactCondition,
+          );
         } catch (_) {
           await File(newStorePath).delete();
-          await FMTCRegistry.instance.synchronise();
+          FMTCRegistry.instance.storeDatabases.remove(id);
           return ImportResultCategory.unknown;
         }
 

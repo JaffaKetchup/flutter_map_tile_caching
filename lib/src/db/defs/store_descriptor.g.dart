@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'store.dart';
+part of 'store_descriptor.dart';
 
 // **************************************************************************
 // IsarCollectionGenerator
@@ -9,13 +9,13 @@ part of 'store.dart';
 // coverage:ignore-file
 // ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters
 
-extension GetDbStoreCollection on Isar {
-  IsarCollection<DbStore> get stores => this.collection();
+extension GetDbStoreDescriptorCollection on Isar {
+  IsarCollection<DbStoreDescriptor> get storeDescriptor => this.collection();
 }
 
-const DbStoreSchema = CollectionSchema(
-  name: r'DbStore',
-  id: -8185066502077300117,
+const DbStoreDescriptorSchema = CollectionSchema(
+  name: r'DbStoreDescriptor',
+  id: 1365152130637522244,
   properties: {
     r'hits': PropertySchema(
       id: 0,
@@ -33,22 +33,22 @@ const DbStoreSchema = CollectionSchema(
       type: IsarType.string,
     )
   },
-  estimateSize: _dbStoreEstimateSize,
-  serialize: _dbStoreSerialize,
-  deserialize: _dbStoreDeserialize,
-  deserializeProp: _dbStoreDeserializeProp,
+  estimateSize: _dbStoreDescriptorEstimateSize,
+  serialize: _dbStoreDescriptorSerialize,
+  deserialize: _dbStoreDescriptorDeserialize,
+  deserializeProp: _dbStoreDescriptorDeserializeProp,
   idName: r'id',
   indexes: {},
   links: {},
   embeddedSchemas: {},
-  getId: _dbStoreGetId,
-  getLinks: _dbStoreGetLinks,
-  attach: _dbStoreAttach,
+  getId: _dbStoreDescriptorGetId,
+  getLinks: _dbStoreDescriptorGetLinks,
+  attach: _dbStoreDescriptorAttach,
   version: '3.0.5',
 );
 
-int _dbStoreEstimateSize(
-  DbStore object,
+int _dbStoreDescriptorEstimateSize(
+  DbStoreDescriptor object,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
@@ -57,8 +57,8 @@ int _dbStoreEstimateSize(
   return bytesCount;
 }
 
-void _dbStoreSerialize(
-  DbStore object,
+void _dbStoreDescriptorSerialize(
+  DbStoreDescriptor object,
   IsarWriter writer,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
@@ -68,13 +68,13 @@ void _dbStoreSerialize(
   writer.writeString(offsets[2], object.name);
 }
 
-DbStore _dbStoreDeserialize(
+DbStoreDescriptor _dbStoreDescriptorDeserialize(
   Id id,
   IsarReader reader,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  final object = DbStore(
+  final object = DbStoreDescriptor(
     name: reader.readString(offsets[2]),
   );
   object.hits = reader.readLong(offsets[0]);
@@ -82,7 +82,7 @@ DbStore _dbStoreDeserialize(
   return object;
 }
 
-P _dbStoreDeserializeProp<P>(
+P _dbStoreDescriptorDeserializeProp<P>(
   IsarReader reader,
   int propertyId,
   int offset,
@@ -100,26 +100,31 @@ P _dbStoreDeserializeProp<P>(
   }
 }
 
-Id _dbStoreGetId(DbStore object) {
+Id _dbStoreDescriptorGetId(DbStoreDescriptor object) {
   return object.id;
 }
 
-List<IsarLinkBase<dynamic>> _dbStoreGetLinks(DbStore object) {
+List<IsarLinkBase<dynamic>> _dbStoreDescriptorGetLinks(
+    DbStoreDescriptor object) {
   return [];
 }
 
-void _dbStoreAttach(IsarCollection<dynamic> col, Id id, DbStore object) {}
+void _dbStoreDescriptorAttach(
+    IsarCollection<dynamic> col, Id id, DbStoreDescriptor object) {}
 
-extension DbStoreQueryWhereSort on QueryBuilder<DbStore, DbStore, QWhere> {
-  QueryBuilder<DbStore, DbStore, QAfterWhere> anyId() {
+extension DbStoreDescriptorQueryWhereSort
+    on QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QWhere> {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
     });
   }
 }
 
-extension DbStoreQueryWhere on QueryBuilder<DbStore, DbStore, QWhereClause> {
-  QueryBuilder<DbStore, DbStore, QAfterWhereClause> idEqualTo(Id id) {
+extension DbStoreDescriptorQueryWhere
+    on QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QWhereClause> {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterWhereClause>
+      idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IdWhereClause.between(
         lower: id,
@@ -128,7 +133,8 @@ extension DbStoreQueryWhere on QueryBuilder<DbStore, DbStore, QWhereClause> {
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterWhereClause> idNotEqualTo(Id id) {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterWhereClause>
+      idNotEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -150,8 +156,8 @@ extension DbStoreQueryWhere on QueryBuilder<DbStore, DbStore, QWhereClause> {
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterWhereClause> idGreaterThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterWhereClause>
+      idGreaterThan(Id id, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -159,8 +165,8 @@ extension DbStoreQueryWhere on QueryBuilder<DbStore, DbStore, QWhereClause> {
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterWhereClause> idLessThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterWhereClause>
+      idLessThan(Id id, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -168,7 +174,8 @@ extension DbStoreQueryWhere on QueryBuilder<DbStore, DbStore, QWhereClause> {
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterWhereClause> idBetween(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterWhereClause>
+      idBetween(
     Id lowerId,
     Id upperId, {
     bool includeLower = true,
@@ -185,9 +192,10 @@ extension DbStoreQueryWhere on QueryBuilder<DbStore, DbStore, QWhereClause> {
   }
 }
 
-extension DbStoreQueryFilter
-    on QueryBuilder<DbStore, DbStore, QFilterCondition> {
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> hitsEqualTo(int value) {
+extension DbStoreDescriptorQueryFilter
+    on QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QFilterCondition> {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      hitsEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'hits',
@@ -196,7 +204,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> hitsGreaterThan(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      hitsGreaterThan(
     int value, {
     bool include = false,
   }) {
@@ -209,7 +218,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> hitsLessThan(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      hitsLessThan(
     int value, {
     bool include = false,
   }) {
@@ -222,7 +232,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> hitsBetween(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      hitsBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -239,7 +250,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> idEqualTo(Id value) {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'id',
@@ -248,7 +260,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> idGreaterThan(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      idGreaterThan(
     Id value, {
     bool include = false,
   }) {
@@ -261,7 +274,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> idLessThan(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      idLessThan(
     Id value, {
     bool include = false,
   }) {
@@ -274,7 +288,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> idBetween(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      idBetween(
     Id lower,
     Id upper, {
     bool includeLower = true,
@@ -291,8 +306,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> missesEqualTo(
-      int value) {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      missesEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'misses',
@@ -301,7 +316,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> missesGreaterThan(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      missesGreaterThan(
     int value, {
     bool include = false,
   }) {
@@ -314,7 +330,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> missesLessThan(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      missesLessThan(
     int value, {
     bool include = false,
   }) {
@@ -327,7 +344,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> missesBetween(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      missesBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -344,7 +362,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> nameEqualTo(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      nameEqualTo(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -357,7 +376,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> nameGreaterThan(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      nameGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -372,7 +392,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> nameLessThan(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      nameLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -387,7 +408,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> nameBetween(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      nameBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -406,7 +428,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> nameStartsWith(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      nameStartsWith(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -419,7 +442,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> nameEndsWith(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      nameEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -432,9 +456,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> nameContains(
-      String value,
-      {bool caseSensitive = true}) {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      nameContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.contains(
         property: r'name',
@@ -444,9 +467,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> nameMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      nameMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.matches(
         property: r'name',
@@ -456,7 +478,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> nameIsEmpty() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      nameIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'name',
@@ -465,7 +488,8 @@ extension DbStoreQueryFilter
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterFilterCondition> nameIsNotEmpty() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterFilterCondition>
+      nameIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'name',
@@ -475,116 +499,132 @@ extension DbStoreQueryFilter
   }
 }
 
-extension DbStoreQueryObject
-    on QueryBuilder<DbStore, DbStore, QFilterCondition> {}
+extension DbStoreDescriptorQueryObject
+    on QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QFilterCondition> {}
 
-extension DbStoreQueryLinks
-    on QueryBuilder<DbStore, DbStore, QFilterCondition> {}
+extension DbStoreDescriptorQueryLinks
+    on QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QFilterCondition> {}
 
-extension DbStoreQuerySortBy on QueryBuilder<DbStore, DbStore, QSortBy> {
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> sortByHits() {
+extension DbStoreDescriptorQuerySortBy
+    on QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QSortBy> {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      sortByHits() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hits', Sort.asc);
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> sortByHitsDesc() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      sortByHitsDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hits', Sort.desc);
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> sortByMisses() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      sortByMisses() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'misses', Sort.asc);
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> sortByMissesDesc() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      sortByMissesDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'misses', Sort.desc);
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> sortByName() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> sortByNameDesc() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      sortByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
     });
   }
 }
 
-extension DbStoreQuerySortThenBy
-    on QueryBuilder<DbStore, DbStore, QSortThenBy> {
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> thenByHits() {
+extension DbStoreDescriptorQuerySortThenBy
+    on QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QSortThenBy> {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      thenByHits() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hits', Sort.asc);
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> thenByHitsDesc() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      thenByHitsDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hits', Sort.desc);
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> thenById() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> thenByIdDesc() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> thenByMisses() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      thenByMisses() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'misses', Sort.asc);
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> thenByMissesDesc() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      thenByMissesDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'misses', Sort.desc);
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> thenByName() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QAfterSortBy> thenByNameDesc() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QAfterSortBy>
+      thenByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
     });
   }
 }
 
-extension DbStoreQueryWhereDistinct
-    on QueryBuilder<DbStore, DbStore, QDistinct> {
-  QueryBuilder<DbStore, DbStore, QDistinct> distinctByHits() {
+extension DbStoreDescriptorQueryWhereDistinct
+    on QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QDistinct> {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QDistinct>
+      distinctByHits() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'hits');
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QDistinct> distinctByMisses() {
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QDistinct>
+      distinctByMisses() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'misses');
     });
   }
 
-  QueryBuilder<DbStore, DbStore, QDistinct> distinctByName(
+  QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QDistinct> distinctByName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'name', caseSensitive: caseSensitive);
@@ -592,27 +632,27 @@ extension DbStoreQueryWhereDistinct
   }
 }
 
-extension DbStoreQueryProperty
-    on QueryBuilder<DbStore, DbStore, QQueryProperty> {
-  QueryBuilder<DbStore, int, QQueryOperations> idProperty() {
+extension DbStoreDescriptorQueryProperty
+    on QueryBuilder<DbStoreDescriptor, DbStoreDescriptor, QQueryProperty> {
+  QueryBuilder<DbStoreDescriptor, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
     });
   }
 
-  QueryBuilder<DbStore, int, QQueryOperations> hitsProperty() {
+  QueryBuilder<DbStoreDescriptor, int, QQueryOperations> hitsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'hits');
     });
   }
 
-  QueryBuilder<DbStore, int, QQueryOperations> missesProperty() {
+  QueryBuilder<DbStoreDescriptor, int, QQueryOperations> missesProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'misses');
     });
   }
 
-  QueryBuilder<DbStore, String, QQueryOperations> nameProperty() {
+  QueryBuilder<DbStoreDescriptor, String, QQueryOperations> nameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'name');
     });

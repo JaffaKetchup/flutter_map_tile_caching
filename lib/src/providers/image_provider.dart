@@ -13,7 +13,7 @@ import 'package:queue/queue.dart';
 
 import '../../flutter_map_tile_caching.dart';
 import '../db/defs/metadata.dart';
-import '../db/defs/store.dart';
+import '../db/defs/store_descriptor.dart';
 import '../db/defs/tile.dart';
 import '../db/registry.dart';
 import '../db/tools.dart';
@@ -59,7 +59,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         _storeId = DatabaseTools.hash(provider.storeDirectory.storeName);
 
   final int _storeId;
-  Isar get _tiles => FMTCRegistry.instance.tileDatabases[_storeId]!;
+  Isar get _tiles => FMTCRegistry.instance.storeDatabases[_storeId]!;
 
   @override
   ImageStreamCompleter loadBuffer(
@@ -90,12 +90,13 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       required bool hit,
     }) =>
         (hit ? cacheHitsQueue : cacheMissesQueue).add(() async {
-          final stores = FMTCRegistry.instance.registryDatabase;
-          await stores.writeTxn(() async {
-            final store = (await stores.stores.get(_storeId))!;
+          final db = FMTCRegistry.instance.storeDatabases[_storeId]!;
+
+          await db.writeTxn(() async {
+            final store = (await db.storeDescriptor.get(0))!;
             if (hit) store.hits += 1;
             if (!hit) store.misses += 1;
-            await stores.stores.put(store);
+            await db.storeDescriptor.put(store);
           });
         });
 
@@ -262,6 +263,8 @@ Future<void> _removeOldestTile(List<Object> args) async {
           .toList(),
     ),
   );
+
+  await db.close();
 }
 
 /// An [Exception] indicating that there was an error retrieving tiles to be

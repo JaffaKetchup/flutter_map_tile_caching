@@ -58,7 +58,7 @@ class FlutterMapTileCaching {
     final settings = customSettings ?? FMTCSettings();
 
     await FMTCRegistry.initialise(
-      dirReal: directory,
+      directory: directory,
       databaseMaxSize: settings.databaseMaxSize,
       databaseCompactCondition: settings.databaseCompactCondition,
     );

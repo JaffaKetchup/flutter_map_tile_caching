@@ -6,56 +6,59 @@ part of '../../flutter_map_tile_caching.dart';
 /// Provides statistics about a [StoreDirectory]
 class StoreStats {
   StoreStats._(StoreDirectory storeDirectory)
-      : _id = DatabaseTools.hash(storeDirectory.storeName);
+      : _id = DatabaseTools.hash(storeDirectory.storeName),
+        _management = storeDirectory.manage;
+
   final int _id;
+  final StoreManagement _management;
 
-  Isar get _tiles => FMTCRegistry.instance.tileDatabases[_id]!;
-
-  IsarCollection<DbStore> get _stores =>
-      FMTCRegistry.instance.registryDatabase.stores;
-  DbStore get _store => _stores.getSync(_id)!;
-  Future<DbStore> get _storeAsync async => (await _stores.get(_id))!;
+  Isar get _db {
+    _management._ensureReadyStatus();
+    return FMTCRegistry.instance.storeDatabases[_id]!;
+  }
 
   /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
   ///
   /// Prefer [storeSizeAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  double get storeSize => _tiles.getSizeSync(includeIndexes: true) / 1024;
+  double get storeSize => _db.getSizeSync(includeIndexes: true) / 1024;
 
   /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
   Future<double> get storeSizeAsync async =>
-      await _tiles.getSize(includeIndexes: true) / 1024;
+      await _db.getSize(includeIndexes: true) / 1024;
 
   /// Retrieve the number of stored tiles
   ///
   /// Prefer [storeLengthAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  int get storeLength => _tiles.tiles.countSync();
+  int get storeLength => _db.tiles.countSync();
 
   /// Retrieve the number of stored tiles
-  Future<int> get storeLengthAsync => _tiles.tiles.count();
+  Future<int> get storeLengthAsync => _db.tiles.count();
 
   /// Retrieve the number of tiles that were successfully retrieved from the
   /// store during browsing
   ///
   /// Prefer [cacheHitsAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  int get cacheHits => _store.hits;
+  int get cacheHits => _db.storeDescriptor.getSync(0)!.hits;
 
   /// Retrieve the number of tiles that were successfully retrieved from the
   /// store during browsing
-  Future<int> get cacheHitsAsync async => (await _storeAsync).hits;
+  Future<int> get cacheHitsAsync async =>
+      (await _db.storeDescriptor.get(0))!.hits;
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the
   /// store during browsing
   ///
   /// Prefer [cacheMissesAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  int get cacheMisses => _store.misses;
+  int get cacheMisses => _db.storeDescriptor.getSync(0)!.misses;
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the
   /// store during browsing
-  Future<int> get cacheMissesAsync async => (await _storeAsync).misses;
+  Future<int> get cacheMissesAsync async =>
+      (await _db.storeDescriptor.get(0))!.misses;
 
   /// Watch for changes in the current store
   ///
@@ -80,16 +83,17 @@ class StoreStats {
     List<StoreParts> storeParts = const [
       StoreParts.metadata,
       StoreParts.tiles,
-      StoreParts.storeEntry,
+      StoreParts.stats,
     ],
   }) =>
       [
         if (storeParts.contains(StoreParts.metadata))
-          _tiles.metadata.watchLazy(fireImmediately: fireImmediately),
+          _db.metadata.watchLazy(fireImmediately: fireImmediately),
         if (storeParts.contains(StoreParts.tiles))
-          _tiles.tiles.watchLazy(fireImmediately: fireImmediately),
-        if (storeParts.contains(StoreParts.storeEntry))
-          _stores.watchObjectLazy(_id, fireImmediately: fireImmediately),
+          _db.tiles.watchLazy(fireImmediately: fireImmediately),
+        if (storeParts.contains(StoreParts.stats))
+          _db.storeDescriptor
+              .watchObjectLazy(0, fireImmediately: fireImmediately),
       ].reduce((v, e) => v.merge(e)).debounce(debounce ?? Duration.zero);
 }
 
@@ -98,19 +102,11 @@ enum StoreParts {
   /// Include changes to the store's metadata objects
   metadata,
 
-  /// Includes changes found directly in the store entry in the registry,
-  /// including those which will make some statistics change (eg. cache hits)
-  storeEntry,
-
-  /// Includes changes within the tiles database, including those which will make
-  /// some statistics change (eg. store size)
+  /// Includes changes to the store's tile objects, including those which will
+  /// make some statistics change (eg. store size)
   tiles,
 
-  /// 'stats' is deprecated and shouldn't be used. Prefer [tiles] and
-  /// [storeEntry]. This remnant will be removed in a future update, and is
-  /// currently non-functional.
-  @Deprecated(
-    "Prefer 'tiles' and 'storeEntry'. This redirect will be removed in a future update",
-  )
+  /// Includes changes to the store's descriptor object, which will change with
+  /// the cache hit and miss statistics
   stats,
 }

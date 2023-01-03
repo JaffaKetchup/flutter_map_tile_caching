@@ -4,19 +4,16 @@
 import 'package:isar/isar.dart';
 import 'package:meta/meta.dart';
 
-import '../tools.dart';
-
-part 'store.g.dart';
+part 'store_descriptor.g.dart';
 
 @internal
-@Collection(accessor: 'stores')
-class DbStore {
-  Id get id => DatabaseTools.hash(name);
-
+@Collection(accessor: 'storeDescriptor')
+class DbStoreDescriptor {
+  final Id id = 0;
   final String name;
 
   int hits = 0;
   int misses = 0;
 
-  DbStore({required this.name});
+  DbStoreDescriptor({required this.name});
 }

@@ -48,11 +48,12 @@ import 'src/bulk_download/tile_loops.dart';
 import 'src/bulk_download/tile_progress.dart';
 import 'src/db/defs/metadata.dart';
 import 'src/db/defs/recovery.dart';
-import 'src/db/defs/store.dart';
+import 'src/db/defs/store_descriptor.dart';
 import 'src/db/defs/tile.dart';
 import 'src/db/registry.dart';
 import 'src/db/tools.dart';
 import 'src/misc/exts.dart';
+
 import 'src/providers/image_provider.dart';
 import 'src/settings/tile_provider_settings.dart';
 

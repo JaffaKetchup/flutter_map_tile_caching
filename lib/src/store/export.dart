@@ -69,6 +69,6 @@ class StoreExport {
   /// See [withGUI] for a method that provides logic to show appropriate platform
   /// windows/sheets for export.
   Future<void> manual(File outputFile) => FMTCRegistry
-      .instance.tileDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!
+      .instance.storeDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!
       .copyToFile(outputFile.absolute.path);
 }

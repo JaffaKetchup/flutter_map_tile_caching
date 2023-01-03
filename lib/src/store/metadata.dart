@@ -10,10 +10,16 @@ part of '../../flutter_map_tile_caching.dart';
 /// implementation.
 class StoreMetadata {
   StoreMetadata._(StoreDirectory storeDirectory)
-      : _id = DatabaseTools.hash(storeDirectory.storeName);
-  final int _id;
+      : _id = DatabaseTools.hash(storeDirectory.storeName),
+        _management = storeDirectory.manage;
 
-  Isar get _metadata => FMTCRegistry.instance.tileDatabases[_id]!;
+  final int _id;
+  final StoreManagement _management;
+
+  Isar get _db {
+    _management._ensureReadyStatus();
+    return FMTCRegistry.instance.storeDatabases[_id]!;
+  }
 
   /// Add a new key-value pair to the store
   ///
@@ -22,8 +28,8 @@ class StoreMetadata {
     required String key,
     required String value,
   }) =>
-      _metadata.writeTxn(
-        () => _metadata.metadata.put(DbMetadata(name: key, data: value)),
+      _db.writeTxn(
+        () => _db.metadata.put(DbMetadata(name: key, data: value)),
       );
 
   /// Add a new key-value pair to the store
@@ -36,27 +42,27 @@ class StoreMetadata {
     required String key,
     required String value,
   }) =>
-      _metadata.writeTxnSync(
-        () => _metadata.metadata.putSync(DbMetadata(name: key, data: value)),
+      _db.writeTxnSync(
+        () => _db.metadata.putSync(DbMetadata(name: key, data: value)),
       );
 
   /// Remove a new key-value pair from the store
-  Future<void> removeAsync({required String key}) => _metadata
-      .writeTxn(() => _metadata.metadata.delete(DatabaseTools.hash(key)));
+  Future<void> removeAsync({required String key}) =>
+      _db.writeTxn(() => _db.metadata.delete(DatabaseTools.hash(key)));
 
   /// Remove a new key-value pair from the store
   ///
   /// Prefer [removeAsync] to avoid blocking the UI thread. Otherwise, this has
   /// slightly better performance.
-  void remove({required String key}) => _metadata.writeTxnSync(
-        () => _metadata.metadata.deleteSync(DatabaseTools.hash(key)),
+  void remove({required String key}) => _db.writeTxnSync(
+        () => _db.metadata.deleteSync(DatabaseTools.hash(key)),
       );
 
   /// Remove all the key-value pairs from the store asynchronously
-  Future<void> resetAsync() => _metadata.writeTxn(
+  Future<void> resetAsync() => _db.writeTxn(
         () async => Future.wait(
-          (await _metadata.metadata.where().findAll())
-              .map((m) => _metadata.metadata.delete(m.id)),
+          (await _db.metadata.where().findAll())
+              .map((m) => _db.metadata.delete(m.id)),
         ),
       );
 
@@ -64,18 +70,18 @@ class StoreMetadata {
   ///
   /// Prefer [resetAsync] to avoid blocking the UI thread. Otherwise, this has
   /// slightly better performance.
-  void reset() => _metadata.writeTxnSync(
+  void reset() => _db.writeTxnSync(
         () => Future.wait(
-          _metadata.metadata
+          _db.metadata
               .where()
               .findAllSync()
-              .map((m) => _metadata.metadata.delete(m.id)),
+              .map((m) => _db.metadata.delete(m.id)),
         ),
       );
 
   /// Read all the key-value pairs from the store
   Future<Map<String, String>> get readAsync async => Map.fromEntries(
-        (await _metadata.metadata.where().findAll())
+        (await _db.metadata.where().findAll())
             .map((m) => MapEntry(m.name, m.data)),
       );
 
@@ -84,9 +90,6 @@ class StoreMetadata {
   /// Prefer [readAsync] to avoid blocking the UI thread. Otherwise, this has
   /// slightly better performance.
   Map<String, String> get read => Map.fromEntries(
-        _metadata.metadata
-            .where()
-            .findAllSync()
-            .map((m) => MapEntry(m.name, m.data)),
+        _db.metadata.where().findAllSync().map((m) => MapEntry(m.name, m.data)),
       );
 }

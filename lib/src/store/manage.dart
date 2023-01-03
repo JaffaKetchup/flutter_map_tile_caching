@@ -6,71 +6,159 @@ part of '../../flutter_map_tile_caching.dart';
 /// Manages a [StoreDirectory]'s representation on the filesystem, such as
 /// creation and deletion
 class StoreManagement {
-  StoreManagement._(this._storeDirectory);
-  final StoreDirectory _storeDirectory;
+  StoreManagement._(this._storeDirectory)
+      : _id = DatabaseTools.hash(_storeDirectory.storeName),
+        _registry = FMTCRegistry.instance,
+        _rootDirectory = FMTC.instance.rootDirectory.directory;
 
-  FMTCRegistry get _registry => FMTCRegistry.instance;
+  final StoreDirectory _storeDirectory;
+  final int _id;
+  final FMTCRegistry _registry;
+  final Directory _rootDirectory;
+
+  void _ensureReadyStatus() {
+    final isRegistered = _registry.storeDatabases.containsKey(_id);
+    if (isRegistered && _registry.storeDatabases[_id]!.isOpen) return;
+    throw FMTCStoreNotReady._(
+      storeName: _storeDirectory.storeName,
+      registered: isRegistered,
+    );
+  }
 
   /// Check whether this store is ready for use
-  Future<bool> get ready async {
-    await _registry.synchronise();
-    return await _registry.registryDatabase.stores
-            .get(DatabaseTools.hash(_storeDirectory.storeName)) !=
-        null;
-  }
-
-  /// Create this store
-  Future<void> create() async {
-    await _registry.registryDatabase.writeTxn(
-      () => _registry.registryDatabase.stores
-          .put(DbStore(name: _storeDirectory.storeName)),
-    );
-    await _registry.synchronise();
-  }
-
-  /// Create this store
   ///
-  /// Advanced version of [create] intended for internal usage in certain
-  /// circumstances only.
-  Future<int> _advancedCreate({bool synchronise = true}) async {
-    final id = await _registry.registryDatabase.writeTxn(
-      () => _registry.registryDatabase.stores
-          .put(DbStore(name: _storeDirectory.storeName)),
+  /// It must be registered, and its underlying database must be open for this
+  /// method to return `true`.
+  ///
+  /// This is a safe method, and will not throw the [FMTCStoreNotReady] error,
+  /// except in exceptional circumstances.
+  bool get ready {
+    try {
+      _ensureReadyStatus();
+      return true;
+      // ignore: avoid_catching_errors
+    } on FMTCStoreNotReady catch (e) {
+      if (e._registered) rethrow;
+      return false;
+    }
+  }
+
+  /// Create this store asynchronously
+  ///
+  /// Does nothing if the store already exists.
+  Future<void> createAsync() async {
+    if (ready) return;
+
+    final db = await Isar.open(
+      [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
+      name: _id.toString(),
+      directory: _rootDirectory.path,
+      maxSizeMiB: FMTC.instance.settings.databaseMaxSize,
+      compactOnLaunch: FMTC.instance.settings.databaseCompactCondition,
     );
-    if (synchronise) await _registry.synchronise();
-    return id;
+    await db.writeTxn(
+      () => db.storeDescriptor
+          .put(DbStoreDescriptor(name: _storeDirectory.storeName)),
+    );
+    _registry.storeDatabases[_id] = db;
+  }
+
+  /// Create this store synchronously
+  ///
+  /// Prefer [createAsync] to avoid blocking the UI thread. Otherwise, this has
+  /// slightly better performance.
+  ///
+  /// Does nothing if the store already exists.
+  void create() {
+    if (ready) return;
+
+    final db = Isar.openSync(
+      [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
+      name: _id.toString(),
+      directory: _rootDirectory.path,
+      maxSizeMiB: FMTC.instance.settings.databaseMaxSize,
+      compactOnLaunch: FMTC.instance.settings.databaseCompactCondition,
+    );
+    db.writeTxnSync(
+      () => db.storeDescriptor
+          .putSync(DbStoreDescriptor(name: _storeDirectory.storeName)),
+    );
+    _registry.storeDatabases[_id] = db;
+  }
+
+  Future<int?> _advancedCreate() async {
+    if (ready) return null;
+
+    final db = await Isar.open(
+      [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
+      name: _id.toString(),
+      directory: _rootDirectory.path,
+      maxSizeMiB: FMTC.instance.settings.databaseMaxSize,
+      compactOnLaunch: FMTC.instance.settings.databaseCompactCondition,
+    );
+    await db.writeTxn(
+      () => db.storeDescriptor
+          .put(DbStoreDescriptor(name: _storeDirectory.storeName)),
+    );
+    _registry.storeDatabases[_id] = db;
+    return _id;
   }
 
   /// Delete this store
   ///
   /// This will remove all traces of this store from the user's device. Use with
   /// caution!
+  ///
+  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
+  /// error will be raised.
   Future<void> delete() async {
-    await _registry.registryDatabase.writeTxn(
-      () => _registry.registryDatabase.stores
-          .delete(DatabaseTools.hash(_storeDirectory.storeName)),
-    );
-    await _registry.synchronise();
+    _ensureReadyStatus();
+
+    final store = _registry.storeDatabases.remove(_id);
+    if (store?.isOpen ?? false) await store!.close(deleteFromDisk: true);
   }
 
-  /// Removes all tiles from this store
+  /// Removes all tiles from this store synchronously
   ///
-  /// Also deletes the cache hits & misses statistic. Metadata is not deleted.
+  /// Also resets the cache hits & misses statistic.
   ///
-  /// To fully reset this store, manually call [delete] then [create].
-  Future<void> reset() async {
-    final storeId = DatabaseTools.hash(_storeDirectory.storeName);
-    final tiles = _registry.tileDatabases[storeId]!;
+  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
+  /// error will be raised.
+  Future<void> resetAsync() async {
+    _ensureReadyStatus();
 
-    await _registry.registryDatabase.writeTxn(
-      () async => _registry.registryDatabase.stores.put(
-        (await _registry.registryDatabase.stores.get(storeId))!
-          ..misses = 0
-          ..hits = 0,
-      ),
-    );
+    final db = _registry.storeDatabases[_id]!;
+    await db.writeTxn(() async {
+      await db.tiles.clear();
+      await db.storeDescriptor.put(
+        (await db.storeDescriptor.get(0))!
+          ..hits = 0
+          ..misses = 0,
+      );
+    });
+  }
 
-    return tiles.writeTxn(tiles.tiles.clear);
+  /// Removes all tiles from this store asynchronously
+  ///
+  /// Also resets the cache hits & misses statistic.
+  ///
+  /// Prefer [resetAsync] to avoid blocking the UI thread. Otherwise, this has
+  /// slightly better performance.
+  ///
+  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
+  /// error will be raised.
+  void reset() {
+    _ensureReadyStatus();
+
+    final db = _registry.storeDatabases[_id]!;
+    db.writeTxnSync(() {
+      db.tiles.clearSync();
+      db.storeDescriptor.putSync(
+        db.storeDescriptor.getSync(0)!
+          ..hits = 0
+          ..misses = 0,
+      );
+    });
   }
 
   /// Rename the store directory asynchronously
@@ -78,27 +166,34 @@ class StoreManagement {
   /// The old [StoreDirectory] will still retain it's link to the old store, so
   /// always use the new returned value instead: returns a new [StoreDirectory]
   /// after a successful renaming operation.
-  Future<StoreDirectory> rename(String storeName) async {
-    File constructor(String name) =>
-        FMTC.instance.rootDirectory.directory >>>
-        '${DatabaseTools.hash(name)}.isar';
+  ///
+  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
+  /// error will be raised.
+  Future<StoreDirectory> rename(String newStoreName) async {
+    _ensureReadyStatus();
 
-    // Close the currently opened store
-    await _registry
-        .tileDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!
-        .close();
-    await _registry.registryDatabase.writeTxn(() async {
-      // Register a new store in the registry and unregister the old one
-      await _registry.registryDatabase.stores
-          .delete(DatabaseTools.hash(_storeDirectory.storeName));
-      await _registry.registryDatabase.stores.put(DbStore(name: storeName));
-      // Manually rename the old file (with the old ID) to the new ID
-      await constructor(_storeDirectory.storeName)
-          .rename(constructor(storeName).absolute.path);
-    });
-    await _registry.synchronise();
+    // Unregister old database without deleting it
+    final oldStore = _registry.storeDatabases.remove(_id);
+    if (oldStore!.isOpen) await oldStore.close();
 
-    return _storeDirectory.copyWith(storeName);
+    final newId = DatabaseTools.hash(newStoreName);
+
+    // Manually change the database's filename
+    await (_rootDirectory >>> '$_id.isar').rename(
+      (_rootDirectory >>> '$newId.isar').path,
+    );
+
+    // Register the new database (it will be re-opened)
+    final newStore = StoreDirectory._(newStoreName);
+    await newStore.manage.createAsync();
+
+    // Update the name stored inside the database
+    await _registry.storeDatabases[newId]?.writeTxn(
+      () => _registry.storeDatabases[newId]!.storeDescriptor
+          .put(DbStoreDescriptor(name: newStoreName)),
+    );
+
+    return newStore;
   }
 
   /// Retrieves the most recently modified tile from the store, extracts it's
@@ -109,6 +204,9 @@ class StoreManagement {
   ///
   /// Eventually returns `null` if there are no cached tiles in this store,
   /// otherwise an [Image] with [size] height and width.
+  ///
+  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
+  /// error will be raised.
   Image? tileImage({
     double? size,
     Key? key,
@@ -131,8 +229,10 @@ class StoreManagement {
     int? cacheWidth,
     int? cacheHeight,
   }) {
+    _ensureReadyStatus();
+
     final latestTile = _registry
-        .tileDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!.tiles
+        .storeDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!.tiles
         .where(sort: Sort.desc)
         .anyLastModified()
         .findFirstSync();
@@ -169,6 +269,9 @@ class StoreManagement {
   ///
   /// Eventually returns `null` if there are no cached tiles in this store,
   /// otherwise an [Image] with [size] height and width.
+  ///
+  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
+  /// error will be raised.
   Future<Image?> tileImageAsync({
     double? size,
     Key? key,
@@ -191,8 +294,10 @@ class StoreManagement {
     int? cacheWidth,
     int? cacheHeight,
   }) async {
+    _ensureReadyStatus();
+
     final latestTile = await _registry
-        .tileDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!.tiles
+        .storeDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!.tiles
         .where(sort: Sort.desc)
         .anyLastModified()
         .findFirst();
@@ -231,14 +336,7 @@ class StoreManagement {
   @Deprecated(
     "Prefer 'ready'. This redirect will be removed in a future update",
   )
-  Future<bool> get readyAsync => ready;
-
-  /// 'createAsync' is deprecated and shouldn't be used. Prefer [create]. This
-  /// redirect will be removed in a future update.
-  @Deprecated(
-    "Prefer 'create'. This redirect will be removed in a future update",
-  )
-  Future<void> createAsync() => create();
+  Future<bool> get readyAsync => Future.sync(() => ready);
 
   /// 'deleteAsync' is deprecated and shouldn't be used. Prefer [delete]. This
   /// redirect will be removed in a future update.
@@ -247,17 +345,35 @@ class StoreManagement {
   )
   Future<void> deleteAsync() => delete();
 
-  /// 'resetAsync' is deprecated and shouldn't be used. Prefer [reset]. This
-  /// redirect will be removed in a future update.
-  @Deprecated(
-    "Prefer 'reset'. This redirect will be removed in a future update",
-  )
-  Future<void> resetAsync() => reset();
-
   /// 'renameAsync' is deprecated and shouldn't be used. Prefer [rename]. This
   /// redirect will be removed in a future update.
   @Deprecated(
     "Prefer 'rename'. This redirect will be removed in a future update",
   )
-  Future<StoreDirectory> renameAsync(String storeName) => rename(storeName);
+  Future<StoreDirectory?> renameAsync(String storeName) => rename(storeName);
+}
+
+/// An error rasied by multiple methods that require the existence of the
+/// requested store
+class FMTCStoreNotReady extends Error {
+  /// The store name that the method tried to access
+  final String storeName;
+
+  /// A human readable description of the error, and steps that may be taken to
+  /// avoid this error being thrown again
+  final String message;
+
+  final bool _registered;
+
+  FMTCStoreNotReady._({
+    required this.storeName,
+    required bool registered,
+  })  : _registered = registered,
+        message = registered
+            ? "The store ('$storeName') was registered, but the underlying database was not open, at this time. This is an erroneous state in FMTC: if this error appears in your application, please open an issue on GitHub immediately."
+            : "The store ('$storeName') does not exist at this time, and is not ready. Ensure that your application does not use the method that triggered this error unless it is sure that the store will exist at this point.";
+
+  /// Similar to [message], but suitable for console output in an unknown context
+  @override
+  String toString() => 'FMTCStoreNotReady: $message';
 }

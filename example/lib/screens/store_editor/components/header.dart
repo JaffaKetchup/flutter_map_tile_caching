@@ -49,7 +49,7 @@ AppBar buildHeader({
                       .manage
                       .rename(newStoreName);
 
-              await instance.manage.create();
+              await instance.manage.createAsync();
               await instance.metadata.addAsync(
                 key: 'sourceURL',
                 value: newValues['sourceURL']!,

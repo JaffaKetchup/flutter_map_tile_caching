@@ -5,8 +5,8 @@ part of '../../flutter_map_tile_caching.dart';
 
 /// Represents a store of tiles
 ///
-/// The tile store itself is a database referred to in the registry
-/// (see [FMTCRegistry]). The database contains tiles, as well as metadata.
+/// The tile store itself is a database containing a descriptor, tiles and
+/// metadata.
 ///
 /// The name originates from previous versions of this library, where it
 /// represented a real directory instead of a database.
@@ -53,9 +53,6 @@ class StoreDirectory {
       FMTCTileProvider(storeDirectory: this, settings: settings);
 
   @override
-  String toString() => 'StoreDirectory(storeName: $storeName)';
-
-  @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
@@ -64,7 +61,4 @@ class StoreDirectory {
 
   @override
   int get hashCode => storeName.hashCode;
-
-  StoreDirectory copyWith(String? storeName) =>
-      StoreDirectory._(storeName ?? this.storeName);
 }

@@ -32,9 +32,6 @@ class RootDirectory {
   ///
   /// To create, initialise FMTC. Assume that FMTC is ready after initialisation
   /// and before [RootManagement.delete] is called.
-  ///
-  /// Whilst the registry database file itself can be modified with methods
-  /// included here, it's contents must only be changed by the [FMTCRegistry].
   RootManagement get manage => RootManagement._();
 
   /// Get statistics about this root (and all sub-stores)

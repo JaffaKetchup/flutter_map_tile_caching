@@ -13,42 +13,34 @@ class RootStats {
   ///
   /// Prefer [storesAvailableAsync] to avoid blocking the UI thread. Otherwise,
   /// this has slightly better performance.
-  List<StoreDirectory> get storesAvailable => _registry.registryDatabase.stores
-      .where()
-      .findAllSync()
-      .map((s) => StoreDirectory._(s.name))
+  List<StoreDirectory> get storesAvailable => _registry.storeDatabases.values
+      .map((e) => StoreDirectory._(e.storeDescriptor.getSync(0)!.name))
       .toList();
 
   /// List all the available [StoreDirectory]s
-  Future<List<StoreDirectory>> get storesAvailableAsync async =>
-      (await _registry.registryDatabase.stores.where().findAll())
-          .map((s) => StoreDirectory._(s.name))
-          .toList();
+  Future<List<StoreDirectory>> get storesAvailableAsync => Future.wait(
+        _registry.storeDatabases.values.map(
+          (e) async => StoreDirectory._((await e.storeDescriptor.get(0))!.name),
+        ),
+      );
 
-  /// Retrieve the total size of all stored tiles and the registry in kibibytes
-  /// (KiB)
+  /// Retrieve the total size of all stored tiles in kibibytes (KiB)
   ///
   /// Prefer [rootSizeAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
   ///
-  /// Internally sums up the size of all stores (using [StoreStats.storeSize])
-  /// and the size of the registry database.
+  /// Internally sums up the size of all stores (using [StoreStats.storeSize]).
   double get rootSize =>
-      (_registry.registryDatabase.getSizeSync() +
-          storesAvailable.map((e) => e.stats.storeSize).sum) /
-      1024;
+      storesAvailable.map((e) => e.stats.storeSize).sum / 1024;
 
-  /// Retrieve the total size of all stored tiles and the registry in kibibytes
+  /// Retrieve the total size of all stored tiles in kibibytes
   /// (KiB)
   ///
   /// Internally sums up the size of all stores (using
-  /// [StoreStats.storeSizeAsync]) and the size of the registry database.
+  /// [StoreStats.storeSizeAsync]).
   Future<double> get rootSizeAsync async =>
-      (await _registry.registryDatabase.getSize() +
-          (await Future.wait(
-            storesAvailable.map((e) => e.stats.storeSizeAsync),
-          ))
-              .sum) /
+      (await Future.wait(storesAvailable.map((e) => e.stats.storeSizeAsync)))
+          .sum /
       1024;
 
   /// Retrieve the number of all stored tiles
@@ -74,16 +66,13 @@ class RootStats {
   /// Whenever this has an event, it is likely the other statistics will have
   /// changed.
   ///
-  /// Control where changes are caught from using [rootParts]. See documentation
-  /// on those parts for their scope.
-  ///
   /// Recursively watch specific stores (using [StoreStats.watchChanges]) by
   /// providing them as a list of [StoreDirectory]s to [recursive]. To watch all
   /// stores, use the [storesAvailable]/[storesAvailableAsync] getter as the
-  /// argument.  By default, no sub-stores are watched (empty list), meaning only
-  /// changes within the registry (eg. store creations) will be caught. Control
-  /// where changes are caught from using [storeParts]. See documentation on
-  /// those parts for their scope.
+  /// argument. By default, no sub-stores are watched (empty list), meaning only
+  /// events that affect the actual store database (eg. store creations) will be
+  /// caught. Control where changes are caught from using [storeParts]. See
+  /// documentation on those parts for their scope.
   ///
   /// Enable debouncing to prevent unnecessary events for small changes in detail
   /// using [debounce]. Defaults to 200ms, or set to null to disable debouncing.
@@ -97,21 +86,16 @@ class RootStats {
     Duration? debounce = const Duration(milliseconds: 200),
     bool fireImmediately = false,
     List<StoreDirectory> recursive = const [],
-    List<RootParts> rootParts = const [
-      RootParts.stores,
-      RootParts.recovery,
-    ],
+    bool watchRecovery = false,
     List<StoreParts> storeParts = const [
       StoreParts.metadata,
       StoreParts.tiles,
-      StoreParts.storeEntry,
+      StoreParts.stats,
     ],
   }) =>
       [
-        if (rootParts.contains(RootParts.stores))
-          _registry.registryDatabase.stores
-              .watchLazy(fireImmediately: fireImmediately),
-        if (rootParts.contains(RootParts.recovery))
+        FMTC.instance.rootDirectory.directory.watch(),
+        if (watchRecovery)
           _registry.recoveryDatabase.recovery
               .watchLazy(fireImmediately: fireImmediately),
         ...recursive.map(
@@ -121,15 +105,4 @@ class RootStats {
           ),
         ),
       ].reduce((v, e) => v.merge(e)).debounce(debounce ?? Duration.zero);
-}
-
-/// Parts of the root which can be watched
-enum RootParts {
-  /// Includes changes within the recovery database
-  recovery,
-
-  /// Includes changes within the registry database
-  ///
-  /// Does not necessarily recursivley watch into stores.
-  stores,
 }
