@@ -21,7 +21,7 @@ class FMTCSettings {
   /// a negative user experience: a large, unknown file may be deleted by a user,
   /// causing significant data loss.
   ///
-  /// Defaults to 3GiB (3072MiB).
+  /// Defaults to 2GiB (2048MiB).
   final int databaseMaxSize;
 
   /// Sets conditions that will trigger each underlying database (individually)
@@ -43,7 +43,7 @@ class FMTCSettings {
   /// places
   FMTCSettings({
     FMTCTileProviderSettings? defaultTileProviderSettings,
-    this.databaseMaxSize = 3072,
+    this.databaseMaxSize = 2048,
     this.databaseCompactCondition = const CompactCondition(minRatio: 2),
   }) : defaultTileProviderSettings =
             defaultTileProviderSettings ?? FMTCTileProviderSettings();

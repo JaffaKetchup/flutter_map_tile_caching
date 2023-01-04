@@ -35,7 +35,7 @@ class FlutterMapTileCaching {
   /// Initialise and prepare FMTC, by creating all neccessary directories/files
   /// and configuring the [FlutterMapTileCaching] singleton
   ///
-  /// Prefer to leave [customRootDirectory] as `null`, which will use
+  /// Prefer to leave [rootDirectory] as `null`, which will use
   /// `getApplicationDocumentsDirectory()`. Alternativley, pass a custom
   /// directory - it is recommended to not use a cache directory, as the OS can
   /// clear these without notice at any time.
@@ -61,17 +61,17 @@ class FlutterMapTileCaching {
   /// [FlutterMapTileCaching.instance]. Note that [FMTC] is an alias for this
   /// object.
   static Future<FlutterMapTileCaching> initialise({
-    String? customRootDirectory,
-    FMTCSettings? customSettings,
+    String? rootDirectory,
+    FMTCSettings? settings,
     void Function(FMTCInitialisationException error)? errorHandler,
     bool disableInitialisationSafety = false,
   }) async {
-    final directory = await ((customRootDirectory == null
+    final directory = await ((rootDirectory == null
                 ? await getApplicationDocumentsDirectory()
-                : Directory(customRootDirectory)) >>
+                : Directory(rootDirectory)) >>
             'fmtc')
         .create(recursive: true);
-    final settings = customSettings ?? FMTCSettings();
+    final fmtcSettings = settings ?? FMTCSettings();
 
     if (!disableInitialisationSafety) {
       final initialisationSafetyFile =
@@ -84,8 +84,8 @@ class FlutterMapTileCaching {
 
       await FMTCRegistry.initialise(
         directory: directory,
-        databaseMaxSize: settings.databaseMaxSize,
-        databaseCompactCondition: settings.databaseCompactCondition,
+        databaseMaxSize: fmtcSettings.databaseMaxSize,
+        databaseCompactCondition: fmtcSettings.databaseCompactCondition,
         errorHandler: errorHandler,
         initialisationSafetyWriteSink: writeSink,
         safeModeSuccessfulIDs:
@@ -97,15 +97,15 @@ class FlutterMapTileCaching {
     } else {
       await FMTCRegistry.initialise(
         directory: directory,
-        databaseMaxSize: settings.databaseMaxSize,
-        databaseCompactCondition: settings.databaseCompactCondition,
+        databaseMaxSize: fmtcSettings.databaseMaxSize,
+        databaseCompactCondition: fmtcSettings.databaseCompactCondition,
         errorHandler: errorHandler,
       );
     }
 
     return _instance = FMTC._(
       rootDirectory: RootDirectory._(directory),
-      settings: settings,
+      settings: fmtcSettings,
     );
   }
 
@@ -127,8 +127,23 @@ class FlutterMapTileCaching {
     return _instance!;
   }
 
-  /// Get a [StoreDirectory] representation by store name, without creating it
-  StoreDirectory call(String storeName) => StoreDirectory._(storeName);
+  /// Get a [StoreDirectory] by name, without creating it automatically
+  ///
+  /// Use `.manage.create()` to create it asynchronously. Alternatively, use
+  /// `[]` to get a store by name and automatically create it synchronously.
+  StoreDirectory call(String storeName) => StoreDirectory._(
+        storeName,
+        autoCreate: false,
+      );
+
+  /// Get a [StoreDirectory] by name, and create it synchronously automatically
+  ///
+  /// Prefer [call]/`()` wherever possible, as this method blocks the thread.
+  /// Note that that method does not automatically create the store.
+  StoreDirectory operator [](String storeName) => StoreDirectory._(
+        storeName,
+        autoCreate: false,
+      );
 }
 
 /// An exception raised when FMTC failed to initialise

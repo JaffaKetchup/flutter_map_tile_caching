@@ -27,36 +27,36 @@ class StoreStats {
   Future<double> get storeSizeAsync async =>
       await _db.getSize(includeIndexes: true) / 1024;
 
-  /// Retrieve the number of stored tiles
+  /// Retrieve the number of stored tiles synchronously
   ///
   /// Prefer [storeLengthAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
   int get storeLength => _db.tiles.countSync();
 
-  /// Retrieve the number of stored tiles
+  /// Retrieve the number of stored tiles asynchronously
   Future<int> get storeLengthAsync => _db.tiles.count();
 
   /// Retrieve the number of tiles that were successfully retrieved from the
-  /// store during browsing
+  /// store during browsing synchronously
   ///
   /// Prefer [cacheHitsAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
   int get cacheHits => _db.storeDescriptor.getSync(0)!.hits;
 
   /// Retrieve the number of tiles that were successfully retrieved from the
-  /// store during browsing
+  /// store during browsing asynchronously
   Future<int> get cacheHitsAsync async =>
       (await _db.storeDescriptor.get(0))!.hits;
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the
-  /// store during browsing
+  /// store during browsing synchronously
   ///
   /// Prefer [cacheMissesAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
   int get cacheMisses => _db.storeDescriptor.getSync(0)!.misses;
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the
-  /// store during browsing
+  /// store during browsing asynchronously
   Future<int> get cacheMissesAsync async =>
       (await _db.storeDescriptor.get(0))!.misses;
 

@@ -184,7 +184,7 @@ class StoreManagement {
     );
 
     // Register the new database (it will be re-opened)
-    final newStore = StoreDirectory._(newStoreName);
+    final newStore = StoreDirectory._(newStoreName, autoCreate: false);
     await newStore.manage.createAsync();
 
     // Update the name stored inside the database

@@ -26,10 +26,6 @@ class RootDirectory {
 
   /// Manage the root's representation on the filesystem
   ///
-  /// Provides access to methods to:
-  ///  * Delete and uninitialise
-  ///  * Reset
-  ///
   /// To create, initialise FMTC. Assume that FMTC is ready after initialisation
   /// and before [RootManagement.delete] is called.
   RootManagement get manage => RootManagement._();

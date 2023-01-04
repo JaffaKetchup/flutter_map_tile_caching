@@ -30,8 +30,8 @@ class RootManagement {
 
     await delete();
     await FMTC.initialise(
-      customRootDirectory: directory,
-      customSettings: settings,
+      rootDirectory: directory,
+      settings: settings,
     );
   }
 

@@ -9,22 +9,31 @@ class RootStats {
 
   FMTCRegistry get _registry => FMTCRegistry.instance;
 
-  /// List all the available [StoreDirectory]s
+  /// List all the available [StoreDirectory]s synchronously
   ///
   /// Prefer [storesAvailableAsync] to avoid blocking the UI thread. Otherwise,
   /// this has slightly better performance.
   List<StoreDirectory> get storesAvailable => _registry.storeDatabases.values
-      .map((e) => StoreDirectory._(e.storeDescriptor.getSync(0)!.name))
+      .map(
+        (e) => StoreDirectory._(
+          e.storeDescriptor.getSync(0)!.name,
+          autoCreate: false,
+        ),
+      )
       .toList();
 
-  /// List all the available [StoreDirectory]s
+  /// List all the available [StoreDirectory]s asynchronously
   Future<List<StoreDirectory>> get storesAvailableAsync => Future.wait(
         _registry.storeDatabases.values.map(
-          (e) async => StoreDirectory._((await e.storeDescriptor.get(0))!.name),
+          (e) async => StoreDirectory._(
+            (await e.storeDescriptor.get(0))!.name,
+            autoCreate: false,
+          ),
         ),
       );
 
   /// Retrieve the total size of all stored tiles in kibibytes (KiB)
+  /// synchronously
   ///
   /// Prefer [rootSizeAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
@@ -33,8 +42,8 @@ class RootStats {
   double get rootSize =>
       storesAvailable.map((e) => e.stats.storeSize).sum / 1024;
 
-  /// Retrieve the total size of all stored tiles in kibibytes
-  /// (KiB)
+  /// Retrieve the total size of all stored tiles in kibibytes (KiB)
+  /// asynchronously
   ///
   /// Internally sums up the size of all stores (using
   /// [StoreStats.storeSizeAsync]).
@@ -43,7 +52,7 @@ class RootStats {
           .sum /
       1024;
 
-  /// Retrieve the number of all stored tiles
+  /// Retrieve the number of all stored tiles synchronously
   ///
   /// Prefer [rootLengthAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
@@ -52,7 +61,7 @@ class RootStats {
   /// [StoreStats.storeLength]).
   int get rootLength => storesAvailable.map((e) => e.stats.storeLength).sum;
 
-  /// Retrieve the number of all stored tiles
+  /// Retrieve the number of all stored tiles asynchronously
   ///
   /// Internally sums up the length of all stores (using
   /// [StoreStats.storeLengthAsync]).

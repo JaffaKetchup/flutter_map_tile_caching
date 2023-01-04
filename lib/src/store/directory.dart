@@ -13,18 +13,17 @@ part of '../../flutter_map_tile_caching.dart';
 ///
 /// Reach through [FlutterMapTileCaching.call].
 class StoreDirectory {
-  StoreDirectory._(this.storeName);
+  StoreDirectory._(
+    this.storeName, {
+    required bool autoCreate,
+  }) {
+    if (autoCreate) manage.create();
+  }
 
   /// The user-friendly name of the store directory
   final String storeName;
 
   /// Manage this store's representation on the filesystem
-  ///
-  /// Provides access to methods to:
-  ///  * Create
-  ///  * Delete
-  ///  * Rename
-  ///  * Reset
   StoreManagement get manage => StoreManagement._(this);
 
   /// Get statistics about this store
