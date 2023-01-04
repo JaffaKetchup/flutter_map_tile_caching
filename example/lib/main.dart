@@ -23,7 +23,11 @@ void main() async {
 
   final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  await FlutterMapTileCaching.initialise();
+  bool damagedDatabaseDeleted = false;
+  await FlutterMapTileCaching.initialise(
+    errorHandler: (error) => damagedDatabaseDeleted = error.wasFatal,
+  );
+
   await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: null);
 
   if (prefs.getBool('reset') ?? false) {
@@ -39,11 +43,16 @@ void main() async {
   );
   if (await newAppVersionFile.exists()) await newAppVersionFile.delete();
 
-  runApp(const AppContainer());
+  runApp(AppContainer(damagedDatabaseDeleted: damagedDatabaseDeleted));
 }
 
 class AppContainer extends StatelessWidget {
-  const AppContainer({Key? key}) : super(key: key);
+  const AppContainer({
+    Key? key,
+    required this.damagedDatabaseDeleted,
+  }) : super(key: key);
+
+  final bool damagedDatabaseDeleted;
 
   @override
   Widget build(BuildContext context) => MultiProvider(
@@ -66,7 +75,7 @@ class AppContainer extends StatelessWidget {
             textTheme: GoogleFonts.openSansTextTheme(),
           ),
           debugShowCheckedModeBanner: false,
-          home: const MainScreen(),
+          home: MainScreen(damagedDatabaseDeleted: damagedDatabaseDeleted),
         ),
       );
 }

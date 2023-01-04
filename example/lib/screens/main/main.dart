@@ -16,7 +16,12 @@ import 'pages/stores/stores.dart';
 import 'pages/update/update.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({
+    Key? key,
+    required this.damagedDatabaseDeleted,
+  }) : super(key: key);
+
+  final bool damagedDatabaseDeleted;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -95,6 +100,15 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     _pageController = PageController(initialPage: _currentPageIndex);
+    if (widget.damagedDatabaseDeleted) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('At least one corrupted database has been deleted.'),
+          ),
+        ),
+      );
+    }
     super.initState();
   }
 
