@@ -58,7 +58,7 @@ const DbTileSchema = CollectionSchema(
   getId: _dbTileGetId,
   getLinks: _dbTileGetLinks,
   attach: _dbTileAttach,
-  version: '3.0.5',
+  version: '3.0.6-dev.0',
 );
 
 int _dbTileEstimateSize(

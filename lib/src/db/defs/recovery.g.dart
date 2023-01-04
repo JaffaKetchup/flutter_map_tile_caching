@@ -130,7 +130,7 @@ const DbRecoverableRegionSchema = CollectionSchema(
   getId: _dbRecoverableRegionGetId,
   getLinks: _dbRecoverableRegionGetLinks,
   attach: _dbRecoverableRegionAttach,
-  version: '3.0.5',
+  version: '3.0.6-dev.0',
 );
 
 int _dbRecoverableRegionEstimateSize(
