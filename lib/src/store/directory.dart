@@ -38,9 +38,15 @@ class StoreDirectory {
   StoreMetadata get metadata => StoreMetadata._(this);
 
   /// Provides export functionality for this store
+  ///
+  /// The 'fmtc_plus_sharing' module must be installed to add the functionality,
+  /// without it, this object provides no functionality.
   StoreExport get export => StoreExport._(this);
 
   /// Get tools to manage bulk downloading to this store
+  ///
+  /// The 'fmtc_plus_background_downloading' module must be installed to add the
+  /// background downloading functionality.
   DownloadManagement get download => DownloadManagement._(this);
 
   /// Get 'flutter_map_tile_caching's custom [TileProvider] for use in a

@@ -17,16 +17,9 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_background/flutter_background.dart';
-import 'package:flutter_background/flutter_background.dart'
-    as flutter_background;
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart'
-    as flutter_local_notifications;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
@@ -36,9 +29,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:queue/queue.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:stream_transform/stream_transform.dart';
 
 import 'src/bulk_download/bulk_tile_writer.dart';
@@ -53,16 +44,14 @@ import 'src/db/defs/tile.dart';
 import 'src/db/registry.dart';
 import 'src/db/tools.dart';
 import 'src/misc/exts.dart';
-
 import 'src/providers/image_provider.dart';
 import 'src/settings/tile_provider_settings.dart';
 
-export 'src/misc/background_download_widget.dart';
 export 'src/settings/tile_provider_settings.dart';
 
 part 'src/bulk_download/download_progress.dart';
 part 'src/fmtc.dart';
-part 'src/misc/exports.dart';
+part 'src/misc/typedefs.dart';
 part 'src/providers/tile_provider.dart';
 part 'src/regions/base_region.dart';
 part 'src/regions/circle.dart';

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:fmtc_plus_background_downloading/fmtc_plus_background_downloading.dart';
 
 class BackgroundDownloadBatteryOptimizationsInfo extends StatefulWidget {
   const BackgroundDownloadBatteryOptimizationsInfo({

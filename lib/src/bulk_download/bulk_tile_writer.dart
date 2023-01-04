@@ -11,6 +11,7 @@ import 'package:meta/meta.dart';
 
 import '../../flutter_map_tile_caching.dart';
 import '../db/defs/metadata.dart';
+import '../db/defs/store_descriptor.dart';
 import '../db/defs/tile.dart';
 import '../db/tools.dart';
 import 'tile_progress.dart';
@@ -130,7 +131,7 @@ Future<void> _bufferWorker(SendPort sendPort) async {
 
   final setupInfo = await recievePort.first as List<dynamic>;
   final db = Isar.openSync(
-    [DbTileSchema, DbMetadataSchema],
+    [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
     name: DatabaseTools.hash(setupInfo[0]).toString(),
     inspector: false,
   );
@@ -207,7 +208,7 @@ Future<void> _instantWorker(SendPort sendPort) async {
   final recievePort = rp.asBroadcastStream();
 
   final db = Isar.openSync(
-    [DbTileSchema, DbMetadataSchema],
+    [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
     name: DatabaseTools.hash(await recievePort.first).toString(),
     inspector: false,
   );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:fmtc_plus_sharing/fmtc_plus_sharing.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../shared/state/general_provider.dart';

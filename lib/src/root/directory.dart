@@ -44,6 +44,9 @@ class RootDirectory {
   RootMigrator get migrator => RootMigrator._();
 
   /// Provides store import functionality for this root
+  ///
+  /// The 'fmtc_plus_sharing' module must be installed to add the functionality,
+  /// without it, this object provides no functionality.
   RootImport get import => RootImport._();
 
   @override
