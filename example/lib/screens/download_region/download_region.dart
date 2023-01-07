@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../shared/state/download_provider.dart';
 import '../../shared/state/general_provider.dart';
 import 'components/bd_battery_optimizations_info.dart';
+import 'components/buffering_configuration.dart';
 import 'components/optional_functionality.dart';
 import 'components/region_information.dart';
 import 'components/section_separator.dart';
@@ -60,134 +61,130 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
         appBar: AppBar(
           title: const Text('Download Region'),
         ),
-        body: Scrollbar(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RegionInformation(
-                    widget: widget,
-                    circleRegion: circleRegion,
-                    rectangleRegion: rectangleRegion,
-                  ),
-                  const SectionSeparator(),
-                  const StoreSelector(),
-                  const SectionSeparator(),
-                  const OptionalFunctionality(),
-                  const SectionSeparator(),
-                  const BackgroundDownloadBatteryOptimizationsInfo(),
-                  const SectionSeparator(),
-                  const UsageWarning(),
-                  const SectionSeparator(),
-                  const Text('START DOWNLOAD IN'),
-                  Consumer2<DownloadProvider, GeneralProvider>(
-                    builder: (context, downloadProvider, generalProvider, _) =>
-                        Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: downloadProvider.selectedStore == null
-                                ? null
-                                : () async {
-                                    final Map<String, String> metadata =
-                                        await downloadProvider
-                                            .selectedStore!.metadata.readAsync;
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RegionInformation(
+                  widget: widget,
+                  circleRegion: circleRegion,
+                  rectangleRegion: rectangleRegion,
+                ),
+                const SectionSeparator(),
+                const StoreSelector(),
+                const SectionSeparator(),
+                const OptionalFunctionality(),
+                const SectionSeparator(),
+                const BufferingConfiguration(),
+                const SectionSeparator(),
+                const BackgroundDownloadBatteryOptimizationsInfo(),
+                const SectionSeparator(),
+                const UsageWarning(),
+                const SectionSeparator(),
+                const Text('START DOWNLOAD IN'),
+                Consumer2<DownloadProvider, GeneralProvider>(
+                  builder: (context, downloadProvider, generalProvider, _) =>
+                      Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: downloadProvider.selectedStore == null
+                              ? null
+                              : () async {
+                                  final Map<String, String> metadata =
+                                      await downloadProvider
+                                          .selectedStore!.metadata.readAsync;
 
-                                    downloadProvider.setDownloadProgress(
-                                      downloadProvider.selectedStore!.download
-                                          .startForeground(
-                                            region:
-                                                widget.region.toDownloadable(
-                                              downloadProvider.minZoom,
-                                              downloadProvider.maxZoom,
-                                              TileLayer(
-                                                urlTemplate:
-                                                    metadata['sourceURL'],
-                                              ),
-                                              preventRedownload:
-                                                  downloadProvider
-                                                      .preventRedownload,
-                                              seaTileRemoval: downloadProvider
-                                                  .seaTileRemoval,
-                                              parallelThreads:
-                                                  (await SharedPreferences
-                                                                  .getInstance())
-                                                              .getBool(
-                                                            'bypassDownloadThreadsLimitation',
-                                                          ) ??
-                                                          false
-                                                      ? 10
-                                                      : 2,
+                                  downloadProvider.setDownloadProgress(
+                                    downloadProvider.selectedStore!.download
+                                        .startForeground(
+                                          region: widget.region.toDownloadable(
+                                            downloadProvider.minZoom,
+                                            downloadProvider.maxZoom,
+                                            TileLayer(
+                                              urlTemplate:
+                                                  metadata['sourceURL'],
                                             ),
-                                            disableRecovery: downloadProvider
-                                                .disableRecovery,
-                                            bufferMode:
-                                                DownloadBufferMode.tiles,
-                                            bufferLimit: 100,
-                                          )
-                                          .asBroadcastStream(),
-                                    );
+                                            preventRedownload: downloadProvider
+                                                .preventRedownload,
+                                            seaTileRemoval:
+                                                downloadProvider.seaTileRemoval,
+                                            parallelThreads:
+                                                (await SharedPreferences
+                                                                .getInstance())
+                                                            .getBool(
+                                                          'bypassDownloadThreadsLimitation',
+                                                        ) ??
+                                                        false
+                                                    ? 10
+                                                    : 2,
+                                          ),
+                                          disableRecovery:
+                                              downloadProvider.disableRecovery,
+                                          bufferMode: DownloadBufferMode.tiles,
+                                          bufferLimit:
+                                              downloadProvider.bufferingAmount,
+                                        )
+                                        .asBroadcastStream(),
+                                  );
 
-                                    if (mounted) Navigator.of(context).pop();
-                                  },
-                            child: const Text('Foreground'),
-                          ),
+                                  if (mounted) Navigator.of(context).pop();
+                                },
+                          child: const Text('Foreground'),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: downloadProvider.selectedStore == null
-                                ? null
-                                : () async {
-                                    final Map<String, String> metadata =
-                                        await downloadProvider
-                                            .selectedStore!.metadata.readAsync;
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: downloadProvider.selectedStore == null
+                              ? null
+                              : () async {
+                                  final Map<String, String> metadata =
+                                      await downloadProvider
+                                          .selectedStore!.metadata.readAsync;
 
-                                    await downloadProvider
-                                        .selectedStore!.download
-                                        .startBackground(
-                                      region: widget.region.toDownloadable(
-                                        downloadProvider.minZoom,
-                                        downloadProvider.maxZoom,
-                                        TileLayer(
-                                          urlTemplate: metadata['sourceURL'],
-                                        ),
-                                        preventRedownload:
-                                            downloadProvider.preventRedownload,
-                                        seaTileRemoval:
-                                            downloadProvider.seaTileRemoval,
-                                        parallelThreads:
-                                            (await SharedPreferences
-                                                            .getInstance())
-                                                        .getBool(
-                                                      'bypassDownloadThreadsLimitation',
-                                                    ) ??
-                                                    false
-                                                ? 10
-                                                : 2,
+                                  await downloadProvider.selectedStore!.download
+                                      .startBackground(
+                                    region: widget.region.toDownloadable(
+                                      downloadProvider.minZoom,
+                                      downloadProvider.maxZoom,
+                                      TileLayer(
+                                        urlTemplate: metadata['sourceURL'],
                                       ),
-                                      disableRecovery:
-                                          downloadProvider.disableRecovery,
-                                      backgroundNotificationIcon:
-                                          const AndroidResource(
-                                        name: 'ic_notification_icon',
-                                        defType: 'mipmap',
-                                      ),
-                                    );
+                                      preventRedownload:
+                                          downloadProvider.preventRedownload,
+                                      seaTileRemoval:
+                                          downloadProvider.seaTileRemoval,
+                                      parallelThreads: (await SharedPreferences
+                                                      .getInstance())
+                                                  .getBool(
+                                                'bypassDownloadThreadsLimitation',
+                                              ) ??
+                                              false
+                                          ? 10
+                                          : 2,
+                                    ),
+                                    disableRecovery:
+                                        downloadProvider.disableRecovery,
+                                    backgroundNotificationIcon:
+                                        const AndroidResource(
+                                      name: 'ic_notification_icon',
+                                      defType: 'mipmap',
+                                    ),
+                                  );
 
-                                    if (mounted) Navigator.of(context).pop();
-                                  },
-                            child: const Text('Background'),
-                          ),
+                                  if (mounted) Navigator.of(context).pop();
+                                },
+                          child: const Text('Background'),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

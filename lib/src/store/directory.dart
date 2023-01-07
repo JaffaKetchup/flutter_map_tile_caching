@@ -58,11 +58,9 @@ class StoreDirectory {
       FMTCTileProvider(storeDirectory: this, settings: settings);
 
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-
-    return other is StoreDirectory && other.storeName == storeName;
-  }
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StoreDirectory && other.storeName == storeName);
 
   @override
   int get hashCode => storeName.hashCode;

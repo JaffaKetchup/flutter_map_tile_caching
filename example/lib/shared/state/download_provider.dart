@@ -84,4 +84,11 @@ class DownloadProvider extends ChangeNotifier {
     _disableRecovery = newBool;
     notifyListeners();
   }
+
+  int _bufferingAmount = 500;
+  int get bufferingAmount => _bufferingAmount;
+  set bufferingAmount(int newNum) {
+    _bufferingAmount = newNum;
+    notifyListeners();
+  }
 }
