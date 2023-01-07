@@ -19,6 +19,7 @@ dependencies:
   flutter_map_tile_caching:
     git:
       url: https://github.com/JaffaKetchup/flutter_map_tile_caching.git
+      ref: next-version
   flutter_speed_dial: ^6.0.0
   fmtc_plus_background_downloading:
     git:
@@ -40,13 +41,6 @@ dependencies:
 
 dev_dependencies: null
 
-dependency_overrides:
-  flutter_map_tile_caching:
-    path: ../
-  fmtc_plus_background_downloading:
-    path: C:/Users/lukas/Documents/GitHub/fmtc_plus_background_downloading
-  fmtc_plus_sharing:
-    path: C:/Users/lukas/Documents/GitHub/fmtc_plus_sharing
 
 flutter:
   uses-material-design: true

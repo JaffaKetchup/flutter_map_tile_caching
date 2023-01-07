@@ -41,16 +41,19 @@ AppBar buildHeader({
             if (formKey.currentState!.validate()) {
               formKey.currentState!.save();
 
-              final StoreDirectory existingStore =
-                  FMTC.instance(widget.existingStoreName!);
-              final StoreDirectory newStore = widget.existingStoreName == null
+              final StoreDirectory? existingStore =
+                  widget.existingStoreName == null
+                      ? null
+                      : FMTC.instance(widget.existingStoreName!);
+              final StoreDirectory newStore = existingStore == null
                   ? FMTC.instance(newValues['storeName']!)
                   : await existingStore.manage.rename(newValues['storeName']!);
               if (!mounted) return;
 
               final downloadProvider =
                   Provider.of<DownloadProvider>(context, listen: false);
-              if (downloadProvider.selectedStore == existingStore) {
+              if (existingStore != null &&
+                  downloadProvider.selectedStore == existingStore) {
                 downloadProvider.setSelectedStore(newStore);
               }
 
