@@ -30,9 +30,12 @@ class RootMigrator {
   ///
   /// In order to migrate the tiles to the new format, [urlTemplates] must be
   /// used. Pass every URL template used to store any of the tiles that might be
-  /// in the store. Specifying `null` will use the preset OSM tile server only.
+  /// in the store. Specifying `null` will use the preset OSM tile server(s)
+  /// only.
   ///
-  /// Set [deleteOldStructure] to `false` to keep the old structure.
+  /// Set [deleteOldStructure] to `false` to keep the old structure. If a store
+  /// exists with the same name, it will not be overwritten, and the
+  /// [deleteOldStructure] parameter will be followed regardless.
   ///
   /// Only supports placeholders in the normal flutter_map form, those that meet
   /// the RegEx: `\{ *([\w_-]+) *\}`. Only supports tiles that were sanitised
@@ -40,26 +43,25 @@ class RootMigrator {
   ///
   /// Recovery information and cached statistics will be lost.
   ///
-  /// Returns `null` if no structure was found or migration failed, otherwise
-  /// the number of tiles that could not be matched to any of the [urlTemplates].
-  /// A fully sucessful migration will return 0.
-  Future<int?> fromV6({
+  /// Returns `null` if no structure root was found, otherwise a [Map] of the
+  /// store names to the number of failed tiles (tiles that could not be matched
+  /// to any of the [urlTemplates]). A successful migration will have all values
+  /// 0.
+  Future<Map<String, int>?> fromV6({
     required List<String>? urlTemplates,
     Directory? customDirectory,
     bool deleteOldStructure = true,
   }) async {
     final placeholderRegex = RegExp(r'\{ *([\w_-]+) *\}');
 
-    final List<List<String>> matchables = [
+    final matchables = <List<String>>[
       ...[
         'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         ...urlTemplates ?? [],
       ].map((url) {
-        final sanitised = _filesystemSanitiseValidate(
-          inputString: url,
-          throwIfInvalid: false,
-        );
+        final sanitised = _defaultFilesystemSanitiser(url).validOutput;
+
         return [
           sanitised.replaceAll(placeholderRegex, '(.*?)'),
           sanitised,
@@ -95,16 +97,20 @@ class RootMigrator {
 
     // Don't continue migration if there are no stores
     final oldStores = root >> 'stores';
-    if (!await oldStores.exists()) return null;
+    if (!await oldStores.exists()) return {};
+
+    // Prepare results map
+    final Map<String, int> results = {};
 
     // Migrate stores
-    int failedTiles = 0;
     await for (final storeDirectory
         in oldStores.list().whereType<Directory>()) {
-      final store = FMTCRegistry.instance.storeDatabases[await FMTC
-          .instance(path.basename(storeDirectory.absolute.path))
-          .manage
-          ._advancedCreate()]!;
+      final name = path.basename(storeDirectory.absolute.path);
+      results[name] = 0;
+
+      final store = FMTCRegistry.instance
+          .storeDatabases[await FMTC.instance(name).manage._advancedCreate()];
+      if (store == null) continue;
 
       // Migrate tiles
       await store.writeTxn(
@@ -156,7 +162,7 @@ class RootMigrator {
                     );
                   }
 
-                  failedTiles++;
+                  results[name] = results[name]! + 1;
                   return null;
                 },
               )
@@ -185,7 +191,7 @@ class RootMigrator {
     // Delete store files
     await oldStores.delete(recursive: true);
 
-    return failedTiles;
+    return results;
   }
 }
 
@@ -232,37 +238,6 @@ _FilesystemSanitiserResult _defaultFilesystemSanitiser(String input) {
     validOutput: validOutput,
     errorMessages: errorMessages,
   );
-}
-
-/// An [Exception] thrown by [FMTCSettings.filesystemSanitiser] indicating that the supplied string was invalid
-///
-/// The [_message] gives a reason and more information.
-class _InvalidFilesystemString implements Exception {
-  final String _message;
-
-  /// An [Exception] thrown by [FMTCSettings.filesystemSanitiser] indicating that the supplied string was invalid
-  ///
-  /// The [_message] gives a reason and more information.
-  _InvalidFilesystemString(this._message);
-
-  @override
-  String toString() => 'InvalidFilesystemString: $_message';
-  String toStringUserFriendly() => _message;
-}
-
-String _filesystemSanitiseValidate({
-  required String inputString,
-  required bool throwIfInvalid,
-}) {
-  final _FilesystemSanitiserResult output =
-      _defaultFilesystemSanitiser(inputString);
-
-  if (throwIfInvalid && output.errorMessages.isNotEmpty) {
-    throw _InvalidFilesystemString(
-      'The input string was unsuitable for filesystem use, due to the following reasons:\n${output.errorMessages.map((e) => ' - $e').join('\n')}',
-    );
-  }
-  return output.validOutput;
 }
 
 /// Object to return from any filesystem sanitiser defined in [FMTCSettings.filesystemSanitiser]
