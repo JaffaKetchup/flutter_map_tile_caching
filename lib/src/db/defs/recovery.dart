@@ -17,28 +17,28 @@ class DbRecoverableRegion {
   @enumerated
   final RegionType type;
 
-  final int minZoom;
-  final int maxZoom;
+  final byte minZoom;
+  final byte maxZoom;
 
-  final int start;
-  final int? end;
+  final short start;
+  final short? end;
 
-  final int parallelThreads;
+  final byte parallelThreads;
   final bool preventRedownload;
   final bool seaTileRemoval;
 
-  final double? nwLat;
-  final double? nwLng;
-  final double? seLat;
-  final double? seLng;
+  final float? nwLat;
+  final float? nwLng;
+  final float? seLat;
+  final float? seLng;
 
-  final double? centerLat;
-  final double? centerLng;
-  final double? circleRadius;
+  final float? centerLat;
+  final float? centerLng;
+  final float? circleRadius;
 
-  final List<double>? linePointsLat;
-  final List<double>? linePointsLng;
-  final double? lineRadius;
+  final List<float>? linePointsLat;
+  final List<float>? linePointsLng;
+  final float? lineRadius;
 
   DbRecoverableRegion({
     required this.id,

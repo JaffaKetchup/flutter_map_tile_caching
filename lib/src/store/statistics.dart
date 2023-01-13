@@ -86,7 +86,7 @@ class StoreStats {
       StoreParts.stats,
     ],
   }) =>
-      [
+      StreamGroup.merge([
         if (storeParts.contains(StoreParts.metadata))
           _db.metadata.watchLazy(fireImmediately: fireImmediately),
         if (storeParts.contains(StoreParts.tiles))
@@ -94,7 +94,7 @@ class StoreStats {
         if (storeParts.contains(StoreParts.stats))
           _db.storeDescriptor
               .watchObjectLazy(0, fireImmediately: fireImmediately),
-      ].reduce((v, e) => v.merge(e)).debounce(debounce ?? Duration.zero);
+      ]).debounce(debounce ?? Duration.zero);
 }
 
 /// Parts of a store which can be watched

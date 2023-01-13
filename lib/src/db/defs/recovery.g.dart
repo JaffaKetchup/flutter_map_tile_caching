@@ -20,62 +20,62 @@ const DbRecoverableRegionSchema = CollectionSchema(
     r'centerLat': PropertySchema(
       id: 0,
       name: r'centerLat',
-      type: IsarType.double,
+      type: IsarType.float,
     ),
     r'centerLng': PropertySchema(
       id: 1,
       name: r'centerLng',
-      type: IsarType.double,
+      type: IsarType.float,
     ),
     r'circleRadius': PropertySchema(
       id: 2,
       name: r'circleRadius',
-      type: IsarType.double,
+      type: IsarType.float,
     ),
     r'end': PropertySchema(
       id: 3,
       name: r'end',
-      type: IsarType.long,
+      type: IsarType.int,
     ),
     r'linePointsLat': PropertySchema(
       id: 4,
       name: r'linePointsLat',
-      type: IsarType.doubleList,
+      type: IsarType.floatList,
     ),
     r'linePointsLng': PropertySchema(
       id: 5,
       name: r'linePointsLng',
-      type: IsarType.doubleList,
+      type: IsarType.floatList,
     ),
     r'lineRadius': PropertySchema(
       id: 6,
       name: r'lineRadius',
-      type: IsarType.double,
+      type: IsarType.float,
     ),
     r'maxZoom': PropertySchema(
       id: 7,
       name: r'maxZoom',
-      type: IsarType.long,
+      type: IsarType.byte,
     ),
     r'minZoom': PropertySchema(
       id: 8,
       name: r'minZoom',
-      type: IsarType.long,
+      type: IsarType.byte,
     ),
     r'nwLat': PropertySchema(
       id: 9,
       name: r'nwLat',
-      type: IsarType.double,
+      type: IsarType.float,
     ),
     r'nwLng': PropertySchema(
       id: 10,
       name: r'nwLng',
-      type: IsarType.double,
+      type: IsarType.float,
     ),
     r'parallelThreads': PropertySchema(
       id: 11,
       name: r'parallelThreads',
-      type: IsarType.long,
+      type: IsarType.byte,
     ),
     r'preventRedownload': PropertySchema(
       id: 12,
@@ -85,12 +85,12 @@ const DbRecoverableRegionSchema = CollectionSchema(
     r'seLat': PropertySchema(
       id: 13,
       name: r'seLat',
-      type: IsarType.double,
+      type: IsarType.float,
     ),
     r'seLng': PropertySchema(
       id: 14,
       name: r'seLng',
-      type: IsarType.double,
+      type: IsarType.float,
     ),
     r'seaTileRemoval': PropertySchema(
       id: 15,
@@ -100,7 +100,7 @@ const DbRecoverableRegionSchema = CollectionSchema(
     r'start': PropertySchema(
       id: 16,
       name: r'start',
-      type: IsarType.long,
+      type: IsarType.int,
     ),
     r'storeName': PropertySchema(
       id: 17,
@@ -142,13 +142,13 @@ int _dbRecoverableRegionEstimateSize(
   {
     final value = object.linePointsLat;
     if (value != null) {
-      bytesCount += 3 + value.length * 8;
+      bytesCount += 3 + value.length * 4;
     }
   }
   {
     final value = object.linePointsLng;
     if (value != null) {
-      bytesCount += 3 + value.length * 8;
+      bytesCount += 3 + value.length * 4;
     }
   }
   bytesCount += 3 + object.storeName.length * 3;
@@ -161,23 +161,23 @@ void _dbRecoverableRegionSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDouble(offsets[0], object.centerLat);
-  writer.writeDouble(offsets[1], object.centerLng);
-  writer.writeDouble(offsets[2], object.circleRadius);
-  writer.writeLong(offsets[3], object.end);
-  writer.writeDoubleList(offsets[4], object.linePointsLat);
-  writer.writeDoubleList(offsets[5], object.linePointsLng);
-  writer.writeDouble(offsets[6], object.lineRadius);
-  writer.writeLong(offsets[7], object.maxZoom);
-  writer.writeLong(offsets[8], object.minZoom);
-  writer.writeDouble(offsets[9], object.nwLat);
-  writer.writeDouble(offsets[10], object.nwLng);
-  writer.writeLong(offsets[11], object.parallelThreads);
+  writer.writeFloat(offsets[0], object.centerLat);
+  writer.writeFloat(offsets[1], object.centerLng);
+  writer.writeFloat(offsets[2], object.circleRadius);
+  writer.writeInt(offsets[3], object.end);
+  writer.writeFloatList(offsets[4], object.linePointsLat);
+  writer.writeFloatList(offsets[5], object.linePointsLng);
+  writer.writeFloat(offsets[6], object.lineRadius);
+  writer.writeByte(offsets[7], object.maxZoom);
+  writer.writeByte(offsets[8], object.minZoom);
+  writer.writeFloat(offsets[9], object.nwLat);
+  writer.writeFloat(offsets[10], object.nwLng);
+  writer.writeByte(offsets[11], object.parallelThreads);
   writer.writeBool(offsets[12], object.preventRedownload);
-  writer.writeDouble(offsets[13], object.seLat);
-  writer.writeDouble(offsets[14], object.seLng);
+  writer.writeFloat(offsets[13], object.seLat);
+  writer.writeFloat(offsets[14], object.seLng);
   writer.writeBool(offsets[15], object.seaTileRemoval);
-  writer.writeLong(offsets[16], object.start);
+  writer.writeInt(offsets[16], object.start);
   writer.writeString(offsets[17], object.storeName);
   writer.writeDateTime(offsets[18], object.time);
   writer.writeByte(offsets[19], object.type.index);
@@ -190,24 +190,24 @@ DbRecoverableRegion _dbRecoverableRegionDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = DbRecoverableRegion(
-    centerLat: reader.readDoubleOrNull(offsets[0]),
-    centerLng: reader.readDoubleOrNull(offsets[1]),
-    circleRadius: reader.readDoubleOrNull(offsets[2]),
-    end: reader.readLongOrNull(offsets[3]),
+    centerLat: reader.readFloatOrNull(offsets[0]),
+    centerLng: reader.readFloatOrNull(offsets[1]),
+    circleRadius: reader.readFloatOrNull(offsets[2]),
+    end: reader.readIntOrNull(offsets[3]),
     id: id,
-    linePointsLat: reader.readDoubleList(offsets[4]),
-    linePointsLng: reader.readDoubleList(offsets[5]),
-    lineRadius: reader.readDoubleOrNull(offsets[6]),
-    maxZoom: reader.readLong(offsets[7]),
-    minZoom: reader.readLong(offsets[8]),
-    nwLat: reader.readDoubleOrNull(offsets[9]),
-    nwLng: reader.readDoubleOrNull(offsets[10]),
-    parallelThreads: reader.readLong(offsets[11]),
+    linePointsLat: reader.readFloatList(offsets[4]),
+    linePointsLng: reader.readFloatList(offsets[5]),
+    lineRadius: reader.readFloatOrNull(offsets[6]),
+    maxZoom: reader.readByte(offsets[7]),
+    minZoom: reader.readByte(offsets[8]),
+    nwLat: reader.readFloatOrNull(offsets[9]),
+    nwLng: reader.readFloatOrNull(offsets[10]),
+    parallelThreads: reader.readByte(offsets[11]),
     preventRedownload: reader.readBool(offsets[12]),
-    seLat: reader.readDoubleOrNull(offsets[13]),
-    seLng: reader.readDoubleOrNull(offsets[14]),
+    seLat: reader.readFloatOrNull(offsets[13]),
+    seLng: reader.readFloatOrNull(offsets[14]),
     seaTileRemoval: reader.readBool(offsets[15]),
-    start: reader.readLong(offsets[16]),
+    start: reader.readInt(offsets[16]),
     storeName: reader.readString(offsets[17]),
     time: reader.readDateTime(offsets[18]),
     type: _DbRecoverableRegiontypeValueEnumMap[
@@ -225,39 +225,39 @@ P _dbRecoverableRegionDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readFloatOrNull(offset)) as P;
     case 1:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readFloatOrNull(offset)) as P;
     case 2:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readFloatOrNull(offset)) as P;
     case 3:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readIntOrNull(offset)) as P;
     case 4:
-      return (reader.readDoubleList(offset)) as P;
+      return (reader.readFloatList(offset)) as P;
     case 5:
-      return (reader.readDoubleList(offset)) as P;
+      return (reader.readFloatList(offset)) as P;
     case 6:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readFloatOrNull(offset)) as P;
     case 7:
-      return (reader.readLong(offset)) as P;
+      return (reader.readByte(offset)) as P;
     case 8:
-      return (reader.readLong(offset)) as P;
+      return (reader.readByte(offset)) as P;
     case 9:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readFloatOrNull(offset)) as P;
     case 10:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readFloatOrNull(offset)) as P;
     case 11:
-      return (reader.readLong(offset)) as P;
+      return (reader.readByte(offset)) as P;
     case 12:
       return (reader.readBool(offset)) as P;
     case 13:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readFloatOrNull(offset)) as P;
     case 14:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readFloatOrNull(offset)) as P;
     case 15:
       return (reader.readBool(offset)) as P;
     case 16:
-      return (reader.readLong(offset)) as P;
+      return (reader.readInt(offset)) as P;
     case 17:
       return (reader.readString(offset)) as P;
     case 18:

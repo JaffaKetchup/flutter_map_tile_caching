@@ -102,7 +102,7 @@ class RootStats {
       StoreParts.stats,
     ],
   }) =>
-      [
+      StreamGroup.merge([
         FMTC.instance.rootDirectory.directory.watch(),
         if (watchRecovery)
           _registry.recoveryDatabase.recovery
@@ -113,5 +113,5 @@ class RootStats {
             storeParts: storeParts,
           ),
         ),
-      ].reduce((v, e) => v.merge(e)).debounce(debounce ?? Duration.zero);
+      ]).debounce(debounce ?? Duration.zero);
 }

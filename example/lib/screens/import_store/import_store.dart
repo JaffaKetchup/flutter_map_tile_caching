@@ -50,7 +50,7 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
                         ),
                       ),
                     );
-                    setState(() {});
+                    if (mounted) setState(() {});
                   },
                 );
               }
