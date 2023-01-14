@@ -24,8 +24,9 @@ class BufferingConfiguration extends StatelessWidget {
                         ),
                         child: Slider(
                           value: provider.bufferingAmount
-                              .clamp(0, provider.regionTiles ?? 1000)
+                              .clamp(9, provider.regionTiles ?? 1000)
                               .roundToDouble(),
+                          min: 9,
                           max: (provider.regionTiles ?? 1000).toDouble(),
                           onChanged: (value) =>
                               provider.bufferingAmount = value.round(),
@@ -33,7 +34,7 @@ class BufferingConfiguration extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 25),
-                    provider.bufferingAmount == 0
+                    provider.bufferingAmount == 9
                         ? const Text('Disabled')
                         : provider.bufferingAmount >=
                                 (provider.regionTiles ?? 1000)

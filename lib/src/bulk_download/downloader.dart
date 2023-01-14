@@ -88,6 +88,7 @@ Future<TileProgress> _getAndSaveTile({
         tileImage: null,
         wasSeaTile: false,
         wasExistingTile: true,
+        wasCancelOperation: false,
         bulkTileWriterResponse: null,
       );
     }
@@ -114,6 +115,7 @@ Future<TileProgress> _getAndSaveTile({
         tileImage: Uint8List.fromList(bytes),
         wasSeaTile: true,
         wasExistingTile: false,
+        wasCancelOperation: false,
         bulkTileWriterResponse: null,
       );
     }
@@ -127,6 +129,7 @@ Future<TileProgress> _getAndSaveTile({
       tileImage: null,
       wasSeaTile: false,
       wasExistingTile: false,
+      wasCancelOperation: false,
       bulkTileWriterResponse: null,
     );
   }
@@ -136,6 +139,7 @@ Future<TileProgress> _getAndSaveTile({
     tileImage: Uint8List.fromList(bytes),
     wasSeaTile: false,
     wasExistingTile: false,
+    wasCancelOperation: false,
     bulkTileWriterResponse: bulkTileWriterResponse,
   );
 }

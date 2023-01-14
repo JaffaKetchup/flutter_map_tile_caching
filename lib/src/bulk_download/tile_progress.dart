@@ -14,6 +14,7 @@ class TileProgress {
   final bool wasExistingTile;
   final int sizeBytes;
 
+  final bool wasCancelOperation;
   final List<int>? bulkTileWriterResponse;
 
   TileProgress({
@@ -21,6 +22,7 @@ class TileProgress {
     required this.tileImage,
     required this.wasSeaTile,
     required this.wasExistingTile,
+    required this.wasCancelOperation,
     required this.bulkTileWriterResponse,
   }) : sizeBytes = tileImage?.lengthInBytes ?? 0;
 }

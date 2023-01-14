@@ -24,14 +24,17 @@ class HorizontalLayout extends StatelessWidget {
               Column(
                 children: [
                   StatDisplay(
-                    statistic:
-                        '${data.successfulTiles} (${data.averageTPS.round()} avg tps)',
+                    statistic: data.bufferMode == DownloadBufferMode.disabled
+                        ? data.successfulTiles.toString()
+                        : '${data.successfulTiles} (${data.successfulTiles - data.persistedTiles})',
                     description: 'successful tiles',
                   ),
                   const SizedBox(height: 5),
                   StatDisplay(
-                    statistic: (data.successfulSize * 1024).asReadableSize,
-                    description: 'downloaded size',
+                    statistic: data.bufferMode == DownloadBufferMode.disabled
+                        ? (data.successfulSize * 1024).asReadableSize
+                        : '${(data.successfulSize * 1024).asReadableSize} (${((data.successfulSize - data.persistedSize) * 1024).asReadableSize})',
+                    description: 'successful size',
                   ),
                   const SizedBox(height: 5),
                   StatDisplay(
@@ -44,6 +47,11 @@ class HorizontalLayout extends StatelessWidget {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  StatDisplay(
+                    statistic: data.averageTPS.toStringAsFixed(2),
+                    description: 'average tps',
+                  ),
+                  const SizedBox(height: 5),
                   StatDisplay(
                     statistic: data.duration
                         .toString()
@@ -60,15 +68,6 @@ class HorizontalLayout extends StatelessWidget {
                         .first
                         .padLeft(8, '0'),
                     description: 'est remaining duration',
-                  ),
-                  const SizedBox(height: 5),
-                  StatDisplay(
-                    statistic: data.estTotalDuration
-                        .toString()
-                        .split('.')
-                        .first
-                        .padLeft(8, '0'),
-                    description: 'est total duration',
                   ),
                 ],
               ),

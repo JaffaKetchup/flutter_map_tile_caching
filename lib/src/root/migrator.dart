@@ -45,9 +45,10 @@ class RootMigrator {
   ///
   /// Returns `null` if no structure root was found, otherwise a [Map] of the
   /// store names to the number of failed tiles (tiles that could not be matched
-  /// to any of the [urlTemplates]). A successful migration will have all values
-  /// 0.
-  Future<Map<String, int>?> fromV6({
+  /// to any of the [urlTemplates]), or `null` if it was skipped because there
+  /// was an existing store with the same name. A successful migration will have
+  /// all values 0.
+  Future<Map<String, int?>?> fromV6({
     required List<String>? urlTemplates,
     Directory? customDirectory,
     bool deleteOldStructure = true,
@@ -100,7 +101,7 @@ class RootMigrator {
     if (!await oldStores.exists()) return {};
 
     // Prepare results map
-    final Map<String, int> results = {};
+    final Map<String, int?> results = {};
 
     // Migrate stores
     await for (final storeDirectory
@@ -110,7 +111,10 @@ class RootMigrator {
 
       final store = FMTCRegistry.instance
           .storeDatabases[await FMTC.instance(name).manage._advancedCreate()];
-      if (store == null) continue;
+      if (store == null) {
+        results[name] = null;
+        continue;
+      }
 
       // Migrate tiles
       await store.writeTxn(
@@ -189,7 +193,7 @@ class RootMigrator {
     }
 
     // Delete store files
-    await oldStores.delete(recursive: true);
+    if (deleteOldStructure) await oldStores.delete(recursive: true);
 
     return results;
   }

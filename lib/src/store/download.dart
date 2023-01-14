@@ -199,7 +199,7 @@ class DownloadManagement {
 
     await for (final TileProgress evt in downloadStream) {
       if (evt.failedUrl == null) {
-        bufferedTiles++;
+        if (!evt.wasCancelOperation) bufferedTiles++;
         bufferedSize += evt.sizeBytes;
         if (evt.bulkTileWriterResponse != null) {
           persistedTiles = evt.bulkTileWriterResponse![0];

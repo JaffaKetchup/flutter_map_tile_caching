@@ -80,11 +80,12 @@ class BulkTileWriter {
           tileImage: tileImage,
           wasSeaTile: false,
           wasExistingTile: false,
+          wasCancelOperation: true,
           bulkTileWriterResponse: await instance.events.next,
         ),
       );
     }
-    await instance.events.cancel();
+    await instance.events.cancel(immediate: true);
 
     _instance = null;
   }
