@@ -152,9 +152,7 @@ class LineRegion implements BaseRegion {
   /// This method is unavailable for this region type: use [toOutlines] instead
   @alwaysThrows
   @override
-  List<LatLng> toList() {
-    throw UnsupportedError(
-      '`toList` is invalid for this region type: use `toOutlines()` instead',
-    );
-  }
+  Never toList() => throw UnsupportedError(
+        '`toList` is invalid for this region type: use `toOutlines()` instead',
+      );
 }

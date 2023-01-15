@@ -248,7 +248,7 @@ class DownloadManagement {
               ? circleTiles
               : lineTiles,
       {
-        'bounds': LatLngBounds.fromPoints(region.points),
+        'rectOutline': LatLngBounds.fromPoints(region.points.cast()),
         'circleOutline': region.points,
         'lineOutline': region.points.chunked(4).toList(),
         'minZoom': region.minZoom,

@@ -20,7 +20,7 @@ enum RegionType {
 /// Should avoid manual construction. Use a supported region shape and the `.toDownloadable()` extension on it.
 ///
 /// Is returned from `.toDownloadable()`.
-class DownloadableRegion {
+class DownloadableRegion<P extends List<Object>> {
   /// The shape that this region conforms to
   final RegionType type;
 
@@ -28,7 +28,7 @@ class DownloadableRegion {
   final BaseRegion originalRegion;
 
   /// All the vertices on the outline of a polygon
-  final List<LatLng> points;
+  final P points;
 
   /// The minimum zoom level to fetch tiles for
   final int minZoom;

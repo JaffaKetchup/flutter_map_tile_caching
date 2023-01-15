@@ -101,7 +101,9 @@ class RecoveredRegion {
             : LineRegion(line!, radius!);
 
     return DownloadableRegion._(
-      points: region.toList(),
+      points: type == RegionType.line
+          ? (region as LineRegion).toOutlines()
+          : region.toList(),
       minZoom: minZoom,
       maxZoom: maxZoom,
       options: options,
