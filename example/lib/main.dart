@@ -48,9 +48,9 @@ void main() async {
 
 class AppContainer extends StatelessWidget {
   const AppContainer({
-    Key? key,
+    super.key,
     required this.damagedDatabaseDeleted,
-  }) : super(key: key);
+  });
 
   final bool damagedDatabaseDeleted;
 
@@ -67,12 +67,10 @@ class AppContainer extends StatelessWidget {
         child: MaterialApp(
           title: 'FMTC Example',
           theme: ThemeData(
-            colorScheme: ColorScheme.fromSwatch(
-              primarySwatch: Colors.teal,
-              accentColor: Colors.deepOrange,
-            ),
+            brightness: Brightness.dark,
             useMaterial3: true,
-            textTheme: GoogleFonts.openSansTextTheme(),
+            textTheme: GoogleFonts.openSansTextTheme(const TextTheme()),
+            colorSchemeSeed: Colors.deepOrange,
           ),
           debugShowCheckedModeBanner: false,
           home: MainScreen(damagedDatabaseDeleted: damagedDatabaseDeleted),

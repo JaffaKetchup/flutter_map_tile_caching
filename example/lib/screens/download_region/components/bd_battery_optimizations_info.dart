@@ -4,8 +4,8 @@ import 'package:fmtc_plus_background_downloading/fmtc_plus_background_downloadin
 
 class BackgroundDownloadBatteryOptimizationsInfo extends StatefulWidget {
   const BackgroundDownloadBatteryOptimizationsInfo({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<BackgroundDownloadBatteryOptimizationsInfo> createState() =>

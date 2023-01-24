@@ -6,8 +6,8 @@ import '../../../../../shared/state/general_provider.dart';
 
 class Header extends StatelessWidget {
   const Header({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) => Row(

@@ -10,10 +10,10 @@ import 'stat_display.dart';
 
 class StoreTile extends StatefulWidget {
   const StoreTile({
-    Key? key,
+    super.key,
     required this.context,
     required this.storeName,
-  }) : super(key: key);
+  });
 
   final BuildContext context;
   final String storeName;

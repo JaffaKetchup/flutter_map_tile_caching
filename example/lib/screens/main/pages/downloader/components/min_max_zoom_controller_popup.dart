@@ -7,8 +7,8 @@ import '../../../../../shared/state/download_provider.dart';
 
 class MinMaxZoomControllerPopup extends StatelessWidget {
   const MinMaxZoomControllerPopup({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) => Padding(

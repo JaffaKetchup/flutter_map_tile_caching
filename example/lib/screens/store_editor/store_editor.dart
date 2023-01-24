@@ -13,10 +13,10 @@ import 'components/header.dart';
 
 class StoreEditorPopup extends StatefulWidget {
   const StoreEditorPopup({
-    Key? key,
+    super.key,
     required this.existingStoreName,
     required this.isStoreInUse,
-  }) : super(key: key);
+  });
 
   final String? existingStoreName;
   final bool isStoreInUse;

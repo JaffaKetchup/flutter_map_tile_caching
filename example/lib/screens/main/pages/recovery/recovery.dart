@@ -8,9 +8,9 @@ import 'components/recovery_list.dart';
 
 class RecoveryPage extends StatefulWidget {
   const RecoveryPage({
-    Key? key,
+    super.key,
     required this.moveToDownloadPage,
-  }) : super(key: key);
+  });
 
   final void Function() moveToDownloadPage;
 

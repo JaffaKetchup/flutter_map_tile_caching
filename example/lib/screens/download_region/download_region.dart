@@ -17,9 +17,9 @@ import 'components/usage_warning.dart';
 
 class DownloadRegionPopup extends StatefulWidget {
   const DownloadRegionPopup({
-    Key? key,
+    super.key,
     required this.region,
-  }) : super(key: key);
+  });
 
   final BaseRegion region;
 

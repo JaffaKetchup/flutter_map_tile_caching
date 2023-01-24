@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:badges/badges.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:fmtc_plus_background_downloading/fmtc_plus_background_downloading.dart';
 import 'package:provider/provider.dart';
@@ -17,9 +17,9 @@ import 'pages/update/update.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({
-    Key? key,
+    super.key,
     required this.damagedDatabaseDeleted,
-  }) : super(key: key);
+  });
 
   final bool damagedDatabaseDeleted;
 
@@ -28,7 +28,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  static const Color backgroundColor = Color(0xFFeaf6f5);
+  //static const Color backgroundColor = Color(0xFFeaf6f5);
   late final PageController _pageController;
   int _currentPageIndex = 0;
   bool extended = false;
@@ -121,7 +121,6 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) => FMTCBackgroundDownload(
         child: Scaffold(
-          backgroundColor: backgroundColor,
           bottomNavigationBar: MediaQuery.of(context).size.width > 950
               ? null
               : NavigationBar(
@@ -143,7 +142,6 @@ class _MainScreenState extends State<MainScreen> {
                   selectedIndex: _currentPageIndex,
                   groupAlignment: 0,
                   extended: extended,
-                  backgroundColor: backgroundColor,
                   destinations: _destinations
                       .map(
                         (d) => NavigationRailDestination(

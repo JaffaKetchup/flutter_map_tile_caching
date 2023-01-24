@@ -6,9 +6,9 @@ import 'stat_display.dart';
 
 class VerticalLayout extends StatelessWidget {
   const VerticalLayout({
-    Key? key,
+    super.key,
     required this.data,
-  }) : super(key: key);
+  });
 
   final DownloadProgress data;
 

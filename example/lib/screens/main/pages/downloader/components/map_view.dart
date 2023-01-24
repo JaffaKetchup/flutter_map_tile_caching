@@ -16,8 +16,8 @@ import 'crosshairs.dart';
 
 class MapView extends StatefulWidget {
   const MapView({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<MapView> createState() => _MapViewState();
@@ -54,7 +54,7 @@ class _MapViewState extends State<MapView> {
             isFilled: true,
             borderColor: Colors.black,
             borderStrokeWidth: 2,
-            color: Colors.white.withOpacity(2 / 3),
+            color: Theme.of(context).colorScheme.background.withOpacity(2 / 3),
           ),
         ],
       );

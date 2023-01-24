@@ -8,11 +8,11 @@ import '../download_region.dart';
 
 class RegionInformation extends StatelessWidget {
   const RegionInformation({
-    Key? key,
+    super.key,
     required this.widget,
     required this.circleRegion,
     required this.rectangleRegion,
-  }) : super(key: key);
+  });
 
   final DownloadRegionPopup widget;
   final CircleRegion? circleRegion;

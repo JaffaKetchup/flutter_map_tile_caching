@@ -8,7 +8,7 @@ import 'components/horizontal_layout.dart';
 import 'components/vertical_layout.dart';
 
 class DownloadingPage extends StatefulWidget {
-  const DownloadingPage({Key? key}) : super(key: key);
+  const DownloadingPage({super.key});
 
   @override
   State<DownloadingPage> createState() => _DownloadingPageState();

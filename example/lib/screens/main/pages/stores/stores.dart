@@ -10,7 +10,7 @@ import 'components/header.dart';
 import 'components/store_tile.dart';
 
 class StoresPage extends StatefulWidget {
-  const StoresPage({Key? key}) : super(key: key);
+  const StoresPage({super.key});
 
   @override
   State<StoresPage> createState() => _StoresPageState();

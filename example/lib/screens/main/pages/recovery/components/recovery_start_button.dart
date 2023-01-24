@@ -8,10 +8,10 @@ import '../../../../download_region/download_region.dart';
 
 class RecoveryStartButton extends StatelessWidget {
   const RecoveryStartButton({
-    Key? key,
+    super.key,
     required this.moveToDownloadPage,
     required this.region,
-  }) : super(key: key);
+  });
 
   final void Function() moveToDownloadPage;
   final RecoveredRegion region;

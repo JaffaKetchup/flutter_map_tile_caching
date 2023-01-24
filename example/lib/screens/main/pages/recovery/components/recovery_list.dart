@@ -6,10 +6,10 @@ import 'recovery_start_button.dart';
 
 class RecoveryList extends StatefulWidget {
   const RecoveryList({
-    Key? key,
+    super.key,
     required this.all,
     required this.moveToDownloadPage,
-  }) : super(key: key);
+  });
 
   final List<RecoveredRegion> all;
   final void Function() moveToDownloadPage;

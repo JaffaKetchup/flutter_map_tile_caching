@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../shared/state/download_provider.dart';
 
 class BufferingConfiguration extends StatelessWidget {
-  const BufferingConfiguration({Key? key}) : super(key: key);
+  const BufferingConfiguration({super.key});
 
   @override
   Widget build(BuildContext context) => Column(

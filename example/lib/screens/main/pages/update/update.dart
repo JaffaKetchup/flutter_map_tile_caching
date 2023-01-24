@@ -15,7 +15,7 @@ import 'components/up_to_date.dart';
 import 'components/update_available.dart';
 
 class UpdatePage extends StatefulWidget {
-  const UpdatePage({Key? key}) : super(key: key);
+  const UpdatePage({super.key});
 
   @override
   State<UpdatePage> createState() => _UpdatePageState();

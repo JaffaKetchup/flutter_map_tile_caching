@@ -127,7 +127,9 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         return decode(await ImmutableBuffer.fromUint8List(bytes));
       }
 
-      throw FallThroughError();
+      throw ArgumentError(
+        '`finish` was called with an invalid combination of arguments',
+      );
     }
 
     final String url = provider.getTileUrl(coords, options);

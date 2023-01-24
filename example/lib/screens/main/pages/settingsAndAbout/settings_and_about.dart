@@ -6,7 +6,7 @@ import '../../../../shared/components/loading_indicator.dart';
 import 'components/header.dart';
 
 class SettingsAndAboutPage extends StatefulWidget {
-  const SettingsAndAboutPage({Key? key}) : super(key: key);
+  const SettingsAndAboutPage({super.key});
 
   @override
   State<SettingsAndAboutPage> createState() => _SettingsAndAboutPageState();

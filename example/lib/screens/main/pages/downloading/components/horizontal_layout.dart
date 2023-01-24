@@ -7,9 +7,9 @@ import 'tile_image.dart';
 
 class HorizontalLayout extends StatelessWidget {
   const HorizontalLayout({
-    Key? key,
+    super.key,
     required this.data,
-  }) : super(key: key);
+  });
 
   final DownloadProgress data;
 
