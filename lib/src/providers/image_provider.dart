@@ -302,7 +302,7 @@ class FMTCBrowsingError implements Exception {
   String toString() => 'FMTCBrowsingError: $message';
 }
 
-/// Programmatic error descriptor for a [FMTCBrowsingError.message]
+/// Pragmatic error descriptor for a [FMTCBrowsingError.message]
 ///
 /// See documentation on that object for more information.
 enum FMTCBrowsingErrorType {

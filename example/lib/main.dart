@@ -28,7 +28,7 @@ void main() async {
     errorHandler: (error) => damagedDatabaseDeleted = error.wasFatal,
   );
 
-  await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: null);
+  await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: []);
 
   if (prefs.getBool('reset') ?? false) {
     await FMTC.instance.rootDirectory.manage.reset();

@@ -1,7 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-// ignore_for_file: avoid_print, comment_references
+// ignore_for_file: comment_references
 
 part of '../../flutter_map_tile_caching.dart';
 
@@ -9,7 +9,10 @@ part of '../../flutter_map_tile_caching.dart';
 class RootMigrator {
   RootMigrator._();
 
-  /// 'fromV4' is deprecated and shouldn't be used. Effort to maintain this length of backwards compatibility has become too great, so any structures remaining on v4 will need migrating manually or disposing of altogether. This remnant will be removed in a future update.
+  /// 'fromV4' is deprecated and shouldn't be used. Effort to maintain this
+  /// length of backwards compatibility has become too great, so any structures
+  /// remaining on v4 will need migrating manually or disposing of altogether.
+  /// This remnant will be removed in a future update.
   @Deprecated(
     'Effort to maintain this length of backwards compatibility has become too great, so any structures remaining on v4 will need migrating manually or disposing of altogether. This remnant will be removed in a future update',
   )
@@ -20,9 +23,9 @@ class RootMigrator {
 
   /// Migrates a v6 file structure to a v7 structure
   ///
-  /// Note that this method can be inefficient on large tilesets, so it's best
-  /// to offer a choice to your users as to whether they would like to migrate,
-  /// or just loose all stored tiles.
+  /// Note that this method can be slow on large tilesets, so it's best to offer
+  /// a choice to your users as to whether they would like to migrate, or just
+  /// lose all stored tiles.
   ///
   /// Checks within `getApplicationDocumentsDirectory()` and
   /// `getTemporaryDirectory()` for a directory named 'fmtc'. Alternatively,
@@ -30,7 +33,7 @@ class RootMigrator {
   ///
   /// In order to migrate the tiles to the new format, [urlTemplates] must be
   /// used. Pass every URL template used to store any of the tiles that might be
-  /// in the store. Specifying `null` will use the preset OSM tile server(s)
+  /// in the store. Specifying an empty list will use the preset OSM tile servers
   /// only.
   ///
   /// Set [deleteOldStructure] to `false` to keep the old structure. If a store
@@ -49,22 +52,22 @@ class RootMigrator {
   /// was an existing store with the same name. A successful migration will have
   /// all values 0.
   Future<Map<String, int?>?> fromV6({
-    required List<String>? urlTemplates,
+    required List<String> urlTemplates,
     Directory? customDirectory,
     bool deleteOldStructure = true,
   }) async {
+    // Prepare the migration regular expressions
     final placeholderRegex = RegExp(r'\{ *([\w_-]+) *\}');
-
-    final matchables = <List<String>>[
+    final matchables = [
       ...[
         'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        ...urlTemplates ?? [],
+        ...urlTemplates,
       ].map((url) {
         final sanitised = _defaultFilesystemSanitiser(url).validOutput;
 
         return [
-          sanitised.replaceAll(placeholderRegex, '(.*?)'),
+          sanitised.replaceAll('.', r'\.').replaceAll(placeholderRegex, '.+?'),
           sanitised,
           url,
         ];
@@ -244,23 +247,10 @@ _FilesystemSanitiserResult _defaultFilesystemSanitiser(String input) {
   );
 }
 
-/// Object to return from any filesystem sanitiser defined in [FMTCSettings.filesystemSanitiser]
-///
-/// [FilesystemSanitiserResult.validOutput] must be sanitised to be safe enough to be used in the filesystem. [FilesystemSanitiserResult.errorMessages] can be empty if there were no changes to the input. Alternatively, it can be one or more messages describing the issue with the input.
-///
-/// If the method is used internally in a validation situation, the output must be equal to the input, otherwise the error messages are thrown. This is, for example, the situation when managing stores and names. If the method is used internally in a sanitisation situation, error messages are ignored. This is, for example, the situation when storing map tiles.
 class _FilesystemSanitiserResult {
-  /// Must be sanitised to be safe enough to be used in the filesystem
   final String validOutput;
-
-  /// Can be empty (default) if there were no changes to the input. Alternatively, it can be one or more messages describing the issue with the input.
   final List<String> errorMessages;
 
-  /// Object to return from any filesystem sanitiser defined in [FMTCSettings.filesystemSanitiser]
-  ///
-  /// [FilesystemSanitiserResult.validOutput] must be sanitised to be safe enough to be used in the filesystem. [FilesystemSanitiserResult.errorMessages] can be empty if there were no changes to the input. Alternatively, it can be one or more messages describing the issue with the input.
-  ///
-  /// If the method is used internally in a validation situation, the output must be equal to the input, otherwise the error messages are thrown. This is, for example, the situation when managing stores and names. If the method is used internally in a sanitisation situation, error messages are ignored. This is, for example, the situation when storing map tiles.
   _FilesystemSanitiserResult({
     required this.validOutput,
     this.errorMessages = const [],

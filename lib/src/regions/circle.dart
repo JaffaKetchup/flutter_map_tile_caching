@@ -3,16 +3,30 @@
 
 part of '../../flutter_map_tile_caching.dart';
 
-/// A circular region with a center point and a radius
-class CircleRegion implements BaseRegion {
-  /// The center of the circle as a `LatLng`
+/// A geographically circular region based off a [center] coord and [radius]
+///
+/// It can be converted to a:
+///  - [DownloadableRegion] for downloading: [toDownloadable]
+///  - [Widget] layer to be placed in a map: [toDrawable]
+///  - list of [LatLng]s forming the outline: [toOutline]
+class CircleRegion extends BaseRegion {
+  /// A geographically circular region based off a [center] coord and [radius]
+  ///
+  /// It can be converted to a:
+  ///  - [DownloadableRegion] for downloading: [toDownloadable]
+  ///  - [Widget] layer to be placed in a map: [toDrawable]
+  ///  - list of [LatLng]s forming the outline: [toOutline]
+  CircleRegion(
+    this.center,
+    this.radius, {
+    super.name,
+  });
+
+  /// Center coordinate
   final LatLng center;
 
-  /// The radius of the circle as a `double` in km
+  /// Radius in kilometers
   final double radius;
-
-  /// Creates a circular region using a center point and a radius
-  CircleRegion(this.center, this.radius);
 
   @override
   DownloadableRegion toDownloadable(
@@ -28,7 +42,7 @@ class CircleRegion implements BaseRegion {
     void Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion._(
-        points: toList(),
+        points: toOutline(),
         minZoom: minZoom,
         maxZoom: maxZoom,
         options: options,
@@ -64,13 +78,13 @@ class CircleRegion implements BaseRegion {
             label: label,
             labelStyle: labelStyle,
             labelPlacement: labelPlacement,
-            points: toList(),
+            points: toOutline(),
           )
         ],
       );
 
   @override
-  List<LatLng> toList() {
+  List<LatLng> toOutline() {
     final double rad = radius / 1.852 / 3437.670013352;
     final double lat = center.latitudeInRad;
     final double lon = center.longitudeInRad;

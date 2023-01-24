@@ -3,9 +3,49 @@
 
 part of '../../flutter_map_tile_caching.dart';
 
-/// A region that can be downloaded, drawn on a map, or converted to a list of points, that forms a particular shape
+/// A geographical region that forms a particular shape
+///
+/// It can be converted to a:
+///  - [DownloadableRegion] for downloading: [toDownloadable]
+///  - [Widget] layer to be placed in a map: [toDrawable]
+///  - list of [LatLng]s forming the outline: [toOutline]/[LineRegion.toOutlines]
+///
+/// Extended/implemented by:
+///  - [RectangleRegion]
+///  - [CircleRegion]
+///  - [LineRegion]
 abstract class BaseRegion {
-  /// Create a downloadable region out of this region - for more information see [DownloadableRegion]'s properties' documentation
+  /// Create a geographical region that forms a particular shape
+  ///
+  /// It can be converted to a:
+  ///  - [DownloadableRegion] for downloading: [toDownloadable]
+  ///  - [Widget] layer to be placed in a map: [toDrawable]
+  ///  - list of [LatLng]s forming the outline: [toOutline]/[LineRegion.toOutlines]
+  ///
+  /// Extended/implemented by:
+  ///  - [RectangleRegion]
+  ///  - [CircleRegion]
+  ///  - [LineRegion]
+  BaseRegion({required String? name})
+      : name = (name?.isEmpty ?? false)
+            ? throw ArgumentError.value(name, 'name', 'Must not be empty.')
+            : name;
+
+  /// The user friendly name for the region
+  ///
+  /// This is used within the recovery system, as well as to delete a particular
+  /// downloaded region within a store.
+  ///
+  /// If `null`, this region will have no name. If specified, this must not be
+  /// empty.
+  ///
+  /// _This property is currently redundant, but usage is planned in future
+  /// versions._
+  final String? name;
+
+  /// Generate the [DownloadableRegion] ready for bulk downloading
+  ///
+  /// For more information see [DownloadableRegion]'s documentation.
   DownloadableRegion toDownloadable(
     int minZoom,
     int maxZoom,
@@ -19,9 +59,7 @@ abstract class BaseRegion {
     void Function(Object?)? errorHandler,
   });
 
-  /// Create a drawable area for a [FlutterMap] out of this region
-  ///
-  /// Returns a layer to be added to the `layer` property of a [FlutterMap].
+  /// Generate a graphical layer to be placed in a [FlutterMap]
   Widget toDrawable({
     Color? fillColor,
     Color borderColor = const Color(0x00000000),
@@ -29,10 +67,17 @@ abstract class BaseRegion {
     bool isDotted = false,
   });
 
-  /// Create a list of all the [LatLng]s along the outline of this region
+  /// Generate the list of all the [LatLng]s forming the outline of this region
   ///
   /// Not supported on line regions: use `toOutlines()` instead.
   ///
   /// Returns a `List<LatLng>` which can be used anywhere.
-  List<LatLng> toList();
+  List<LatLng> toOutline();
+
+  /// 'toList' is deprecated and shouldn't be used. Prefer [toOutline]. This
+  /// redirect will be removed in a future update.
+  @Deprecated(
+    "Prefer 'toOutline'. This redirect will be removed in a future update.",
+  )
+  List<LatLng> toList() => toOutline();
 }

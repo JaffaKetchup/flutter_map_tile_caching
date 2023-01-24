@@ -3,20 +3,39 @@
 
 part of '../../flutter_map_tile_caching.dart';
 
-/// A region with the border as the locus of a line at it's center
-class LineRegion implements BaseRegion {
-  /// A line defined by a list of`LatLng`s
+/// A geographically line/locus region based off a list of coords and a [radius]
+///
+/// It can be converted to a:
+///  - [DownloadableRegion] for downloading: [toDownloadable]
+///  - [Widget] layer to be placed in a map: [toDrawable]
+///  - list of [LatLng]s forming the outline: [LineRegion.toOutlines]
+class LineRegion extends BaseRegion {
+  /// A geographically line/locus region based off a list of coords and a [radius]
+  ///
+  /// It can be converted to a:
+  ///  - [DownloadableRegion] for downloading: [toDownloadable]
+  ///  - [Widget] layer to be placed in a map: [toDrawable]
+  ///  - list of [LatLng]s forming the outline: [LineRegion.toOutlines]
+  LineRegion(
+    this.line,
+    this.radius, {
+    super.name,
+  });
+
+  /// The center line defined by a list of coordinates
   final List<LatLng> line;
 
-  /// The offset of the border in each direction in meters, like a radius
+  /// The offset of the outline from the [line] in all directions (in meters)
   final double radius;
 
-  /// Creates a region with the border as the locus of a line at it's center
-  LineRegion(this.line, this.radius);
-
-  /// Creates a list of rectangles made of the locus of the specified line which can be used anywhere
+  /// Generate the list of rectangle segments formed from the locus of this line
   ///
-  /// Use the optional `overlap` argument to set the rectangle joint(s) behaviours. -1 is reduced, 0 is normal (default), 1 is full (as downloaded).
+  /// Use the optional `overlap` argument to set the behaviour of the joints
+  /// between segments:
+  ///
+  /// * -1: joined by closest corners (largest gap),
+  /// * 0 (default): joined by centers (equal gap and overlap)
+  /// * 1 (as downloaded): joined by further corners (most overlap)
   List<List<LatLng>> toOutlines([int overlap = 0]) {
     if (overlap < -1 || overlap > 1) {
       throw ArgumentError('`overlap` must be between -1 and 1 inclusive');
@@ -75,7 +94,7 @@ class LineRegion implements BaseRegion {
     void Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion._(
-        points: toOutlines(1).expand((x) => x).toList(),
+        points: toOutline(),
         minZoom: minZoom,
         maxZoom: maxZoom,
         options: options,
@@ -90,18 +109,6 @@ class LineRegion implements BaseRegion {
         errorHandler: errorHandler,
       );
 
-  /// Create a drawable area for a [FlutterMap] out of this region
-  ///
-  /// [prettyPaint] controls what type of shape will be output. If `false`,
-  /// multiple overlapping rectangular [Polygon]s will be output, representing
-  /// the area that will actually be downloaded. If `true` (default), a
-  /// [Polyline] will be output, which handles all the nice rounding and some
-  /// other stuff that makes it more suitable to present to the user.
-  ///
-  /// Some parameters will only have an effect depending whether a [Polygon] or
-  /// [Polyline] is being output.
-  ///
-  /// Returns a layer to be added to the `layer` property of a [FlutterMap].
   @override
   Widget toDrawable({
     Color? fillColor,
@@ -149,10 +156,21 @@ class LineRegion implements BaseRegion {
                   .toList(),
             );
 
-  /// This method is unavailable for this region type: use [toOutlines] instead
-  @alwaysThrows
+  /// Flattens the result of [toOutlines] - its documentation is quoted below
+  ///
+  /// Prefer [toOutlines]. This method is likely to give a different result than
+  /// expected if used externally.
+  ///
+  /// > Generate the list of rectangle segments formed from the locus of this
+  /// > line
+  /// >
+  /// > Use the optional `overlap` argument to set the behaviour of the joints
+  /// between segments:
+  /// >
+  /// > * -1: joined by closest corners (largest gap),
+  /// > * 0: joined by centers (equal gap and overlap)
+  /// > * 1 (default, as downloaded): joined by further corners (most overlap)
   @override
-  Never toList() => throw UnsupportedError(
-        '`toList` is invalid for this region type: use `toOutlines()` instead',
-      );
+  List<LatLng> toOutline([int overlap = 1]) =>
+      toOutlines(overlap).expand((x) => x).toList();
 }

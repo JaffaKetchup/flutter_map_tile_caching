@@ -50,7 +50,7 @@ class _MapViewState extends State<MapView> {
               LatLng(90, -180),
               LatLng(-90, -180),
             ],
-            holePointsList: [region.toList()],
+            holePointsList: [region.toOutline()],
             isFilled: true,
             borderColor: Colors.black,
             borderStrokeWidth: 2,
