@@ -124,13 +124,15 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                           ),
                                           disableRecovery:
                                               downloadProvider.disableRecovery,
-                                          bufferMode: downloadProvider
-                                                      .bufferingAmount ==
-                                                  9
-                                              ? DownloadBufferMode.disabled
-                                              : DownloadBufferMode.tiles,
-                                          bufferLimit:
-                                              downloadProvider.bufferingAmount,
+                                          bufferMode:
+                                              downloadProvider.bufferMode,
+                                          bufferLimit: downloadProvider
+                                                      .bufferMode ==
+                                                  DownloadBufferMode.tiles
+                                              ? downloadProvider.bufferingAmount
+                                              : downloadProvider
+                                                      .bufferingAmount *
+                                                  1000,
                                         )
                                         .asBroadcastStream(),
                                   );

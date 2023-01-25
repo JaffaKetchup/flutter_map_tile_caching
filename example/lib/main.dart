@@ -71,6 +71,15 @@ class AppContainer extends StatelessWidget {
             useMaterial3: true,
             textTheme: GoogleFonts.openSansTextTheme(const TextTheme()),
             colorSchemeSeed: Colors.deepOrange,
+            switchTheme: SwitchThemeData(
+              thumbIcon: MaterialStateProperty.resolveWith(
+                (states) => Icon(
+                  states.contains(MaterialState.selected)
+                      ? Icons.check
+                      : Icons.close,
+                ),
+              ),
+            ),
           ),
           debugShowCheckedModeBanner: false,
           home: MainScreen(damagedDatabaseDeleted: damagedDatabaseDeleted),
