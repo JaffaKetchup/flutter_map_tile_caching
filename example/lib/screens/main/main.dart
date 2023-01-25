@@ -55,7 +55,9 @@ class _MainScreenState extends State<MainScreen> {
               future: FMTC.instance.rootDirectory.recovery.failedRegions,
               builder: (context, snapshot) => Badge(
                 position: BadgePosition.topEnd(top: -5, end: -6),
-                animationDuration: const Duration(milliseconds: 100),
+                badgeAnimation: const BadgeAnimation.size(
+                  animationDuration: Duration(milliseconds: 100),
+                ),
                 showBadge: _currentPageIndex != 3 &&
                     (snapshot.data?.isNotEmpty ?? false),
                 child: const Icon(Icons.running_with_errors),

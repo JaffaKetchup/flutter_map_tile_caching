@@ -10,7 +10,7 @@ environment:
   flutter: ">=3.7.0"
 
 dependencies:
-  badges: ^2.0.2
+  badges: ^3.0.2
   better_open_file: ^3.6.4
   flutter:
     sdk: flutter
