@@ -1,7 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../../flutter_map_tile_caching.dart';
+part of flutter_map_tile_caching;
 
 /// Manages a [StoreDirectory]'s representation on the filesystem, such as
 /// creation and deletion

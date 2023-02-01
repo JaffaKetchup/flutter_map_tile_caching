@@ -3,7 +3,7 @@
 
 // ignore_for_file: comment_references
 
-part of '../../flutter_map_tile_caching.dart';
+part of flutter_map_tile_caching;
 
 /// Manage migration for file structure across FMTC versions
 class RootMigrator {
