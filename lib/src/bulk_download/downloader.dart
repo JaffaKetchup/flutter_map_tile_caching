@@ -2,20 +2,26 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
+import 'package:isar/isar.dart';
+import 'package:meta/meta.dart';
 import 'package:queue/queue.dart';
 
-import '../internal/exts.dart';
-import '../internal/filesystem_sanitiser_private.dart';
-import '../internal/tile_provider.dart';
+import '../../flutter_map_tile_caching.dart';
+import '../db/defs/tile.dart';
+import '../db/registry.dart';
+import '../db/tools.dart';
+import 'bulk_tile_writer.dart';
 import 'internal_timing_progress_management.dart';
 import 'tile_progress.dart';
 
+//! ENTRY POINT !//
+
+@internal
 Stream<TileProgress> bulkDownloader({
   required List<Coords<num>> tiles,
   required FMTCTileProvider provider,
@@ -45,15 +51,15 @@ Stream<TileProgress> bulkDownloader({
         progressManagement: progressManagement,
       ),
     )
-        .then(
-      (e) {
-        if (!streamController.isClosed) streamController.add(e);
-      },
-    );
+        .then((e) {
+      if (!streamController.isClosed) streamController.add(e);
+    });
   }
 
   return streamController.stream;
 }
+
+//! DOWNLOAD AND SAVE TILE !//
 
 Future<TileProgress> _getAndSaveTile({
   required FMTCTileProvider provider,
@@ -66,24 +72,24 @@ Future<TileProgress> _getAndSaveTile({
   required int downloadID,
   required InternalProgressTimingManagement progressManagement,
 }) async {
-  final Coords<double> coordDouble =
-      Coords(coord.x.toDouble(), coord.y.toDouble())..z = coord.z.toDouble();
-  final String url = provider.getTileUrl(coordDouble, options);
-  final File file = provider.storeDirectory.access.tiles >>>
-      filesystemSanitiseValidate(
-        inputString: url,
-        throwIfInvalid: false,
-      );
+  final Isar tiles = FMTCRegistry.instance
+      .storeDatabases[DatabaseTools.hash(provider.storeDirectory.storeName)]!;
+
+  final String url = provider.getTileUrl(coord, options);
+  final DbTile? existingTile = await tiles.tiles.get(DatabaseTools.hash(url));
 
   final List<int> bytes = [];
+  final List<int>? bulkTileWriterResponse;
 
   try {
-    if (preventRedownload && await file.exists()) {
+    if (preventRedownload && existingTile != null) {
       return TileProgress(
         failedUrl: null,
+        tileImage: null,
         wasSeaTile: false,
         wasExistingTile: true,
-        tileImage: null,
+        wasCancelOperation: false,
+        bulkTileWriterResponse: null,
       );
     }
 
@@ -92,7 +98,6 @@ Future<TileProgress> _getAndSaveTile({
     final int totalBytes = response.contentLength ?? 0;
 
     int received = 0;
-
     await for (final List<int> evt in response.stream) {
       bytes.addAll(evt);
       received += evt.length;
@@ -102,35 +107,39 @@ Future<TileProgress> _getAndSaveTile({
       );
     }
 
-    file.writeAsBytesSync(
-      bytes,
-      flush: true,
-    );
-
-    if (seaTileBytes != null &&
-        const ListEquality().equals(await file.readAsBytes(), seaTileBytes)) {
-      await file.delete();
+    if (existingTile != null &&
+        seaTileBytes != null &&
+        const ListEquality().equals(bytes, seaTileBytes)) {
       return TileProgress(
         failedUrl: null,
+        tileImage: Uint8List.fromList(bytes),
         wasSeaTile: true,
         wasExistingTile: false,
-        tileImage: Uint8List.fromList(bytes),
+        wasCancelOperation: false,
+        bulkTileWriterResponse: null,
       );
     }
+
+    BulkTileWriter.instance.sendPort.send(List.unmodifiable([url, bytes]));
+    bulkTileWriterResponse = await BulkTileWriter.instance.events.next;
   } catch (e) {
     if (errorHandler != null) errorHandler(e);
     return TileProgress(
       failedUrl: url,
+      tileImage: null,
       wasSeaTile: false,
       wasExistingTile: false,
-      tileImage: null,
+      wasCancelOperation: false,
+      bulkTileWriterResponse: null,
     );
   }
 
   return TileProgress(
     failedUrl: null,
+    tileImage: Uint8List.fromList(bytes),
     wasSeaTile: false,
     wasExistingTile: false,
-    tileImage: Uint8List.fromList(bytes),
+    wasCancelOperation: false,
+    bulkTileWriterResponse: bulkTileWriterResponse,
   );
 }

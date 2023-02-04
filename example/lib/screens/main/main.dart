@@ -1,8 +1,9 @@
 import 'dart:io';
 
 import 'package:badges/badges.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:fmtc_plus_background_downloading/fmtc_plus_background_downloading.dart';
 import 'package:provider/provider.dart';
 
 import '../../shared/state/download_provider.dart';
@@ -15,14 +16,19 @@ import 'pages/stores/stores.dart';
 import 'pages/update/update.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({
+    super.key,
+    required this.damagedDatabaseDeleted,
+  });
+
+  final bool damagedDatabaseDeleted;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  static const Color backgroundColor = Color(0xFFeaf6f5);
+  //static const Color backgroundColor = Color(0xFFeaf6f5);
   late final PageController _pageController;
   int _currentPageIndex = 0;
   bool extended = false;
@@ -43,12 +49,15 @@ class _MainScreenState extends State<MainScreen> {
         NavigationDestination(
           icon: StreamBuilder(
             stream: FMTC.instance.rootDirectory.stats
-                .watchChanges(rootParts: [RootParts.recovery]),
+                .watchChanges()
+                .asBroadcastStream(),
             builder: (context, _) => FutureBuilder<List<RecoveredRegion>>(
               future: FMTC.instance.rootDirectory.recovery.failedRegions,
               builder: (context, snapshot) => Badge(
                 position: BadgePosition.topEnd(top: -5, end: -6),
-                animationDuration: const Duration(milliseconds: 100),
+                badgeAnimation: const BadgeAnimation.size(
+                  animationDuration: Duration(milliseconds: 100),
+                ),
                 showBadge: _currentPageIndex != 3 &&
                     (snapshot.data?.isNotEmpty ?? false),
                 child: const Icon(Icons.running_with_errors),
@@ -93,6 +102,15 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     _pageController = PageController(initialPage: _currentPageIndex);
+    if (widget.damagedDatabaseDeleted) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('At least one corrupted database has been deleted.'),
+          ),
+        ),
+      );
+    }
     super.initState();
   }
 
@@ -105,7 +123,6 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) => FMTCBackgroundDownload(
         child: Scaffold(
-          backgroundColor: backgroundColor,
           bottomNavigationBar: MediaQuery.of(context).size.width > 950
               ? null
               : NavigationBar(
@@ -127,7 +144,6 @@ class _MainScreenState extends State<MainScreen> {
                   selectedIndex: _currentPageIndex,
                   groupAlignment: 0,
                   extended: extended,
-                  backgroundColor: backgroundColor,
                   destinations: _destinations
                       .map(
                         (d) => NavigationRailDestination(

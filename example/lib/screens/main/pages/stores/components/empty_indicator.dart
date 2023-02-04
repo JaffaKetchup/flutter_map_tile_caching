@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class EmptyIndicator extends StatelessWidget {
   const EmptyIndicator({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) => Center(

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 class StatDisplay extends StatelessWidget {
   const StatDisplay({
-    Key? key,
+    super.key,
     required this.statistic,
     required this.description,
-  }) : super(key: key);
+  });
 
   final String statistic;
   final String description;

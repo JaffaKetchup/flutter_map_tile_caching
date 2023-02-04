@@ -3,9 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 class Header extends StatelessWidget {
   const Header({
-    Key? key,
+    super.key,
     required this.title,
-  }) : super(key: key);
+  });
 
   final String title;
 

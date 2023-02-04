@@ -5,7 +5,7 @@ import '../../../../../shared/state/download_provider.dart';
 import '../../../../../shared/vars/region_mode.dart';
 
 class ShapeControllerPopup extends StatelessWidget {
-  const ShapeControllerPopup({Key? key}) : super(key: key);
+  const ShapeControllerPopup({super.key});
 
   static const Map<String, List<dynamic>> regionShapes = {
     'Square': [

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 class Crosshairs extends StatelessWidget {
   const Crosshairs({
-    Key? key,
+    super.key,
     this.size = 20,
     this.thickness = 2,
-  }) : super(key: key);
+  });
 
   final double size;
   final double thickness;

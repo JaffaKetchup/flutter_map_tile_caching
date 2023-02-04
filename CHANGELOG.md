@@ -7,13 +7,30 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 * @huulbaek
 * @andrewames
 * @ozzy1873
-* Anonymous Donor (via Ko-Fi, no username provided)
-* Private Donor (via GitHub, chosen private)
-* Private Donor (via GitHub, chosen private)
+* @mohammedX6
+* @weishuhn
+* and 3 anonymous or private donors
 
 # Changelog
 
-## [6.2.0] - 2022/10/XX
+## [7.0.0] - 2023/01/XX
+
+* Migrated to Isar database
+* Major performance improvements, thanks to Isar
+* Added buffering to bulk tile downloading
+* Added method to catch tile retrieval errors
+* Removed v4 -> v5 migrator & added v6 -> v7 migrator
+* Removed some synchronous methods from structure management
+* Removed 'fmtc_advanced' import file
+
+Plus the usual:
+
+* Minor performance improvements
+* Bug fixes
+* Dependency updates
+* Documentation improvements
+
+## [6.2.0] - 2022/10/25
 
 * Performance improvements
 * Changed license to GPL v3

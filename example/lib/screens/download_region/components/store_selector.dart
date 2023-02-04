@@ -6,7 +6,7 @@ import '../../../shared/state/download_provider.dart';
 import '../../../shared/state/general_provider.dart';
 
 class StoreSelector extends StatefulWidget {
-  const StoreSelector({Key? key}) : super(key: key);
+  const StoreSelector({super.key});
 
   @override
   State<StoreSelector> createState() => _StoreSelectorState();

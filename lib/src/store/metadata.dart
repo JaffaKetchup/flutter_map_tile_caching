@@ -1,30 +1,25 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:io';
-
-import 'package:path/path.dart' as p;
-import 'package:stream_transform/stream_transform.dart';
-
-import '../internal/exts.dart';
-import 'access.dart';
-import 'directory.dart';
+part of flutter_map_tile_caching;
 
 /// Manage custom miscellaneous information tied to a [StoreDirectory]
 ///
-/// Uses a key-value format where both key and value must be [String]. There is no validation or sanitisation on any keys or values; note that keys form part of filenames. More advanced requirements should use another package, as this is a basic implementation.
+/// Uses a key-value format where both key and value must be [String]. More
+/// advanced requirements should use another package, as this is a basic
+/// implementation.
 class StoreMetadata {
-  /// The file extension for all custom metadata files
-  static const _metadataExtension = '.metadata';
+  StoreMetadata._(StoreDirectory storeDirectory)
+      : _id = DatabaseTools.hash(storeDirectory.storeName),
+        _management = storeDirectory.manage;
 
-  /// Manage custom miscellaneous information tied to a [StoreDirectory]
-  ///
-  /// Uses a key-value format where both key and value must be [String]. There is no validation or sanitisation on any keys or values; note that keys form part of filenames. More advanced requirements should use another package, as this is a basic implementation.
-  StoreMetadata(StoreDirectory storeDirectory)
-      : _access = StoreAccess(storeDirectory).metadata;
+  final int _id;
+  final StoreManagement _management;
 
-  /// Shorthand for [StoreAccess.metadata], used commonly throughout
-  final Directory _access;
+  Isar get _db {
+    _management._ensureReadyStatus();
+    return FMTCRegistry.instance.storeDatabases[_id]!;
+  }
 
   /// Add a new key-value pair to the store asynchronously
   ///
@@ -32,91 +27,69 @@ class StoreMetadata {
   Future<void> addAsync({
     required String key,
     required String value,
-  }) async {
-    final File file = _access >>> key + _metadataExtension;
-    await file.create();
-    await file.writeAsString(value);
-  }
+  }) =>
+      _db.writeTxn(
+        () => _db.metadata.put(DbMetadata(name: key, data: value)),
+      );
 
   /// Add a new key-value pair to the store synchronously
   ///
   /// Overwrites the value if the key already exists.
+  ///
+  /// Prefer [addAsync] to avoid blocking the UI thread. Otherwise, this has
+  /// slightly better performance.
   void add({
     required String key,
     required String value,
   }) =>
-      (_access >>> key + _metadataExtension)
-        ..createSync()
-        ..writeAsStringSync(value);
+      _db.writeTxnSync(
+        () => _db.metadata.putSync(DbMetadata(name: key, data: value)),
+      );
 
   /// Remove a new key-value pair from the store asynchronously
-  Future<void> removeAsync({required String key}) async {
-    final File file = _access >>> key + _metadataExtension;
-    if (await file.exists()) await file.delete();
-  }
+  Future<void> removeAsync({required String key}) =>
+      _db.writeTxn(() => _db.metadata.delete(DatabaseTools.hash(key)));
 
   /// Remove a new key-value pair from the store synchronously
-  void remove({required String key}) {
-    final File file = _access >>> key + _metadataExtension;
-    if (file.existsSync()) file.deleteSync();
-  }
+  ///
+  /// Prefer [removeAsync] to avoid blocking the UI thread. Otherwise, this has
+  /// slightly better performance.
+  void remove({required String key}) => _db.writeTxnSync(
+        () => _db.metadata.deleteSync(DatabaseTools.hash(key)),
+      );
 
   /// Remove all the key-value pairs from the store asynchronously
-  Future<void> resetAsync() async {
-    for (final File f in await (await _access.listWithExists())
-        .map(
-          (e) => p.extension(e.absolute.path) == _metadataExtension ? e : null,
-        )
-        .whereType<File>()
-        .toList()) {
-      await f.delete();
-    }
-  }
+  Future<void> resetAsync() => _db.writeTxn(
+        () async => Future.wait(
+          (await _db.metadata.where().findAll())
+              .map((m) => _db.metadata.delete(m.id)),
+        ),
+      );
 
   /// Remove all the key-value pairs from the store synchronously
-  void reset() {
-    for (final File f in _access
-        .listSync()
-        .map(
-          (e) => p.extension(e.absolute.path) == _metadataExtension ? e : null,
-        )
-        .whereType<File>()
-        .toList()) {
-      f.deleteSync();
-    }
-  }
+  ///
+  /// Prefer [resetAsync] to avoid blocking the UI thread. Otherwise, this has
+  /// slightly better performance.
+  void reset() => _db.writeTxnSync(
+        () => Future.wait(
+          _db.metadata
+              .where()
+              .findAllSync()
+              .map((m) => _db.metadata.delete(m.id)),
+        ),
+      );
 
-  Future<Map<String, String>> get readAsync async =>
-      (await (await _access.listWithExists())
-              .asyncMap(
-                (e) async =>
-                    e is File && p.extension(e.absolute.path) == '.metadata'
-                        ? {
-                            p.basenameWithoutExtension(e.absolute.path):
-                                await e.readAsString()
-                          }
-                        : null,
-              )
-              .whereType<Map<String, String>>()
-              .toList())
-          .reduce((v, e) {
-        v.addAll(e);
-        return v;
-      });
+  /// Read all the key-value pairs from the store asynchronously
+  Future<Map<String, String>> get readAsync async => Map.fromEntries(
+        (await _db.metadata.where().findAll())
+            .map((m) => MapEntry(m.name, m.data)),
+      );
 
-  Map<String, String> get read => _access
-          .listSync()
-          .map(
-            (e) => e is File
-                ? {
-                    p.basenameWithoutExtension(e.absolute.path):
-                        e.readAsStringSync()
-                  }
-                : null,
-          )
-          .whereType<Map<String, String>>()
-          .reduce((v, e) {
-        v.addAll(e);
-        return v;
-      });
+  /// Read all the key-value pairs from the store synchronously
+  ///
+  /// Prefer [readAsync] to avoid blocking the UI thread. Otherwise, this has
+  /// slightly better performance.
+  Map<String, String> get read => Map.fromEntries(
+        _db.metadata.where().findAllSync().map((m) => MapEntry(m.name, m.data)),
+      );
 }
