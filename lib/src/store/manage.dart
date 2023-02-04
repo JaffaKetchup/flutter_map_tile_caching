@@ -1,215 +1,379 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:io';
-import 'dart:math';
+part of flutter_map_tile_caching;
 
-import 'package:flutter/widgets.dart';
-import 'package:path/path.dart' as p;
-
-import '../internal/exts.dart';
-import '../internal/filesystem_sanitiser_private.dart';
-import 'access.dart';
-import 'directory.dart';
-import 'metadata.dart';
-import 'statistics.dart';
-
-/// Manages a [StoreDirectory]'s representation on the filesystem, such as creation and deletion
+/// Manages a [StoreDirectory]'s representation on the filesystem, such as
+/// creation and deletion
 class StoreManagement {
-  /// The store directory to manage
+  StoreManagement._(this._storeDirectory)
+      : _id = DatabaseTools.hash(_storeDirectory.storeName),
+        _registry = FMTCRegistry.instance,
+        _rootDirectory = FMTC.instance.rootDirectory.directory;
+
   final StoreDirectory _storeDirectory;
+  final int _id;
+  final FMTCRegistry _registry;
+  final Directory _rootDirectory;
 
-  /// Manages a [StoreDirectory]'s representation on the filesystem, such as creation and deletion
-  StoreManagement(this._storeDirectory)
-      : _access = StoreAccess(_storeDirectory);
-
-  /// Shorthand for [StoreDirectory.access], used commonly throughout
-  final StoreAccess _access;
-
-  /// Check whether all directories exist synchronously
-  bool get ready => [
-        _access.tiles.existsSync(),
-        _access.stats.existsSync(),
-        _access.metadata.existsSync(),
-      ].every((e) => e);
-
-  /// Check whether all directories exist asynchronously
-  Future<bool> get readyAsync async => (await Future.wait<bool>([
-        _access.tiles.exists(),
-        _access.stats.exists(),
-        _access.metadata.exists(),
-      ]))
-          .every((e) => e);
-
-  /// Create all of the directories synchronously
-  void create() {
-    _access.tiles.createSync(recursive: true);
-    _access.stats.createSync(recursive: true);
-    _access.metadata.createSync(recursive: true);
-  }
-
-  /// Create all of the directories asynchronously
-  Future<void> createAsync() => Future.wait([
-        _access.tiles.create(recursive: true),
-        _access.stats.create(recursive: true),
-        _access.metadata.create(recursive: true),
-      ]);
-
-  /// Delete all of the directories synchronously
-  ///
-  /// This will remove all traces of this store from the user's device. Use with caution!
-  void delete() {
-    reset();
-    _access.real.deleteSync(recursive: true);
-  }
-
-  /// Delete all of the directories asynchronously
-  ///
-  /// This will remove all traces of this store from the user's device. Use with caution!
-  Future<void> deleteAsync() async {
-    await resetAsync();
-    await _access.real.delete(recursive: true);
-  }
-
-  /// Resets this store synchronously
-  ///
-  /// Deletes all files within the [StoreAccess.tiles] directory, and invalidates any cached statistics ([StoreStats.invalidateCachedStatisticsAsync]). Therefore, custom metadata ([StoreMetadata]) is not deleted.
-  ///
-  /// For a full reset, manually [delete] then [create] the store.
-  void reset() {
-    _access.tiles.listSync().forEach((e) => e.deleteSync());
-    _storeDirectory.stats.invalidateCachedStatistics(statTypes: null);
-  }
-
-  /// Resets this store synchronously
-  ///
-  /// Deletes all files within the [StoreAccess.tiles] directory, and invalidates any cached statistics ([StoreStats.invalidateCachedStatisticsAsync]). Therefore, custom metadata ([StoreMetadata]) is not deleted.
-  ///
-  /// For a full reset, manually [deleteAsync] then [createAsync] the store.
-  Future<void> resetAsync() async {
-    await Future.wait(
-      await (await _access.tiles.listWithExists())
-          .map((e) => e.delete())
-          .toList(),
+  void _ensureReadyStatus() {
+    final isRegistered = _registry.storeDatabases.containsKey(_id);
+    if (isRegistered && _registry.storeDatabases[_id]!.isOpen) return;
+    throw FMTCStoreNotReady._(
+      storeName: _storeDirectory.storeName,
+      registered: isRegistered,
     );
-    await _storeDirectory.stats
-        .invalidateCachedStatisticsAsync(statTypes: null);
   }
 
-  /// Rename the store directory synchronously
+  /// Check whether this store is ready for use
   ///
-  /// The old [StoreDirectory] will still retain it's link to the old store, so always use the new returned value instead: returns a new [StoreDirectory] after a successful renaming operation.
-  StoreDirectory rename(String storeName) {
-    final String safe = filesystemSanitiseValidate(
-      inputString: storeName,
-      throwIfInvalid: true,
-    );
-
-    if (safe != _storeDirectory.storeName) {
-      _access.real.renameSync(
-        p.joinAll([_storeDirectory.rootDirectory.access.real.path, safe]),
-      );
+  /// It must be registered, and its underlying database must be open for this
+  /// method to return `true`.
+  ///
+  /// This is a safe method, and will not throw the [FMTCStoreNotReady] error,
+  /// except in exceptional circumstances.
+  bool get ready {
+    try {
+      _ensureReadyStatus();
+      return true;
+      // ignore: avoid_catching_errors
+    } on FMTCStoreNotReady catch (e) {
+      if (e._registered) rethrow;
+      return false;
     }
+  }
 
-    return _storeDirectory.copyWith(storeName: safe);
+  /// Create this store asynchronously
+  ///
+  /// Does nothing if the store already exists.
+  Future<void> createAsync() async {
+    if (ready) return;
+
+    final db = await Isar.open(
+      [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
+      name: _id.toString(),
+      directory: _rootDirectory.path,
+      maxSizeMiB: FMTC.instance.settings.databaseMaxSize,
+      compactOnLaunch: FMTC.instance.settings.databaseCompactCondition,
+    );
+    await db.writeTxn(
+      () => db.storeDescriptor
+          .put(DbStoreDescriptor(name: _storeDirectory.storeName)),
+    );
+    _registry.storeDatabases[_id] = db;
+  }
+
+  /// Create this store synchronously
+  ///
+  /// Prefer [createAsync] to avoid blocking the UI thread. Otherwise, this has
+  /// slightly better performance.
+  ///
+  /// Does nothing if the store already exists.
+  void create() {
+    if (ready) return;
+
+    final db = Isar.openSync(
+      [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
+      name: _id.toString(),
+      directory: _rootDirectory.path,
+      maxSizeMiB: FMTC.instance.settings.databaseMaxSize,
+      compactOnLaunch: FMTC.instance.settings.databaseCompactCondition,
+    );
+    db.writeTxnSync(
+      () => db.storeDescriptor
+          .putSync(DbStoreDescriptor(name: _storeDirectory.storeName)),
+    );
+    _registry.storeDatabases[_id] = db;
+  }
+
+  Future<int?> _advancedCreate() async {
+    if (ready) return null;
+
+    final db = await Isar.open(
+      [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
+      name: _id.toString(),
+      directory: _rootDirectory.path,
+      maxSizeMiB: FMTC.instance.settings.databaseMaxSize,
+      compactOnLaunch: FMTC.instance.settings.databaseCompactCondition,
+    );
+    await db.writeTxn(
+      () => db.storeDescriptor
+          .put(DbStoreDescriptor(name: _storeDirectory.storeName)),
+    );
+    _registry.storeDatabases[_id] = db;
+    return _id;
+  }
+
+  /// Delete this store
+  ///
+  /// This will remove all traces of this store from the user's device. Use with
+  /// caution!
+  ///
+  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
+  /// error will be raised.
+  Future<void> delete() async {
+    _ensureReadyStatus();
+
+    final store = _registry.storeDatabases.remove(_id);
+    if (store?.isOpen ?? false) await store!.close(deleteFromDisk: true);
+  }
+
+  /// Removes all tiles from this store synchronously
+  ///
+  /// Also resets the cache hits & misses statistic.
+  ///
+  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
+  /// error will be raised.
+  Future<void> resetAsync() async {
+    _ensureReadyStatus();
+
+    final db = _registry.storeDatabases[_id]!;
+    await db.writeTxn(() async {
+      await db.tiles.clear();
+      await db.storeDescriptor.put(
+        (await db.storeDescriptor.get(0))!
+          ..hits = 0
+          ..misses = 0,
+      );
+    });
+  }
+
+  /// Removes all tiles from this store asynchronously
+  ///
+  /// Also resets the cache hits & misses statistic.
+  ///
+  /// Prefer [resetAsync] to avoid blocking the UI thread. Otherwise, this has
+  /// slightly better performance.
+  ///
+  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
+  /// error will be raised.
+  void reset() {
+    _ensureReadyStatus();
+
+    final db = _registry.storeDatabases[_id]!;
+    db.writeTxnSync(() {
+      db.tiles.clearSync();
+      db.storeDescriptor.putSync(
+        db.storeDescriptor.getSync(0)!
+          ..hits = 0
+          ..misses = 0,
+      );
+    });
   }
 
   /// Rename the store directory asynchronously
   ///
-  /// The old [StoreDirectory] will still retain it's link to the old store, so always use the new returned value instead: returns a new [StoreDirectory] after a successful renaming operation.
-  Future<StoreDirectory> renameAsync(String storeName) async {
-    final String safe = filesystemSanitiseValidate(
-      inputString: storeName,
-      throwIfInvalid: true,
+  /// The old [StoreDirectory] will still retain it's link to the old store, so
+  /// always use the new returned value instead: returns a new [StoreDirectory]
+  /// after a successful renaming operation.
+  ///
+  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
+  /// error will be raised.
+  Future<StoreDirectory> rename(String newStoreName) async {
+    _ensureReadyStatus();
+
+    // Unregister old database without deleting it
+    final oldStore = _registry.storeDatabases.remove(_id);
+    if (oldStore!.isOpen) await oldStore.close();
+
+    final newId = DatabaseTools.hash(newStoreName);
+
+    // Manually change the database's filename
+    await (_rootDirectory >>> '$_id.isar').rename(
+      (_rootDirectory >>> '$newId.isar').path,
     );
 
-    if (safe != _storeDirectory.storeName) {
-      await _access.real.rename(
-        p.joinAll([_storeDirectory.rootDirectory.access.stores.path, safe]),
-      );
-    }
+    // Register the new database (it will be re-opened)
+    final newStore = StoreDirectory._(newStoreName, autoCreate: false);
+    await newStore.manage.createAsync();
 
-    return _storeDirectory.copyWith(storeName: safe);
+    // Update the name stored inside the database
+    await _registry.storeDatabases[newId]?.writeTxn(
+      () => _registry.storeDatabases[newId]!.storeDescriptor
+          .put(DbStoreDescriptor(name: newStoreName)),
+    );
+
+    return newStore;
   }
 
-  /// Retrieves a tile from the store and extracts it's [Image] synchronously
+  /// Retrieves the most recently modified tile from the store, extracts it's
+  /// bytes, and renders them to an [Image]
   ///
-  /// [randomRange] controls the randomness of the tile chosen (defaults to `null`):
-  /// * null                  : no randomness - the first tile is chosen
-  /// * value <= 0            : any tile may be chosen
-  /// * value >= store length : any tile may be chosen
-  /// * value < store length  : any tile up to this range may be chosen, enforcing an iteration limit internally
+  /// Prefer [tileImageAsync] to avoid blocking the UI thread. Otherwise, this
+  /// has slightly better performance.
   ///
-  /// Note that tiles are not necessarily ordered chronologically. They are usually ordered alphabetically.
+  /// Eventually returns `null` if there are no cached tiles in this store,
+  /// otherwise an [Image] with [size] height and width.
   ///
-  /// Returns `null` if there are no cached tiles in this store, otherwise an [Image] with [size] height and width.
+  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
+  /// error will be raised.
   Image? tileImage({
-    int? randomRange,
     double? size,
+    Key? key,
+    double scale = 1.0,
+    Widget Function(BuildContext, Widget, int?, bool)? frameBuilder,
+    Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
+    String? semanticLabel,
+    bool excludeFromSemantics = false,
+    Color? color,
+    Animation<double>? opacity,
+    BlendMode? colorBlendMode,
+    BoxFit? fit,
+    AlignmentGeometry alignment = Alignment.center,
+    ImageRepeat repeat = ImageRepeat.noRepeat,
+    Rect? centerSlice,
+    bool matchTextDirection = false,
+    bool gaplessPlayback = false,
+    bool isAntiAlias = false,
+    FilterQuality filterQuality = FilterQuality.low,
+    int? cacheWidth,
+    int? cacheHeight,
   }) {
-    final int storeLen = _storeDirectory.stats.storeLength;
-    if (storeLen == 0) return null;
+    _ensureReadyStatus();
 
-    int i = 0;
+    final latestTile = _registry
+        .storeDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!.tiles
+        .where(sort: Sort.desc)
+        .anyLastModified()
+        .findFirstSync();
+    if (latestTile == null) return null;
 
-    final int randomNumber = randomRange == null
-        ? 0
-        : Random().nextInt(
-            randomRange <= 0 ? storeLen : randomRange.clamp(0, storeLen),
-          );
-
-    for (final FileSystemEntity e in _access.tiles.listSync()) {
-      if (i >= randomNumber) {
-        return Image.file(
-          File(e.absolute.path),
-          width: size,
-          height: size,
-        );
-      }
-      i++;
-    }
-
-    return null;
+    return Image.memory(
+      Uint8List.fromList(latestTile.bytes),
+      key: key,
+      scale: scale,
+      frameBuilder: frameBuilder,
+      errorBuilder: errorBuilder,
+      semanticLabel: semanticLabel,
+      excludeFromSemantics: excludeFromSemantics,
+      width: size,
+      height: size,
+      color: color,
+      opacity: opacity,
+      colorBlendMode: colorBlendMode,
+      fit: fit,
+      alignment: alignment,
+      repeat: repeat,
+      centerSlice: centerSlice,
+      matchTextDirection: matchTextDirection,
+      gaplessPlayback: gaplessPlayback,
+      isAntiAlias: isAntiAlias,
+      filterQuality: filterQuality,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
+    );
   }
 
-  /// Retrieves a tile from the store and extracts it's [Image] asynchronously
+  /// Retrieves the most recently modified tile from the store, extracts it's
+  /// bytes, and renders them to an [Image]
   ///
-  /// [randomRange] controls the randomness of the tile chosen (defaults to `null`):
-  /// * null                  : no randomness - the first tile is chosen
-  /// * value <= 0            : any tile may be chosen
-  /// * value >= store length : any tile may be chosen
-  /// * value < store length  : any tile up to this range may be chosen, enforcing an iteration limit internally
+  /// Eventually returns `null` if there are no cached tiles in this store,
+  /// otherwise an [Image] with [size] height and width.
   ///
-  /// Note that tiles are not necessarily ordered chronologically. They are usually ordered alphabetically.
-  ///
-  /// Eventually returns `null` if there are no cached tiles in this store, otherwise an [Image] with [size] height and width.
+  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
+  /// error will be raised.
   Future<Image?> tileImageAsync({
-    int? randomRange,
     double? size,
+    Key? key,
+    double scale = 1.0,
+    Widget Function(BuildContext, Widget, int?, bool)? frameBuilder,
+    Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
+    String? semanticLabel,
+    bool excludeFromSemantics = false,
+    Color? color,
+    Animation<double>? opacity,
+    BlendMode? colorBlendMode,
+    BoxFit? fit,
+    AlignmentGeometry alignment = Alignment.center,
+    ImageRepeat repeat = ImageRepeat.noRepeat,
+    Rect? centerSlice,
+    bool matchTextDirection = false,
+    bool gaplessPlayback = false,
+    bool isAntiAlias = false,
+    FilterQuality filterQuality = FilterQuality.low,
+    int? cacheWidth,
+    int? cacheHeight,
   }) async {
-    final int storeLen = await _storeDirectory.stats.storeLengthAsync;
-    if (storeLen == 0) return null;
+    _ensureReadyStatus();
 
-    int i = 0;
+    final latestTile = await _registry
+        .storeDatabases[DatabaseTools.hash(_storeDirectory.storeName)]!.tiles
+        .where(sort: Sort.desc)
+        .anyLastModified()
+        .findFirst();
+    if (latestTile == null) return null;
 
-    final int randomNumber = randomRange == null
-        ? 0
-        : Random().nextInt(
-            randomRange <= 0 ? storeLen : randomRange.clamp(0, storeLen),
-          );
-
-    await for (final FileSystemEntity e
-        in await _access.tiles.listWithExists()) {
-      if (i >= randomNumber) {
-        return Image.file(
-          File(e.absolute.path),
-          width: size,
-          height: size,
-        );
-      }
-      i++;
-    }
-
-    return null;
+    return Image.memory(
+      Uint8List.fromList(latestTile.bytes),
+      key: key,
+      scale: scale,
+      frameBuilder: frameBuilder,
+      errorBuilder: errorBuilder,
+      semanticLabel: semanticLabel,
+      excludeFromSemantics: excludeFromSemantics,
+      width: size,
+      height: size,
+      color: color,
+      opacity: opacity,
+      colorBlendMode: colorBlendMode,
+      fit: fit,
+      alignment: alignment,
+      repeat: repeat,
+      centerSlice: centerSlice,
+      matchTextDirection: matchTextDirection,
+      gaplessPlayback: gaplessPlayback,
+      isAntiAlias: isAntiAlias,
+      filterQuality: filterQuality,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
+    );
   }
+
+  //! DEPRECATED METHODS !//
+
+  /// 'readyAsync' is deprecated and shouldn't be used. Prefer [ready]. This
+  /// redirect will be removed in a future update.
+  @Deprecated(
+    "Prefer 'ready'. This redirect will be removed in a future update",
+  )
+  Future<bool> get readyAsync => Future.sync(() => ready);
+
+  /// 'deleteAsync' is deprecated and shouldn't be used. Prefer [delete]. This
+  /// redirect will be removed in a future update.
+  @Deprecated(
+    "Prefer 'delete'. This redirect will be removed in a future update",
+  )
+  Future<void> deleteAsync() => delete();
+
+  /// 'renameAsync' is deprecated and shouldn't be used. Prefer [rename]. This
+  /// redirect will be removed in a future update.
+  @Deprecated(
+    "Prefer 'rename'. This redirect will be removed in a future update",
+  )
+  Future<StoreDirectory?> renameAsync(String storeName) => rename(storeName);
+}
+
+/// An error rasied by multiple methods that require the existence of the
+/// requested store
+class FMTCStoreNotReady extends Error {
+  /// The store name that the method tried to access
+  final String storeName;
+
+  /// A human readable description of the error, and steps that may be taken to
+  /// avoid this error being thrown again
+  final String message;
+
+  final bool _registered;
+
+  FMTCStoreNotReady._({
+    required this.storeName,
+    required bool registered,
+  })  : _registered = registered,
+        message = registered
+            ? "The store ('$storeName') was registered, but the underlying database was not open, at this time. This is an erroneous state in FMTC: if this error appears in your application, please open an issue on GitHub immediately."
+            : "The store ('$storeName') does not exist at this time, and is not ready. Ensure that your application does not use the method that triggered this error unless it is sure that the store will exist at this point.";
+
+  /// Similar to [message], but suitable for console output in an unknown context
+  @override
+  String toString() => 'FMTCStoreNotReady: $message';
 }

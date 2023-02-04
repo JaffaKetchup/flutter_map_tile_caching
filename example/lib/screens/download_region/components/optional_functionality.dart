@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../shared/state/download_provider.dart';
 
 class OptionalFunctionality extends StatelessWidget {
-  const OptionalFunctionality({Key? key}) : super(key: key);
+  const OptionalFunctionality({super.key});
 
   @override
   Widget build(BuildContext context) => Column(

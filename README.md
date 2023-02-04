@@ -1,4 +1,4 @@
-# flutter_map_tile_caching
+# [flutter_map](https://pub.dev/packages/flutter_map)_tile_caching
 
 A plugin for ['flutter_map'](https://pub.dev/packages/flutter_map) providing advanced caching functionality, with ability to download map regions for offline use. Also includes useful prebuilt widgets.
 
@@ -29,14 +29,18 @@ You can read more about me and what I do on my [GitHub Sponsors](https://github.
 
 Alternatively, if you prefer not to use GitHub Sponsors, please feel free to use my [Ko-fi](https://ko-fi.com/jaffaketchup). Note that the PayPal backend will take a small percentage amount of donations made through this method.
 
-## (Commercial) Licensing
+## (Proprietary) Licensing
 
-_I am not a lawyer, and this information is to the best of my understanding._
+_I am not a lawyer, and this information is to the best of my understanding. You are urged to read the license yourself for a thorough understanding._
 
-This project is released under GPL-v3. For more information about this license, see <https://choosealicense.com/licenses/gpl-3.0/>. Essentially, whilst you can use this code within commercial projects, they must not be proprietary/closed-source.
+This project is released under GPL v3. For detailed information about this license, see <https://www.gnu.org/licenses/gpl-3.0.en.html>. [choosealicense.com](https://choosealicense.com/licenses/gpl-3.0/) summarises the license with the following paragraph:
 
-However, I am willing to sell alternative licenses on a case-by-case basis and on request: please read on for more information.
+> Permissions of this strong copyleft license are conditioned on making available complete source code of licensed works and modifications, which include larger works using a licensed work, under the same license. Copyright and license notices must be preserved. Contributors provide an express grant of patent rights.
 
-I learnt (and am still learning) to code with free, open-source software due to my age and therefore my lack of money, and for that reason, I believe in promoting open-source wherever possible to give equal opportunities to everybody, no matter their age or financial position. I'm not sure it's fair for commercial proprietary applications to use software made by people for free out of generosity. On the other hand, I am also trying to make a small amount of money from my projects, by donations or by selling licenses. And I recognise that commercial businesses may want to use my projects.
+Essentially, whilst you can use this code within commercial projects, they must not be proprietary - they incorporate this 'licensed work' so they must be available under the same license. You must distribute your source code on request (under the same GPL v3 license) to anyone who uses your program.
 
-Therefore, if you would like a license to use this software on a closed-source application, I will be willing to sell a yearly license for a reasonable price. If this seems like what you want/need, please do not hesitate to get in touch via [github@jaffaketchup.com](mailto://github@jaffaketchup.com).
+However, I am willing to sell alternative (proprietary) licenses on a case-by-case basis and on request.
+
+I learnt (and am still learning) to code with free, open-source software due to my age and lack of money, and for that reason, I believe in promoting open-source wherever possible to give equal opportunities to everybody, no matter their age or financial position. I'm not sure it's fair for commercial proprietary applications to use software made by people for free out of generosity. On the other hand, I am also trying to make a small amount of money from my projects, by donations or by selling licenses. And I recognise that commercial businesses may want to use my projects for their own proprietary applications.
+
+Therefore, if you would like a license to use this software within a proprietary, I am willing to sell a (preferably yearly or usage based) license for a reasonable price. If this seems like what you want/need, please do not hesitate to get in touch via [github@jaffaketchup.com](mailto://github@jaffaketchup.com).

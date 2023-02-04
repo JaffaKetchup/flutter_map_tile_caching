@@ -9,8 +9,8 @@ import '../../../../shared/state/general_provider.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<MapPage> createState() => _MapPageState();

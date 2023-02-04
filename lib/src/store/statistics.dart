@@ -1,217 +1,76 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:io';
-
-import 'package:flutter/widgets.dart';
-import 'package:stream_transform/stream_transform.dart';
-import 'package:watcher/watcher.dart';
-
-import '../internal/exts.dart';
-import '../misc/enums.dart';
-import 'access.dart';
-import 'directory.dart';
+part of flutter_map_tile_caching;
 
 /// Provides statistics about a [StoreDirectory]
 class StoreStats {
-  /// The store directory to provide statistics about
-  final StoreDirectory _storeDirectory;
+  StoreStats._(StoreDirectory storeDirectory)
+      : _id = DatabaseTools.hash(storeDirectory.storeName),
+        _management = storeDirectory.manage;
 
-  /// Internally force re-calculation for all statistics, instead of retrieving from cache via [_csgSync] or [_csgAsync]
-  final bool _forceRecalculation;
+  final int _id;
+  final StoreManagement _management;
 
-  /// Provides statistics about a [StoreDirectory]
-  StoreStats(this._storeDirectory, {bool forceRecalculation = false})
-      : _forceRecalculation = forceRecalculation,
-        _access = StoreAccess(_storeDirectory);
-
-  /// Shorthand for [StoreDirectory.access], used commonly throughout
-  final StoreAccess _access;
-
-  /// Force re-calculation for all statistics instead of retrieving from stats cache
-  StoreStats get noCache =>
-      StoreStats(_storeDirectory, forceRecalculation: true);
-
-  /// Get a cached statistic or fallback to a calculation synchronously
-  ///
-  /// Stands for 'CachedStatisticGetterSynchronous'
-  String _csgSync(String statType, dynamic Function() calculation) {
-    final File f = _access.stats >>> '$statType.cache';
-
-    if (!_forceRecalculation && f.existsSync()) {
-      return f.readAsStringSync();
-    } else {
-      final String calculated = calculation().toString();
-      f.writeAsStringSync(calculated, flush: true);
-      return calculated;
-    }
+  Isar get _db {
+    _management._ensureReadyStatus();
+    return FMTCRegistry.instance.storeDatabases[_id]!;
   }
 
-  /// Get a cached statistic or fallback to a calculation asynchronously
+  /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
   ///
-  /// Stands for 'CachedStatisticGetterAsynchronous'
-  Future<String> _csgAsync(
-    String statType,
-    Future<dynamic> Function() calculation,
-  ) async {
-    final File f = _access.stats >>> '$statType.cache';
+  /// Prefer [storeSizeAsync] to avoid blocking the UI thread. Otherwise, this
+  /// has slightly better performance.
+  double get storeSize => _db.getSizeSync(includeIndexes: true) / 1024;
 
-    if (!_forceRecalculation && await f.exists()) {
-      return f.readAsString();
-    } else {
-      final String calculated = (await calculation()).toString();
-      await f.writeAsString(calculated, flush: true);
-      return calculated;
-    }
-  }
-
-  /// Remove the cached statistics synchronously
-  ///
-  /// For asynchronous version, see [invalidateCachedStatisticsAsync].
-  ///
-  /// [statTypes] dictates the types of statistics to remove, defaulting to only 'length' and 'size'. Set to `null` to remove all types.
-  void invalidateCachedStatistics({
-    List<String>? statTypes = const [
-      'length',
-      'size',
-    ],
-  }) =>
-      (statTypes ??
-              [
-                'length',
-                'size',
-                'cacheHits',
-                'cacheMisses',
-              ])
-          .map((e) => _access.stats >>> '$e.cache')
-          .forEach((e) => e.existsSync() ? e.deleteSync() : null);
-
-  /// Remove the cached statistics asynchronously
-  ///
-  /// For synchronous version, see [invalidateCachedStatistics].
-  ///
-  /// [statTypes] dictates the types of statistics to remove, defaulting to only 'length' and 'size'. Set to `null` to remove all types.
-  Future<void> invalidateCachedStatisticsAsync({
-    List<String>? statTypes = const [
-      'length',
-      'size',
-    ],
-  }) =>
-      Future.wait(
-        (statTypes ??
-                [
-                  'length',
-                  'size',
-                  'cacheHits',
-                  'cacheMisses',
-                ])
-            .map((e) async {
-          final File file = _access.stats >>> '$e.cache';
-          return await file.exists() ? file.delete() : null;
-        }),
-      );
-
-  /// Retrieve the size of the store in kibibytes (KiB)
-  ///
-  /// For asynchronous version, see [storeSizeAsync].
-  ///
-  /// Includes all files beneath the store, not necessarily just tiles.
-  double get storeSize =>
-      double.tryParse(
-        _csgSync(
-          'size',
-          () => _access.real
-              .listSync(recursive: true)
-              .map((e) => e is File ? e.lengthSync() / 1024 : 0)
-              .sum,
-        ),
-      ) ??
-      0;
-
-  /// Retrieve the size of the store in kibibytes (KiB)
-  ///
-  /// For asynchronous version, see [storeSize].
-  ///
-  /// Includes all files beneath the store, not necessarily just tiles.
+  /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
   Future<double> get storeSizeAsync async =>
-      double.tryParse(
-        await _csgAsync(
-          'size',
-          () async => (await _access.real
-                  .list(recursive: true)
-                  .asyncMap(
-                    (e) async => e is File ? await e.length() / 1024 : 0,
-                  )
-                  .toList())
-              .sum,
-        ),
-      ) ??
-      0;
+      await _db.getSize(includeIndexes: true) / 1024;
 
-  /// Retrieve the number of stored tiles in a store
+  /// Retrieve the number of stored tiles synchronously
   ///
-  /// For asynchronous version, see [storeLengthAsync].
-  ///
-  /// Only includes tiles stored, not necessarily all files.
-  int get storeLength =>
-      int.tryParse(_csgSync('length', () => _access.tiles.listSync().length)) ??
-      0;
+  /// Prefer [storeLengthAsync] to avoid blocking the UI thread. Otherwise, this
+  /// has slightly better performance.
+  int get storeLength => _db.tiles.countSync();
 
-  /// Retrieve the number of stored tiles in a store
-  ///
-  /// For synchronous version, see [storeLength].
-  ///
-  /// Only includes tiles stored, not necessarily all files.
-  Future<int> get storeLengthAsync async =>
-      int.tryParse(
-        await _csgAsync(
-          'length',
-          () async => (await _access.tiles.listWithExists()).length,
-        ),
-      ) ??
-      0;
+  /// Retrieve the number of stored tiles asynchronously
+  Future<int> get storeLengthAsync => _db.tiles.count();
 
-  /// Retrieve the number of tiles that were successfully retrieved from the store during browsing
+  /// Retrieve the number of tiles that were successfully retrieved from the
+  /// store during browsing synchronously
   ///
-  /// For asynchronous version, see [cacheHitsAsync].
-  ///
-  /// If using [noCache], this will always return 0.
-  int get cacheHits => int.tryParse(_csgSync('cacheHits', () => 0)) ?? 0;
+  /// Prefer [cacheHitsAsync] to avoid blocking the UI thread. Otherwise, this
+  /// has slightly better performance.
+  int get cacheHits => _db.storeDescriptor.getSync(0)!.hits;
 
-  /// Retrieve the number of tiles that were successfully retrieved from the store during browsing
-  ///
-  /// For synchronous version, see [cacheHits].
-  ///
-  /// If using [noCache], this will always return 0.
+  /// Retrieve the number of tiles that were successfully retrieved from the
+  /// store during browsing asynchronously
   Future<int> get cacheHitsAsync async =>
-      int.tryParse(await _csgAsync('cacheHits', () => Future.sync(() => 0))) ??
-      0;
+      (await _db.storeDescriptor.get(0))!.hits;
 
-  /// Retrieve the number of tiles that were unsuccessfully retrieved from the store during browsing
+  /// Retrieve the number of tiles that were unsuccessfully retrieved from the
+  /// store during browsing synchronously
   ///
-  /// For asynchronous version, see [cacheMissesAsync].
-  ///
-  /// Includes tiles that needed updating. If using [noCache], this will always return 0.
-  int get cacheMisses => int.tryParse(_csgSync('cacheMisses', () => 0)) ?? 0;
+  /// Prefer [cacheMissesAsync] to avoid blocking the UI thread. Otherwise, this
+  /// has slightly better performance.
+  int get cacheMisses => _db.storeDescriptor.getSync(0)!.misses;
 
-  /// Retrieve the number of tiles that were unsuccessfully retrieved from the store during browsing
-  ///
-  /// For synchronous version, see [cacheMisses].
-  ///
-  /// Includes tiles that needed updating. If using [noCache], this will always return 0.
+  /// Retrieve the number of tiles that were unsuccessfully retrieved from the
+  /// store during browsing asynchronously
   Future<int> get cacheMissesAsync async =>
-      int.tryParse(
-        await _csgAsync('cacheMisses', () => Future.sync(() => 0)),
-      ) ??
-      0;
+      (await _db.storeDescriptor.get(0))!.misses;
 
   /// Watch for changes in the current store
   ///
-  /// Useful to update UI only when required, for example, in a [StreamBuilder]. Whenever this has an event, it is likely the other statistics will have changed.
+  /// Useful to update UI only when required, for example, in a `StreamBuilder`.
+  /// Whenever this has an event, it is likely the other statistics will have
+  /// changed.
   ///
-  /// Control which changes are caught through the [events] parameter, which takes a list of [ChangeType]s. Catches all change types by default.
+  /// Control where changes are caught from using [storeParts]. See documentation
+  /// on those parts for their scope.
   ///
-  /// Enable debouncing to prevent unnecessary events for small changes in detail using [debounce]. Defaults to 200ms, or set to null to disable debouncing.
+  /// Enable debouncing to prevent unnecessary events for small changes in detail
+  /// using [debounce]. Defaults to 200ms, or set to null to disable debouncing.
   ///
   /// Debouncing example (dash roughly represents [debounce]):
   /// ```dart
@@ -220,43 +79,34 @@ class StoreStats {
   /// ```
   Stream<void> watchChanges({
     Duration? debounce = const Duration(milliseconds: 200),
-    List<ChangeType> events = const [
-      ChangeType.ADD,
-      ChangeType.MODIFY,
-      ChangeType.REMOVE
+    bool fireImmediately = false,
+    List<StoreParts> storeParts = const [
+      StoreParts.metadata,
+      StoreParts.tiles,
+      StoreParts.stats,
     ],
-    List<StoreParts> storeParts = StoreParts.values,
-  }) {
-    Stream<void> constructStream(Directory dir) => FileSystemEntity
-            .isWatchSupported
-        ? dir
-            .watch(
-              events: [
-                events.contains(ChangeType.ADD) ? FileSystemEvent.create : null,
-                events.contains(ChangeType.MODIFY)
-                    ? FileSystemEvent.modify
-                    : null,
-                events.contains(ChangeType.MODIFY)
-                    ? FileSystemEvent.move
-                    : null,
-                events.contains(ChangeType.REMOVE)
-                    ? FileSystemEvent.delete
-                    : null,
-              ].whereType<int>().reduce((v, e) => v | e),
-            )
-            .map<void>((e) {})
-        : DirectoryWatcher(dir.absolute.path)
-            .events
-            .where((evt) => events.contains(evt.type))
-            .map<void>((e) {});
+  }) =>
+      StreamGroup.merge([
+        if (storeParts.contains(StoreParts.metadata))
+          _db.metadata.watchLazy(fireImmediately: fireImmediately),
+        if (storeParts.contains(StoreParts.tiles))
+          _db.tiles.watchLazy(fireImmediately: fireImmediately),
+        if (storeParts.contains(StoreParts.stats))
+          _db.storeDescriptor
+              .watchObjectLazy(0, fireImmediately: fireImmediately),
+      ]).debounce(debounce ?? Duration.zero);
+}
 
-    final Stream<void> stream = constructStream(_access.real).mergeAll([
-      if (storeParts.contains(StoreParts.metadata))
-        constructStream(_access.metadata),
-      if (storeParts.contains(StoreParts.stats)) constructStream(_access.stats),
-      if (storeParts.contains(StoreParts.tiles)) constructStream(_access.tiles),
-    ]);
+/// Parts of a store which can be watched
+enum StoreParts {
+  /// Include changes to the store's metadata objects
+  metadata,
 
-    return debounce == null ? stream : stream.debounce(debounce);
-  }
+  /// Includes changes to the store's tile objects, including those which will
+  /// make some statistics change (eg. store size)
+  tiles,
+
+  /// Includes changes to the store's descriptor object, which will change with
+  /// the cache hit and miss statistics
+  stats,
 }

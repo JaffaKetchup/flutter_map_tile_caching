@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class UsageWarning extends StatelessWidget {
   const UsageWarning({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) => Row(

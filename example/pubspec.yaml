@@ -3,37 +3,44 @@ description: The example application for 'flutter_map_tile_caching', showcasing
   it's functionality and use-cases.
 publish_to: "none"
 
-version: 6.2.0
+version: 7.0.0
 
 environment:
-  sdk: ">=2.15.0 <3.0.0"
-  flutter: ">=3.0.0"
+  sdk: ">=2.17.0 <3.0.0"
+  flutter: ">=3.7.0"
 
 dependencies:
-  badges: ^2.0.2
+  badges: ^3.0.2
   better_open_file: ^3.6.4
   flutter:
     sdk: flutter
   flutter_foreground_task: ^3.9.0
   flutter_map: ^3.0.0
   flutter_map_tile_caching:
-    path: ../
+    git:
+      url: https://github.com/JaffaKetchup/flutter_map_tile_caching.git
+      ref: next-version
   flutter_speed_dial: ^6.0.0
+  fmtc_plus_background_downloading:
+    git:
+      url: https://github.com/JaffaKetchup/fmtc_plus_background_downloading.git
+  fmtc_plus_sharing:
+    git:
+      url: https://github.com/JaffaKetchup/fmtc_plus_sharing.git
   google_fonts: ^3.0.1
   http: ^0.13.4
-  intl: ^0.17.0
+  intl: ^0.18.0
   latlong2: ^0.8.1
   osm_nominatim: ^2.0.1
-  path: ^1.8.1
+  path: ^1.8.3
   provider: ^6.0.3
   shared_preferences: ^2.0.15
   stream_transform: ^2.0.0
   validators: ^3.0.0
   version: ^3.0.2
 
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
+dev_dependencies: null
+
 
 flutter:
   uses-material-design: true

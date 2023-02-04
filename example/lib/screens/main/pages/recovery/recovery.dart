@@ -8,9 +8,9 @@ import 'components/recovery_list.dart';
 
 class RecoveryPage extends StatefulWidget {
   const RecoveryPage({
-    Key? key,
+    super.key,
     required this.moveToDownloadPage,
-  }) : super(key: key);
+  });
 
   final void Function() moveToDownloadPage;
 
@@ -19,7 +19,7 @@ class RecoveryPage extends StatefulWidget {
 }
 
 class _RecoveryPageState extends State<RecoveryPage> {
-  late Future<List<Future<RecoveredRegion>>> _recoverableRegions;
+  late Future<List<RecoveredRegion>> _recoverableRegions;
 
   @override
   void initState() {
@@ -29,9 +29,9 @@ class _RecoveryPageState extends State<RecoveryPage> {
         FMTC.instance.rootDirectory.recovery.recoverableRegions;
 
     listRecoverableRegions();
-    FMTC.instance.rootDirectory.stats.watchChanges(
-      rootParts: [RootParts.recovery],
-    ).listen((_) {
+    FMTC.instance.rootDirectory.stats
+        .watchChanges(watchRecovery: true)
+        .listen((_) {
       if (mounted) {
         listRecoverableRegions();
         setState(() {});
@@ -50,7 +50,7 @@ class _RecoveryPageState extends State<RecoveryPage> {
                 const Header(),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: FutureBuilder<List<Future<RecoveredRegion>>>(
+                  child: FutureBuilder<List<RecoveredRegion>>(
                     future: _recoverableRegions,
                     builder: (context, all) => all.hasData
                         ? all.data!.isEmpty

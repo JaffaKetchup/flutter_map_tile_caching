@@ -1,20 +1,30 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong2/latlong.dart';
+part of flutter_map_tile_caching;
 
-import 'base_region.dart';
-import 'downloadable_region.dart';
+/// A geographically rectangular region based off coordinate bounds
+///
+/// Rectangles do not support skewing into parallelograms.
+///
+/// It can be converted to a:
+///  - [DownloadableRegion] for downloading: [toDownloadable]
+///  - [Widget] layer to be placed in a map: [toDrawable]
+///  - list of [LatLng]s forming the outline: [toOutline]
+class RectangleRegion extends BaseRegion {
+  /// A geographically rectangular region based off coordinate bounds
+  ///
+  /// It can be converted to a:
+  ///  - [DownloadableRegion] for downloading: [toDownloadable]
+  ///  - [Widget] layer to be placed in a map: [toDrawable]
+  ///  - list of [LatLng]s forming the outline: [toOutline]
+  RectangleRegion(
+    this.bounds, {
+    super.name,
+  });
 
-/// A rectangular region with two or more corners
-class RectangleRegion implements BaseRegion {
-  /// The `LatLngBounds` used to create the rectangle
+  /// The coordinate bounds
   final LatLngBounds bounds;
-
-  /// Creates a rectangular region using two or more corners
-  RectangleRegion(this.bounds);
 
   @override
   DownloadableRegion toDownloadable(
@@ -29,7 +39,7 @@ class RectangleRegion implements BaseRegion {
     Crs crs = const Epsg3857(),
     void Function(Object?)? errorHandler,
   }) =>
-      DownloadableRegion.internal(
+      DownloadableRegion._(
         points: [bounds.northWest, bounds.southEast],
         minZoom: minZoom,
         maxZoom: maxZoom,
@@ -83,7 +93,7 @@ class RectangleRegion implements BaseRegion {
       );
 
   @override
-  List<LatLng> toList() => [
+  List<LatLng> toOutline() => [
         LatLng(bounds.southEast.latitude, bounds.northWest.longitude),
         bounds.southEast,
         LatLng(bounds.northWest.latitude, bounds.southEast.longitude),

@@ -3,8 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 class Header extends StatelessWidget {
   const Header({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) => Text(

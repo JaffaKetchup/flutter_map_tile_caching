@@ -23,56 +23,36 @@ void main() async {
 
   final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
-  await FMTC.instance.rootDirectory.migrator.fromV4();
+  bool damagedDatabaseDeleted = false;
+  await FlutterMapTileCaching.initialise(
+    errorHandler: (error) => damagedDatabaseDeleted = error.wasFatal,
+  );
+
+  await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: []);
 
   if (prefs.getBool('reset') ?? false) {
-    await FMTC.instance.rootDirectory.manage.resetAsync();
-
-    final StoreDirectory instanceA = FMTC.instance('OpenStreetMap (A)');
-    await instanceA.manage.createAsync();
-    await instanceA.metadata.addAsync(
-      key: 'sourceURL',
-      value: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    );
-    await instanceA.metadata.addAsync(
-      key: 'validDuration',
-      value: '14',
-    );
-    await instanceA.metadata.addAsync(
-      key: 'behaviour',
-      value: 'cacheFirst',
-    );
-
-    final StoreDirectory instanceB = FMTC.instance('OpenStreetMap (B)');
-    await instanceB.manage.createAsync();
-    await instanceB.metadata.addAsync(
-      key: 'sourceURL',
-      value: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    );
-    await instanceB.metadata.addAsync(
-      key: 'validDuration',
-      value: '14',
-    );
-    await instanceB.metadata.addAsync(
-      key: 'behaviour',
-      value: 'cacheFirst',
-    );
+    await FMTC.instance.rootDirectory.manage.reset();
   }
 
   final File newAppVersionFile = File(
     p.join(
-      FMTC.instance.rootDirectory.access.real.path,
+      // ignore: invalid_use_of_internal_member, invalid_use_of_protected_member
+      FMTC.instance.rootDirectory.directory.absolute.path,
       'newAppVersion.${Platform.isWindows ? 'exe' : 'apk'}',
     ),
   );
   if (await newAppVersionFile.exists()) await newAppVersionFile.delete();
 
-  runApp(const AppContainer());
+  runApp(AppContainer(damagedDatabaseDeleted: damagedDatabaseDeleted));
 }
 
 class AppContainer extends StatelessWidget {
-  const AppContainer({Key? key}) : super(key: key);
+  const AppContainer({
+    super.key,
+    required this.damagedDatabaseDeleted,
+  });
+
+  final bool damagedDatabaseDeleted;
 
   @override
   Widget build(BuildContext context) => MultiProvider(
@@ -87,15 +67,22 @@ class AppContainer extends StatelessWidget {
         child: MaterialApp(
           title: 'FMTC Example',
           theme: ThemeData(
-            colorScheme: ColorScheme.fromSwatch(
-              primarySwatch: Colors.teal,
-              accentColor: Colors.deepOrange,
-            ),
+            brightness: Brightness.dark,
             useMaterial3: true,
-            textTheme: GoogleFonts.openSansTextTheme(),
+            textTheme: GoogleFonts.openSansTextTheme(const TextTheme()),
+            colorSchemeSeed: Colors.deepOrange,
+            switchTheme: SwitchThemeData(
+              thumbIcon: MaterialStateProperty.resolveWith(
+                (states) => Icon(
+                  states.contains(MaterialState.selected)
+                      ? Icons.check
+                      : Icons.close,
+                ),
+              ),
+            ),
           ),
           debugShowCheckedModeBanner: false,
-          home: const MainScreen(),
+          home: MainScreen(damagedDatabaseDeleted: damagedDatabaseDeleted),
         ),
       );
 }

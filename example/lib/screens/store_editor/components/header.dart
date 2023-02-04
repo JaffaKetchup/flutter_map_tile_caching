@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
+import '../../../shared/state/download_provider.dart';
 import '../../../shared/state/general_provider.dart';
 import '../store_editor.dart';
 
@@ -40,27 +41,34 @@ AppBar buildHeader({
             if (formKey.currentState!.validate()) {
               formKey.currentState!.save();
 
-              final String newStoreName = newValues['storeName']!;
+              final StoreDirectory? existingStore =
+                  widget.existingStoreName == null
+                      ? null
+                      : FMTC.instance(widget.existingStoreName!);
+              final StoreDirectory newStore = existingStore == null
+                  ? FMTC.instance(newValues['storeName']!)
+                  : await existingStore.manage.rename(newValues['storeName']!);
+              if (!mounted) return;
 
-              final StoreDirectory instance = widget.existingStoreName == null
-                  ? FMTC.instance(newStoreName)
-                  : await FMTC
-                      .instance(widget.existingStoreName!)
-                      .manage
-                      .renameAsync(newStoreName);
+              final downloadProvider =
+                  Provider.of<DownloadProvider>(context, listen: false);
+              if (existingStore != null &&
+                  downloadProvider.selectedStore == existingStore) {
+                downloadProvider.setSelectedStore(newStore);
+              }
 
-              await instance.manage.createAsync();
-              await instance.metadata.addAsync(
+              await newStore.manage.createAsync();
+              await newStore.metadata.addAsync(
                 key: 'sourceURL',
                 value: newValues['sourceURL']!,
               );
-              await instance.metadata.addAsync(
+              await newStore.metadata.addAsync(
                 key: 'validDuration',
                 value: newValues['validDuration']!,
               );
 
               if (widget.existingStoreName == null || useNewCacheModeValue) {
-                await instance.metadata.addAsync(
+                await newStore.metadata.addAsync(
                   key: 'behaviour',
                   value: cacheModeValue ?? 'cacheFirst',
                 );
@@ -69,7 +77,7 @@ AppBar buildHeader({
               if (!mounted) return;
               if (widget.isStoreInUse && widget.existingStoreName != null) {
                 Provider.of<GeneralProvider>(context, listen: false)
-                    .currentStore = newStoreName;
+                    .currentStore = newValues['storeName'];
               }
               Navigator.of(context).pop();
 

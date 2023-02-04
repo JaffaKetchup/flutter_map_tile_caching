@@ -15,7 +15,7 @@ import 'components/up_to_date.dart';
 import 'components/update_available.dart';
 
 class UpdatePage extends StatefulWidget {
-  const UpdatePage({Key? key}) : super(key: key);
+  const UpdatePage({super.key});
 
   @override
   State<UpdatePage> createState() => _UpdatePageState();
@@ -39,7 +39,8 @@ class _UpdatePageState extends State<UpdatePage> {
     );
     final File file = File(
       p.join(
-        FMTC.instance.rootDirectory.access.real.path,
+        // ignore: invalid_use_of_internal_member, invalid_use_of_protected_member
+        FMTC.instance.rootDirectory.directory.absolute.path,
         'newAppVersion.${Platform.isWindows ? 'exe' : 'apk'}',
       ),
     );

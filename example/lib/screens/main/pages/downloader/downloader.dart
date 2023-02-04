@@ -7,7 +7,7 @@ import 'components/header.dart';
 import 'components/map_view.dart';
 
 class DownloaderPage extends StatefulWidget {
-  const DownloaderPage({Key? key}) : super(key: key);
+  const DownloaderPage({super.key});
 
   @override
   State<DownloaderPage> createState() => _DownloaderPageState();
