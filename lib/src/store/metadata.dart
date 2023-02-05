@@ -10,16 +10,10 @@ part of flutter_map_tile_caching;
 /// implementation.
 class StoreMetadata {
   StoreMetadata._(StoreDirectory storeDirectory)
-      : _id = DatabaseTools.hash(storeDirectory.storeName),
-        _management = storeDirectory.manage;
+      : _name = storeDirectory.storeName;
 
-  final int _id;
-  final StoreManagement _management;
-
-  Isar get _db {
-    _management._ensureReadyStatus();
-    return FMTCRegistry.instance.storeDatabases[_id]!;
-  }
+  final String _name;
+  Isar get _db => FMTCRegistry.instance(_name);
 
   /// Add a new key-value pair to the store asynchronously
   ///

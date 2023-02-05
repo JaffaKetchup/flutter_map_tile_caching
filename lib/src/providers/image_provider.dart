@@ -48,6 +48,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// Shorthand for `provider.settings`
   late final FMTCTileProviderSettings settings;
 
+  final Isar _db;
+
   /// Create a specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
   FMTCImageProvider({
     required this.provider,
@@ -56,10 +58,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required this.httpClient,
     required this.headers,
   })  : settings = provider.settings,
-        _storeId = DatabaseTools.hash(provider.storeDirectory.storeName);
-
-  final int _storeId;
-  Isar get _tiles => FMTCRegistry.instance.storeDatabases[_storeId]!;
+        _db = FMTCRegistry.instance(provider.storeDirectory.storeName);
 
   @override
   ImageStreamCompleter loadBuffer(
@@ -90,13 +89,11 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       required bool hit,
     }) =>
         (hit ? cacheHitsQueue : cacheMissesQueue).add(() async {
-          final db = FMTCRegistry.instance.storeDatabases[_storeId]!;
-
-          await db.writeTxn(() async {
-            final store = (await db.storeDescriptor.get(0))!;
+          await _db.writeTxn(() async {
+            final store = (await _db.storeDescriptor.get(0))!;
             if (hit) store.hits += 1;
             if (!hit) store.misses += 1;
-            await db.storeDescriptor.put(store);
+            await _db.storeDescriptor.put(store);
           });
         });
 
@@ -133,8 +130,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     }
 
     final String url = provider.getTileUrl(coords, options);
-    final DbTile? existingTile =
-        await _tiles.tiles.get(DatabaseTools.hash(url));
+    final DbTile? existingTile = await _db.tiles.get(DatabaseTools.hash(url));
 
     // Logic to check whether the tile needs creating or updating
     final bool needsCreating = existingTile == null;
@@ -208,8 +204,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
       // Cache the tile asynchronously
       unawaited(
-        _tiles
-            .writeTxn(() => _tiles.tiles.put(DbTile(url: url, bytes: bytes!))),
+        _db.writeTxn(() => _db.tiles.put(DbTile(url: url, bytes: bytes!))),
       );
 
       // If an new tile was created over the tile limit, delete the oldest tile
@@ -248,6 +243,7 @@ Future<void> _removeOldestTile(List<Object> args) async {
   final db = Isar.openSync(
     [DbTileSchema, DbMetadataSchema],
     name: DatabaseTools.hash(args[0] as String).toString(),
+    inspector: false,
   );
 
   db.writeTxnSync(

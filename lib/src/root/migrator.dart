@@ -112,12 +112,13 @@ class RootMigrator {
       final name = path.basename(storeDirectory.absolute.path);
       results[name] = 0;
 
-      final store = FMTCRegistry.instance
-          .storeDatabases[await FMTC.instance(name).manage._advancedCreate()];
-      if (store == null) {
+      // Ignore this store if a counterpart already exists
+      if (FMTC.instance(name).manage.ready) {
         results[name] = null;
         continue;
       }
+      await FMTC.instance(name).manage.createAsync();
+      final store = FMTCRegistry.instance(name);
 
       // Migrate tiles
       await store.writeTxn(

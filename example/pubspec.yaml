@@ -3,7 +3,7 @@ description: The example application for 'flutter_map_tile_caching', showcasing
   it's functionality and use-cases.
 publish_to: "none"
 
-version: 7.0.0
+version: 7.0.1
 
 environment:
   sdk: ">=2.18.0 <3.0.0"

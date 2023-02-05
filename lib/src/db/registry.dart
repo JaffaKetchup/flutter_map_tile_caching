@@ -14,10 +14,11 @@ import 'defs/metadata.dart';
 import 'defs/recovery.dart';
 import 'defs/store_descriptor.dart';
 import 'defs/tile.dart';
+import 'tools.dart';
 
 /// Manages the stores available
 ///
-/// It is very important for the [storeDatabases] state to remain in sync with
+/// It is very important for the [_storeDatabases] state to remain in sync with
 /// the actual state of the [directory], otherwise unexpected behaviour may
 /// occur.
 @internal
@@ -25,14 +26,14 @@ class FMTCRegistry {
   const FMTCRegistry._({
     required this.directory,
     required this.recoveryDatabase,
-    required this.storeDatabases,
-  });
+    required Map<int, Isar> storeDatabases,
+  }) : _storeDatabases = storeDatabases;
 
   static late FMTCRegistry instance;
 
   final Directory directory;
   final Isar recoveryDatabase;
-  final Map<int, Isar> storeDatabases;
+  final Map<int, Isar> _storeDatabases;
 
   static Future<FMTCRegistry> initialise({
     required Directory directory,
@@ -62,6 +63,7 @@ class FMTCRegistry {
         directory: directory.absolute.path,
         maxSizeMiB: databaseMaxSize,
         compactOnLaunch: databaseCompactCondition,
+        inspector: false,
       ),
       storeDatabases: Map.fromEntries(
         await directory
@@ -98,6 +100,7 @@ class FMTCRegistry {
                     directory: directory.absolute.path,
                     maxSizeMiB: databaseMaxSize,
                     compactOnLaunch: databaseCompactCondition,
+                    inspector: false,
                   ),
                 );
                 initialisationSafetyWriteSink?.writeln(id);
@@ -124,4 +127,20 @@ class FMTCRegistry {
       recoveryDatabase.close(deleteFromDisk: delete),
     ]);
   }
+
+  Isar call(String storeName) {
+    final id = DatabaseTools.hash(storeName);
+    final isRegistered = _storeDatabases.containsKey(id);
+    if (!(isRegistered && _storeDatabases[id]!.isOpen)) {
+      throw FMTCStoreNotReady(
+        storeName: storeName,
+        registered: isRegistered,
+      );
+    }
+    return _storeDatabases[id]!;
+  }
+
+  Isar register(int id, Isar db) => _storeDatabases[id] = db;
+  Isar? unregister(int id) => _storeDatabases.remove(id);
+  Map<int, Isar> get storeDatabases => _storeDatabases;
 }
