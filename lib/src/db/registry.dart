@@ -43,10 +43,12 @@ class FMTCRegistry {
     IOSink? initialisationSafetyWriteSink,
     List<String>? safeModeSuccessfulIDs,
   }) async {
+    final recoveryFile = directory >>> '.recovery.isar';
+
     bool hasLocatedCorruption = false;
 
-    if (safeModeSuccessfulIDs != null) {
-      await (directory >>> '.recovery.isar').delete();
+    if (safeModeSuccessfulIDs != null && await recoveryFile.exists()) {
+      await recoveryFile.delete();
     }
 
     await directory
