@@ -72,8 +72,7 @@ Future<TileProgress> _getAndSaveTile({
   required int downloadID,
   required InternalProgressTimingManagement progressManagement,
 }) async {
-  final Isar tiles = FMTCRegistry.instance
-      .storeDatabases[DatabaseTools.hash(provider.storeDirectory.storeName)]!;
+  final Isar tiles = FMTCRegistry.instance(provider.storeDirectory.storeName);
 
   final String url = provider.getTileUrl(coord, options);
   final DbTile? existingTile = await tiles.tiles.get(DatabaseTools.hash(url));

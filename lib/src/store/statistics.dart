@@ -4,18 +4,8 @@
 part of flutter_map_tile_caching;
 
 /// Provides statistics about a [StoreDirectory]
-class StoreStats {
-  StoreStats._(StoreDirectory storeDirectory)
-      : _id = DatabaseTools.hash(storeDirectory.storeName),
-        _management = storeDirectory.manage;
-
-  final int _id;
-  final StoreManagement _management;
-
-  Isar get _db {
-    _management._ensureReadyStatus();
-    return FMTCRegistry.instance.storeDatabases[_id]!;
-  }
+class StoreStats extends _StoreDb {
+  const StoreStats._(super._store);
 
   /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
   ///

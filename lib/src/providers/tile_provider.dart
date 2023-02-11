@@ -54,8 +54,8 @@ class FMTCTileProvider extends TileProvider {
         },
       );
 
-  IsarCollection<DbTile> get _tiles => FMTCRegistry.instance
-      .storeDatabases[DatabaseTools.hash(storeDirectory.storeName)]!.tiles;
+  IsarCollection<DbTile> get _tiles =>
+      FMTCRegistry.instance(storeDirectory.storeName).tiles;
 
   /// Check whether a specified tile is cached in the current store synchronously
   bool checkTileCached({
