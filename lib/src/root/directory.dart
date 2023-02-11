@@ -12,7 +12,7 @@ part of flutter_map_tile_caching;
 ///
 /// Reach through [FlutterMapTileCaching.rootDirectory].
 class RootDirectory {
-  RootDirectory._(this.directory);
+  const RootDirectory._(this.directory);
 
   /// The real directory beneath which FMTC places all data - usually located
   /// within the application's directories
@@ -28,22 +28,22 @@ class RootDirectory {
   ///
   /// To create, initialise FMTC. Assume that FMTC is ready after initialisation
   /// and before [RootManagement.delete] is called.
-  RootManagement get manage => RootManagement._();
+  RootManagement get manage => const RootManagement._();
 
   /// Get statistics about this root (and all sub-stores)
-  RootStats get stats => RootStats._();
+  RootStats get stats => const RootStats._();
 
   /// Manage the download recovery of all sub-stores
   RootRecovery get recovery => RootRecovery.instance ?? RootRecovery._();
 
   /// Manage migration for file structure across FMTC versions
-  RootMigrator get migrator => RootMigrator._();
+  RootMigrator get migrator => const RootMigrator._();
 
   /// Provides store import functionality for this root
   ///
   /// The 'fmtc_plus_sharing' module must be installed to add the functionality,
   /// without it, this object provides no functionality.
-  RootImport get import => RootImport._();
+  RootImport get import => const RootImport._();
 
   @override
   bool operator ==(Object other) =>

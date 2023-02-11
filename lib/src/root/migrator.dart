@@ -7,7 +7,7 @@ part of flutter_map_tile_caching;
 
 /// Manage migration for file structure across FMTC versions
 class RootMigrator {
-  RootMigrator._();
+  const RootMigrator._();
 
   /// 'fromV4' is deprecated and shouldn't be used. Effort to maintain this
   /// length of backwards compatibility has become too great, so any structures

@@ -12,7 +12,6 @@ class StoreManagement {
         _registry = FMTCRegistry.instance,
         _rootDirectory = FMTC.instance.rootDirectory.directory;
 
-  //final StoreDirectory _storeDirectory;
   final String _name;
   final int _id;
   final FMTCRegistry _registry;

@@ -5,7 +5,7 @@ part of flutter_map_tile_caching;
 
 /// Provides statistics about a [RootDirectory]
 class RootStats {
-  RootStats._();
+  const RootStats._();
 
   FMTCRegistry get _registry => FMTCRegistry.instance;
 

@@ -8,12 +8,8 @@ part of flutter_map_tile_caching;
 /// Uses a key-value format where both key and value must be [String]. More
 /// advanced requirements should use another package, as this is a basic
 /// implementation.
-class StoreMetadata {
-  StoreMetadata._(StoreDirectory storeDirectory)
-      : _name = storeDirectory.storeName;
-
-  final String _name;
-  Isar get _db => FMTCRegistry.instance(_name);
+class StoreMetadata extends _StoreDb {
+  const StoreMetadata._(super._store);
 
   /// Add a new key-value pair to the store asynchronously
   ///

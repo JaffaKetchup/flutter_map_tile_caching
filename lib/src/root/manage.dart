@@ -6,7 +6,7 @@ part of flutter_map_tile_caching;
 /// Manages a [RootDirectory]'s representation on the filesystem, such as
 /// creation and deletion
 class RootManagement {
-  RootManagement._();
+  const RootManagement._();
 
   /// Delete the root directory, database, and stores
   ///
