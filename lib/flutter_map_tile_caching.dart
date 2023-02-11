@@ -52,6 +52,7 @@ export 'src/settings/tile_provider_settings.dart';
 
 part 'src/bulk_download/download_progress.dart';
 part 'src/fmtc.dart';
+part 'src/misc/store_db_impl.dart';
 part 'src/misc/typedefs.dart';
 part 'src/providers/tile_provider.dart';
 part 'src/regions/base_region.dart';

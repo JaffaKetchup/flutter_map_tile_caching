@@ -34,8 +34,6 @@ body:
       description: |
         Please include a [minimal reproducible example](https://en.wikipedia.org/wiki/Minimal_reproducible_example) (preferable), otherwise detail the exact steps to reproduce this issue.
         If you do not include any information here, it will take longer for us to verify your issue.
-      placeholder: Text automatically formatted as Dart code, on submission
-      render: dart
   - type: textarea
     id: solution
     attributes:
@@ -63,7 +61,6 @@ body:
         - Windows
         - MacOS
         - Linux
-        - Other
     validations:
       required: true
   - type: dropdown
@@ -97,15 +94,13 @@ body:
     id: terms
     attributes:
       label: Requirements
-      description: These are in place to prevent spam and unnecessary reports.
+      description: These are in place to prevent spam and unnecessary reports. Please read and understand them fully before posting.
       options:
         - label: I agree to follow this project's [Code of Conduct](https://github.com/jaffaketchup/flutter_map_tile_caching/blob/main/CODE_OF_CONDUCT.md)
           required: true
-        - label: My Flutter/Dart installation is unaltered, and `flutter doctor` finds no relevant issues
+        - label: I have checked for known issues in the GitHub tracker and [on the docs site](https://fmtc.jaffaketchup.dev/known-issues-and-reporting#known-issues)
           required: true
-        - label: I am using the [latest stable version](https://pub.dev/packages/flutter_map_tile_caching) of this package
+        - label: I have completed the pre-report checks listed [on the docs site](https://fmtc.jaffaketchup.dev/known-issues-and-reporting#reporting-a-bug)
           required: true
-        - label: I have checked the FAQs section on the documentation website
-          required: true
-        - label: I have checked for similar issues which may be duplicates
+        - label: If I am using FMTC in a proprietary project, I have read and understood [this important legal notice](https://fmtc.jaffaketchup.dev/#proprietary-licensing)
           required: true

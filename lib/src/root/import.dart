@@ -8,5 +8,5 @@ part of flutter_map_tile_caching;
 ///
 /// Does not include any functionality without the module.
 class RootImport {
-  RootImport._();
+  const RootImport._();
 }

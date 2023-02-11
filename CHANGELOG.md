@@ -13,7 +13,12 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [7.0.0] - 2023/01/XX
+## [7.0.1] - 2023/02/11
+
+* Minor bug fixes
+* Minor improvements
+
+## [7.0.0] - 2023/02/04
 
 * Migrated to Isar database
 * Major performance improvements, thanks to Isar

@@ -8,7 +8,7 @@ part of flutter_map_tile_caching;
 ///
 /// Does not include any functionality without the module.
 class StoreExport {
-  StoreExport._(this.storeDirectory);
+  const StoreExport._(this.storeDirectory);
 
   /// Used in the 'fmtc_plus_sharing' module
   ///
