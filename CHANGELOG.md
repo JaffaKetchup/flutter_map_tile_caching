@@ -13,6 +13,10 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [7.0.2] - 2023/02/12
+
+* Minor changes to example application
+
 ## [7.0.1] - 2023/02/11
 
 * Minor bug fixes
