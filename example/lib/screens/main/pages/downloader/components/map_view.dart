@@ -120,8 +120,16 @@ class _MapViewState extends State<MapView> {
                   options: MapOptions(
                     center: LatLng(51.509364, -0.128928),
                     zoom: 9.2,
+                    maxZoom: 22,
+                    maxBounds: LatLngBounds.fromPoints([
+                      LatLng(-90, 180),
+                      LatLng(90, 180),
+                      LatLng(90, -180),
+                      LatLng(-90, -180),
+                    ]),
                     interactiveFlags:
                         InteractiveFlag.all & ~InteractiveFlag.rotate,
+                    scrollWheelVelocity: 0.002,
                     keepAlive: true,
                     onMapReady: () {
                       _updatePointLatLng();
