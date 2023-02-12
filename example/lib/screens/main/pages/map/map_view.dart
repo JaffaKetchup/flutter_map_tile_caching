@@ -42,6 +42,7 @@ class _MapPageState extends State<MapPage> {
               options: MapOptions(
                 center: LatLng(51.509364, -0.128928),
                 zoom: 9.2,
+                maxZoom: 22,
                 maxBounds: LatLngBounds.fromPoints([
                   LatLng(-90, 180),
                   LatLng(90, 180),
@@ -49,6 +50,7 @@ class _MapPageState extends State<MapPage> {
                   LatLng(-90, -180),
                 ]),
                 interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                scrollWheelVelocity: 0.002,
                 keepAlive: true,
               ),
               nonRotatedChildren: [
@@ -77,9 +79,9 @@ class _MapPageState extends State<MapPage> {
                             ),
                           )
                       : NetworkNoRetryTileProvider(),
-                  maxZoom: 20,
+                  maxZoom: 22,
                   userAgentPackageName: 'dev.org.fmtc.example.app',
-                  keepBuffer: 5,
+                  panBuffer: 3,
                   backgroundColor: const Color(0xFFaad3df),
                 ),
               ],
