@@ -48,14 +48,23 @@ class StoreDirectory {
   /// background downloading functionality.
   DownloadManagement get download => DownloadManagement._(this);
 
-  /// Get 'flutter_map_tile_caching's custom [TileProvider] for use in a
-  /// [TileLayer], specific to this store
+  /// Get the [TileProvider] suitable to connect the [TileLayer] to FMTC's
+  /// internals
   ///
   /// Uses [FMTCSettings.defaultTileProviderSettings] by default (and it's
   /// default if unspecified). Alternatively, override [settings] for this get
   /// only.
-  FMTCTileProvider getTileProvider([FMTCTileProviderSettings? settings]) =>
-      FMTCTileProvider(storeDirectory: this, settings: settings);
+  FMTCTileProvider getTileProvider([
+    FMTCTileProviderSettings? settings,
+    Map<String, String>? headers,
+    HttpClient? httpClient,
+  ]) =>
+      FMTCTileProvider._(
+        storeDirectory: this,
+        settings: settings,
+        headers: headers ?? {},
+        httpClient: httpClient,
+      );
 
   @override
   bool operator ==(Object other) =>

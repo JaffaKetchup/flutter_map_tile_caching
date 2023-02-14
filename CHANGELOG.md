@@ -13,6 +13,13 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [7.1.0] - 2023/02/12
+
+* Added URL query params obscurer feature
+* Added `headers` and `httpClient` parameters to `getTileProvider`
+* Minor documentation improvements
+* Minor bug fixes
+
 ## [7.0.2] - 2023/02/12
 
 * Minor changes to example application
