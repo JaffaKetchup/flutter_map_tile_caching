@@ -2,7 +2,6 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -29,12 +28,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// The coordinates of the tile to be fetched
   final Coords<num> coords;
 
-  /// A HTTP client used to send requests
-  final HttpClient httpClient;
-
-  /// Custom headers to send with each request
-  final Map<String, String> headers;
-
   /// Used internally to safely and efficiently enforce the `settings.maxStoreLength`
   static final Queue removeOldestQueue =
       Queue(timeout: const Duration(seconds: 1));
@@ -55,8 +48,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required this.provider,
     required this.options,
     required this.coords,
-    required this.httpClient,
-    required this.headers,
   })  : settings = provider.settings,
         _db = FMTCRegistry.instance(provider.storeDirectory.storeName);
 
@@ -112,11 +103,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         try {
           throw FMTCBrowsingError(throwError, throwErrorType!);
         } on FMTCBrowsingError catch (e) {
-          if (settings.errorHandler != null) {
-            settings.errorHandler!(e);
-          } else {
-            rethrow;
-          }
+          settings.errorHandler?.call(e);
+          rethrow;
         }
       }
 
@@ -125,12 +113,27 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       }
 
       throw ArgumentError(
-        '`finish` was called with an invalid combination of arguments',
+        '`finish` was called with an invalid combination of arguments, or a fall-through situation occurred.',
       );
     }
 
-    final String url = provider.getTileUrl(coords, options);
-    final DbTile? existingTile = await _db.tiles.get(DatabaseTools.hash(url));
+    final String networkUrl = provider.getTileUrl(coords, options);
+    final String matcherUrl;
+
+    if (networkUrl.contains('?') &&
+        provider.settings.obscuredQueryParams.isNotEmpty) {
+      String secondPartUrl = networkUrl.split('?')[1];
+      for (final r in provider.settings.obscuredQueryParams) {
+        secondPartUrl = secondPartUrl.replaceAll(r, '');
+      }
+
+      matcherUrl = '${networkUrl.split('?')[0]}?$secondPartUrl';
+    } else {
+      matcherUrl = networkUrl;
+    }
+
+    final DbTile? existingTile =
+        await _db.tiles.get(DatabaseTools.hash(matcherUrl));
 
     // Logic to check whether the tile needs creating or updating
     final bool needsCreating = existingTile == null;
@@ -141,6 +144,15 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
                 DateTime.now().millisecondsSinceEpoch -
                         existingTile.lastModified.millisecondsSinceEpoch >
                     settings.cachedValidDuration.inMilliseconds);
+
+    /* DEBUG ONLY
+    print('---------');
+    print(networkUrl);
+    print(matcherUrl);
+    print('   Existing ID: ' + (existingTile?.id ?? 'None').toString());
+    print('   Needs Creating: ' + needsCreating.toString());
+    print('   Needs Updating: ' + needsUpdating.toString());
+    */
 
     // Get any existing bytes from the tile, if it exists
     Uint8List? bytes;
@@ -162,9 +174,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
       // Try to get a response from a server, throwing an error if not possible & the tile does not exist
       try {
-        final HttpClientRequest request =
-            await httpClient.getUrl(Uri.parse(url));
-        headers.forEach((k, v) => request.headers.add(k, v));
+        final request = await provider.httpClient.getUrl(Uri.parse(networkUrl));
+        provider.headers.forEach(
+          (k, v) => request.headers.add(k, v, preserveHeaderCase: true),
+        );
         response = await request.close();
       } catch (err) {
         return finish(
@@ -204,7 +217,9 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
       // Cache the tile asynchronously
       unawaited(
-        _db.writeTxn(() => _db.tiles.put(DbTile(url: url, bytes: bytes!))),
+        _db.writeTxn(
+          () => _db.tiles.put(DbTile(url: matcherUrl, bytes: bytes!)),
+        ),
       );
 
       // If an new tile was created over the tile limit, delete the oldest tile

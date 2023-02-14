@@ -1,24 +1,25 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'package:isar/isar.dart';
-
 import '../../flutter_map_tile_caching.dart';
 import '../providers/image_provider.dart';
 
-/// Multiple behaviors dictating how browse caching should be carried out
-///
-/// Check documentation on each value for more information.
+/// Behaviours dictating how and when browse caching should be carried out
 enum CacheBehavior {
   /// Only get tiles from the local cache
   ///
-  /// Useful for applications with dedicated 'Offline Mode'.
+  /// Throws [FMTCBrowsingErrorType.missingInCacheOnlyMode] if a tile is not
+  /// available.
   cacheOnly,
 
-  /// Get tiles from the local cache, going on the Internet to update the cached tile if it has expired (`cachedValidDuration` has passed)
+  /// Get tiles from the local cache, only using the network to update the cached
+  /// tile if it has expired ([FMTCTileProviderSettings.cachedValidDuration] has
+  /// passed)
   cacheFirst,
 
-  /// Get tiles from the Internet and update the cache for every tile
+  /// Get tiles from the network where possible, and update the cached tiles
+  ///
+  /// Safely falls back to using cached tiles if the network is not available.
   onlineFirst,
 }
 
@@ -44,17 +45,21 @@ class FMTCTileProviderSettings {
   /// Only applies to 'browse caching', ie. downloading regions will bypass this
   /// limit.
   ///
-  /// Note that the actual store has an un-modifiable maximum size limit of
-  /// [Isar.defaultMaxSizeMiB] (1GB). It is unspecified what will happen if this
-  /// limit is reached, however it is likely that an error will be thrown.
+  /// Note that the actual store has a size limit of
+  /// [FMTCSettings.databaseMaxSize], irrespective of this value.
   ///
   /// Defaults to 0 disabled.
   final int maxStoreLength;
 
+  /// A list of keys in the query part of the source URL (after the '?'), who's
+  /// values will not be stored
+  ///
+  /// See the online documentation for more information.
+  final Iterable<RegExp> obscuredQueryParams;
+
   /// A custom callback that will be called when an [FMTCBrowsingError] is raised
   ///
-  /// Prevents the error being printed to the console, and only captures this
-  /// type of error, unlike 'flutter_map's native solution.
+  /// Even if this is defined, the error will still be (re)thrown.
   void Function(FMTCBrowsingError exception)? errorHandler;
 
   /// Create settings for an [FMTCTileProvider]
@@ -62,8 +67,9 @@ class FMTCTileProviderSettings {
     this.behavior = CacheBehavior.cacheFirst,
     this.cachedValidDuration = const Duration(days: 16),
     this.maxStoreLength = 0,
+    List<String> obscuredQueryParams = const [],
     this.errorHandler,
-  });
+  }) : obscuredQueryParams = obscuredQueryParams.map((e) => RegExp('$e=[^&]*'));
 
   @override
   bool operator ==(Object other) =>

@@ -3,23 +3,24 @@
 
 part of flutter_map_tile_caching;
 
-/// Global FMTC settings, used throughout or in long lasting places
+/// Global FMTC settings
 class FMTCSettings {
   /// Default settings used when creating an [FMTCTileProvider]
   ///
-  /// Can be overridden on a case-to-case basis when actually creating the tile provider.
+  /// Can be overridden on a case-to-case basis when actually creating the tile
+  /// provider.
   final FMTCTileProviderSettings defaultTileProviderSettings;
 
   /// Sets a strict upper size limit on each underlying database individually
   /// (of which there are multiple)
   ///
-  /// Prefer to set a limit on the number of tiles instead, using
-  /// [FMTCTileProviderSettings.maxStoreLength].
+  /// It is also recommended to set a limit on the number of tiles instead, using
+  /// [FMTCTileProviderSettings.maxStoreLength]. If using a generous number
+  /// there, use a larger number here as well.
   ///
-  /// Setting this value too low may cause errors. Setting this value too high
-  /// and not limiting the number of tiles may result in slower operations and
-  /// a negative user experience: a large, unknown file may be deleted by a user,
-  /// causing significant data loss.
+  /// Setting this value too low may cause unexpected errors when writing to the
+  /// database. Setting this value too high may cause memory issues on certain
+  /// older devices or emulators.
   ///
   /// Defaults to 2GiB (2048MiB).
   final int databaseMaxSize;
@@ -39,8 +40,7 @@ class FMTCSettings {
   /// exporting a store will always compact it's underlying database.
   final DatabaseCompactCondition? databaseCompactCondition;
 
-  /// Create custom global FMTC settings, used throughout or in long lasting
-  /// places
+  /// Create custom global FMTC settings
   FMTCSettings({
     FMTCTileProviderSettings? defaultTileProviderSettings,
     this.databaseMaxSize = 2048,
