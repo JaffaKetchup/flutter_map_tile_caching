@@ -26,6 +26,7 @@ void main() async {
   bool damagedDatabaseDeleted = false;
   await FlutterMapTileCaching.initialise(
     errorHandler: (error) => damagedDatabaseDeleted = error.wasFatal,
+    debugMode: true,
   );
 
   await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: []);

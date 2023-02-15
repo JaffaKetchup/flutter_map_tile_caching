@@ -65,12 +65,13 @@ class FlutterMapTileCaching {
   /// initialisation safety system, and is not recommended, as this may leave the
   /// application unable to launch if any database becomes corrupted.
   ///
-  /// ~Setting [debugMode] `true` can be useful to diagnose issues, either within
+  /// Setting [debugMode] `true` can be useful to diagnose issues, either within
   /// your application or FMTC itself. It enables the Isar inspector and causes
   /// extra console logging in important areas. Prefer to leave disabled to
   /// prevent console pollution and to maximise performance. Whether FMTC chooses
   /// to listen to this value is also dependent on [kDebugMode] - see
-  /// [FlutterMapTileCaching.debugMode] for more information.~
+  /// [FlutterMapTileCaching.debugMode] for more information.
+  /// _Extra logging is currently limited._
   ///
   /// This returns a configured [FlutterMapTileCaching], the same object as
   /// [FlutterMapTileCaching.instance]. Note that [FMTC] is an alias for this
