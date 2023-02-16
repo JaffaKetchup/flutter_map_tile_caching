@@ -26,11 +26,19 @@ class FlutterMapTileCaching {
   /// See [FMTCSettings]' properties for more information
   final FMTCSettings settings;
 
+  final bool _debugMode;
+
+  /// Whether FMTC should perform extra reporting and console logging
+  ///
+  /// Depends on [_debugMode] (set via [initialise]) and [kDebugMode].
+  bool get debugMode => _debugMode && kDebugMode;
+
   /// Internal constructor, to be used by [initialise]
-  FlutterMapTileCaching._({
+  const FlutterMapTileCaching._({
     required this.rootDirectory,
     required this.settings,
-  });
+    required bool debugMode,
+  }) : _debugMode = debugMode;
 
   /// Initialise and prepare FMTC, by creating all neccessary directories/files
   /// and configuring the [FlutterMapTileCaching] singleton
@@ -57,6 +65,14 @@ class FlutterMapTileCaching {
   /// initialisation safety system, and is not recommended, as this may leave the
   /// application unable to launch if any database becomes corrupted.
   ///
+  /// Setting [debugMode] `true` can be useful to diagnose issues, either within
+  /// your application or FMTC itself. It enables the Isar inspector and causes
+  /// extra console logging in important areas. Prefer to leave disabled to
+  /// prevent console pollution and to maximise performance. Whether FMTC chooses
+  /// to listen to this value is also dependent on [kDebugMode] - see
+  /// [FlutterMapTileCaching.debugMode] for more information.
+  /// _Extra logging is currently limited._
+  ///
   /// This returns a configured [FlutterMapTileCaching], the same object as
   /// [FlutterMapTileCaching.instance]. Note that [FMTC] is an alias for this
   /// object.
@@ -65,6 +81,7 @@ class FlutterMapTileCaching {
     FMTCSettings? settings,
     void Function(FMTCInitialisationException error)? errorHandler,
     bool disableInitialisationSafety = false,
+    bool debugMode = false,
   }) async {
     final directory = await ((rootDirectory == null
                 ? await getApplicationDocumentsDirectory()
@@ -90,6 +107,7 @@ class FlutterMapTileCaching {
         initialisationSafetyWriteSink: writeSink,
         safeModeSuccessfulIDs:
             needsRescue ? await initialisationSafetyFile.readAsLines() : null,
+        debugMode: debugMode && kDebugMode,
       );
 
       await writeSink.close();
@@ -100,12 +118,16 @@ class FlutterMapTileCaching {
         databaseMaxSize: fmtcSettings.databaseMaxSize,
         databaseCompactCondition: fmtcSettings.databaseCompactCondition,
         errorHandler: errorHandler,
+        initialisationSafetyWriteSink: null,
+        safeModeSuccessfulIDs: null,
+        debugMode: debugMode && kDebugMode,
       );
     }
 
     return _instance = FMTC._(
       rootDirectory: RootDirectory._(directory),
       settings: fmtcSettings,
+      debugMode: debugMode,
     );
   }
 

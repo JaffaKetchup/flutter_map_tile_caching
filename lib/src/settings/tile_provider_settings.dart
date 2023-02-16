@@ -1,6 +1,8 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
+import 'package:meta/meta.dart';
+
 import '../../flutter_map_tile_caching.dart';
 import '../providers/image_provider.dart';
 
@@ -51,8 +53,10 @@ class FMTCTileProviderSettings {
   /// Defaults to 0 disabled.
   final int maxStoreLength;
 
-  /// A list of keys in the query part of the source URL (after the '?'), who's
-  /// values will not be stored
+  /// A list of regular expressions indicating key-value pairs to be remove from
+  /// a URL's query parameter list
+  ///
+  /// Used by [obscureQueryParams] to apply to a URL.
   ///
   /// See the online documentation for more information.
   final Iterable<RegExp> obscuredQueryParams;
@@ -70,6 +74,19 @@ class FMTCTileProviderSettings {
     List<String> obscuredQueryParams = const [],
     this.errorHandler,
   }) : obscuredQueryParams = obscuredQueryParams.map((e) => RegExp('$e=[^&]*'));
+
+  /// Apply the [obscuredQueryParams] to the input [url]
+  @internal
+  String obscureQueryParams(String url) {
+    if (!url.contains('?') || obscuredQueryParams.isEmpty) return url;
+
+    String secondPartUrl = url.split('?')[1];
+    for (final r in obscuredQueryParams) {
+      secondPartUrl = secondPartUrl.replaceAll(r, '');
+    }
+
+    return '${url.split('?')[0]}?$secondPartUrl';
+  }
 
   @override
   bool operator ==(Object other) =>

@@ -39,9 +39,10 @@ class FMTCRegistry {
     required Directory directory,
     required int databaseMaxSize,
     required CompactCondition? databaseCompactCondition,
-    void Function(FMTCInitialisationException error)? errorHandler,
-    IOSink? initialisationSafetyWriteSink,
-    List<String>? safeModeSuccessfulIDs,
+    required void Function(FMTCInitialisationException error)? errorHandler,
+    required IOSink? initialisationSafetyWriteSink,
+    required List<String>? safeModeSuccessfulIDs,
+    required bool debugMode,
   }) async {
     final recoveryFile = directory >>> '.recovery.isar';
 
@@ -60,12 +61,19 @@ class FMTCRegistry {
     return instance = FMTCRegistry._(
       directory: directory,
       recoveryDatabase: await Isar.open(
-        [DbRecoverableRegionSchema],
+        [
+          DbRecoverableRegionSchema,
+          if (debugMode) ...[
+            DbStoreDescriptorSchema,
+            DbTileSchema,
+            DbMetadataSchema,
+          ],
+        ],
         name: '.recovery',
         directory: directory.absolute.path,
         maxSizeMiB: databaseMaxSize,
         compactOnLaunch: databaseCompactCondition,
-        inspector: false,
+        inspector: debugMode,
       ),
       storeDatabases: Map.fromEntries(
         await directory
@@ -102,7 +110,7 @@ class FMTCRegistry {
                     directory: directory.absolute.path,
                     maxSizeMiB: databaseMaxSize,
                     compactOnLaunch: databaseCompactCondition,
-                    inspector: false,
+                    inspector: debugMode,
                   ),
                 );
                 initialisationSafetyWriteSink?.writeln(id);

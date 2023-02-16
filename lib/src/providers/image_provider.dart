@@ -117,25 +117,11 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       );
     }
 
-    final String networkUrl = provider.getTileUrl(coords, options);
-    final String matcherUrl;
+    final networkUrl = provider.getTileUrl(coords, options);
+    final matcherUrl = provider.settings.obscureQueryParams(networkUrl);
 
-    if (networkUrl.contains('?') &&
-        provider.settings.obscuredQueryParams.isNotEmpty) {
-      String secondPartUrl = networkUrl.split('?')[1];
-      for (final r in provider.settings.obscuredQueryParams) {
-        secondPartUrl = secondPartUrl.replaceAll(r, '');
-      }
+    final existingTile = await _db.tiles.get(DatabaseTools.hash(matcherUrl));
 
-      matcherUrl = '${networkUrl.split('?')[0]}?$secondPartUrl';
-    } else {
-      matcherUrl = networkUrl;
-    }
-
-    final DbTile? existingTile =
-        await _db.tiles.get(DatabaseTools.hash(matcherUrl));
-
-    // Logic to check whether the tile needs creating or updating
     final bool needsCreating = existingTile == null;
     final bool needsUpdating = needsCreating
         ? false
@@ -145,8 +131,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
                         existingTile.lastModified.millisecondsSinceEpoch >
                     settings.cachedValidDuration.inMilliseconds);
 
-    /* DEBUG ONLY
-    print('---------');
+    /*print('---------');
     print(networkUrl);
     print(matcherUrl);
     print('   Existing ID: ' + (existingTile?.id ?? 'None').toString());
