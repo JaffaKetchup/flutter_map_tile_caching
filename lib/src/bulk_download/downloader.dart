@@ -119,7 +119,9 @@ Future<TileProgress> _getAndSaveTile({
       );
     }
 
-    BulkTileWriter.instance.sendPort.send(List.unmodifiable([url, bytes]));
+    BulkTileWriter.instance.sendPort.send(
+      List.unmodifiable([provider.settings.obscureQueryParams(url), bytes]),
+    );
     bulkTileWriterResponse = await BulkTileWriter.instance.events.next;
   } catch (e) {
     if (errorHandler != null) errorHandler(e);
