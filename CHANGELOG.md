@@ -13,6 +13,10 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [7.1.2] - 2023/02/18
+
+* Minor bug fixes
+
 ## [7.1.1] - 2023/02/16
 
 * Major bug fixes
