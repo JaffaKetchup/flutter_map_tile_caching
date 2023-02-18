@@ -38,9 +38,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// Used internally to safely and efficiently update the cache misses statistic
   static final Queue cacheMissesQueue = Queue();
 
-  /// Shorthand for `provider.settings`
-  late final FMTCTileProviderSettings settings;
-
   final Isar _db;
 
   /// Create a specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
@@ -48,8 +45,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required this.provider,
     required this.options,
     required this.coords,
-  })  : settings = provider.settings,
-        _db = FMTCRegistry.instance(provider.storeDirectory.storeName);
+  }) : _db = FMTCRegistry.instance(provider.storeDirectory.storeName);
 
   @override
   ImageStreamCompleter loadBuffer(
@@ -103,7 +99,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         try {
           throw FMTCBrowsingError(throwError, throwErrorType!);
         } on FMTCBrowsingError catch (e) {
-          settings.errorHandler?.call(e);
+          provider.settings.errorHandler?.call(e);
           rethrow;
         }
       }
@@ -125,18 +121,19 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     final bool needsCreating = existingTile == null;
     final bool needsUpdating = needsCreating
         ? false
-        : settings.behavior == CacheBehavior.onlineFirst ||
-            (settings.cachedValidDuration != Duration.zero &&
+        : provider.settings.behavior == CacheBehavior.onlineFirst ||
+            (provider.settings.cachedValidDuration != Duration.zero &&
                 DateTime.now().millisecondsSinceEpoch -
                         existingTile.lastModified.millisecondsSinceEpoch >
-                    settings.cachedValidDuration.inMilliseconds);
+                    provider.settings.cachedValidDuration.inMilliseconds);
 
-    /*print('---------');
+    /* DEBUG ONLY
+    print('---------');
     print(networkUrl);
     print(matcherUrl);
-    print('   Existing ID: ' + (existingTile?.id ?? 'None').toString());
-    print('   Needs Creating: ' + needsCreating.toString());
-    print('   Needs Updating: ' + needsUpdating.toString());
+    print('   Store: ${provider.storeDirectory.storeName}');
+    print('   Existing ID: ${existingTile?.id ?? 'None'}');
+    print('   Needs Updating & Not Creating: $needsUpdating');
     */
 
     // Get any existing bytes from the tile, if it exists
@@ -144,7 +141,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     if (!needsCreating) bytes = Uint8List.fromList(existingTile.bytes);
 
     // IF network is disabled & the tile does not exist THEN throw an error
-    if (settings.behavior == CacheBehavior.cacheOnly && needsCreating) {
+    if (provider.settings.behavior == CacheBehavior.cacheOnly &&
+        needsCreating) {
       return finish(
         throwError:
             'Failed to load the tile from the cache because it was missing.',
@@ -208,12 +206,15 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       );
 
       // If an new tile was created over the tile limit, delete the oldest tile
-      if (needsCreating && settings.maxStoreLength != 0) {
+      if (needsCreating && provider.settings.maxStoreLength != 0) {
         unawaited(
           removeOldestQueue.add(
             () => compute(
               _removeOldestTile,
-              [provider.storeDirectory.storeName, settings.maxStoreLength],
+              [
+                provider.storeDirectory.storeName,
+                provider.settings.maxStoreLength,
+              ],
             ),
           ),
         );
@@ -233,15 +234,23 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is FMTCImageProvider && other.coords == coords);
+      (other is FMTCImageProvider &&
+          other.runtimeType == runtimeType &&
+          other.coords == coords &&
+          other.provider == provider &&
+          other.options == options);
 
   @override
-  int get hashCode => coords.hashCode;
+  int get hashCode => Object.hashAllUnordered([
+        coords.hashCode,
+        provider.hashCode,
+        options.hashCode,
+      ]);
 }
 
 Future<void> _removeOldestTile(List<Object> args) async {
   final db = Isar.openSync(
-    [DbTileSchema, DbMetadataSchema],
+    [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
     name: DatabaseTools.hash(args[0] as String).toString(),
     inspector: false,
   );

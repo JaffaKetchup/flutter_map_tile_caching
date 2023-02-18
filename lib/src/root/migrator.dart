@@ -197,7 +197,9 @@ class RootMigrator {
     }
 
     // Delete store files
-    if (deleteOldStructure) await oldStores.delete(recursive: true);
+    if (deleteOldStructure && await oldStores.exists()) {
+      await oldStores.delete(recursive: true);
+    }
 
     return results;
   }

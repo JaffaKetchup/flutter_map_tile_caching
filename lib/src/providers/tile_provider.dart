@@ -72,4 +72,22 @@ class FMTCTileProvider extends TileProvider {
     required TileLayer options,
   }) async =>
       await _tiles.get(DatabaseTools.hash(getTileUrl(coords, options))) != null;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FMTCTileProvider &&
+          other.runtimeType == runtimeType &&
+          other.httpClient == httpClient &&
+          other.settings == settings &&
+          other.storeDirectory == storeDirectory &&
+          other.headers == headers);
+
+  @override
+  int get hashCode => Object.hashAllUnordered([
+        httpClient.hashCode,
+        settings.hashCode,
+        storeDirectory.hashCode,
+        headers.hashCode,
+      ]);
 }
