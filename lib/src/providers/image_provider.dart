@@ -199,8 +199,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       );
 
       // Cache the tile asynchronously
-      await _db.writeTxn(
-        () => _db.tiles.put(DbTile(url: matcherUrl, bytes: bytes!)),
+      unawaited(
+        _db.writeTxn(
+          () => _db.tiles.put(DbTile(url: matcherUrl, bytes: bytes!)),
+        ),
       );
 
       // If an new tile was created over the tile limit, delete the oldest tile
