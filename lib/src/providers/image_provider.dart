@@ -241,7 +241,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
 Future<void> _removeOldestTile(List<Object> args) async {
   final db = Isar.openSync(
-    [DbTileSchema, DbMetadataSchema],
+    [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
     name: DatabaseTools.hash(args[0] as String).toString(),
     inspector: false,
   );
