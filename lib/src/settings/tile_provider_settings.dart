@@ -95,12 +95,15 @@ class FMTCTileProviderSettings {
           other.behavior == behavior &&
           other.cachedValidDuration == cachedValidDuration &&
           other.maxStoreLength == maxStoreLength &&
-          other.errorHandler == errorHandler);
+          other.errorHandler == errorHandler &&
+          other.obscuredQueryParams == obscuredQueryParams);
 
   @override
-  int get hashCode =>
-      behavior.hashCode ^
-      cachedValidDuration.hashCode ^
-      maxStoreLength.hashCode ^
-      errorHandler.hashCode;
+  int get hashCode => Object.hashAllUnordered([
+        behavior.hashCode,
+        cachedValidDuration.hashCode,
+        maxStoreLength.hashCode,
+        errorHandler.hashCode,
+        obscuredQueryParams.hashCode,
+      ]);
 }
