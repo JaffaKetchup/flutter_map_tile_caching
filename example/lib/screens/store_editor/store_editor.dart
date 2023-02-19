@@ -200,6 +200,36 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                               textInputAction: TextInputAction.done,
                             ),
                             const SizedBox(height: 5),
+                            TextFormField(
+                              decoration: const InputDecoration(
+                                labelText: 'Maximum Length',
+                                helperText:
+                                    'Use 0 days for infinite number of tiles',
+                                suffixText: 'tiles',
+                                prefixIcon: Icon(Icons.disc_full),
+                                isDense: true,
+                              ),
+                              validator: (input) {
+                                if (input == null ||
+                                    input.isEmpty ||
+                                    int.parse(input) < 0) {
+                                  return 'Must be 0 or more';
+                                }
+                                return null;
+                              },
+                              onSaved: (input) =>
+                                  _newValues['maxLength'] = input!,
+                              autovalidateMode:
+                                  AutovalidateMode.onUserInteraction,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                              initialValue: metadata.data!.isEmpty
+                                  ? '20000'
+                                  : metadata.data!['maxLength'],
+                              textInputAction: TextInputAction.done,
+                            ),
                             Row(
                               children: [
                                 const Text('Cache Behaviour:'),

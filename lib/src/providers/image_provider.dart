@@ -28,17 +28,11 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// The coordinates of the tile to be fetched
   final Coords<num> coords;
 
-  /// Used internally to safely and efficiently enforce the `settings.maxStoreLength`
-  static final Queue removeOldestQueue =
-      Queue(timeout: const Duration(seconds: 1));
-
-  /// Used internally to safely and efficiently update the cache hits statistic
-  static final Queue cacheHitsQueue = Queue();
-
-  /// Used internally to safely and efficiently update the cache misses statistic
-  static final Queue cacheMissesQueue = Queue();
-
   final Isar _db;
+
+  static final _removeOldestQueue = Queue(timeout: const Duration(seconds: 1));
+  static final _cacheHitsQueue = Queue();
+  static final _cacheMissesQueue = Queue();
 
   /// Create a specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
   FMTCImageProvider({
@@ -75,7 +69,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     Future<void> cacheHitMiss({
       required bool hit,
     }) =>
-        (hit ? cacheHitsQueue : cacheMissesQueue).add(() async {
+        (hit ? _cacheHitsQueue : _cacheMissesQueue).add(() async {
           await _db.writeTxn(() async {
             final store = (await _db.storeDescriptor.get(0))!;
             if (hit) store.hits += 1;
@@ -127,7 +121,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
                         existingTile.lastModified.millisecondsSinceEpoch >
                     provider.settings.cachedValidDuration.inMilliseconds);
 
-    /* DEBUG ONLY
+    // DEBUG ONLY
+    /*
     print('---------');
     print(networkUrl);
     print(matcherUrl);
@@ -208,7 +203,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       // If an new tile was created over the tile limit, delete the oldest tile
       if (needsCreating && provider.settings.maxStoreLength != 0) {
         unawaited(
-          removeOldestQueue.add(
+          _removeOldestQueue.add(
             () => compute(
               _removeOldestTile,
               [

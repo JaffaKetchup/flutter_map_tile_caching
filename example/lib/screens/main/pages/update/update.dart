@@ -53,8 +53,6 @@ class _UpdatePageState extends State<UpdatePage> {
     } else {
       await OpenFile.open(file.absolute.path);
     }
-
-    exit(0);
   }
 
   @override

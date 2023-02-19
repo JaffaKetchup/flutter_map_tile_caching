@@ -58,6 +58,7 @@ AppBar buildHeader({
               }
 
               await newStore.manage.createAsync();
+
               await newStore.metadata.addAsync(
                 key: 'sourceURL',
                 value: newValues['sourceURL']!,
@@ -65,6 +66,10 @@ AppBar buildHeader({
               await newStore.metadata.addAsync(
                 key: 'validDuration',
                 value: newValues['validDuration']!,
+              );
+              await newStore.metadata.addAsync(
+                key: 'maxLength',
+                value: newValues['maxLength']!,
               );
 
               if (widget.existingStoreName == null || useNewCacheModeValue) {
