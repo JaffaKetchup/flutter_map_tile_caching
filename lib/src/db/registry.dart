@@ -82,7 +82,7 @@ class FMTCRegistry {
               (e) =>
                   e is File &&
                   !path.basename(e.path).startsWith('.') &&
-                  !path.basename(e.path).endsWith('-lck'),
+                  path.basename(e.path).endsWith('.isar'),
             )
             .asyncMap((f) async {
               final id = path.basenameWithoutExtension(f.path);
