@@ -39,8 +39,6 @@ class StoreManagement {
   ///
   /// Does nothing if the store already exists.
   Future<void> createAsync() async {
-    if (ready) return;
-
     final db = await Isar.open(
       [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
       name: _id.toString(),
