@@ -100,29 +100,32 @@ class FMTCRegistry {
                 return null;
               }
 
-              final MapEntry<int, Isar> entry;
-              try {
-                entry = MapEntry(
-                  int.parse(id),
-                  await Isar.open(
-                    [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
-                    name: id,
-                    directory: directory.absolute.path,
-                    maxSizeMiB: databaseMaxSize,
-                    compactOnLaunch: databaseCompactCondition,
-                    inspector: debugMode,
-                  ),
-                );
-                initialisationSafetyWriteSink?.writeln(id);
-                await initialisationSafetyWriteSink?.flush();
-              } catch (err) {
-                errorHandler?.call(
-                  FMTCInitialisationException(source: err),
-                );
-                return null;
+              if (int.tryParse(id) != null) {
+                final MapEntry<int, Isar> entry;
+                try {
+                  entry = MapEntry(
+                    int.parse(id),
+                    await Isar.open(
+                      [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
+                      name: id,
+                      directory: directory.absolute.path,
+                      maxSizeMiB: databaseMaxSize,
+                      compactOnLaunch: databaseCompactCondition,
+                      inspector: debugMode,
+                    ),
+                  );
+                  initialisationSafetyWriteSink?.writeln(id);
+                  await initialisationSafetyWriteSink?.flush();
+                } catch (err) {
+                  errorHandler?.call(
+                    FMTCInitialisationException(source: err),
+                  );
+                  return null;
+                }
+                return entry;
               }
 
-              return entry;
+              return null;
             })
             .whereNotNull()
             .toList(),
