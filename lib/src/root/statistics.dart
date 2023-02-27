@@ -102,16 +102,18 @@ class RootStats {
       StoreParts.stats,
     ],
   }) =>
-      StreamGroup.merge([
-        FMTC.instance.rootDirectory.directory.watch(),
-        if (watchRecovery)
-          _registry.recoveryDatabase.recovery
-              .watchLazy(fireImmediately: fireImmediately),
-        ...recursive.map(
-          (s) => s.stats.watchChanges(
-            fireImmediately: fireImmediately,
-            storeParts: storeParts,
-          ),
-        ),
-      ]).debounce(debounce ?? Duration.zero);
+      Platform.isIOS
+          ? const Stream.empty()
+          : StreamGroup.merge([
+              FMTC.instance.rootDirectory.directory.watch(),
+              if (watchRecovery)
+                _registry.recoveryDatabase.recovery
+                    .watchLazy(fireImmediately: fireImmediately),
+              ...recursive.map(
+                (s) => s.stats.watchChanges(
+                  fireImmediately: fireImmediately,
+                  storeParts: storeParts,
+                ),
+              ),
+            ]).debounce(debounce ?? Duration.zero);
 }
