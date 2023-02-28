@@ -54,7 +54,12 @@ class FMTCRegistry {
 
     await directory
         .list()
-        .where((e) => e is File && path.basename(e.path).endsWith('-lck'))
+        .where(
+          (e) =>
+              e is File &&
+              (path.basename(e.path).endsWith('-lck') ||
+                  path.extension(e.path) == '.compact'),
+        )
         .asyncMap((f) => f.delete())
         .toList();
 
