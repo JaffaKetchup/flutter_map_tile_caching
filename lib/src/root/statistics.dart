@@ -103,7 +103,8 @@ class RootStats {
     ],
   }) =>
       StreamGroup.merge([
-        FMTC.instance.rootDirectory.directory.watch(),
+        DirectoryWatcher(FMTC.instance.rootDirectory.directory.absolute.path)
+            .events,
         if (watchRecovery)
           _registry.recoveryDatabase.recovery
               .watchLazy(fireImmediately: fireImmediately),
