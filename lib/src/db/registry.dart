@@ -100,6 +100,8 @@ class FMTCRegistry {
                 return null;
               }
 
+              if (int.tryParse(id) == null) return null;
+
               final MapEntry<int, Isar> entry;
               try {
                 entry = MapEntry(
@@ -116,9 +118,7 @@ class FMTCRegistry {
                 initialisationSafetyWriteSink?.writeln(id);
                 await initialisationSafetyWriteSink?.flush();
               } catch (err) {
-                errorHandler?.call(
-                  FMTCInitialisationException(source: err),
-                );
+                errorHandler?.call(FMTCInitialisationException(source: err));
                 return null;
               }
 

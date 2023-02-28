@@ -177,8 +177,7 @@ class _StoreTileState extends State<StoreTile> {
                                           setState(
                                             () => _emptyingProgress = true,
                                           );
-                                          _store.manage.reset();
-
+                                          await _store.manage.resetAsync();
                                           setState(
                                             () => _emptyingProgress = false,
                                           );
