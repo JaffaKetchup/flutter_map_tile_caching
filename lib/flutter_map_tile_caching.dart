@@ -32,6 +32,7 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:queue/queue.dart';
 import 'package:stream_transform/stream_transform.dart';
+import 'package:watcher/watcher.dart';
 
 import 'src/bulk_download/bulk_tile_writer.dart';
 import 'src/bulk_download/downloader.dart';

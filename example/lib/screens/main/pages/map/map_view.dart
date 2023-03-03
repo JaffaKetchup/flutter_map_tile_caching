@@ -76,6 +76,9 @@ class _MapPageState extends State<MapPage> {
                                         metadata.data!['validDuration']!,
                                       ),
                                     ),
+                              maxStoreLength: int.parse(
+                                metadata.data!['maxLength']!,
+                              ),
                             ),
                           )
                       : NetworkNoRetryTileProvider(),

@@ -120,13 +120,13 @@ class RootMigrator {
       await FMTC.instance(name).manage.createAsync();
       final store = FMTCRegistry.instance(name);
 
-      // Migrate tiles
-      await store.writeTxn(
-        () async => store.tiles.putAll(
-          await (storeDirectory >> 'tiles')
-              .list()
-              .whereType<File>()
-              .asyncMap(
+      // Migrate tiles in transaction batches of 250
+      await for (final List<File> tiles
+          in (storeDirectory >> 'tiles').list().whereType<File>().slices(250)) {
+        await store.writeTxn(
+          () async => store.tiles.putAll(
+            (await Future.wait(
+              tiles.map(
                 (f) async {
                   final filename = path.basename(f.absolute.path);
                   final Map<String, String> placeholderValues = {};
@@ -173,11 +173,13 @@ class RootMigrator {
                   results[name] = results[name]! + 1;
                   return null;
                 },
-              )
-              .whereNotNull()
-              .toList(),
-        ),
-      );
+              ),
+            ))
+                .whereNotNull()
+                .toList(),
+          ),
+        );
+      }
 
       // Migrate metadata
       await store.writeTxn(

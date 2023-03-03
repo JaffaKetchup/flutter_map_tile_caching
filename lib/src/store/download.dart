@@ -23,7 +23,7 @@ class DownloadManagement {
   StreamController<TileProgress>? _streamController;
 
   /// Used internally to manage tiles per second progress calculations
-  late InternalProgressTimingManagement _progressManagement;
+  InternalProgressTimingManagement? _progressManagement;
 
   /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
   ///
@@ -125,7 +125,7 @@ class DownloadManagement {
     await BulkTileWriter.stop(latestTileImage);
     _queue?.dispose();
     unawaited(_streamController?.close());
-    await _progressManagement.stopTracking();
+    await _progressManagement?.stopTracking();
 
     if (_recoveryId != null) {
       await FMTC.instance.rootDirectory.recovery.cancel(_recoveryId!);
@@ -175,6 +175,7 @@ class DownloadManagement {
     final DateTime startTime = DateTime.now();
 
     _progressManagement = InternalProgressTimingManagement()..startTracking();
+
     await BulkTileWriter.start(
       provider: tileProvider,
       bufferMode: bufferMode,
@@ -194,7 +195,7 @@ class DownloadManagement {
       queue: _queue!,
       streamController: _streamController!,
       downloadID: _recoveryId!,
-      progressManagement: _progressManagement,
+      progressManagement: _progressManagement!,
     );
 
     await for (final TileProgress evt in downloadStream) {
@@ -225,7 +226,7 @@ class DownloadManagement {
         duration: DateTime.now().difference(startTime),
         tileImage: evt.tileImage == null ? null : MemoryImage(evt.tileImage!),
         bufferMode: bufferMode,
-        progressManagement: _progressManagement,
+        progressManagement: _progressManagement!,
       );
 
       yield prog;

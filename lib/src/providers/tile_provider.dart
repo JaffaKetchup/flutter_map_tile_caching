@@ -55,15 +55,17 @@ class FMTCTileProvider extends TileProvider {
         coords: coords,
       );
 
-  IsarCollection<DbTile> get _tiles =>
-      FMTCRegistry.instance(storeDirectory.storeName).tiles;
-
   /// Check whether a specified tile is cached in the current store synchronously
   bool checkTileCached({
     required Coords<num> coords,
     required TileLayer options,
   }) =>
-      _tiles.getSync(DatabaseTools.hash(getTileUrl(coords, options))) != null;
+      FMTCRegistry.instance(storeDirectory.storeName).tiles.getSync(
+            DatabaseTools.hash(
+              settings.obscureQueryParams(getTileUrl(coords, options)),
+            ),
+          ) !=
+      null;
 
   /// Check whether a specified tile is cached in the current store
   /// asynchronously
@@ -71,7 +73,12 @@ class FMTCTileProvider extends TileProvider {
     required Coords<num> coords,
     required TileLayer options,
   }) async =>
-      await _tiles.get(DatabaseTools.hash(getTileUrl(coords, options))) != null;
+      await FMTCRegistry.instance(storeDirectory.storeName).tiles.get(
+            DatabaseTools.hash(
+              settings.obscureQueryParams(getTileUrl(coords, options)),
+            ),
+          ) !=
+      null;
 
   @override
   bool operator ==(Object other) =>

@@ -8,7 +8,8 @@ part of flutter_map_tile_caching;
 class RootManagement {
   const RootManagement._();
 
-  /// Delete the root directory, database, and stores
+  /// Unintialise/close open databases, and delete the root directory and its
+  /// contents
   ///
   /// This will remove all traces of this root from the user's device. Use with
   /// caution!
