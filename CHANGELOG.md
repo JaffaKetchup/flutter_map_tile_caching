@@ -13,6 +13,16 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [7.2.0] - 2023/03/XX
+
+* Stability improvements
+  * Starting multiple downloads no longer causes `LateInitializationErrors`
+  * Migrator storage and memory usage no longer spikes as significantly as previously, thanks to transaction batching
+  * Opening and processing of stores on initialisation is more robust and less error-prone to filename variations
+  * Root statistic watching now works on all platforms
+* Multiple minor bug fixes and documentation improvements
+* Added `maxStoreLength` config to example app
+
 ## [7.1.2] - 2023/02/18
 
 * Minor bug fixes

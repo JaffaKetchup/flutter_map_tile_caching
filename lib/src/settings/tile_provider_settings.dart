@@ -56,9 +56,13 @@ class FMTCTileProviderSettings {
   /// A list of regular expressions indicating key-value pairs to be remove from
   /// a URL's query parameter list
   ///
+  /// If using this property, it is recommended to set it globally on
+  /// initialisation with [FMTCSettings], to ensure it gets applied throughout.
+  ///
   /// Used by [obscureQueryParams] to apply to a URL.
   ///
-  /// See the online documentation for more information.
+  /// See the [online documentation](https://fmtc.jaffaketchup.dev/usage/integration#obscuring-query-parameters)
+  /// for more information.
   final Iterable<RegExp> obscuredQueryParams;
 
   /// A custom callback that will be called when an [FMTCBrowsingError] is raised

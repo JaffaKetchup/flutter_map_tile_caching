@@ -5,6 +5,7 @@ jobs:
   package-analysis:
     name: "Analyse Package"
     runs-on: ubuntu-latest
+    if: github.event.head_commit.message != 'Built Example Applications'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -27,6 +28,7 @@ jobs:
   content-analysis:
     name: "Analyse Contents"
     runs-on: ubuntu-latest
+    if: github.event.head_commit.message != 'Built Example Applications'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
