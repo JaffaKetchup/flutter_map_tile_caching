@@ -70,12 +70,16 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       required bool hit,
     }) =>
         (hit ? _cacheHitsQueue : _cacheMissesQueue).add(() async {
-          await _db.writeTxn(() async {
-            final store = (await _db.storeDescriptor.get(0))!;
-            if (hit) store.hits += 1;
-            if (!hit) store.misses += 1;
-            await _db.storeDescriptor.put(store);
-          });
+          if (_db.isOpen) {
+            await _db.writeTxn(() async {
+              final store =
+                  _db.isOpen ? (await _db.storeDescriptor.get(0)) : null;
+              if (store == null) return;
+              if (hit) store.hits += 1;
+              if (!hit) store.misses += 1;
+              await _db.storeDescriptor.put(store);
+            });
+          }
         });
 
     Future<Codec> finish({

@@ -5,7 +5,7 @@ import 'dart:io';
 
 import 'package:isar/isar.dart';
 import 'package:meta/meta.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:stream_transform/stream_transform.dart';
 
 import '../../flutter_map_tile_caching.dart';
@@ -52,17 +52,6 @@ class FMTCRegistry {
       await recoveryFile.delete();
     }
 
-    await directory
-        .list()
-        .where(
-          (e) =>
-              e is File &&
-              (path.basename(e.path).endsWith('-lck') ||
-                  path.extension(e.path) == '.compact'),
-        )
-        .asyncMap((f) => f.delete())
-        .toList();
-
     return instance = FMTCRegistry._(
       directory: directory,
       recoveryDatabase: await Isar.open(
@@ -86,23 +75,23 @@ class FMTCRegistry {
             .where(
               (e) =>
                   e is File &&
-                  !path.basename(e.path).startsWith('.') &&
-                  path.extension(e.path) == '.isar',
+                  !p.basename(e.path).startsWith('.') &&
+                  p.extension(e.path) == '.isar',
             )
             .asyncMap((f) async {
-              final id = path.basenameWithoutExtension(f.path);
+              final id = p.basenameWithoutExtension(f.path);
 
               if (!hasLocatedCorruption &&
                   safeModeSuccessfulIDs != null &&
                   !safeModeSuccessfulIDs.contains(id)) {
-                await f.delete();
-                hasLocatedCorruption = true;
-                errorHandler?.call(
-                  FMTCInitialisationException(
-                    source: null,
-                  ),
-                );
-                return null;
+                try {
+                  await f.delete();
+                  hasLocatedCorruption = true;
+                  errorHandler?.call(FMTCInitialisationException(source: null));
+                  return null;
+                } on FileSystemException catch (_) {
+                  return null;
+                }
               }
 
               if (int.tryParse(id) == null) return null;
