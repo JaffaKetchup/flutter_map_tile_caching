@@ -3,7 +3,7 @@ description: The example application for 'flutter_map_tile_caching', showcasing
   it's functionality and use-cases.
 publish_to: "none"
 
-version: 7.2.0
+version: 8.0.0
 
 environment:
   sdk: ">=2.18.0 <3.0.0"
@@ -37,6 +37,8 @@ dev_dependencies: null
 dependency_overrides:
   flutter_map_tile_caching:
     path: ../
+  fmtc_plus_sharing:
+    path: C:\Users\lukas\Documents\GitHub\fmtc_plus_sharing
 
 flutter:
   uses-material-design: true

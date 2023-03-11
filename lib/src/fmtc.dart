@@ -167,36 +167,3 @@ class FlutterMapTileCaching {
         autoCreate: false,
       );
 }
-
-/// An exception raised when FMTC failed to initialise
-///
-/// May indicate a previously fatal crash due to a corrupted database. If this is
-/// the case, [source] will be `null`, [wasFatal] will be `true`, and the
-/// corrupted database will be deleted.
-class FMTCInitialisationException implements Exception {
-  /// The original error object
-  ///
-  /// If `null` indicates a previously fatal crash due to a corrupted database. If
-  /// this is the case, [wasFatal] will be `true`, and the corrupted database will
-  /// be deleted.
-  final Object? source;
-
-  /// Indicates whether there was a previously fatal crash due to a corrupted
-  /// database. If this is the case, [source] will be `null`, and the corrupted
-  /// database will be deleted.
-  final bool wasFatal;
-
-  /// Create an exception raised when FMTC failed to initialise
-  ///
-  /// May indicate a previously fatal crash. If this is the case, [source] will
-  /// be `null`, [wasFatal] will be `true`, and the corrupted database will be
-  /// deleted.
-  @internal
-  FMTCInitialisationException({
-    required this.source,
-  }) : wasFatal = source == null;
-
-  /// Converts the [source] into a string
-  @override
-  String toString() => source.toString();
-}

@@ -35,8 +35,7 @@ class StoreStats extends _StoreDb {
 
   /// Retrieve the number of tiles that were successfully retrieved from the
   /// store during browsing asynchronously
-  Future<int> get cacheHitsAsync async =>
-      (await _db.storeDescriptor.get(0))!.hits;
+  Future<int> get cacheHitsAsync async => (await _db.descriptor).hits;
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the
   /// store during browsing synchronously
@@ -47,8 +46,7 @@ class StoreStats extends _StoreDb {
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the
   /// store during browsing asynchronously
-  Future<int> get cacheMissesAsync async =>
-      (await _db.storeDescriptor.get(0))!.misses;
+  Future<int> get cacheMissesAsync async => (await _db.descriptor).misses;
 
   /// Watch for changes in the current store
   ///

@@ -26,7 +26,7 @@ class RootStats {
   Future<List<StoreDirectory>> get storesAvailableAsync => Future.wait(
         _registry.storeDatabases.values.map(
           (e) async => StoreDirectory._(
-            (await e.storeDescriptor.get(0))!.name,
+            (await e.descriptor).name,
             autoCreate: false,
           ),
         ),
@@ -104,7 +104,8 @@ class RootStats {
   }) =>
       StreamGroup.merge([
         DirectoryWatcher(FMTC.instance.rootDirectory.directory.absolute.path)
-            .events,
+            .events
+            .where((e) => !path.dirname(e.path).endsWith('temporary')),
         if (watchRecovery)
           _registry.recoveryDatabase.recovery
               .watchLazy(fireImmediately: fireImmediately),

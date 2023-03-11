@@ -45,11 +45,16 @@ import 'src/db/defs/store_descriptor.dart';
 import 'src/db/defs/tile.dart';
 import 'src/db/registry.dart';
 import 'src/db/tools.dart';
+import 'src/errors/browsing.dart';
+import 'src/errors/initialisation.dart';
+import 'src/errors/store_not_ready.dart';
 import 'src/misc/exts.dart';
 import 'src/providers/image_provider.dart';
-import 'src/settings/tile_provider_settings.dart';
 
-export 'src/settings/tile_provider_settings.dart';
+export 'src/errors/browsing.dart';
+export 'src/errors/damaged_store.dart';
+export 'src/errors/initialisation.dart';
+export 'src/errors/store_not_ready.dart';
 
 part 'src/bulk_download/download_progress.dart';
 part 'src/fmtc.dart';
@@ -69,6 +74,7 @@ part 'src/root/migrator.dart';
 part 'src/root/recovery.dart';
 part 'src/root/statistics.dart';
 part 'src/settings/fmtc_settings.dart';
+part 'src/settings/tile_provider_settings.dart';
 part 'src/store/directory.dart';
 part 'src/store/download.dart';
 part 'src/store/export.dart';

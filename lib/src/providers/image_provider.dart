@@ -72,8 +72,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         (hit ? _cacheHitsQueue : _cacheMissesQueue).add(() async {
           if (_db.isOpen) {
             await _db.writeTxn(() async {
-              final store =
-                  _db.isOpen ? (await _db.storeDescriptor.get(0)) : null;
+              final store = _db.isOpen ? await _db.descriptor : null;
               if (store == null) return;
               if (hit) store.hits += 1;
               if (!hit) store.misses += 1;
@@ -271,60 +270,4 @@ Future<void> _removeOldestTile(List<Object> args) async {
   );
 
   await db.close();
-}
-
-/// An [Exception] indicating that there was an error retrieving tiles to be
-/// displayed on the map
-///
-/// These can usually be safely ignored, as they simply represent a fall
-/// through of all valid/possible cases, but you may wish to handle them
-/// anyway using [FMTCTileProviderSettings.errorHandler].
-///
-/// Always thrown from within [FMTCImageProvider] generated from
-/// [FMTCTileProvider]. The [message] further indicates the reason, and will
-/// depend on the current caching behaviour. The [type] represents the same
-/// message in a way that is easy to parse/handle.
-class FMTCBrowsingError implements Exception {
-  /// Friendly message
-  final String message;
-
-  /// Programmatic error descriptor
-  final FMTCBrowsingErrorType type;
-
-  /// An [Exception] indicating that there was an error retrieving tiles to be
-  /// displayed on the map
-  ///
-  /// These can usually be safely ignored, as they simply represent a fall
-  /// through of all valid/possible cases, but you may wish to handle them
-  /// anyway using [FMTCTileProviderSettings.errorHandler].
-  ///
-  /// Always thrown from within [FMTCImageProvider] generated from
-  /// [FMTCTileProvider]. The [message] further indicates the reason, and will
-  /// depend on the current caching behaviour. The [type] represents the same
-  /// message in a way that is easy to parse/handle.
-  FMTCBrowsingError(this.message, this.type);
-
-  @override
-  String toString() => 'FMTCBrowsingError: $message';
-}
-
-/// Pragmatic error descriptor for a [FMTCBrowsingError.message]
-///
-/// See documentation on that object for more information.
-enum FMTCBrowsingErrorType {
-  /// Paired with friendly message:
-  /// "Failed to load the tile from the cache because it was missing."
-  missingInCacheOnlyMode,
-
-  /// Paired with friendly message:
-  /// "Failed to load the tile from the cache or the network because it was
-  /// missing from the cache and a connection to the server could not be
-  /// established."
-  noConnectionDuringFetch,
-
-  /// Paired with friendly message:
-  /// "Failed to load the tile from the cache or the network because it was
-  /// missing from the cache and the server responded with a HTTP code other than
-  /// 200 OK."
-  negativeFetchResponse,
 }

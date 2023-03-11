@@ -30,7 +30,7 @@ class StoreManagement {
       return true;
       // ignore: avoid_catching_errors
     } on FMTCStoreNotReady catch (e) {
-      if (e._registered) rethrow;
+      if (e.registered) rethrow;
       return false;
     }
   }
@@ -102,7 +102,7 @@ class StoreManagement {
     await db.writeTxn(() async {
       await db.tiles.clear();
       await db.storeDescriptor.put(
-        (await db.storeDescriptor.get(0))!
+        (await db.descriptor)
           ..hits = 0
           ..misses = 0,
       );
@@ -319,34 +319,4 @@ class StoreManagement {
     "Prefer 'rename'. This redirect will be removed in a future update",
   )
   Future<StoreDirectory?> renameAsync(String storeName) => rename(storeName);
-}
-
-/// An error rasied by multiple methods that require the existence of the
-/// requested store
-class FMTCStoreNotReady extends Error {
-  /// The store name that the method tried to access
-  final String storeName;
-
-  /// A human readable description of the error, and steps that may be taken to
-  /// avoid this error being thrown again
-  final String message;
-
-  final bool _registered;
-
-  /// Create an error rasied by multiple methods that require the existence of
-  /// the requested store
-  ///
-  /// Internal usage only.
-  @internal
-  FMTCStoreNotReady({
-    required this.storeName,
-    required bool registered,
-  })  : _registered = registered,
-        message = registered
-            ? "The store ('$storeName') was registered, but the underlying database was not open, at this time. This is an erroneous state in FMTC: if this error appears in your application, please open an issue on GitHub immediately."
-            : "The store ('$storeName') does not exist at this time, and is not ready. Ensure that your application does not use the method that triggered this error unless it is sure that the store will exist at this point.";
-
-  /// Similar to [message], but suitable for console output in an unknown context
-  @override
-  String toString() => 'FMTCStoreNotReady: $message';
 }
