@@ -37,8 +37,11 @@ dev_dependencies: null
 dependency_overrides:
   flutter_map_tile_caching:
     path: ../
-  #fmtc_plus_sharing:
-  #  path: C:\Users\lukas\Documents\GitHub\fmtc_plus_sharing
+  fmtc_plus_sharing:
+    git:
+      url: https://github.com/JaffaKetchup/fmtc_plus_sharing.git
+      ref: v8
+
 
 flutter:
   uses-material-design: true
