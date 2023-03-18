@@ -92,7 +92,8 @@ Future<TileProgress> _getAndSaveTile({
       );
     }
 
-    final response = await client.send(Request('GET', Uri.parse(url)));
+    final response = await client
+        .send(Request('GET', Uri.parse(url))..headers.addAll(provider.headers));
     final totalBytes = response.contentLength ?? 0;
 
     int received = 0;

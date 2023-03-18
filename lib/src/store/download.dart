@@ -144,6 +144,9 @@ class DownloadManagement {
     required int? bufferLimit,
     required BaseClient? httpClient,
   }) async* {
+    _queue = Queue(parallel: region.parallelThreads);
+    _streamController = StreamController();
+
     httpClient ??= HttpPlusClient(
       http1Client: IOClient(
         HttpClient()
@@ -200,8 +203,8 @@ class DownloadManagement {
       errorHandler: region.errorHandler,
       preventRedownload: region.preventRedownload,
       seaTileBytes: seaTileBytes,
-      queue: _queue = Queue(parallel: region.parallelThreads),
-      streamController: _streamController = StreamController(),
+      queue: _queue!,
+      streamController: _streamController!,
       downloadID: _recoveryId!,
       progressManagement: _progressManagement!,
     );
