@@ -83,8 +83,8 @@ class DownloadManagement {
     int? bufferLimit,
     BaseClient? httpClient,
   }) async* {
+    // Start recovery
     _recoveryId = DateTime.now().millisecondsSinceEpoch;
-
     if (!disableRecovery) {
       await FMTC.instance.rootDirectory.recovery._start(
         id: _recoveryId!,
@@ -93,60 +93,27 @@ class DownloadManagement {
       );
     }
 
-    yield* _startDownload(
-      tileProviderSettings: tileProviderSettings,
-      region: region,
-      tiles: await _generateTilesComputer(region),
-      bufferMode: bufferMode,
-      bufferLimit: bufferLimit,
-      httpClient: httpClient,
-    );
-  }
+    // Generate tiles
+    final tiles = (await compute(
+      region.type == RegionType.rectangle
+          ? TilesGenerator.rectangleTiles
+          : region.type == RegionType.circle
+              ? TilesGenerator.circleTiles
+              : TilesGenerator.lineTiles,
+      _generateTileLoopsInput(region),
+    ))
+        .skip(region.start)
+        .take(
+          region.end == null
+              ? 9223372036854775807
+              : (region.end! - region.start),
+        );
 
-  /// Check approximately how many downloadable tiles are within a specified
-  /// [DownloadableRegion]
-  ///
-  /// This does not take into account sea tile removal or redownload prevention,
-  /// as these are handled in the download area of the code.
-  ///
-  /// Returns an `int` which is the number of tiles.
-  Future<int> check(DownloadableRegion region) async =>
-      (await _generateTilesComputer(region)).length;
-
-  /// Cancels the ongoing foreground download and recovery session (within the
-  /// current object)
-  ///
-  /// Do not use to cancel background downloads, return `true` from the
-  /// background download callback to cancel a background download. Background
-  /// download cancellations require a few more 'shut-down' steps that can create
-  /// unexpected issues and memory leaks if not carried out.
-  ///
-  /// Note that another instance of this object must be retrieved before another
-  /// download is attempted, as this one is destroyed.
-  Future<void> cancel({Uint8List? latestTileImage}) async {
-    await BulkTileWriter.stop(latestTileImage);
-    _queue?.dispose();
-    unawaited(_streamController?.close());
-    await _progressManagement?.stopTracking();
-
-    if (_recoveryId != null) {
-      await FMTC.instance.rootDirectory.recovery.cancel(_recoveryId!);
-    }
-
-    _instances.remove(_storeDirectory);
-  }
-
-  Stream<DownloadProgress> _startDownload({
-    required FMTCTileProviderSettings? tileProviderSettings,
-    required DownloadableRegion region,
-    required List<Coords<num>> tiles,
-    required DownloadBufferMode bufferMode,
-    required int? bufferLimit,
-    required BaseClient? httpClient,
-  }) async* {
+    // Initialise required global variables
     _queue = Queue(parallel: region.parallelThreads);
     _streamController = StreamController();
 
+    // Initialise HTTP client
     httpClient ??= HttpPlusClient(
       http1Client: IOClient(
         HttpClient()
@@ -156,9 +123,11 @@ class DownloadManagement {
       connectionTimeout: const Duration(seconds: 5),
     );
 
+    // Get the tile provider
     final FMTCTileProvider tileProvider =
         _storeDirectory.getTileProvider(tileProviderSettings);
 
+    // Initialise the sea tile removal system
     Uint8List? seaTileBytes;
     if (region.seaTileRemoval) {
       try {
@@ -173,6 +142,7 @@ class DownloadManagement {
       }
     }
 
+    // Initialse local tracking variables
     int bufferedTiles = 0;
     int bufferedSize = 0;
     int persistedTiles = 0;
@@ -185,8 +155,10 @@ class DownloadManagement {
 
     final DateTime startTime = DateTime.now();
 
+    // Start progress management
     _progressManagement = InternalProgressTimingManagement()..startTracking();
 
+    // Start writing isolates
     await BulkTileWriter.start(
       provider: tileProvider,
       bufferMode: bufferMode,
@@ -194,6 +166,7 @@ class DownloadManagement {
       downloadStream: _streamController!,
     );
 
+    // Bulk download the generated tiles
     final Stream<TileProgress> downloadStream = bulkDownloader(
       tiles: tiles,
       provider: tileProvider,
@@ -209,6 +182,7 @@ class DownloadManagement {
       progressManagement: _progressManagement!,
     );
 
+    // Listen to download progress, and report results
     await for (final TileProgress evt in downloadStream) {
       if (evt.failedUrl == null) {
         if (!evt.wasCancelOperation) bufferedTiles++;
@@ -249,16 +223,48 @@ class DownloadManagement {
     httpClient.close();
   }
 
-  static Future<List<Coords<num>>> _generateTilesComputer(
-    DownloadableRegion region, {
-    bool applyRange = true,
-  }) async {
-    final List<Coords<num>> tiles = await compute(
-      region.type == RegionType.rectangle
-          ? rectangleTiles
-          : region.type == RegionType.circle
-              ? circleTiles
-              : lineTiles,
+  /// Check approximately how many downloadable tiles are within a specified
+  /// [DownloadableRegion]
+  ///
+  /// This does not take into account sea tile removal or redownload prevention,
+  /// as these are handled in the download area of the code.
+  ///
+  /// Returns an `int` which is the number of tiles.
+  Future<int> check(DownloadableRegion region) => compute(
+        region.type == RegionType.rectangle
+            ? TilesCounter.rectangleTiles
+            : region.type == RegionType.circle
+                ? TilesCounter.circleTiles
+                : TilesCounter.lineTiles,
+        _generateTileLoopsInput(region),
+      );
+
+  /// Cancels the ongoing foreground download and recovery session (within the
+  /// current object)
+  ///
+  /// Do not use to cancel background downloads, return `true` from the
+  /// background download callback to cancel a background download. Background
+  /// download cancellations require a few more 'shut-down' steps that can create
+  /// unexpected issues and memory leaks if not carried out.
+  ///
+  /// Note that another instance of this object must be retrieved before another
+  /// download is attempted, as this one is destroyed.
+  Future<void> cancel({Uint8List? latestTileImage}) async {
+    await BulkTileWriter.stop(latestTileImage);
+    _queue?.dispose();
+    unawaited(_streamController?.close());
+    await _progressManagement?.stopTracking();
+
+    if (_recoveryId != null) {
+      await FMTC.instance.rootDirectory.recovery.cancel(_recoveryId!);
+    }
+
+    _instances.remove(_storeDirectory);
+  }
+
+  static Map<String, dynamic> _generateTileLoopsInput(
+    DownloadableRegion region,
+  ) =>
       {
         'rectOutline': LatLngBounds.fromPoints(region.points.cast()),
         'circleOutline': region.points,
@@ -268,12 +274,7 @@ class DownloadManagement {
         'crs': region.crs,
         'tileSize':
             CustomPoint(region.options.tileSize, region.options.tileSize),
-      },
-    );
-
-    if (!applyRange) return tiles;
-    return tiles.getRange(region.start, region.end ?? tiles.length).toList();
-  }
+      };
 }
 
 /// Describes the buffering mode during a bulk download

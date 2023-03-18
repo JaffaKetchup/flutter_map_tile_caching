@@ -38,7 +38,7 @@ import 'package:watcher/watcher.dart';
 import 'src/bulk_download/bulk_tile_writer.dart';
 import 'src/bulk_download/downloader.dart';
 import 'src/bulk_download/internal_timing_progress_management.dart';
-import 'src/bulk_download/tile_loops.dart';
+import 'src/bulk_download/tile_loops/shared.dart';
 import 'src/bulk_download/tile_progress.dart';
 import 'src/db/defs/metadata.dart';
 import 'src/db/defs/recovery.dart';

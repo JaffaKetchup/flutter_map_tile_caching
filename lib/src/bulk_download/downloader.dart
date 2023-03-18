@@ -23,7 +23,7 @@ import 'tile_progress.dart';
 
 @internal
 Stream<TileProgress> bulkDownloader({
-  required List<Coords<num>> tiles,
+  required Iterable<Coords<num>> tiles,
   required FMTCTileProvider provider,
   required TileLayer options,
   required BaseClient client,
