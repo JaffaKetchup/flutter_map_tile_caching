@@ -13,7 +13,15 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [7.2.0] - 2023/03/XX
+## [8.0.0] - 2023/XX/XX
+
+* Performance improvements  
+  `check`ing the number of tiles in a region is now much faster and more efficient
+* Stability improvements  
+  Cancelling a download no longer causes `QueueCancelledException` to be thrown, which could crash the app
+* Added support for custom `HttpClient`s/`BaseClient`s
+
+## [7.2.0] - 2023/03/03
 
 * Stability improvements
   * Starting multiple downloads no longer causes `LateInitializationErrors`
