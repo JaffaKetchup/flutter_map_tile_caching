@@ -53,7 +53,7 @@ Stream<TileProgress> bulkDownloader({
     )
         .then((e) {
       if (!streamController.isClosed) streamController.add(e);
-    });
+    }).catchError((_) {});
   }
 
   return streamController.stream;
