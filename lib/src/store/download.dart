@@ -81,6 +81,7 @@ class DownloadManagement {
     bool disableRecovery = false,
     DownloadBufferMode bufferMode = DownloadBufferMode.disabled,
     int? bufferLimit,
+    BaseClient? httpClient,
   }) async* {
     _recoveryId = DateTime.now().millisecondsSinceEpoch;
 
@@ -98,6 +99,7 @@ class DownloadManagement {
       tiles: await _generateTilesComputer(region),
       bufferMode: bufferMode,
       bufferLimit: bufferLimit,
+      httpClient: httpClient,
     );
   }
 
@@ -140,18 +142,24 @@ class DownloadManagement {
     required List<Coords<num>> tiles,
     required DownloadBufferMode bufferMode,
     required int? bufferLimit,
+    required BaseClient? httpClient,
   }) async* {
-    _queue = Queue(parallel: region.parallelThreads);
-    _streamController = StreamController();
+    httpClient ??= HttpPlusClient(
+      http1Client: IOClient(
+        HttpClient()
+          ..connectionTimeout = const Duration(seconds: 5)
+          ..userAgent = null,
+      ),
+      connectionTimeout: const Duration(seconds: 5),
+    );
 
     final FMTCTileProvider tileProvider =
         _storeDirectory.getTileProvider(tileProviderSettings);
-    final http.Client client = http.Client();
 
     Uint8List? seaTileBytes;
     if (region.seaTileRemoval) {
       try {
-        seaTileBytes = (await client.get(
+        seaTileBytes = (await httpClient.get(
           Uri.parse(
             tileProvider.getTileUrl(Coords(0, 0)..z = 17, region.options),
           ),
@@ -187,13 +195,13 @@ class DownloadManagement {
       tiles: tiles,
       provider: tileProvider,
       options: region.options,
-      client: client,
+      client: httpClient,
       parallelThreads: region.parallelThreads,
       errorHandler: region.errorHandler,
       preventRedownload: region.preventRedownload,
       seaTileBytes: seaTileBytes,
-      queue: _queue!,
-      streamController: _streamController!,
+      queue: _queue = Queue(parallel: region.parallelThreads),
+      streamController: _streamController = StreamController(),
       downloadID: _recoveryId!,
       progressManagement: _progressManagement!,
     );
@@ -235,7 +243,7 @@ class DownloadManagement {
       }
     }
 
-    client.close();
+    httpClient.close();
   }
 
   static Future<List<Coords<num>>> _generateTilesComputer(

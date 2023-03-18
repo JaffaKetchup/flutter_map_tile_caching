@@ -1,8 +1,10 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of flutter_map_tile_caching;
+import 'package:isar/isar.dart';
 
-/// See [FMTCSettings.databaseCompactCondition] and [isar.CompactCondition]'s
+import '../../flutter_map_tile_caching.dart';
+
+/// See [FMTCSettings.databaseCompactCondition] and [CompactCondition]'s
 /// documentation for more information
-typedef DatabaseCompactCondition = isar.CompactCondition;
+typedef DatabaseCompactCondition = CompactCondition;

@@ -147,6 +147,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
 
                                 if (!validators.isURL(
                                   input,
+                                  protocols: ['http', 'https'],
                                   requireProtocol: true,
                                 )) {
                                   return 'Invalid URL';

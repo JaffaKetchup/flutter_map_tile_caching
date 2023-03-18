@@ -6,7 +6,7 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'package:isar/isar.dart';
 import 'package:meta/meta.dart';
 import 'package:queue/queue.dart';
@@ -26,7 +26,7 @@ Stream<TileProgress> bulkDownloader({
   required List<Coords<num>> tiles,
   required FMTCTileProvider provider,
   required TileLayer options,
-  required http.Client client,
+  required BaseClient client,
   required Function(Object?)? errorHandler,
   required int parallelThreads,
   required bool preventRedownload,
@@ -65,7 +65,7 @@ Future<TileProgress> _getAndSaveTile({
   required FMTCTileProvider provider,
   required Coords<num> coord,
   required TileLayer options,
-  required http.Client client,
+  required BaseClient client,
   required void Function(Object)? errorHandler,
   required bool preventRedownload,
   required Uint8List? seaTileBytes,
@@ -92,9 +92,8 @@ Future<TileProgress> _getAndSaveTile({
       );
     }
 
-    final http.StreamedResponse response =
-        await client.send(http.Request('GET', Uri.parse(url)));
-    final int totalBytes = response.contentLength ?? 0;
+    final response = await client.send(Request('GET', Uri.parse(url)));
+    final totalBytes = response.contentLength ?? 0;
 
     int received = 0;
     await for (final List<int> evt in response.stream) {

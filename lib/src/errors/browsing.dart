@@ -55,7 +55,6 @@ enum FMTCBrowsingErrorType {
 
   /// Paired with friendly message:
   /// "Failed to load the tile from the cache or the network because it was
-  /// missing from the cache and the server responded with a HTTP code other than
-  /// 200 OK."
+  /// missing from the cache and the server responded with a HTTP code of <$>."
   negativeFetchResponse,
 }

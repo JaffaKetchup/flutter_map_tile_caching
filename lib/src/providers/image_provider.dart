@@ -7,6 +7,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:http/http.dart';
 import 'package:isar/isar.dart';
 import 'package:queue/queue.dart';
 
@@ -28,7 +29,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// The coordinates of the tile to be fetched
   final Coords<num> coords;
 
-  final Isar _db;
+  /// The database to write tiles to
+  final Isar db;
 
   static final _removeOldestQueue = Queue(timeout: const Duration(seconds: 1));
   static final _cacheHitsQueue = Queue();
@@ -39,7 +41,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required this.provider,
     required this.options,
     required this.coords,
-  }) : _db = FMTCRegistry.instance(provider.storeDirectory.storeName);
+  }) : db = FMTCRegistry.instance(provider.storeDirectory.storeName);
 
   @override
   ImageStreamCompleter loadBuffer(
@@ -70,19 +72,19 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       required bool hit,
     }) =>
         (hit ? _cacheHitsQueue : _cacheMissesQueue).add(() async {
-          if (_db.isOpen) {
-            await _db.writeTxn(() async {
-              final store = _db.isOpen ? await _db.descriptor : null;
+          if (db.isOpen) {
+            await db.writeTxn(() async {
+              final store = db.isOpen ? await db.descriptor : null;
               if (store == null) return;
               if (hit) store.hits += 1;
               if (!hit) store.misses += 1;
-              await _db.storeDescriptor.put(store);
+              await db.storeDescriptor.put(store);
             });
           }
         });
 
     Future<Codec> finish({
-      Uint8List? bytes,
+      List<int>? bytes,
       String? throwError,
       FMTCBrowsingErrorType? throwErrorType,
       bool? cacheHit,
@@ -102,7 +104,9 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       }
 
       if (bytes != null) {
-        return decode(await ImmutableBuffer.fromUint8List(bytes));
+        return decode(
+          await ImmutableBuffer.fromUint8List(Uint8List.fromList(bytes)),
+        );
       }
 
       throw ArgumentError(
@@ -113,7 +117,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     final networkUrl = provider.getTileUrl(coords, options);
     final matcherUrl = provider.settings.obscureQueryParams(networkUrl);
 
-    final existingTile = await _db.tiles.get(DatabaseTools.hash(matcherUrl));
+    final existingTile = await db.tiles.get(DatabaseTools.hash(matcherUrl));
 
     final bool needsCreating = existingTile == null;
     final bool needsUpdating = needsCreating
@@ -124,18 +128,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
                         existingTile.lastModified.millisecondsSinceEpoch >
                     provider.settings.cachedValidDuration.inMilliseconds);
 
-    // DEBUG ONLY
-    /*
-    print('---------');
-    print(networkUrl);
-    print(matcherUrl);
-    print('   Store: ${provider.storeDirectory.storeName}');
-    print('   Existing ID: ${existingTile?.id ?? 'None'}');
-    print('   Needs Updating & Not Creating: $needsUpdating');
-    */
-
     // Get any existing bytes from the tile, if it exists
-    Uint8List? bytes;
+    List<int>? bytes;
     if (!needsCreating) bytes = Uint8List.fromList(existingTile.bytes);
 
     // IF network is disabled & the tile does not exist THEN throw an error
@@ -151,15 +145,14 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     // IF network is enabled & (the tile does not exist | needs updating) THEN download the tile | throw an error
     if (needsCreating || needsUpdating) {
-      final HttpClientResponse response;
+      final StreamedResponse response;
 
       // Try to get a response from a server, throwing an error if not possible & the tile does not exist
       try {
-        final request = await provider.httpClient.getUrl(Uri.parse(networkUrl));
-        provider.headers.forEach(
-          (k, v) => request.headers.add(k, v, preserveHeaderCase: true),
+        response = await provider.httpClient.send(
+          Request('GET', Uri.parse(networkUrl))
+            ..headers.addAll(provider.headers),
         );
-        response = await request.close();
       } catch (err) {
         return finish(
           bytes: !needsCreating ? bytes : null,
@@ -176,7 +169,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         return finish(
           bytes: !needsCreating ? bytes : null,
           throwError: needsCreating
-              ? 'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.'
+              ? 'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code of ${response.statusCode}'
               : null,
           throwErrorType: FMTCBrowsingErrorType.negativeFetchResponse,
           cacheHit: false,
@@ -184,22 +177,23 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       }
 
       // Read the bytes from the HTTP request response
-      bytes = await consolidateHttpClientResponseBytes(
-        response,
-        onBytesReceived: (int cumulative, int? total) {
-          chunkEvents.add(
-            ImageChunkEvent(
-              cumulativeBytesLoaded: cumulative,
-              expectedTotalBytes: total,
-            ),
-          );
-        },
-      );
+      int bytesReceivedLength = 0;
+      bytes = [];
+      await for (final byte in response.stream) {
+        bytesReceivedLength += byte.length;
+        bytes.addAll(byte);
+        chunkEvents.add(
+          ImageChunkEvent(
+            cumulativeBytesLoaded: bytesReceivedLength,
+            expectedTotalBytes: response.contentLength,
+          ),
+        );
+      }
 
       // Cache the tile asynchronously
       unawaited(
-        _db.writeTxn(
-          () => _db.tiles.put(DbTile(url: matcherUrl, bytes: bytes!)),
+        db.writeTxn(
+          () => db.tiles.put(DbTile(url: matcherUrl, bytes: bytes!)),
         ),
       );
 
