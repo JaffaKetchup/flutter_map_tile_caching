@@ -2,14 +2,15 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:typed_data';
 
+import 'package:async/async.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart';
-import 'package:isar/isar.dart';
 import 'package:meta/meta.dart';
-import 'package:queue/queue.dart';
+import 'package:stream_transform/stream_transform.dart';
 
 import '../../flutter_map_tile_caching.dart';
 import '../db/defs/tile.dart';
@@ -17,47 +18,82 @@ import '../db/registry.dart';
 import '../db/tools.dart';
 import 'bulk_tile_writer.dart';
 import 'internal_timing_progress_management.dart';
+import 'tile_loops/shared.dart';
 import 'tile_progress.dart';
 
 //! ENTRY POINT !//
 
 @internal
-Stream<TileProgress> bulkDownloader({
-  required Iterable<Coords<num>> tiles,
+Future<Stream<TileProgress>> bulkDownloader({
+  required DownloadableRegion region,
   required FMTCTileProvider provider,
-  required TileLayer options,
+  required StreamController<TileProgress> tileProgressStreamController,
+  required Stream<void> cancelStream,
   required BaseClient client,
-  required Function(Object?)? errorHandler,
-  required int parallelThreads,
-  required bool preventRedownload,
   required Uint8List? seaTileBytes,
-  required Queue queue,
-  required StreamController<TileProgress> streamController,
-  required int downloadID,
   required InternalProgressTimingManagement progressManagement,
-}) {
-  for (final Coords<num> coord in tiles) {
-    queue.add(
-      () async {
-        final Isar tiles =
-            FMTCRegistry.instance(provider.storeDirectory.storeName);
+}) async {
+  final tiles = FMTCRegistry.instance(provider.storeDirectory.storeName);
 
-        final String url = provider.getTileUrl(coord, options);
-        final DbTile? existingTile =
-            await tiles.tiles.get(DatabaseTools.hash(url));
+  final isolatePort = ReceivePort();
+  final tileIsolate = await Isolate.spawn(
+    region.type == RegionType.rectangle
+        ? TilesGenerator.rectangleTiles
+        : region.type == RegionType.circle
+            ? TilesGenerator.circleTiles
+            : TilesGenerator.lineTiles,
+    {'sendPort': isolatePort.sendPort, ...generateTileLoopsInput(region)},
+  );
+  final tileQueue = StreamQueue<List<int>?>(
+    isolatePort
+        .skip(region.start)
+        .take(
+          region.end == null
+              ? 9223372036854775807
+              : (region.end! - region.start),
+        )
+        .merge(cancelStream)
+        .cast(),
+  );
 
-        final List<int> bytes = [];
-        final List<int>? bulkTileWriterResponse;
+  for (int _ = 1; _ <= region.parallelThreads; _++) {
+    unawaited(() async {
+      while (true) {
+        final List<int>? value;
 
         try {
-          if (preventRedownload && existingTile != null) {
-            return TileProgress(
-              failedUrl: null,
-              tileImage: null,
-              wasSeaTile: false,
-              wasExistingTile: true,
-              wasCancelOperation: false,
-              bulkTileWriterResponse: null,
+          value = await tileQueue.next;
+          // ignore: avoid_catching_errors
+        } on StateError {
+          break;
+        }
+
+        if (value == null) {
+          tileIsolate.kill(priority: Isolate.immediate);
+          isolatePort.close();
+          unawaited(tileProgressStreamController.close());
+          await tileQueue.cancel(immediate: true);
+          break;
+        }
+
+        final coord = Coords(value[0], value[1])..z = value[2];
+
+        final url = provider.getTileUrl(coord, region.options);
+        final existingTile = await tiles.tiles.get(DatabaseTools.hash(url));
+
+        try {
+          final List<int> bytes = [];
+
+          if (region.preventRedownload && existingTile != null) {
+            tileProgressStreamController.add(
+              TileProgress(
+                failedUrl: null,
+                tileImage: null,
+                wasSeaTile: false,
+                wasExistingTile: true,
+                wasCancelOperation: false,
+                bulkTileWriterResponse: null,
+              ),
             );
           }
 
@@ -79,13 +115,15 @@ Stream<TileProgress> bulkDownloader({
           if (existingTile != null &&
               seaTileBytes != null &&
               const ListEquality().equals(bytes, seaTileBytes)) {
-            return TileProgress(
-              failedUrl: null,
-              tileImage: Uint8List.fromList(bytes),
-              wasSeaTile: true,
-              wasExistingTile: false,
-              wasCancelOperation: false,
-              bulkTileWriterResponse: null,
+            tileProgressStreamController.add(
+              TileProgress(
+                failedUrl: null,
+                tileImage: Uint8List.fromList(bytes),
+                wasSeaTile: true,
+                wasExistingTile: false,
+                wasCancelOperation: false,
+                bulkTileWriterResponse: null,
+              ),
             );
           }
 
@@ -94,32 +132,35 @@ Stream<TileProgress> bulkDownloader({
               [provider.settings.obscureQueryParams(url), bytes],
             ),
           );
-          bulkTileWriterResponse = await BulkTileWriter.instance.events.next;
-        } catch (e) {
-          if (errorHandler != null) errorHandler(e);
-          return TileProgress(
-            failedUrl: url,
-            tileImage: null,
-            wasSeaTile: false,
-            wasExistingTile: false,
-            wasCancelOperation: false,
-            bulkTileWriterResponse: null,
-          );
-        }
 
-        return TileProgress(
-          failedUrl: null,
-          tileImage: Uint8List.fromList(bytes),
-          wasSeaTile: false,
-          wasExistingTile: false,
-          wasCancelOperation: false,
-          bulkTileWriterResponse: bulkTileWriterResponse,
-        );
-      },
-    ).then((e) {
-      if (!streamController.isClosed) streamController.add(e);
-    }).catchError((_) {});
+          tileProgressStreamController.add(
+            TileProgress(
+              failedUrl: null,
+              tileImage: Uint8List.fromList(bytes),
+              wasSeaTile: false,
+              wasExistingTile: false,
+              wasCancelOperation: false,
+              bulkTileWriterResponse: await BulkTileWriter.instance.events.next,
+            ),
+          );
+        } catch (e) {
+          region.errorHandler?.call(e);
+          if (!tileProgressStreamController.isClosed) {
+            tileProgressStreamController.add(
+              TileProgress(
+                failedUrl: url,
+                tileImage: null,
+                wasSeaTile: false,
+                wasExistingTile: false,
+                wasCancelOperation: false,
+                bulkTileWriterResponse: null,
+              ),
+            );
+          }
+        }
+      }
+    }());
   }
 
-  return streamController.stream;
+  return tileProgressStreamController.stream;
 }

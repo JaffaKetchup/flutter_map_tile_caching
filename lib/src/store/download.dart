@@ -13,14 +13,15 @@ class DownloadManagement {
   /// The store directory to provide access paths to
   final StoreDirectory _storeDirectory;
 
-  /// Used internally to queue download tiles to process in bulk
-  Queue? _queue;
-
   /// Used internally to keep track of the recovery file
   int? _recoveryId;
 
   /// Used internally to control bulk downloading
-  StreamController<TileProgress>? _streamController;
+  // ignore: close_sinks
+  StreamController<TileProgress>? _tileProgressStreamController;
+
+  /// Used internally to cancel bulk downloading
+  StreamController<void>? _cancelStreamController;
 
   /// Used internally to manage tiles per second progress calculations
   InternalProgressTimingManagement? _progressManagement;
@@ -93,25 +94,12 @@ class DownloadManagement {
       );
     }
 
-    // Generate tiles
-    final tiles = (await compute(
-      region.type == RegionType.rectangle
-          ? TilesGenerator.rectangleTiles
-          : region.type == RegionType.circle
-              ? TilesGenerator.circleTiles
-              : TilesGenerator.lineTiles,
-      _generateTileLoopsInput(region),
-    ))
-        .skip(region.start)
-        .take(
-          region.end == null
-              ? 9223372036854775807
-              : (region.end! - region.start),
-        );
+    // Initialise stream controllers
+    _tileProgressStreamController = StreamController();
+    _cancelStreamController = StreamController(sync: true);
 
-    // Initialise required global variables
-    _queue = Queue(parallel: region.parallelThreads);
-    _streamController = StreamController();
+    // Count number of tiles
+    final maxTiles = await check(region);
 
     // Initialise HTTP client
     httpClient ??= HttpPlusClient(
@@ -163,22 +151,17 @@ class DownloadManagement {
       provider: tileProvider,
       bufferMode: bufferMode,
       bufferLimit: bufferLimit,
-      downloadStream: _streamController!,
+      downloadStream: _tileProgressStreamController!,
     );
 
-    // Bulk download the generated tiles
-    final Stream<TileProgress> downloadStream = bulkDownloader(
-      tiles: tiles,
+    // Start the bulk downloader
+    final Stream<TileProgress> downloadStream = await bulkDownloader(
+      tileProgressStreamController: _tileProgressStreamController!,
+      cancelStream: _cancelStreamController!.stream,
       provider: tileProvider,
-      options: region.options,
+      region: region,
       client: httpClient,
-      parallelThreads: region.parallelThreads,
-      errorHandler: region.errorHandler,
-      preventRedownload: region.preventRedownload,
       seaTileBytes: seaTileBytes,
-      queue: _queue!,
-      streamController: _streamController!,
-      downloadID: _recoveryId!,
       progressManagement: _progressManagement!,
     );
 
@@ -200,7 +183,7 @@ class DownloadManagement {
 
       final DownloadProgress prog = DownloadProgress._(
         downloadID: _recoveryId!,
-        maxTiles: tiles.length,
+        maxTiles: maxTiles,
         successfulTiles: bufferedTiles,
         persistedTiles: persistedTiles,
         failedTiles: failedTiles,
@@ -236,7 +219,7 @@ class DownloadManagement {
             : region.type == RegionType.circle
                 ? TilesCounter.circleTiles
                 : TilesCounter.lineTiles,
-        _generateTileLoopsInput(region),
+        generateTileLoopsInput(region),
       );
 
   /// Cancels the ongoing foreground download and recovery session (within the
@@ -249,10 +232,13 @@ class DownloadManagement {
   ///
   /// Note that another instance of this object must be retrieved before another
   /// download is attempted, as this one is destroyed.
+  ///
+  /// TODO: Prevent errors & undownloaded tiles with new streaming system
   Future<void> cancel({Uint8List? latestTileImage}) async {
+    _cancelStreamController?.add(null);
+    unawaited(_cancelStreamController?.close());
+
     await BulkTileWriter.stop(latestTileImage);
-    _queue?.dispose();
-    unawaited(_streamController?.close());
     await _progressManagement?.stopTracking();
 
     if (_recoveryId != null) {
@@ -261,20 +247,6 @@ class DownloadManagement {
 
     _instances.remove(_storeDirectory);
   }
-
-  static Map<String, dynamic> _generateTileLoopsInput(
-    DownloadableRegion region,
-  ) =>
-      {
-        'rectOutline': LatLngBounds.fromPoints(region.points.cast()),
-        'circleOutline': region.points,
-        'lineOutline': region.points.chunked(4).toList(),
-        'minZoom': region.minZoom,
-        'maxZoom': region.maxZoom,
-        'crs': region.crs,
-        'tileSize':
-            CustomPoint(region.options.tileSize, region.options.tileSize),
-      };
 }
 
 /// Describes the buffering mode during a bulk download
@@ -299,12 +271,4 @@ enum DownloadBufferMode {
   /// Tiles will be written to an intermediate memory buffer, then bulk written
   /// to the database once there are more bytes than specified.
   bytes,
-}
-
-extension _ListExtensionsE<E> on List<E> {
-  Iterable<List<E>> chunked(int size) sync* {
-    for (var i = 0; i < length; i += size) {
-      yield sublist(i, (i + size < length) ? i + size : length);
-    }
-  }
 }

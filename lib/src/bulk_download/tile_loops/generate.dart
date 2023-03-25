@@ -4,14 +4,14 @@
 part of 'shared.dart';
 
 class TilesGenerator {
-  static List<Coords<num>> rectangleTiles(Map<String, dynamic> input) {
+  static void rectangleTiles(Map<String, dynamic> input) {
+    final SendPort port = input['sendPort'];
     final LatLngBounds bounds = input['rectOutline'];
     final int minZoom = input['minZoom'];
     final int maxZoom = input['maxZoom'];
     final Crs crs = input['crs'];
     final CustomPoint<num> tileSize = input['tileSize'];
 
-    final List<Coords<num>> coords = [];
     for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
       final CustomPoint<num> nwCustomPoint = crs
           .latLngToPoint(bounds.northWest, zoomLvl.toDouble())
@@ -25,14 +25,15 @@ class TilesGenerator {
 
       for (num x = nwCustomPoint.x; x <= seCustomPoint.x; x++) {
         for (num y = nwCustomPoint.y; y <= seCustomPoint.y; y++) {
-          coords.add(Coords(x, y)..z = zoomLvl);
+          port.send([x.toInt(), y.toInt(), zoomLvl]);
         }
       }
     }
-    return coords;
+
+    port.send(null);
   }
 
-  static List<Coords<num>> circleTiles(Map<String, dynamic> input) {
+  static void circleTiles(Map<String, dynamic> input) {
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given a `LatLng` for every x degrees on a circle's circumference, convert it into a tile number
     // 2. Using a `Map` per zoom level, record all the X values in it without duplicates
@@ -40,6 +41,7 @@ class TilesGenerator {
     // 4. Loop over these XY values and add them to the list
     // Theoretically, this could have been done using the same method as `lineTiles`, but `lineTiles` was built after this algorithm and this makes more sense for a circle
 
+    final SendPort port = input['sendPort'];
     final List<LatLng> circleOutline = input['circleOutline'];
     final int minZoom = input['minZoom'];
     final int maxZoom = input['maxZoom'];
@@ -48,8 +50,6 @@ class TilesGenerator {
 
     // Format: Map<z, Map<x, List<y>>>
     final Map<int, Map<int, List<int>>> outlineTileNums = {};
-
-    final List<Coords<num>> coords = [];
 
     for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
       outlineTileNums[zoomLvl] = <int, List<int>>{};
@@ -79,17 +79,15 @@ class TilesGenerator {
         for (int y = outlineTileNums[zoomLvl]![x]![0];
             y <= outlineTileNums[zoomLvl]![x]![1];
             y++) {
-          coords.add(
-            Coords(x.toDouble(), y.toDouble())..z = zoomLvl.toDouble(),
-          );
+          port.send([x, y, zoomLvl]);
         }
       }
     }
 
-    return coords;
+    port.send(null);
   }
 
-  static List<Coords<num>> lineTiles(Map<String, dynamic> input) {
+  static void lineTiles(Map<String, dynamic> input) {
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given 4 `LatLng` points, create a 'straight' rectangle around the 'rotated' rectangle, that can be defined with just 2 `LatLng` points
     // 2. Convert the straight rectangle into tile numbers, and loop through the same as `rectangleTiles`
@@ -137,13 +135,12 @@ class TilesGenerator {
       return true;
     }
 
+    final SendPort port = input['sendPort'];
     final List<List<LatLng>> rects = input['lineOutline'];
     final int minZoom = input['minZoom'];
     final int maxZoom = input['maxZoom'];
     final Crs crs = input['crs'];
     final CustomPoint<num> tileSize = input['tileSize'];
-
-    final List<Coords<num>> coords = [];
 
     for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
       for (final List<LatLng> rect in rects) {
@@ -218,7 +215,7 @@ class TilesGenerator {
                 CustomPoint(x, y + 1),
               ),
             )) {
-              coords.add(Coords(x, y)..z = zoomLvl);
+              port.send([x.toInt(), y.toInt(), zoomLvl]);
               foundOverlappingTile = true;
             } else if (foundOverlappingTile) {
               break;
@@ -228,6 +225,6 @@ class TilesGenerator {
       }
     }
 
-    return coords;
+    port.send(null);
   }
 }
