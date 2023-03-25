@@ -95,12 +95,11 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       if (cacheHit != null) unawaited(cacheHitMiss(hit: cacheHit));
 
       if (throwError != null) {
-        try {
-          throw FMTCBrowsingError(throwError, throwErrorType!);
-        } on FMTCBrowsingError catch (e) {
-          provider.settings.errorHandler?.call(e);
-          rethrow;
-        }
+        await evict();
+
+        final error = FMTCBrowsingError(throwError, throwErrorType!);
+        provider.settings.errorHandler?.call(error);
+        throw error;
       }
 
       if (bytes != null) {
@@ -119,20 +118,17 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     final existingTile = await db.tiles.get(DatabaseTools.hash(matcherUrl));
 
-    final bool needsCreating = existingTile == null;
-    final bool needsUpdating = needsCreating
-        ? false
-        : provider.settings.behavior == CacheBehavior.onlineFirst ||
+    final needsCreating = existingTile == null;
+    final needsUpdating = !needsCreating &&
+        (provider.settings.behavior == CacheBehavior.onlineFirst ||
             (provider.settings.cachedValidDuration != Duration.zero &&
                 DateTime.now().millisecondsSinceEpoch -
                         existingTile.lastModified.millisecondsSinceEpoch >
-                    provider.settings.cachedValidDuration.inMilliseconds);
+                    provider.settings.cachedValidDuration.inMilliseconds));
 
-    // Get any existing bytes from the tile, if it exists
     List<int>? bytes;
     if (!needsCreating) bytes = Uint8List.fromList(existingTile.bytes);
 
-    // IF network is disabled & the tile does not exist THEN throw an error
     if (provider.settings.behavior == CacheBehavior.cacheOnly &&
         needsCreating) {
       return finish(
@@ -143,17 +139,15 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       );
     }
 
-    // IF network is enabled & (the tile does not exist | needs updating) THEN download the tile | throw an error
     if (needsCreating || needsUpdating) {
       final StreamedResponse response;
 
-      // Try to get a response from a server, throwing an error if not possible & the tile does not exist
       try {
         response = await provider.httpClient.send(
           Request('GET', Uri.parse(networkUrl))
             ..headers.addAll(provider.headers),
         );
-      } catch (err) {
+      } catch (_) {
         return finish(
           bytes: !needsCreating ? bytes : null,
           throwError: needsCreating
@@ -164,7 +158,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         );
       }
 
-      // Check for an OK HTTP status code, throwing an error if not possible & the tile does not exist
       if (response.statusCode != 200) {
         return finish(
           bytes: !needsCreating ? bytes : null,
@@ -176,7 +169,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         );
       }
 
-      // Read the bytes from the HTTP request response
       int bytesReceivedLength = 0;
       bytes = [];
       await for (final byte in response.stream) {
@@ -190,14 +182,12 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         );
       }
 
-      // Cache the tile asynchronously
       unawaited(
         db.writeTxn(
           () => db.tiles.put(DbTile(url: matcherUrl, bytes: bytes!)),
         ),
       );
 
-      // If an new tile was created over the tile limit, delete the oldest tile
       if (needsCreating && provider.settings.maxStoreLength != 0) {
         unawaited(
           _removeOldestQueue.add(
@@ -215,7 +205,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       return finish(bytes: bytes, cacheHit: false);
     }
 
-    // IF tile exists & does not need updating THEN return the existing tile
     return finish(bytes: bytes, cacheHit: true);
   }
 

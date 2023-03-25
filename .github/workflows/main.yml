@@ -36,8 +36,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: "stable"
-      - name: Ensure Correct Flutter Installation
-        run: flutter --version
       - name: Get All Dependencies
         run: flutter pub get
       - name: Check Formatting
@@ -65,18 +63,16 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: "stable"
-      - name: Ensure Correct Flutter Installation
-        run: flutter --version
-      - name: Ensure Clean Flutter Environment
-        run: flutter clean
       - name: Remove Existing Prebuilt Applications
         run: Remove-Item "prebuiltExampleApplications" -Recurse -ErrorAction Ignore
         working-directory: .
       - name: Create Prebuilt Applications (Output) Directory
         run: md prebuiltExampleApplications
         working-directory: .
+      - name: Get All Dependencies
+        run: flutter pub get
       - name: Build Android Application
-        run: flutter build apk --split-per-abi --obfuscate --split-debug-info=/symbols
+        run: flutter build apk --obfuscate --split-debug-info=/symbols
       - name: Move Android Application To Output Directory
         run: move "example\build\app\outputs\flutter-apk\app-armeabi-v7a-release.apk" "prebuiltExampleApplications\AndroidApplication.apk"
         working-directory: .
