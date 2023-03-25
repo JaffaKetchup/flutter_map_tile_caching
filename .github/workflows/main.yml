@@ -74,7 +74,7 @@ jobs:
       - name: Build Android Application
         run: flutter build apk --obfuscate --split-debug-info=/symbols
       - name: Move Android Application To Output Directory
-        run: move "example\build\app\outputs\flutter-apk\app-armeabi-v7a-release.apk" "prebuiltExampleApplications\AndroidApplication.apk"
+        run: move "example\build\app\outputs\flutter-apk\app-release.apk" "prebuiltExampleApplications\AndroidApplication.apk"
         working-directory: .
       - name: Build Windows Application
         run: flutter build windows --obfuscate --split-debug-info=/symbols
