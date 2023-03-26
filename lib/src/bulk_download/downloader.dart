@@ -50,8 +50,11 @@ Future<Stream<TileProgress>> bulkDownloader({
         ),
   );
 
-  final threadStates =
-      List.generate(region.parallelThreads + 1, (_) => Completer<void>());
+  final threadStates = List.generate(
+    region.parallelThreads + 1,
+    (_) => Completer<void>(),
+    growable: false,
+  );
 
   for (int thread = 0; thread <= region.parallelThreads; thread++) {
     unawaited(() async {
@@ -68,11 +71,12 @@ Future<Stream<TileProgress>> bulkDownloader({
 
         if (cancelRequestSignal.isCompleted) {
           await tileQueue.cancel(immediate: true);
+
           tileIsolate.kill(priority: Isolate.immediate);
           isolatePort.close();
 
-          unawaited(streamController.close());
           await BulkTileWriter.stop(null);
+          unawaited(streamController.close());
 
           cancelCompleteSignal.complete();
           break;
@@ -80,6 +84,8 @@ Future<Stream<TileProgress>> bulkDownloader({
 
         if (value == null) {
           await tileQueue.cancel();
+
+          threadStates[thread].complete();
           await Future.wait(threadStates.map((e) => e.future));
 
           tileIsolate.kill(priority: Isolate.immediate);
