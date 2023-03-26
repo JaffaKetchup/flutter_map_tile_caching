@@ -13,25 +13,14 @@ class DownloadManagement {
   /// The store directory to provide access paths to
   final StoreDirectory _storeDirectory;
 
-  /// Used internally to keep track of the recovery file
   int? _recoveryId;
-
-  /// Used internally to control bulk downloading
   // ignore: close_sinks
   StreamController<TileProgress>? _tileProgressStreamController;
-
-  /// Used internally to cancel bulk downloading
-  StreamController<void>? _cancelStreamController;
-
-  /// Used internally to manage tiles per second progress calculations
+  Completer<void>? _cancelRequestSignal;
+  Completer<void>? _cancelCompleteSignal;
   InternalProgressTimingManagement? _progressManagement;
+  BaseClient? _httpClient;
 
-  /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
-  ///
-  /// Is a singleton to ensure functioning as expected.
-  ///
-  /// The 'fmtc_plus_background_downloading' module must be installed to add the
-  /// background downloading functionality.
   factory DownloadManagement._(StoreDirectory storeDirectory) {
     if (!_instances.keys.contains(storeDirectory)) {
       _instances[storeDirectory] = DownloadManagement.__(storeDirectory);
@@ -39,12 +28,6 @@ class DownloadManagement {
     return _instances[storeDirectory]!;
   }
 
-  /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
-  ///
-  /// Is a singleton to ensure functioning as expected.
-  ///
-  /// The 'fmtc_plus_background_downloading' module must be installed to add the
-  /// background downloading functionality.
   DownloadManagement.__(this._storeDirectory);
 
   /// Contains the intialised instances of [DownloadManagement]s
@@ -96,20 +79,22 @@ class DownloadManagement {
 
     // Initialise stream controllers
     _tileProgressStreamController = StreamController();
-    _cancelStreamController = StreamController(sync: true);
+    _cancelRequestSignal = Completer();
+    _cancelCompleteSignal = Completer();
 
     // Count number of tiles
     final maxTiles = await check(region);
 
     // Initialise HTTP client
-    httpClient ??= HttpPlusClient(
-      http1Client: IOClient(
-        HttpClient()
-          ..connectionTimeout = const Duration(seconds: 5)
-          ..userAgent = null,
-      ),
-      connectionTimeout: const Duration(seconds: 5),
-    );
+    _httpClient = httpClient ??
+        HttpPlusClient(
+          http1Client: IOClient(
+            HttpClient()
+              ..connectionTimeout = const Duration(seconds: 5)
+              ..userAgent = null,
+          ),
+          connectionTimeout: const Duration(seconds: 5),
+        );
 
     // Get the tile provider
     final FMTCTileProvider tileProvider =
@@ -119,7 +104,7 @@ class DownloadManagement {
     Uint8List? seaTileBytes;
     if (region.seaTileRemoval) {
       try {
-        seaTileBytes = (await httpClient.get(
+        seaTileBytes = (await _httpClient!.get(
           Uri.parse(
             tileProvider.getTileUrl(Coords(0, 0)..z = 17, region.options),
           ),
@@ -156,13 +141,14 @@ class DownloadManagement {
 
     // Start the bulk downloader
     final Stream<TileProgress> downloadStream = await bulkDownloader(
-      tileProgressStreamController: _tileProgressStreamController!,
-      cancelStream: _cancelStreamController!.stream,
-      provider: tileProvider,
+      streamController: _tileProgressStreamController!,
+      cancelRequestSignal: _cancelRequestSignal!,
+      cancelCompleteSignal: _cancelCompleteSignal!,
       region: region,
-      client: httpClient,
+      provider: tileProvider,
       seaTileBytes: seaTileBytes,
       progressManagement: _progressManagement!,
+      client: _httpClient!,
     );
 
     // Listen to download progress, and report results
@@ -198,12 +184,10 @@ class DownloadManagement {
       );
 
       yield prog;
-      if (prog.percentageProgress >= 100) {
-        await cancel(latestTileImage: evt.tileImage);
-      }
+      if (prog.percentageProgress >= 100) break;
     }
 
-    httpClient.close();
+    await _internalCancel();
   }
 
   /// Check approximately how many downloadable tiles are within a specified
@@ -232,18 +216,20 @@ class DownloadManagement {
   ///
   /// Note that another instance of this object must be retrieved before another
   /// download is attempted, as this one is destroyed.
-  ///
-  /// TODO: Prevent errors & undownloaded tiles with new streaming system
-  Future<void> cancel({Uint8List? latestTileImage}) async {
-    _cancelStreamController?.add(null);
-    unawaited(_cancelStreamController?.close());
+  Future<void> cancel() async {
+    _cancelRequestSignal?.complete();
+    await _cancelCompleteSignal?.future;
 
-    await BulkTileWriter.stop(latestTileImage);
+    await _internalCancel();
+  }
+
+  Future<void> _internalCancel() async {
     await _progressManagement?.stopTracking();
 
     if (_recoveryId != null) {
       await FMTC.instance.rootDirectory.recovery.cancel(_recoveryId!);
     }
+    _httpClient?.close();
 
     _instances.remove(_storeDirectory);
   }
