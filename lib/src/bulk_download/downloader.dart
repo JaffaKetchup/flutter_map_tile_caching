@@ -2,6 +2,7 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
@@ -118,10 +119,16 @@ Future<Stream<TileProgress>> bulkDownloader({
             );
           }
 
-          final response = await client.send(
-            Request('GET', Uri.parse(url))..headers.addAll(provider.headers),
-          );
-          final totalBytes = response.contentLength ?? 0;
+          final uri = Uri.parse(url);
+          final response = await client
+              .send(Request('GET', uri)..headers.addAll(provider.headers));
+
+          if (response.statusCode != 200) {
+            throw HttpException(
+              response.reasonPhrase ?? response.statusCode.toString(),
+              uri: uri,
+            );
+          }
 
           int received = 0;
           await for (final List<int> evt in response.stream) {
@@ -129,7 +136,7 @@ Future<Stream<TileProgress>> bulkDownloader({
             received += evt.length;
             progressManagement.progress[url.hashCode] = TimestampProgress(
               DateTime.now(),
-              received / totalBytes,
+              received / (response.contentLength ?? 0),
             );
           }
 

@@ -16,9 +16,11 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 ## [8.0.0] - 2023/XX/XX
 
 * Performance improvements  
-  `check`ing the number of tiles in a region is now much faster and more efficient
+  * `check`ing the number of tiles in a region is now much faster and more efficient
 * Stability improvements  
-  Cancelling a download no longer causes `QueueCancelledException` to be thrown, which could crash the app
+  * Cancelling a download no longer causes `QueueCancelledException` to be thrown, which could crash the app
+  * Bulk downloading (and `check`ing the number of tiles in a region) no longer causes memory bloats, which could crash the app on large regions
+  * `FMTCImageProvider` now evicts failed images from Flutter's `ImageCache`
 * Added support for custom `HttpClient`s/`BaseClient`s
 
 ## [7.2.0] - 2023/03/03
