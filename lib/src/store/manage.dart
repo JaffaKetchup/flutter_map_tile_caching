@@ -123,7 +123,7 @@ class StoreManagement {
     db.writeTxnSync(() {
       db.tiles.clearSync();
       db.storeDescriptor.putSync(
-        db.storeDescriptor.getSync(0)!
+        db.descriptorSync
           ..hits = 0
           ..misses = 0,
       );

@@ -35,7 +35,7 @@ class StoreStats extends _StoreDb {
   ///
   /// Prefer [cacheHitsAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  int get cacheHits => _db.storeDescriptor.getSync(0)!.hits;
+  int get cacheHits => _db.descriptorSync.hits;
 
   /// Retrieve the number of tiles that were successfully retrieved from the
   /// store during browsing asynchronously
@@ -46,7 +46,7 @@ class StoreStats extends _StoreDb {
   ///
   /// Prefer [cacheMissesAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  int get cacheMisses => _db.storeDescriptor.getSync(0)!.misses;
+  int get cacheMisses => _db.descriptorSync.misses;
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the
   /// store during browsing asynchronously

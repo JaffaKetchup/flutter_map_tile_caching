@@ -16,7 +16,7 @@ class RootStats {
   List<StoreDirectory> get storesAvailable => _registry.storeDatabases.values
       .map(
         (e) => StoreDirectory._(
-          e.storeDescriptor.getSync(0)!.name,
+          e.descriptorSync.name,
           autoCreate: false,
         ),
       )

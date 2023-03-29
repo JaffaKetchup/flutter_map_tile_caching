@@ -39,4 +39,15 @@ extension IsarExts on Isar {
     }
     return descriptor;
   }
+
+  DbStoreDescriptor get descriptorSync {
+    final descriptor = storeDescriptor.getSync(0);
+    if (descriptor == null) {
+      throw FMTCDamagedStoreException(
+        'Failed to perform an operation on a store due to the core descriptor being missing.',
+        FMTCDamagedStoreExceptionType.missingStoreDescriptor,
+      );
+    }
+    return descriptor;
+  }
 }
