@@ -33,13 +33,20 @@ class DownloadManagement {
   /// Contains the intialised instances of [DownloadManagement]s
   static final Map<StoreDirectory, DownloadManagement> _instances = {};
 
-  /// Download a specified [DownloadableRegion] in the foreground
+  /// Download a specified [DownloadableRegion] in the foreground, with a
+  /// recovery session
   ///
   /// To check the number of tiles that need to be downloaded before using this
   /// function, use [check].
   ///
-  /// Unless otherwise specified in [disableRecovery], a recovery session is
-  /// started.
+  /// [httpClient] defaults to a [HttpPlusClient] which supports HTTP/2 and falls
+  /// back to a standard [IOClient]/[HttpClient] for HTTP/1.1 servers. Timeout is
+  /// set to 5 seconds by default.
+  ///
+  /// Streams a [DownloadProgress] object containing statistics and information
+  /// about the download's progression status. This must be listened to.
+  ///
+  /// ---
   ///
   /// [bufferMode] and [bufferLimit] control how this download will use
   /// buffering. For information about buffering, and it's advantages and
@@ -53,12 +60,6 @@ class DownloadManagement {
   /// to 500
   /// - If [bufferMode] is [DownloadBufferMode.bytes], [bufferLimit] will default
   /// to 2000000 (2 MB)
-  ///
-  /// Note that these defaults may not be suitable for your user's devices, and
-  /// you should adjust them to be suitable to your usecase.
-  ///
-  /// Streams a [DownloadProgress] object containing statistics and information
-  /// about the download's progression status.
   Stream<DownloadProgress> startForeground({
     required DownloadableRegion region,
     FMTCTileProviderSettings? tileProviderSettings,
@@ -77,13 +78,12 @@ class DownloadManagement {
       );
     }
 
-    // Initialise stream controllers
-    _tileProgressStreamController = StreamController();
-    _cancelRequestSignal = Completer();
-    _cancelCompleteSignal = Completer();
-
     // Count number of tiles
     final maxTiles = await check(region);
+
+    // Get the tile provider
+    final FMTCTileProvider tileProvider =
+        _storeDirectory.getTileProvider(tileProviderSettings);
 
     // Initialise HTTP client
     _httpClient = httpClient ??
@@ -95,10 +95,6 @@ class DownloadManagement {
           ),
           connectionTimeout: const Duration(seconds: 5),
         );
-
-    // Get the tile provider
-    final FMTCTileProvider tileProvider =
-        _storeDirectory.getTileProvider(tileProviderSettings);
 
     // Initialise the sea tile removal system
     Uint8List? seaTileBytes;
@@ -115,20 +111,20 @@ class DownloadManagement {
       }
     }
 
-    // Initialse local tracking variables
+    // Initialise variables
+    final List<String> failedTiles = [];
     int bufferedTiles = 0;
     int bufferedSize = 0;
     int persistedTiles = 0;
     int persistedSize = 0;
-
     int seaTiles = 0;
     int existingTiles = 0;
-
-    final List<String> failedTiles = [];
-
-    final DateTime startTime = DateTime.now();
+    _tileProgressStreamController = StreamController();
+    _cancelRequestSignal = Completer();
+    _cancelCompleteSignal = Completer();
 
     // Start progress management
+    final DateTime startTime = DateTime.now();
     _progressManagement = InternalProgressTimingManagement()..startTracking();
 
     // Start writing isolates
@@ -136,7 +132,7 @@ class DownloadManagement {
       provider: tileProvider,
       bufferMode: bufferMode,
       bufferLimit: bufferLimit,
-      downloadStream: _tileProgressStreamController!,
+      streamController: _tileProgressStreamController!,
     );
 
     // Start the bulk downloader

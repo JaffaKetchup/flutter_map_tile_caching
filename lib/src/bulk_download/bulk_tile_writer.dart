@@ -38,12 +38,12 @@ class BulkTileWriter {
     required FMTCTileProvider provider,
     required DownloadBufferMode bufferMode,
     required int? bufferLimit,
-    required StreamController<TileProgress> downloadStream,
+    required StreamController<TileProgress> streamController,
   }) async {
     final btw = BulkTileWriter._()
       .._recievePort = ReceivePort()
       .._bufferMode = bufferMode
-      .._downloadStream = downloadStream;
+      .._downloadStream = streamController;
 
     await Isolate.spawn(
       bufferMode == DownloadBufferMode.disabled

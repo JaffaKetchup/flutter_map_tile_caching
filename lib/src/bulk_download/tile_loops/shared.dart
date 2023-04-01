@@ -2,11 +2,12 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:isolate';
-import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/flutter_map.dart' hide Polygon;
 import 'package:latlong2/latlong.dart';
+import 'package:meta/meta.dart';
 
 import '../../../flutter_map_tile_caching.dart';
 
@@ -24,11 +25,7 @@ class _Polygon {
   List<CustomPoint<num>> get points => [nw, ne, se, sw];
 }
 
-extension on List<double> {
-  double get minNum => reduce(min);
-  double get maxNum => reduce(max);
-}
-
+@internal
 Map<String, dynamic> generateTileLoopsInput(DownloadableRegion region) {
   Iterable<List<E>> chunked<E>(List<E> list, int size) sync* {
     final length = list.length;

@@ -19,7 +19,7 @@ class FMTCTileProvider extends TileProvider {
   /// [BaseClient] (such as a [HttpClient]) used to make all network requests
   ///
   /// Defaults to a [HttpPlusClient] which supports HTTP/2 and falls back to a
-  /// standard [IOClient]([HttpClient]) for HTTP/1.1 servers. Timeout is set to
+  /// standard [IOClient]/[HttpClient] for HTTP/1.1 servers. Timeout is set to
   /// 5 seconds by default.
   final BaseClient httpClient;
 

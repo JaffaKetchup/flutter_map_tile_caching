@@ -180,14 +180,14 @@ class TilesCounter {
 
         final CustomPoint<num> srNorthWest = crs
             .latLngToPoint(
-              LatLng(rrAllLat.maxNum, rrAllLon.minNum),
+              LatLng(rrAllLat.max, rrAllLon.min),
               zoomLvl.toDouble(),
             )
             .unscaleBy(tileSize)
             .floor();
         final CustomPoint<num> srSouthEast = crs
                 .latLngToPoint(
-                  LatLng(rrAllLat.minNum, rrAllLon.maxNum),
+                  LatLng(rrAllLat.min, rrAllLon.max),
                   zoomLvl.toDouble(),
                 )
                 .unscaleBy(tileSize)
