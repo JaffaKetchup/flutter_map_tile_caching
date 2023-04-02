@@ -30,7 +30,7 @@ class TilesGenerator {
       }
     }
 
-    port.send(null);
+    Isolate.exit();
   }
 
   static void circleTiles(Map<String, dynamic> input) {
@@ -84,7 +84,7 @@ class TilesGenerator {
       }
     }
 
-    port.send(null);
+    Isolate.exit();
   }
 
   static void lineTiles(Map<String, dynamic> input) {
@@ -225,6 +225,6 @@ class TilesGenerator {
       }
     }
 
-    port.send(null);
+    Isolate.exit();
   }
 }

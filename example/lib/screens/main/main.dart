@@ -21,7 +21,7 @@ class MainScreen extends StatefulWidget {
     required this.damagedDatabaseDeleted,
   });
 
-  final bool damagedDatabaseDeleted;
+  final String? damagedDatabaseDeleted;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -102,11 +102,13 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     _pageController = PageController(initialPage: _currentPageIndex);
-    if (widget.damagedDatabaseDeleted) {
+    if (widget.damagedDatabaseDeleted != null) {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('At least one corrupted database has been deleted.'),
+          SnackBar(
+            content: Text(
+              'At least one corrupted database has been deleted.\n${widget.damagedDatabaseDeleted}',
+            ),
           ),
         ),
       );

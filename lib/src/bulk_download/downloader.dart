@@ -34,17 +34,19 @@ Future<Stream<TileProgress>> bulkDownloader({
 }) async {
   final tiles = FMTCRegistry.instance(provider.storeDirectory.storeName);
 
-  final isolatePort = ReceivePort();
+  final recievePort = ReceivePort();
+  final sendPort = recievePort.sendPort;
   final tileIsolate = await Isolate.spawn(
     region.type == RegionType.rectangle
         ? TilesGenerator.rectangleTiles
         : region.type == RegionType.circle
             ? TilesGenerator.circleTiles
             : TilesGenerator.lineTiles,
-    {'sendPort': isolatePort.sendPort, ...generateTileLoopsInput(region)},
+    {'sendPort': sendPort, ...generateTileLoopsInput(region)},
+    onExit: sendPort,
   );
   final tileQueue = StreamQueue(
-    isolatePort.skip(region.start).take(
+    recievePort.skip(region.start).take(
           region.end == null
               ? 9223372036854775807
               : (region.end! - region.start),
@@ -74,7 +76,7 @@ Future<Stream<TileProgress>> bulkDownloader({
           await tileQueue.cancel(immediate: true);
 
           tileIsolate.kill(priority: Isolate.immediate);
-          isolatePort.close();
+          recievePort.close();
 
           await BulkTileWriter.stop(null);
           unawaited(streamController.close());
@@ -89,8 +91,7 @@ Future<Stream<TileProgress>> bulkDownloader({
           threadStates[thread].complete();
           await Future.wait(threadStates.map((e) => e.future));
 
-          tileIsolate.kill(priority: Isolate.immediate);
-          isolatePort.close();
+          recievePort.close();
 
           await BulkTileWriter.stop(null);
           unawaited(streamController.close());

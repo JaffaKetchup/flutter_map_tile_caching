@@ -105,7 +105,7 @@ class RootStats {
       StreamGroup.merge([
         DirectoryWatcher(FMTC.instance.rootDirectory.directory.absolute.path)
             .events
-            .where((e) => !path.dirname(e.path).endsWith('temporary')),
+            .where((e) => !path.dirname(e.path).endsWith('import')),
         if (watchRecovery)
           _registry.recoveryDatabase.recovery
               .watchLazy(fireImmediately: fireImmediately),

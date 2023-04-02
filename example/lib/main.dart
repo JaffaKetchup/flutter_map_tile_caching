@@ -23,9 +23,9 @@ void main() async {
 
   final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  bool damagedDatabaseDeleted = false;
+  String? damagedDatabaseDeleted;
   await FlutterMapTileCaching.initialise(
-    errorHandler: (error) => damagedDatabaseDeleted = error.wasFatal,
+    errorHandler: (error) => damagedDatabaseDeleted = error.message,
     debugMode: true,
   );
 
@@ -53,7 +53,7 @@ class AppContainer extends StatelessWidget {
     required this.damagedDatabaseDeleted,
   });
 
-  final bool damagedDatabaseDeleted;
+  final String? damagedDatabaseDeleted;
 
   @override
   Widget build(BuildContext context) => MultiProvider(

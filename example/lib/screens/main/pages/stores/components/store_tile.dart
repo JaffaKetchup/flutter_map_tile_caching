@@ -181,15 +181,6 @@ class _StoreTileState extends State<StoreTile> {
                                           setState(
                                             () => _emptyingProgress = false,
                                           );
-                                          if (mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content:
-                                                    Text('Finished Emptying'),
-                                              ),
-                                            );
-                                          }
 
                                           _loadStatistics();
                                         },
@@ -210,7 +201,6 @@ class _StoreTileState extends State<StoreTile> {
                                           final bool result = await _store
                                               .export
                                               .withGUI(context: context);
-
                                           setState(
                                             () => _exportingProgress = false,
                                           );

@@ -25,4 +25,8 @@ class TileProgress {
     required this.wasCancelOperation,
     required this.bulkTileWriterResponse,
   }) : sizeBytes = tileImage?.lengthInBytes ?? 0;
+
+  @override
+  String toString() =>
+      'Tile Progress Report (${failedUrl != null ? 'Failed' : 'Successful'}):\n - `failedUrl`: $failedUrl\n - Has `tileImage`: ${tileImage != null}\n - `wasSeaTile`: $wasSeaTile\n - `wasExistingTile`: $wasExistingTile\n - `sizeBytes`: $sizeBytes\n - `wasCancelOperation`: $wasCancelOperation\n - `bulkTileWriterResponse`: $bulkTileWriterResponse';
 }
