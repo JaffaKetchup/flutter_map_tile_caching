@@ -21,78 +21,25 @@ class RootManagement {
 
   /// Reset the root directory, database, and stores
   ///
-  /// Internally calls [delete] then re-initialises FMTC with the same setup.
+  /// Internally calls [delete] then re-initialises FMTC with the same root
+  /// directory, [FMTCSettings], and debug mode. Other setup is lost: need to
+  /// further customise the [FlutterMapTileCaching.initialise]? Use [delete],
+  /// then re-initialise yourself.
   ///
   /// This will remove all traces of this root from the user's device. Use with
   /// caution!
-  Future<void> reset() async {
+  ///
+  /// Returns the new [FlutterMapTileCaching] instance.
+  Future<FlutterMapTileCaching> reset() async {
     final directory = FMTC.instance.rootDirectory.directory.absolute.path;
     final settings = FMTC.instance.settings;
+    final debugMode = FMTC.instance.debugMode;
 
     await delete();
-    await FMTC.initialise(
+    return FMTC.initialise(
       rootDirectory: directory,
       settings: settings,
+      debugMode: debugMode,
     );
   }
-
-  //! DEPRECATED METHODS !//
-
-  /// 'deleteAsync' is deprecated and shouldn't be used. Prefer [delete]. This
-  /// redirect will be removed in a future update.
-  @Deprecated(
-    "Prefer 'delete'. This redirect will be removed in a future update",
-  )
-  Future<void> deleteAsync() => delete();
-
-  /// 'resetAsync' is deprecated and shouldn't be used. Prefer [reset]. This
-  /// redirect will be removed in a future update.
-  @Deprecated(
-    "Prefer 'reset'. This redirect will be removed in a future update",
-  )
-  Future<void> resetAsync() => reset();
-
-  /// 'create' is deprecated and shouldn't be used. Creation is now performed
-  /// automatically when initialising FMTC. This remnant will be removed in a
-  /// future update.
-  @Deprecated(
-    'Creation is now performed automatically when initialising FMTC. This remnant will be removed in a future update',
-  )
-  @alwaysThrows
-  Never create() => throw UnsupportedError(
-        "'create' is deprecated and shouldn't be used. Creation is now performed automatically when initialising FMTC. This remnant will be removed in a future update.",
-      );
-
-  /// 'createAsync' is deprecated and shouldn't be used. Creation is now
-  /// performed automatically when initialising FMTC. This remnant will be
-  /// removed in a future update.
-  @Deprecated(
-    'Creation is now performed automatically when initialising FMTC. This remnant will be removed in a future update',
-  )
-  @alwaysThrows
-  Future<Never> createAsync() async => throw UnsupportedError(
-        "'createAsync' is deprecated and shouldn't be used. Creation is now performed automatically when initialising FMTC. This remnant will be removed in a future update.",
-      );
-
-  /// 'ready' is deprecated and shouldn't be used. Assume that the necessary
-  /// directories and files exist after initialisation and until 'delete' is
-  /// used. This remnant will be removed in a future update.
-  @Deprecated(
-    "Assume that the necessary directories and files exist after initialisation and until 'delete' is used",
-  )
-  @alwaysThrows
-  Never get ready => throw UnsupportedError(
-        "'ready' is deprecated and shouldn't be used. Assume that the necessary directories and files exist after initialisation and until 'delete' is used. This remnant will be removed in a future update.",
-      );
-
-  /// 'readyAsync' is deprecated and shouldn't be used. Assume that the necessary
-  /// directories and files exist after initialisation and until 'delete' is
-  /// used. This remnant will be removed in a future update.
-  @Deprecated(
-    "Assume that the necessary directories and files exist after initialisation and until 'delete' is used",
-  )
-  @alwaysThrows
-  Future<Never> get readyAsync async => throw UnsupportedError(
-        "'readyAsync' is deprecated and shouldn't be used. Assume that the necessary directories and files exist after initialisation and until 'delete' is used. This remnant will be removed in a future update.",
-      );
 }

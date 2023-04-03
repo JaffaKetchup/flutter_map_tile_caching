@@ -296,27 +296,4 @@ class StoreManagement {
       cacheHeight: cacheHeight,
     );
   }
-
-  //! DEPRECATED METHODS !//
-
-  /// 'readyAsync' is deprecated and shouldn't be used. Prefer [ready]. This
-  /// redirect will be removed in a future update.
-  @Deprecated(
-    "Prefer 'ready'. This redirect will be removed in a future update",
-  )
-  Future<bool> get readyAsync => Future.sync(() => ready);
-
-  /// 'deleteAsync' is deprecated and shouldn't be used. Prefer [delete]. This
-  /// redirect will be removed in a future update.
-  @Deprecated(
-    "Prefer 'delete'. This redirect will be removed in a future update",
-  )
-  Future<void> deleteAsync() => delete();
-
-  /// 'renameAsync' is deprecated and shouldn't be used. Prefer [rename]. This
-  /// redirect will be removed in a future update.
-  @Deprecated(
-    "Prefer 'rename'. This redirect will be removed in a future update",
-  )
-  Future<StoreDirectory?> renameAsync(String storeName) => rename(storeName);
 }

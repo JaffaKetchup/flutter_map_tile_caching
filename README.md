@@ -25,9 +25,7 @@ Many thanks for any amount you can spare, it means a lot to me!
 
 You can read more about me and what I do on my [GitHub Sponsors](https://github.com/sponsors/JaffaKetchup) page, where you can donate as well.
 
-[![Sponsor Me Via GitHub Sponsors](GitHubSponsorsImage.jpg)](https://github.com/sponsors/JaffaKetchup)
-
-Alternatively, if you prefer not to use GitHub Sponsors, please feel free to use my [Ko-fi](https://ko-fi.com/jaffaketchup). Note that the PayPal backend will take a small percentage amount of donations made through this method.
+[![Sponsor Me Via GitHub Sponsors](https://github.com/JaffaKetchup/flutter_map_tile_caching/blob/main/GitHubSponsorsImage.jpg)](https://github.com/sponsors/JaffaKetchup)
 
 ## (Proprietary) Licensing
 
