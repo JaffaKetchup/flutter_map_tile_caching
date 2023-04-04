@@ -15,7 +15,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_foreground_task: ^3.9.0
-  flutter_map: ^3.0.0
+  flutter_map: ^4.0.0-dev.1
   flutter_map_tile_caching:
   flutter_speed_dial: ^6.0.0
   fmtc_plus_background_downloading: ^7.0.0
@@ -41,7 +41,6 @@ dependency_overrides:
     git:
       url: https://github.com/JaffaKetchup/fmtc_plus_sharing.git
       ref: v8
-
 
 flutter:
   uses-material-design: true

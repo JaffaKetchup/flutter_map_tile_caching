@@ -99,7 +99,7 @@ Future<Stream<TileProgress>> bulkDownloader({
           break;
         }
 
-        final coord = Coords(value[0], value[1])..z = value[2];
+        final coord = TileCoordinates(value[0], value[1], value[2]);
 
         final url = provider.getTileUrl(coord, region.options);
         final existingTile = await tiles.tiles.get(DatabaseTools.hash(url));

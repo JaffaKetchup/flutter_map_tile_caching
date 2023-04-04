@@ -157,7 +157,7 @@ class _MapViewState extends State<MapView> {
                                 .instance(generalProvider.currentStore!)
                                 .getTileProvider()
                                 .checkTileCachedAsync(
-                                  coords: tile.coords,
+                                  coords: tile.coordinates,
                                   options: TileLayer(
                                     urlTemplate: urlTemplate,
                                   ),
@@ -178,7 +178,7 @@ class _MapViewState extends State<MapView> {
                         downloadProvider.regionMode != RegionMode.circle)
                       _buildTargetPolygon(
                         RectangleRegion(
-                          LatLngBounds(_coordsTopLeft, _coordsBottomRight),
+                          LatLngBounds(_coordsTopLeft!, _coordsBottomRight!),
                         ),
                       )
                     else if (_center != null &&
@@ -303,7 +303,7 @@ class _MapViewState extends State<MapView> {
     downloadProvider.region = downloadProvider.regionMode == RegionMode.circle
         ? CircleRegion(_center!, _radius!)
         : RectangleRegion(
-            LatLngBounds(_coordsTopLeft, _coordsBottomRight),
+            LatLngBounds(_coordsTopLeft!, _coordsBottomRight!),
           );
   }
 

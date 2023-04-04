@@ -102,7 +102,10 @@ class DownloadManagement {
       try {
         seaTileBytes = (await _httpClient!.get(
           Uri.parse(
-            tileProvider.getTileUrl(Coords(0, 0)..z = 17, region.options),
+            tileProvider.getTileUrl(
+              const TileCoordinates(0, 0, 17),
+              region.options,
+            ),
           ),
         ))
             .bodyBytes;

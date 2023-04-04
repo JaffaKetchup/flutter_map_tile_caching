@@ -27,6 +27,7 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
   * Methods that require a valid store descriptor object to be present can now throw `FMTCDamagedStoreException`
   * `FMTCImageProvider` now evicts failed images from Flutter's `ImageCache` to prevent potential future errors
 * Added support for custom `HttpClient`s/`BaseClient`s
+* Added support for 'flutter_map' v4
 
 ## [7.2.0] - 2023/03/03
 

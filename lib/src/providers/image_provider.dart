@@ -27,7 +27,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   final TileLayer options;
 
   /// The coordinates of the tile to be fetched
-  final Coords<num> coords;
+  final TileCoordinates coords;
 
   /// The database to write tiles to
   final Isar db;
@@ -57,9 +57,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       chunkEvents: chunkEvents.stream,
       scale: 1,
       debugLabel: coords.toString(),
-      informationCollector: () => <DiagnosticsNode>[
-        DiagnosticsProperty<Coords>('Coordinates', coords),
-      ],
+      informationCollector: () => [DiagnosticsProperty('Coordinates', coords)],
     );
   }
 

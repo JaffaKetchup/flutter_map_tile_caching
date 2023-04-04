@@ -59,7 +59,7 @@ class FMTCTileProvider extends TileProvider {
   /// Get a browsed tile as an image, paint it on the map and save it's bytes to
   /// cache for later (dependent on the [CacheBehavior])
   @override
-  ImageProvider getImage(Coords<num> coords, TileLayer options) =>
+  ImageProvider getImage(TileCoordinates coords, TileLayer options) =>
       FMTCImageProvider(
         provider: this,
         options: options,
@@ -68,7 +68,7 @@ class FMTCTileProvider extends TileProvider {
 
   /// Check whether a specified tile is cached in the current store synchronously
   bool checkTileCached({
-    required Coords<num> coords,
+    required TileCoordinates coords,
     required TileLayer options,
   }) =>
       FMTCRegistry.instance(storeDirectory.storeName).tiles.getSync(
@@ -81,7 +81,7 @@ class FMTCTileProvider extends TileProvider {
   /// Check whether a specified tile is cached in the current store
   /// asynchronously
   Future<bool> checkTileCachedAsync({
-    required Coords<num> coords,
+    required TileCoordinates coords,
     required TileLayer options,
   }) async =>
       await FMTCRegistry.instance(storeDirectory.storeName).tiles.get(

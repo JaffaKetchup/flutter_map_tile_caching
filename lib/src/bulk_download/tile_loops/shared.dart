@@ -26,21 +26,12 @@ class _Polygon {
 }
 
 @internal
-Map<String, dynamic> generateTileLoopsInput(DownloadableRegion region) {
-  Iterable<List<E>> chunked<E>(List<E> list, int size) sync* {
-    final length = list.length;
-    for (var i = 0; i < length; i += size) {
-      yield list.sublist(i, (i + size < length) ? i + size : length);
-    }
-  }
-
-  return {
-    'rectOutline': LatLngBounds.fromPoints(region.points.cast()),
-    'circleOutline': region.points,
-    'lineOutline': chunked(region.points, 4).toList(),
-    'minZoom': region.minZoom,
-    'maxZoom': region.maxZoom,
-    'crs': region.crs,
-    'tileSize': CustomPoint(region.options.tileSize, region.options.tileSize),
-  };
-}
+Map<String, dynamic> generateTileLoopsInput(DownloadableRegion region) => {
+      'rectOutline': LatLngBounds.fromPoints(region.points.cast()),
+      'circleOutline': region.points,
+      'lineOutline': region.points.slices(4).toList(),
+      'minZoom': region.minZoom,
+      'maxZoom': region.maxZoom,
+      'crs': region.crs,
+      'tileSize': CustomPoint(region.options.tileSize, region.options.tileSize),
+    };
