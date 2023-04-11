@@ -26,12 +26,11 @@ class FlutterMapTileCaching {
   /// See [FMTCSettings]' properties for more information
   final FMTCSettings settings;
 
-  final bool _debugMode;
-
   /// Whether FMTC should perform extra reporting and console logging
   ///
   /// Depends on [_debugMode] (set via [initialise]) and [kDebugMode].
   bool get debugMode => _debugMode && kDebugMode;
+  final bool _debugMode;
 
   /// Internal constructor, to be used by [initialise]
   const FlutterMapTileCaching._({
@@ -44,7 +43,7 @@ class FlutterMapTileCaching {
   /// and configuring the [FlutterMapTileCaching] singleton
   ///
   /// Prefer to leave [rootDirectory] as `null`, which will use
-  /// `getApplicationDocumentsDirectory()`. Alternativley, pass a custom
+  /// `getApplicationDocumentsDirectory()`. Alternatively, pass a custom
   /// directory - it is recommended to not use a cache directory, as the OS can
   /// clear these without notice at any time.
   ///
@@ -88,6 +87,7 @@ class FlutterMapTileCaching {
                 : Directory(rootDirectory)) >>
             'fmtc')
         .create(recursive: true);
+
     settings ??= FMTCSettings();
 
     if (!disableInitialisationSafety) {

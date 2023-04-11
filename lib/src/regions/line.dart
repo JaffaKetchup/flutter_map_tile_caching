@@ -33,9 +33,9 @@ class LineRegion extends BaseRegion {
   /// Use the optional `overlap` argument to set the behaviour of the joints
   /// between segments:
   ///
-  /// * -1: joined by closest corners (largest gap),
+  /// * -1: joined by closest corners (largest gap)
   /// * 0 (default): joined by centers (equal gap and overlap)
-  /// * 1 (as downloaded): joined by further corners (most overlap)
+  /// * 1 (as downloaded): joined by further corners (largest overlap)
   List<List<LatLng>> toOutlines([int overlap = 0]) {
     if (overlap < -1 || overlap > 1) {
       throw ArgumentError('`overlap` must be between -1 and 1 inclusive');
