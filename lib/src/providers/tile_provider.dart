@@ -64,6 +64,7 @@ class FMTCTileProvider extends TileProvider {
         provider: this,
         options: options,
         coords: coords,
+        directory: FMTC.instance.rootDirectory.directory.absolute.path,
       );
 
   /// Check whether a specified tile is cached in the current store synchronously

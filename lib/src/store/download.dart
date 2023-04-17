@@ -135,6 +135,7 @@ class DownloadManagement {
       provider: tileProvider,
       bufferMode: bufferMode,
       bufferLimit: bufferLimit,
+      directory: FMTC.instance.rootDirectory.directory.absolute.path,
       streamController: _tileProgressStreamController!,
     );
 

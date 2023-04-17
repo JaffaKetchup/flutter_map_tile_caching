@@ -29,6 +29,9 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// The coordinates of the tile to be fetched
   final TileCoordinates coords;
 
+  /// Configured root directory
+  final String directory;
+
   /// The database to write tiles to
   final Isar db;
 
@@ -41,6 +44,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required this.provider,
     required this.options,
     required this.coords,
+    required this.directory,
   }) : db = FMTCRegistry.instance(provider.storeDirectory.storeName);
 
   @override
@@ -193,6 +197,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
               _removeOldestTile,
               [
                 provider.storeDirectory.storeName,
+                directory,
                 provider.settings.maxStoreLength,
               ],
             ),
@@ -227,10 +232,11 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       ]);
 }
 
-Future<void> _removeOldestTile(List<Object> args) async {
+Future<void> _removeOldestTile(List<dynamic> args) async {
   final db = Isar.openSync(
     [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
-    name: DatabaseTools.hash(args[0] as String).toString(),
+    name: DatabaseTools.hash(args[0]).toString(),
+    directory: args[1],
     inspector: false,
   );
 
@@ -240,9 +246,7 @@ Future<void> _removeOldestTile(List<Object> args) async {
           .where()
           .anyLastModified()
           .limit(
-            (db.tiles.countSync() - (args[1] as int))
-                .clamp(0, double.maxFinite)
-                .toInt(),
+            (db.tiles.countSync() - args[2]).clamp(0, double.maxFinite).toInt(),
           )
           .findAllSync()
           .map((t) => t.id)

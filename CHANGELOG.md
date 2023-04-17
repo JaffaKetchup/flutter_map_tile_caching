@@ -21,13 +21,15 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
   * Starting a download is now much quicker and closer to constant time, as tile coordinates don't need to be pre-generated
   * Cancelling a download no longer causes many `QueueCancelledException`s to be thrown, which could crash the app
   * Removed reliance on 'queue' dependency in order to squeeze as much speed as possible out of the new implementation
-* Other stability improvements
+* Other improvements
   * `initialise` now automatically renames databases if their filename ID doesn't match their name hash
   * `initialise` can now throw a more useful `FMTCInitialisationException` with improved clarity
-  * Methods that require a valid store descriptor object to be present can now throw `FMTCDamagedStoreException`
-  * `FMTCImageProvider` now evicts failed images from Flutter's `ImageCache` to prevent potential future errors
+  * Methods that require a valid store descriptor object to be present now throw `FMTCDamagedStoreException` if it is not present
+* Other bug fixes
+  * `FMTCImageProvider`'s oldest tile deleter & bulk downloading now respects custom root directories
+  * `FMTCImageProvider` now evicts failed images from Flutter's `ImageCache` to prevent errors
 * Added support for custom `HttpClient`s/`BaseClient`s
-* Added support for 'flutter_map' v4
+* Added support for Isar v3.1 (bug fixes & stability improvements)
 
 ## [7.2.0] - 2023/03/03
 
