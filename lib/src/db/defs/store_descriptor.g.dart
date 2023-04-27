@@ -44,7 +44,7 @@ const DbStoreDescriptorSchema = CollectionSchema(
   getId: _dbStoreDescriptorGetId,
   getLinks: _dbStoreDescriptorGetLinks,
   attach: _dbStoreDescriptorAttach,
-  version: '3.1.0',
+  version: '3.1.0+1',
 );
 
 int _dbStoreDescriptorEstimateSize(

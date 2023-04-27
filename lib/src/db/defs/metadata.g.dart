@@ -39,7 +39,7 @@ const DbMetadataSchema = CollectionSchema(
   getId: _dbMetadataGetId,
   getLinks: _dbMetadataGetLinks,
   attach: _dbMetadataAttach,
-  version: '3.1.0',
+  version: '3.1.0+1',
 );
 
 int _dbMetadataEstimateSize(

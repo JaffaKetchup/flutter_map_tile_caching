@@ -67,7 +67,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
                         ),
                       ),
                     )
-                  : Text('~${provider.regionTiles} tiles'),
+                  : Text('${provider.regionTiles} tiles'),
             ),
           ),
         ),
