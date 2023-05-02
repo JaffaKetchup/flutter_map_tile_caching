@@ -90,7 +90,7 @@ class BulkTileWriter {
         ),
       );
     }
-    await instance.events.cancel();
+    await instance.events.cancel(immediate: true);
 
     _instance = null;
   }

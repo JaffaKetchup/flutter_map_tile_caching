@@ -3,6 +3,7 @@
 
 import 'dart:isolate';
 
+import 'package:async/async.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/flutter_map.dart' hide Polygon;

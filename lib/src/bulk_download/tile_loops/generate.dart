@@ -4,13 +4,17 @@
 part of 'shared.dart';
 
 class TilesGenerator {
-  static void rectangleTiles(Map<String, dynamic> input) {
-    final SendPort port = input['sendPort'];
+  static Future<void> rectangleTiles(Map<String, dynamic> input) async {
+    final SendPort sendPort = input['sendPort'];
     final LatLngBounds bounds = input['rectOutline'];
     final int minZoom = input['minZoom'];
     final int maxZoom = input['maxZoom'];
     final Crs crs = input['crs'];
     final CustomPoint<num> tileSize = input['tileSize'];
+
+    final recievePort = ReceivePort();
+    sendPort.send(recievePort.sendPort);
+    final requestQueue = StreamQueue(recievePort);
 
     for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
       final CustomPoint<num> nwCustomPoint = crs
@@ -25,7 +29,8 @@ class TilesGenerator {
 
       for (num x = nwCustomPoint.x; x <= seCustomPoint.x; x++) {
         for (num y = nwCustomPoint.y; y <= seCustomPoint.y; y++) {
-          port.send([x.toInt(), y.toInt(), zoomLvl]);
+          await requestQueue.next;
+          sendPort.send([x.toInt(), y.toInt(), zoomLvl]);
         }
       }
     }
@@ -33,7 +38,7 @@ class TilesGenerator {
     Isolate.exit();
   }
 
-  static void circleTiles(Map<String, dynamic> input) {
+  static Future<void> circleTiles(Map<String, dynamic> input) async {
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given a `LatLng` for every x degrees on a circle's circumference, convert it into a tile number
     // 2. Using a `Map` per zoom level, record all the X values in it without duplicates
@@ -41,12 +46,16 @@ class TilesGenerator {
     // 4. Loop over these XY values and add them to the list
     // Theoretically, this could have been done using the same method as `lineTiles`, but `lineTiles` was built after this algorithm and this makes more sense for a circle
 
-    final SendPort port = input['sendPort'];
+    final SendPort sendPort = input['sendPort'];
     final List<LatLng> circleOutline = input['circleOutline'];
     final int minZoom = input['minZoom'];
     final int maxZoom = input['maxZoom'];
     final Crs crs = input['crs'];
     final CustomPoint<num> tileSize = input['tileSize'];
+
+    final recievePort = ReceivePort();
+    sendPort.send(recievePort.sendPort);
+    final requestQueue = StreamQueue(recievePort);
 
     // Format: Map<z, Map<x, List<y>>>
     final Map<int, Map<int, List<int>>> outlineTileNums = {};
@@ -79,7 +88,8 @@ class TilesGenerator {
         for (int y = outlineTileNums[zoomLvl]![x]![0];
             y <= outlineTileNums[zoomLvl]![x]![1];
             y++) {
-          port.send([x, y, zoomLvl]);
+          await requestQueue.next;
+          sendPort.send([x, y, zoomLvl]);
         }
       }
     }
@@ -87,7 +97,7 @@ class TilesGenerator {
     Isolate.exit();
   }
 
-  static void lineTiles(Map<String, dynamic> input) {
+  static Future<void> lineTiles(Map<String, dynamic> input) async {
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given 4 `LatLng` points, create a 'straight' rectangle around the 'rotated' rectangle, that can be defined with just 2 `LatLng` points
     // 2. Convert the straight rectangle into tile numbers, and loop through the same as `rectangleTiles`
@@ -135,14 +145,18 @@ class TilesGenerator {
       return true;
     }
 
-    final SendPort port = input['sendPort'];
+    final SendPort sendPort = input['sendPort'];
     final List<List<LatLng>> rects = input['lineOutline'];
     final int minZoom = input['minZoom'];
     final int maxZoom = input['maxZoom'];
     final Crs crs = input['crs'];
     final CustomPoint<num> tileSize = input['tileSize'];
 
-    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
+    final recievePort = ReceivePort();
+    sendPort.send(recievePort.sendPort);
+    final requestQueue = StreamQueue(recievePort);
+
+    for (double zoomLvl = minZoom.toDouble(); zoomLvl <= maxZoom; zoomLvl++) {
       for (final List<LatLng> rect in rects) {
         final LatLng rrBottomLeft = rect[0];
         final LatLng rrBottomRight = rect[1];
@@ -162,38 +176,28 @@ class TilesGenerator {
           rrBottomRight.longitude,
         ];
 
-        final CustomPoint<num> rrNorthWest = crs
-            .latLngToPoint(rrTopLeft, zoomLvl.toDouble())
-            .unscaleBy(tileSize)
-            .floor();
-        final CustomPoint<num> rrNorthEast = crs
-                .latLngToPoint(rrTopRight, zoomLvl.toDouble())
-                .unscaleBy(tileSize)
-                .ceil() -
-            const CustomPoint(1, 0);
+        final CustomPoint<num> rrNorthWest =
+            crs.latLngToPoint(rrTopLeft, zoomLvl).unscaleBy(tileSize).floor();
+        final CustomPoint<num> rrNorthEast =
+            crs.latLngToPoint(rrTopRight, zoomLvl).unscaleBy(tileSize).ceil() -
+                const CustomPoint(1, 0);
         final CustomPoint<num> rrSouthWest = crs
-                .latLngToPoint(rrBottomLeft, zoomLvl.toDouble())
+                .latLngToPoint(rrBottomLeft, zoomLvl)
                 .unscaleBy(tileSize)
                 .ceil() -
             const CustomPoint(0, 1);
         final CustomPoint<num> rrSouthEast = crs
-                .latLngToPoint(rrBottomRight, zoomLvl.toDouble())
+                .latLngToPoint(rrBottomRight, zoomLvl)
                 .unscaleBy(tileSize)
                 .ceil() -
             const CustomPoint(1, 1);
 
         final CustomPoint<num> srNorthWest = crs
-            .latLngToPoint(
-              LatLng(rrAllLat.max, rrAllLon.min),
-              zoomLvl.toDouble(),
-            )
+            .latLngToPoint(LatLng(rrAllLat.max, rrAllLon.min), zoomLvl)
             .unscaleBy(tileSize)
             .floor();
         final CustomPoint<num> srSouthEast = crs
-                .latLngToPoint(
-                  LatLng(rrAllLat.min, rrAllLon.max),
-                  zoomLvl.toDouble(),
-                )
+                .latLngToPoint(LatLng(rrAllLat.min, rrAllLon.max), zoomLvl)
                 .unscaleBy(tileSize)
                 .ceil() -
             const CustomPoint(1, 1);
@@ -215,7 +219,8 @@ class TilesGenerator {
                 CustomPoint(x, y + 1),
               ),
             )) {
-              port.send([x.toInt(), y.toInt(), zoomLvl]);
+              await requestQueue.next;
+              sendPort.send([x.toInt(), y.toInt(), zoomLvl]);
               foundOverlappingTile = true;
             } else if (foundOverlappingTile) {
               break;

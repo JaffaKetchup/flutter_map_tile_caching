@@ -35,15 +35,14 @@ Future<Stream<TileProgress>> bulkDownloader({
   final tiles = FMTCRegistry.instance(provider.storeDirectory.storeName);
 
   final recievePort = ReceivePort();
-  final sendPort = recievePort.sendPort;
   final tileIsolate = await Isolate.spawn(
     region.type == RegionType.rectangle
         ? TilesGenerator.rectangleTiles
         : region.type == RegionType.circle
             ? TilesGenerator.circleTiles
             : TilesGenerator.lineTiles,
-    {'sendPort': sendPort, ...generateTileLoopsInput(region)},
-    onExit: sendPort,
+    {'sendPort': recievePort.sendPort, ...generateTileLoopsInput(region)},
+    onExit: recievePort.sendPort,
   );
   final tileQueue = StreamQueue(
     recievePort.skip(region.start).take(
@@ -52,23 +51,25 @@ Future<Stream<TileProgress>> bulkDownloader({
               : (region.end! - region.start),
         ),
   );
+  final requestTilePort = (await tileQueue.next) as SendPort;
 
-  final threadStates = List.generate(
+  final threadCompleters = List.generate(
     region.parallelThreads + 1,
     (_) => Completer<void>(),
     growable: false,
   );
 
-  for (int thread = 0; thread <= region.parallelThreads; thread++) {
+  for (final threadCompleter in threadCompleters) {
     unawaited(() async {
       while (true) {
-        final List<int>? value;
+        requestTilePort.send(null);
 
+        final List<int>? value;
         try {
           value = await tileQueue.next;
           // ignore: avoid_catching_errors
         } on StateError {
-          threadStates[thread].complete();
+          threadCompleter.complete();
           break;
         }
 
@@ -88,8 +89,8 @@ Future<Stream<TileProgress>> bulkDownloader({
         if (value == null) {
           await tileQueue.cancel();
 
-          threadStates[thread].complete();
-          await Future.wait(threadStates.map((e) => e.future));
+          threadCompleter.complete();
+          await Future.wait(threadCompleters.map((e) => e.future));
 
           recievePort.close();
 
@@ -126,7 +127,7 @@ Future<Stream<TileProgress>> bulkDownloader({
 
           if (response.statusCode != 200) {
             throw HttpException(
-              response.reasonPhrase ?? response.statusCode.toString(),
+              '[${response.statusCode}] ${response.reasonPhrase ?? 'Unknown Reason'}',
               uri: uri,
             );
           }
@@ -135,9 +136,12 @@ Future<Stream<TileProgress>> bulkDownloader({
           await for (final List<int> evt in response.stream) {
             bytes.addAll(evt);
             received += evt.length;
-            progressManagement.progress[url.hashCode] = TimestampProgress(
-              DateTime.now(),
-              received / (response.contentLength ?? 0),
+            progressManagement.registerEvent(
+              url,
+              TimestampProgress(
+                DateTime.now(),
+                received / (response.contentLength ?? 0),
+              ),
             );
           }
 

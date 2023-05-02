@@ -128,7 +128,7 @@ class DownloadManagement {
 
     // Start progress management
     final DateTime startTime = DateTime.now();
-    _progressManagement = InternalProgressTimingManagement()..startTracking();
+    _progressManagement = InternalProgressTimingManagement()..start();
 
     // Start writing isolates
     await BulkTileWriter.start(
@@ -154,7 +154,11 @@ class DownloadManagement {
     // Listen to download progress, and report results
     await for (final TileProgress evt in downloadStream) {
       if (evt.failedUrl == null) {
-        if (!evt.wasCancelOperation) bufferedTiles++;
+        if (!evt.wasCancelOperation) {
+          bufferedTiles++;
+        } else {
+          bufferedTiles = 0;
+        }
         bufferedSize += evt.sizeBytes;
         if (evt.bulkTileWriterResponse != null) {
           persistedTiles = evt.bulkTileWriterResponse![0];
@@ -164,8 +168,8 @@ class DownloadManagement {
         failedTiles.add(evt.failedUrl!);
       }
 
-      seaTiles += evt.wasSeaTile ? 1 : 0;
-      existingTiles += evt.wasExistingTile ? 1 : 0;
+      if (evt.wasSeaTile) seaTiles += 1;
+      if (evt.wasExistingTile) existingTiles += 1;
 
       final DownloadProgress prog = DownloadProgress._(
         downloadID: _recoveryId!,
@@ -187,7 +191,7 @@ class DownloadManagement {
       if (prog.percentageProgress >= 100) break;
     }
 
-    await _internalCancel();
+    _internalCancel();
   }
 
   /// Check approximately how many downloadable tiles are within a specified
@@ -220,14 +224,14 @@ class DownloadManagement {
     _cancelRequestSignal?.complete();
     await _cancelCompleteSignal?.future;
 
-    await _internalCancel();
+    _internalCancel();
   }
 
-  Future<void> _internalCancel() async {
-    await _progressManagement?.stopTracking();
+  void _internalCancel() {
+    _progressManagement?.stop();
 
     if (_recoveryId != null) {
-      await FMTC.instance.rootDirectory.recovery.cancel(_recoveryId!);
+      FMTC.instance.rootDirectory.recovery.cancel(_recoveryId!);
     }
     _httpClient?.close();
 
