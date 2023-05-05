@@ -8,11 +8,26 @@ body:
       value: "
         # Feature Request
 
-        Thanks for taking the time to let us know what you want to see! It helps us to improve the experience for you and other developers that may be facing a similar problem. Unfortunately, response times for feature requests are longer than bug reports, as they are lower priority. If you want this functionality implemented quickly, please make a Pull Request to go alongside this feature request.
+        Thanks for taking the time to let us know what you want to see!  
+        Unfortunately, response times for feature requests are longer than bug reports, as they are lower priority. If you want this functionality implemented quickly, please make a Pull Request to go alongside this feature request.
+        
+        > If you are using FMTC in a proprietary project, please read and understand [this important legal notice](https://fmtc.jaffaketchup.dev/#proprietary-licensing) on the topic of licensing. Please get in touch if you would like more information!
+        
+        
+        ---
+        
+        
+        Before requesting a feature, please:
+
+        * Check if there is already an open or closed issue that is similar to yours
+        
+        * Ensure that you're using the latest version of FMTC and any modules
+        
+        * Ensure that you've read the documentation thoroughly
+        
+        
+        ---
         "
-  - type: markdown
-    attributes:
-      value: ---
   - type: textarea
     id: description
     attributes:
@@ -25,30 +40,14 @@ body:
     attributes:
       label: What other alternatives are available?
       description: Have you used any workarounds, for example?
+  - type: markdown
+    attributes:
+      value: ---
   - type: textarea
     id: additional-info
     attributes:
       label: Can you provide any other information?
-      description: |
-        Please attach any other logs, screenshots, or screen recordings.
-        Is there anything else you'd like to say?
-  - type: markdown
-    attributes:
-      value: ---
-  - type: dropdown
-    id: platform
-    attributes:
-      label: Platforms Affected
-      description: What platforms does this issue affect?
-      multiple: true
-      options:
-        - Android
-        - iOS
-        - Windows
-        - MacOS
-        - Linux
-    validations:
-      required: true
+      description: Is there anything else you'd like to say?
   - type: dropdown
     id: severity
     attributes:
@@ -60,20 +59,3 @@ body:
         - "Obtrusive: No workarounds are available, and this is essential to me"
     validations:
       required: true
-  - type: markdown
-    attributes:
-      value: ---
-  - type: checkboxes
-    id: terms
-    attributes:
-      label: Requirements
-      description: These are in place to prevent spam. Please read and understand them fully before posting.
-      options:
-        - label: I agree to follow this project's [Code of Conduct](https://github.com/jaffaketchup/flutter_map_tile_caching/blob/main/CODE_OF_CONDUCT.md)
-          required: true
-        - label: I have checked for similar feature requests which may be duplicates
-          required: true
-        - label: I am using the [latest stable version](https://pub.dev/packages/flutter_map_tile_caching) of this package
-          required: true
-        - label: If I am using FMTC in a proprietary project, I have read and understood [this important legal notice](https://fmtc.jaffaketchup.dev/#proprietary-licensing)
-          required: true

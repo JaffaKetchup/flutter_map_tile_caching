@@ -4,9 +4,11 @@
 import 'package:isar/isar.dart';
 import 'package:meta/meta.dart';
 
+import '../../flutter_map_tile_caching.dart';
+import 'defs/store_descriptor.dart';
+
 @internal
 class DatabaseTools {
-  /// Efficiently converts a string into an ID for a [Collection]
   static int hash(String string) {
     final str = string.trim();
 
@@ -23,5 +25,29 @@ class DatabaseTools {
     }
 
     return hash;
+  }
+}
+
+extension IsarExts on Isar {
+  Future<DbStoreDescriptor> get descriptor async {
+    final descriptor = await storeDescriptor.get(0);
+    if (descriptor == null) {
+      throw FMTCDamagedStoreException(
+        'Failed to perform an operation on a store due to the core descriptor being missing.',
+        FMTCDamagedStoreExceptionType.missingStoreDescriptor,
+      );
+    }
+    return descriptor;
+  }
+
+  DbStoreDescriptor get descriptorSync {
+    final descriptor = storeDescriptor.getSync(0);
+    if (descriptor == null) {
+      throw FMTCDamagedStoreException(
+        'Failed to perform an operation on a store due to the core descriptor being missing.',
+        FMTCDamagedStoreExceptionType.missingStoreDescriptor,
+      );
+    }
+    return descriptor;
   }
 }

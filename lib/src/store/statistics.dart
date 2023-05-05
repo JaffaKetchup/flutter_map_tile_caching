@@ -1,6 +1,10 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
+// Not sure why the hell this triggers! It triggers on a documentation comment,
+// and doesn't go away no matter what I do.
+// ignore_for_file: use_late_for_private_fields_and_variables
+
 part of flutter_map_tile_caching;
 
 /// Provides statistics about a [StoreDirectory]
@@ -31,24 +35,22 @@ class StoreStats extends _StoreDb {
   ///
   /// Prefer [cacheHitsAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  int get cacheHits => _db.storeDescriptor.getSync(0)!.hits;
+  int get cacheHits => _db.descriptorSync.hits;
 
   /// Retrieve the number of tiles that were successfully retrieved from the
   /// store during browsing asynchronously
-  Future<int> get cacheHitsAsync async =>
-      (await _db.storeDescriptor.get(0))!.hits;
+  Future<int> get cacheHitsAsync async => (await _db.descriptor).hits;
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the
   /// store during browsing synchronously
   ///
   /// Prefer [cacheMissesAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  int get cacheMisses => _db.storeDescriptor.getSync(0)!.misses;
+  int get cacheMisses => _db.descriptorSync.misses;
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the
   /// store during browsing asynchronously
-  Future<int> get cacheMissesAsync async =>
-      (await _db.storeDescriptor.get(0))!.misses;
+  Future<int> get cacheMissesAsync async => (await _db.descriptor).misses;
 
   /// Watch for changes in the current store
   ///

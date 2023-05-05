@@ -38,12 +38,13 @@ class BulkTileWriter {
     required FMTCTileProvider provider,
     required DownloadBufferMode bufferMode,
     required int? bufferLimit,
-    required StreamController<TileProgress> downloadStream,
+    required String directory,
+    required StreamController<TileProgress> streamController,
   }) async {
     final btw = BulkTileWriter._()
       .._recievePort = ReceivePort()
       .._bufferMode = bufferMode
-      .._downloadStream = downloadStream;
+      .._downloadStream = streamController;
 
     await Isolate.spawn(
       bufferMode == DownloadBufferMode.disabled
@@ -57,9 +58,13 @@ class BulkTileWriter {
       ..sendPort = await btw.events.next
       ..sendPort.send(
         bufferMode == DownloadBufferMode.disabled
-            ? provider.storeDirectory.storeName
+            ? [
+                provider.storeDirectory.storeName,
+                directory,
+              ]
             : [
                 provider.storeDirectory.storeName,
+                directory,
                 bufferMode,
                 bufferLimit ??
                     (bufferMode == DownloadBufferMode.tiles ? 500 : 2000000),
@@ -134,11 +139,12 @@ Future<void> _bufferWorker(SendPort sendPort) async {
   final db = Isar.openSync(
     [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
     name: DatabaseTools.hash(setupInfo[0]).toString(),
+    directory: setupInfo[1],
     inspector: false,
   );
 
-  final bufferMode = setupInfo[1] as DownloadBufferMode;
-  final bufferLimit = setupInfo[2] as int;
+  final bufferMode = setupInfo[2] as DownloadBufferMode;
+  final bufferLimit = setupInfo[3] as int;
 
   final tileBuffer = <DbTile>{};
 
@@ -208,9 +214,11 @@ Future<void> _instantWorker(SendPort sendPort) async {
   sendPort.send(rp.sendPort);
   final recievePort = rp.asBroadcastStream();
 
+  final setupInfo = await recievePort.first as List<dynamic>;
   final db = Isar.openSync(
     [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
-    name: DatabaseTools.hash(await recievePort.first).toString(),
+    name: DatabaseTools.hash(setupInfo[0]).toString(),
+    directory: setupInfo[1],
     inspector: false,
   );
 

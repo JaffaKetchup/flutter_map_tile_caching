@@ -26,12 +26,11 @@ class FlutterMapTileCaching {
   /// See [FMTCSettings]' properties for more information
   final FMTCSettings settings;
 
-  final bool _debugMode;
-
   /// Whether FMTC should perform extra reporting and console logging
   ///
   /// Depends on [_debugMode] (set via [initialise]) and [kDebugMode].
   bool get debugMode => _debugMode && kDebugMode;
+  final bool _debugMode;
 
   /// Internal constructor, to be used by [initialise]
   const FlutterMapTileCaching._({
@@ -44,7 +43,7 @@ class FlutterMapTileCaching {
   /// and configuring the [FlutterMapTileCaching] singleton
   ///
   /// Prefer to leave [rootDirectory] as `null`, which will use
-  /// `getApplicationDocumentsDirectory()`. Alternativley, pass a custom
+  /// `getApplicationDocumentsDirectory()`. Alternatively, pass a custom
   /// directory - it is recommended to not use a cache directory, as the OS can
   /// clear these without notice at any time.
   ///
@@ -88,7 +87,8 @@ class FlutterMapTileCaching {
                 : Directory(rootDirectory)) >>
             'fmtc')
         .create(recursive: true);
-    final fmtcSettings = settings ?? FMTCSettings();
+
+    settings ??= FMTCSettings();
 
     if (!disableInitialisationSafety) {
       final initialisationSafetyFile =
@@ -101,8 +101,8 @@ class FlutterMapTileCaching {
 
       await FMTCRegistry.initialise(
         directory: directory,
-        databaseMaxSize: fmtcSettings.databaseMaxSize,
-        databaseCompactCondition: fmtcSettings.databaseCompactCondition,
+        databaseMaxSize: settings.databaseMaxSize,
+        databaseCompactCondition: settings.databaseCompactCondition,
         errorHandler: errorHandler,
         initialisationSafetyWriteSink: writeSink,
         safeModeSuccessfulIDs:
@@ -115,8 +115,8 @@ class FlutterMapTileCaching {
     } else {
       await FMTCRegistry.initialise(
         directory: directory,
-        databaseMaxSize: fmtcSettings.databaseMaxSize,
-        databaseCompactCondition: fmtcSettings.databaseCompactCondition,
+        databaseMaxSize: settings.databaseMaxSize,
+        databaseCompactCondition: settings.databaseCompactCondition,
         errorHandler: errorHandler,
         initialisationSafetyWriteSink: null,
         safeModeSuccessfulIDs: null,
@@ -126,7 +126,7 @@ class FlutterMapTileCaching {
 
     return _instance = FMTC._(
       rootDirectory: RootDirectory._(directory),
-      settings: fmtcSettings,
+      settings: settings,
       debugMode: debugMode,
     );
   }
@@ -164,39 +164,6 @@ class FlutterMapTileCaching {
   /// Note that that method does not automatically create the store.
   StoreDirectory operator [](String storeName) => StoreDirectory._(
         storeName,
-        autoCreate: false,
+        autoCreate: true,
       );
-}
-
-/// An exception raised when FMTC failed to initialise
-///
-/// May indicate a previously fatal crash due to a corrupted database. If this is
-/// the case, [source] will be `null`, [wasFatal] will be `true`, and the
-/// corrupted database will be deleted.
-class FMTCInitialisationException implements Exception {
-  /// The original error object
-  ///
-  /// If `null` indicates a previously fatal crash due to a corrupted database. If
-  /// this is the case, [wasFatal] will be `true`, and the corrupted database will
-  /// be deleted.
-  final Object? source;
-
-  /// Indicates whether there was a previously fatal crash due to a corrupted
-  /// database. If this is the case, [source] will be `null`, and the corrupted
-  /// database will be deleted.
-  final bool wasFatal;
-
-  /// Create an exception raised when FMTC failed to initialise
-  ///
-  /// May indicate a previously fatal crash. If this is the case, [source] will
-  /// be `null`, [wasFatal] will be `true`, and the corrupted database will be
-  /// deleted.
-  @internal
-  FMTCInitialisationException({
-    required this.source,
-  }) : wasFatal = source == null;
-
-  /// Converts the [source] into a string
-  @override
-  String toString() => source.toString();
 }

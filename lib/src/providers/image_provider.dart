@@ -7,6 +7,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:http/http.dart';
 import 'package:isar/isar.dart';
 import 'package:queue/queue.dart';
 
@@ -26,9 +27,13 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   final TileLayer options;
 
   /// The coordinates of the tile to be fetched
-  final Coords<num> coords;
+  final TileCoordinates coords;
 
-  final Isar _db;
+  /// Configured root directory
+  final String directory;
+
+  /// The database to write tiles to
+  final Isar db;
 
   static final _removeOldestQueue = Queue(timeout: const Duration(seconds: 1));
   static final _cacheHitsQueue = Queue();
@@ -39,7 +44,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required this.provider,
     required this.options,
     required this.coords,
-  }) : _db = FMTCRegistry.instance(provider.storeDirectory.storeName);
+    required this.directory,
+  }) : db = FMTCRegistry.instance(provider.storeDirectory.storeName);
 
   @override
   ImageStreamCompleter loadBuffer(
@@ -55,9 +61,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       chunkEvents: chunkEvents.stream,
       scale: 1,
       debugLabel: coords.toString(),
-      informationCollector: () => <DiagnosticsNode>[
-        DiagnosticsProperty<Coords>('Coordinates', coords),
-      ],
+      informationCollector: () => [DiagnosticsProperty('Coordinates', coords)],
     );
   }
 
@@ -70,20 +74,19 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       required bool hit,
     }) =>
         (hit ? _cacheHitsQueue : _cacheMissesQueue).add(() async {
-          if (_db.isOpen) {
-            await _db.writeTxn(() async {
-              final store =
-                  _db.isOpen ? (await _db.storeDescriptor.get(0)) : null;
+          if (db.isOpen) {
+            await db.writeTxn(() async {
+              final store = db.isOpen ? await db.descriptor : null;
               if (store == null) return;
               if (hit) store.hits += 1;
               if (!hit) store.misses += 1;
-              await _db.storeDescriptor.put(store);
+              await db.storeDescriptor.put(store);
             });
           }
         });
 
     Future<Codec> finish({
-      Uint8List? bytes,
+      List<int>? bytes,
       String? throwError,
       FMTCBrowsingErrorType? throwErrorType,
       bool? cacheHit,
@@ -94,16 +97,17 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       if (cacheHit != null) unawaited(cacheHitMiss(hit: cacheHit));
 
       if (throwError != null) {
-        try {
-          throw FMTCBrowsingError(throwError, throwErrorType!);
-        } on FMTCBrowsingError catch (e) {
-          provider.settings.errorHandler?.call(e);
-          rethrow;
-        }
+        await evict();
+
+        final error = FMTCBrowsingError(throwError, throwErrorType!);
+        provider.settings.errorHandler?.call(error);
+        throw error;
       }
 
       if (bytes != null) {
-        return decode(await ImmutableBuffer.fromUint8List(bytes));
+        return decode(
+          await ImmutableBuffer.fromUint8List(Uint8List.fromList(bytes)),
+        );
       }
 
       throw ArgumentError(
@@ -114,32 +118,19 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     final networkUrl = provider.getTileUrl(coords, options);
     final matcherUrl = provider.settings.obscureQueryParams(networkUrl);
 
-    final existingTile = await _db.tiles.get(DatabaseTools.hash(matcherUrl));
+    final existingTile = await db.tiles.get(DatabaseTools.hash(matcherUrl));
 
-    final bool needsCreating = existingTile == null;
-    final bool needsUpdating = needsCreating
-        ? false
-        : provider.settings.behavior == CacheBehavior.onlineFirst ||
+    final needsCreating = existingTile == null;
+    final needsUpdating = !needsCreating &&
+        (provider.settings.behavior == CacheBehavior.onlineFirst ||
             (provider.settings.cachedValidDuration != Duration.zero &&
                 DateTime.now().millisecondsSinceEpoch -
                         existingTile.lastModified.millisecondsSinceEpoch >
-                    provider.settings.cachedValidDuration.inMilliseconds);
+                    provider.settings.cachedValidDuration.inMilliseconds));
 
-    // DEBUG ONLY
-    /*
-    print('---------');
-    print(networkUrl);
-    print(matcherUrl);
-    print('   Store: ${provider.storeDirectory.storeName}');
-    print('   Existing ID: ${existingTile?.id ?? 'None'}');
-    print('   Needs Updating & Not Creating: $needsUpdating');
-    */
-
-    // Get any existing bytes from the tile, if it exists
-    Uint8List? bytes;
+    List<int>? bytes;
     if (!needsCreating) bytes = Uint8List.fromList(existingTile.bytes);
 
-    // IF network is disabled & the tile does not exist THEN throw an error
     if (provider.settings.behavior == CacheBehavior.cacheOnly &&
         needsCreating) {
       return finish(
@@ -150,18 +141,15 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       );
     }
 
-    // IF network is enabled & (the tile does not exist | needs updating) THEN download the tile | throw an error
     if (needsCreating || needsUpdating) {
-      final HttpClientResponse response;
+      final StreamedResponse response;
 
-      // Try to get a response from a server, throwing an error if not possible & the tile does not exist
       try {
-        final request = await provider.httpClient.getUrl(Uri.parse(networkUrl));
-        provider.headers.forEach(
-          (k, v) => request.headers.add(k, v, preserveHeaderCase: true),
+        response = await provider.httpClient.send(
+          Request('GET', Uri.parse(networkUrl))
+            ..headers.addAll(provider.headers),
         );
-        response = await request.close();
-      } catch (err) {
+      } catch (_) {
         return finish(
           bytes: !needsCreating ? bytes : null,
           throwError: needsCreating
@@ -172,39 +160,36 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         );
       }
 
-      // Check for an OK HTTP status code, throwing an error if not possible & the tile does not exist
       if (response.statusCode != 200) {
         return finish(
           bytes: !needsCreating ? bytes : null,
           throwError: needsCreating
-              ? 'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.'
+              ? 'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code of ${response.statusCode}'
               : null,
           throwErrorType: FMTCBrowsingErrorType.negativeFetchResponse,
           cacheHit: false,
         );
       }
 
-      // Read the bytes from the HTTP request response
-      bytes = await consolidateHttpClientResponseBytes(
-        response,
-        onBytesReceived: (int cumulative, int? total) {
-          chunkEvents.add(
-            ImageChunkEvent(
-              cumulativeBytesLoaded: cumulative,
-              expectedTotalBytes: total,
-            ),
-          );
-        },
-      );
+      int bytesReceivedLength = 0;
+      bytes = [];
+      await for (final byte in response.stream) {
+        bytesReceivedLength += byte.length;
+        bytes.addAll(byte);
+        chunkEvents.add(
+          ImageChunkEvent(
+            cumulativeBytesLoaded: bytesReceivedLength,
+            expectedTotalBytes: response.contentLength,
+          ),
+        );
+      }
 
-      // Cache the tile asynchronously
       unawaited(
-        _db.writeTxn(
-          () => _db.tiles.put(DbTile(url: matcherUrl, bytes: bytes!)),
+        db.writeTxn(
+          () => db.tiles.put(DbTile(url: matcherUrl, bytes: bytes!)),
         ),
       );
 
-      // If an new tile was created over the tile limit, delete the oldest tile
       if (needsCreating && provider.settings.maxStoreLength != 0) {
         unawaited(
           _removeOldestQueue.add(
@@ -212,6 +197,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
               _removeOldestTile,
               [
                 provider.storeDirectory.storeName,
+                directory,
                 provider.settings.maxStoreLength,
               ],
             ),
@@ -222,7 +208,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       return finish(bytes: bytes, cacheHit: false);
     }
 
-    // IF tile exists & does not need updating THEN return the existing tile
     return finish(bytes: bytes, cacheHit: true);
   }
 
@@ -247,10 +232,11 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       ]);
 }
 
-Future<void> _removeOldestTile(List<Object> args) async {
+Future<void> _removeOldestTile(List<dynamic> args) async {
   final db = Isar.openSync(
     [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
-    name: DatabaseTools.hash(args[0] as String).toString(),
+    name: DatabaseTools.hash(args[0]).toString(),
+    directory: args[1],
     inspector: false,
   );
 
@@ -260,9 +246,7 @@ Future<void> _removeOldestTile(List<Object> args) async {
           .where()
           .anyLastModified()
           .limit(
-            (db.tiles.countSync() - (args[1] as int))
-                .clamp(0, double.maxFinite)
-                .toInt(),
+            (db.tiles.countSync() - args[2]).clamp(0, double.maxFinite).toInt(),
           )
           .findAllSync()
           .map((t) => t.id)
@@ -271,60 +255,4 @@ Future<void> _removeOldestTile(List<Object> args) async {
   );
 
   await db.close();
-}
-
-/// An [Exception] indicating that there was an error retrieving tiles to be
-/// displayed on the map
-///
-/// These can usually be safely ignored, as they simply represent a fall
-/// through of all valid/possible cases, but you may wish to handle them
-/// anyway using [FMTCTileProviderSettings.errorHandler].
-///
-/// Always thrown from within [FMTCImageProvider] generated from
-/// [FMTCTileProvider]. The [message] further indicates the reason, and will
-/// depend on the current caching behaviour. The [type] represents the same
-/// message in a way that is easy to parse/handle.
-class FMTCBrowsingError implements Exception {
-  /// Friendly message
-  final String message;
-
-  /// Programmatic error descriptor
-  final FMTCBrowsingErrorType type;
-
-  /// An [Exception] indicating that there was an error retrieving tiles to be
-  /// displayed on the map
-  ///
-  /// These can usually be safely ignored, as they simply represent a fall
-  /// through of all valid/possible cases, but you may wish to handle them
-  /// anyway using [FMTCTileProviderSettings.errorHandler].
-  ///
-  /// Always thrown from within [FMTCImageProvider] generated from
-  /// [FMTCTileProvider]. The [message] further indicates the reason, and will
-  /// depend on the current caching behaviour. The [type] represents the same
-  /// message in a way that is easy to parse/handle.
-  FMTCBrowsingError(this.message, this.type);
-
-  @override
-  String toString() => 'FMTCBrowsingError: $message';
-}
-
-/// Pragmatic error descriptor for a [FMTCBrowsingError.message]
-///
-/// See documentation on that object for more information.
-enum FMTCBrowsingErrorType {
-  /// Paired with friendly message:
-  /// "Failed to load the tile from the cache because it was missing."
-  missingInCacheOnlyMode,
-
-  /// Paired with friendly message:
-  /// "Failed to load the tile from the cache or the network because it was
-  /// missing from the cache and a connection to the server could not be
-  /// established."
-  noConnectionDuringFetch,
-
-  /// Paired with friendly message:
-  /// "Failed to load the tile from the cache or the network because it was
-  /// missing from the cache and the server responded with a HTTP code other than
-  /// 200 OK."
-  negativeFetchResponse,
 }

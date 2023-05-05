@@ -1,10 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'package:meta/meta.dart';
-
-import '../../flutter_map_tile_caching.dart';
-import '../providers/image_provider.dart';
+part of flutter_map_tile_caching;
 
 /// Behaviours dictating how and when browse caching should be carried out
 enum CacheBehavior {
@@ -80,7 +77,6 @@ class FMTCTileProviderSettings {
   }) : obscuredQueryParams = obscuredQueryParams.map((e) => RegExp('$e=[^&]*'));
 
   /// Apply the [obscuredQueryParams] to the input [url]
-  @internal
   String obscureQueryParams(String url) {
     if (!url.contains('?') || obscuredQueryParams.isEmpty) return url;
 

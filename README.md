@@ -25,9 +25,7 @@ Many thanks for any amount you can spare, it means a lot to me!
 
 You can read more about me and what I do on my [GitHub Sponsors](https://github.com/sponsors/JaffaKetchup) page, where you can donate as well.
 
-[![Sponsor Me Via GitHub Sponsors](GitHubSponsorsImage.jpg)](https://github.com/sponsors/JaffaKetchup)
-
-Alternatively, if you prefer not to use GitHub Sponsors, please feel free to use my [Ko-fi](https://ko-fi.com/jaffaketchup). Note that the PayPal backend will take a small percentage amount of donations made through this method.
+[![Sponsor Me Via GitHub Sponsors](https://github.com/JaffaKetchup/flutter_map_tile_caching/blob/main/GitHubSponsorsImage.jpg)](https://github.com/sponsors/JaffaKetchup)
 
 ## (Proprietary) Licensing
 
@@ -43,4 +41,4 @@ However, I am willing to sell alternative (proprietary) licenses on a case-by-ca
 
 I learnt (and am still learning) to code with free, open-source software due to my age and lack of money, and for that reason, I believe in promoting open-source wherever possible to give equal opportunities to everybody, no matter their age or financial position. I'm not sure it's fair for commercial proprietary applications to use software made by people for free out of generosity. On the other hand, I am also trying to make a small amount of money from my projects, by donations or by selling licenses. And I recognise that commercial businesses may want to use my projects for their own proprietary applications.
 
-Therefore, if you would like a license to use this software within a proprietary, I am willing to sell a (preferably yearly or usage based) license for a reasonable price. If this seems like what you want/need, please do not hesitate to get in touch via [fmtc@jaffaketchup.com](mailto:fmtc@jaffaketchup.com).
+Therefore, if you would like a license to use this software within a proprietary, I am willing to sell a (preferably yearly or usage based) license for a reasonable price. If this seems like what you want/need, please do not hesitate to get in touch via [fmtc@jaffaketchup.dev](mailto:fmtc@jaffaketchup.dev).

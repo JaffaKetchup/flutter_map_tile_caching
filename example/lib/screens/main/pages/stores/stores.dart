@@ -48,21 +48,25 @@ class _StoresPageState extends State<StoresPage> {
                 Expanded(
                   child: FutureBuilder<List<StoreDirectory>>(
                     future: _stores,
-                    builder: (context, snapshot) => snapshot.hasData
-                        ? snapshot.data!.isEmpty
-                            ? const EmptyIndicator()
-                            : ListView.builder(
-                                itemCount: snapshot.data!.length,
-                                itemBuilder: (context, index) => StoreTile(
-                                  context: context,
-                                  storeName: snapshot.data![index].storeName,
-                                  key:
-                                      ValueKey(snapshot.data![index].storeName),
-                                ),
-                              )
-                        : const LoadingIndicator(
-                            message: 'Loading Stores...',
-                          ),
+                    builder: (context, snapshot) => snapshot.hasError
+                        ? throw snapshot.error! as FMTCDamagedStoreException
+                        : snapshot.hasData
+                            ? snapshot.data!.isEmpty
+                                ? const EmptyIndicator()
+                                : ListView.builder(
+                                    itemCount: snapshot.data!.length,
+                                    itemBuilder: (context, index) => StoreTile(
+                                      context: context,
+                                      storeName:
+                                          snapshot.data![index].storeName,
+                                      key: ValueKey(
+                                        snapshot.data![index].storeName,
+                                      ),
+                                    ),
+                                  )
+                            : const LoadingIndicator(
+                                message: 'Loading Stores...',
+                              ),
                   ),
                 ),
               ],

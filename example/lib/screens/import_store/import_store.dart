@@ -32,12 +32,14 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
                   onTap: () async {
                     importStores.addAll(
                       (await FMTC.instance.rootDirectory.import.withGUI(
-                                collisionHandler: (s) {
+                                collisionHandler: (fn, sn) {
                                   setState(
-                                    () => importStores[s]!
-                                        .needsCollisionResolution = true,
+                                    () => importStores[fn]!.collisionInfo = [
+                                      fn,
+                                      sn,
+                                    ],
                                   );
-                                  return importStores[s]!
+                                  return importStores[fn]!
                                       .collisionResolution
                                       .future;
                                 },
@@ -46,7 +48,7 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
                           .map(
                         (name, status) => MapEntry(
                           name,
-                          _ImportStore(status, needsCollisionResolution: false),
+                          _ImportStore(status, collisionInfo: null),
                         ),
                       ),
                     );
@@ -55,51 +57,64 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
                 );
               }
 
-              final storeName = importStores.keys.toList()[i];
-              return FutureBuilder<bool>(
-                future: importStores[storeName]?.resultStatus,
-                builder: (context, status) => FutureBuilder<bool>(
-                  future: importStores[storeName]?.collisionResolution.future,
-                  builder: (context, conflict) {
-                    final isCollision =
-                        importStores[storeName]!.needsCollisionResolution &&
-                            conflict.data == null;
-                    final isSuccessful = status.data == null || status.data!;
-                    final isCancelled = conflict.data == false;
+              final filename = importStores.keys.toList()[i];
+              return FutureBuilder<ImportResult>(
+                future: importStores[filename]?.result,
+                builder: (context, s1) => FutureBuilder<bool>(
+                  future: importStores[filename]?.collisionResolution.future,
+                  builder: (context, s2) {
+                    final result = s1.data;
+                    final conflict = s2.data;
+
+                    T stateSwitcher<T>({
+                      required T loading,
+                      required T successful,
+                      required T failed,
+                      required T cancelled,
+                      required T collided,
+                    }) {
+                      if (importStores[filename]!.collisionInfo != null &&
+                          conflict == null) return collided;
+                      if (conflict == false) return cancelled;
+                      if (result == null) return loading;
+                      return result.successful ? successful : failed;
+                    }
+
+                    final storeName = result?.storeName;
 
                     return ListTile(
-                      leading: isCollision
-                          ? const Icon(Icons.merge_type, color: Colors.amber)
-                          : isSuccessful
-                              ? const Icon(Icons.done, color: Colors.green)
-                              : isCancelled
-                                  ? const Icon(Icons.cancel)
-                                  : const Icon(Icons.error, color: Colors.red),
-                      title: Text(storeName),
-                      subtitle: isCollision
-                          ? const Text(
-                              'A store with the same name already exists. What would you like to do?',
-                            )
-                          : isSuccessful
-                              ? null
-                              : Text(
-                                  isCancelled
-                                      ? 'Import cancelled due to collision.'
-                                      : 'Import failed. The database file may have been corrupted.',
-                                ),
-                      trailing: isCollision
+                      leading: stateSwitcher(
+                        loading: const CircularProgressIndicator.adaptive(),
+                        successful: const Icon(Icons.done, color: Colors.green),
+                        failed: const Icon(Icons.error, color: Colors.red),
+                        cancelled: const Icon(Icons.cancel),
+                        collided:
+                            const Icon(Icons.merge_type, color: Colors.amber),
+                      ),
+                      title: Text(filename),
+                      subtitle: stateSwitcher(
+                        loading: const Text('Loading...'),
+                        successful: Text('Imported as: $storeName'),
+                        failed: null,
+                        cancelled: null,
+                        collided: Text(
+                          'Collision with ${importStores[filename]!.collisionInfo?[1]}',
+                        ),
+                      ),
+                      trailing: importStores[filename]!.collisionInfo != null &&
+                              conflict == null
                           ? Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  onPressed: () => importStores[storeName]!
+                                  onPressed: () => importStores[filename]!
                                       .collisionResolution
                                       .complete(true),
                                   icon: const Icon(Icons.edit),
                                   tooltip: 'Overwrite store',
                                 ),
                                 IconButton(
-                                  onPressed: () => importStores[storeName]!
+                                  onPressed: () => importStores[filename]!
                                       .collisionResolution
                                       .complete(false),
                                   icon: const Icon(Icons.cancel),
@@ -122,12 +137,12 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
 }
 
 class _ImportStore {
-  final Future<bool> resultStatus;
-  bool needsCollisionResolution;
+  final Future<ImportResult> result;
+  List<String>? collisionInfo;
   Completer<bool> collisionResolution;
 
   _ImportStore(
-    this.resultStatus, {
-    required this.needsCollisionResolution,
+    this.result, {
+    required this.collisionInfo,
   }) : collisionResolution = Completer();
 }
