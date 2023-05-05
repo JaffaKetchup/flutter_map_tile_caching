@@ -10,7 +10,7 @@ class TilesGenerator {
     final int minZoom = input['minZoom'];
     final int maxZoom = input['maxZoom'];
     final Crs crs = input['crs'];
-    final CustomPoint<num> tileSize = input['tileSize'];
+    final CustomPoint<double> tileSize = input['tileSize'];
 
     final recievePort = ReceivePort();
     sendPort.send(recievePort.sendPort);
@@ -51,7 +51,7 @@ class TilesGenerator {
     final int minZoom = input['minZoom'];
     final int maxZoom = input['maxZoom'];
     final Crs crs = input['crs'];
-    final CustomPoint<num> tileSize = input['tileSize'];
+    final CustomPoint<double> tileSize = input['tileSize'];
 
     final recievePort = ReceivePort();
     sendPort.send(recievePort.sendPort);
@@ -150,7 +150,7 @@ class TilesGenerator {
     final int minZoom = input['minZoom'];
     final int maxZoom = input['maxZoom'];
     final Crs crs = input['crs'];
-    final CustomPoint<num> tileSize = input['tileSize'];
+    final CustomPoint<double> tileSize = input['tileSize'];
 
     final recievePort = ReceivePort();
     sendPort.send(recievePort.sendPort);

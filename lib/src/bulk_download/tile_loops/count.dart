@@ -9,7 +9,7 @@ class TilesCounter {
     final int minZoom = input['minZoom'];
     final int maxZoom = input['maxZoom'];
     final Crs crs = input['crs'];
-    final CustomPoint<num> tileSize = input['tileSize'];
+    final CustomPoint<double> tileSize = input['tileSize'];
 
     int numberOfTiles = 0;
     for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
@@ -41,7 +41,7 @@ class TilesCounter {
     final int minZoom = input['minZoom'];
     final int maxZoom = input['maxZoom'];
     final Crs crs = input['crs'];
-    final CustomPoint<num> tileSize = input['tileSize'];
+    final CustomPoint<double> tileSize = input['tileSize'];
 
     // Format: Map<z, Map<x, List<y>>>
     final Map<int, Map<int, List<int>>> outlineTileNums = {};
@@ -134,7 +134,7 @@ class TilesCounter {
     final int minZoom = input['minZoom'];
     final int maxZoom = input['maxZoom'];
     final Crs crs = input['crs'];
-    final CustomPoint<num> tileSize = input['tileSize'];
+    final CustomPoint<double> tileSize = input['tileSize'];
 
     int numberOfTiles = 0;
 
