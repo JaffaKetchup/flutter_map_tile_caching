@@ -1,17 +1,23 @@
 # Contributing
 
-*Please note we have a code of conduct, please follow it in all your interactions with this project.*
+## Reporting A Bug
 
-When contributing to this repository, please first discuss the change you wish to make via any one of the following:
+FMTC is a large, platform-dependent package, and there's only one person running manual tests on it before releases, so there's a decent chance that a bug you've found is actually a bug. Reporting it is always appreciated!
 
-- A feature request issue (preferred)
-- A ping to '@JaffaKetchup' on the flutter_map Discord server plugin channel (preferred for small changes)
-- An email to github@jaffaketchup.dev (last resort)
+Before reporting a bug, please:
 
-You may then submit a pull request, conforming to the following basic rules:
+* Check if there is already an open or closed issue that is similar to yours
+* Ensure that your Flutter environment is correctly installed & set-up
+* Ensure that this package, 'flutter_map', and any modules are correctly installed & set-up
 
-- Try to ensure code is concise, but well documentated and explained within the code
-- Try to keep to a similar coding style as I have used
-- You must not change the linting rules
+## Contributing Code
 
-Thanks for you contribution, it's greatly appriciated!
+Contributors are always welcome, and support is always greatly appreciated! Before opening a Pull Request, however, please open a feature request or bug report to link the PR to.
+
+When submitting code, please:
+
+* Keep code concise and in a similar style to surrounding code
+* Document all public APIs in detail and with correct grammar
+* Use the included linting rules
+* Update the example application to appropriately consume any public API changes
+* Avoid incrementing this package's version number or changelog

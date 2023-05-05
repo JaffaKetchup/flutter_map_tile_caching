@@ -16,18 +16,29 @@ class FMTCTileProvider extends TileProvider {
   /// [FlutterMapTileCaching].
   final FMTCTileProviderSettings settings;
 
-  /// Used internally for browsing-caused tile requests
-  final HttpClient httpClient;
+  /// [BaseClient] (such as a [HttpClient]) used to make all network requests
+  ///
+  /// Defaults to a [HttpPlusClient] which supports HTTP/2 and falls back to a
+  /// standard [IOClient]/[HttpClient] for HTTP/1.1 servers. Timeout is set to
+  /// 5 seconds by default.
+  final BaseClient httpClient;
 
   FMTCTileProvider._({
     required this.storeDirectory,
     required FMTCTileProviderSettings? settings,
     Map<String, String> headers = const {},
-    HttpClient? httpClient,
+    BaseClient? httpClient,
   })  : settings =
             settings ?? FMTC.instance.settings.defaultTileProviderSettings,
-        httpClient = httpClient ?? HttpClient()
-          ..userAgent = null,
+        httpClient = httpClient ??
+            HttpPlusClient(
+              http1Client: IOClient(
+                HttpClient()
+                  ..connectionTimeout = const Duration(seconds: 5)
+                  ..userAgent = null,
+              ),
+              connectionTimeout: const Duration(seconds: 5),
+            ),
         super(
           headers: {
             ...headers,
@@ -37,7 +48,7 @@ class FMTCTileProvider extends TileProvider {
           },
         );
 
-  /// Closes the open [HttpClient] - this will make the provider unable to
+  /// Closes the open [httpClient] - this will make the provider unable to
   /// perform network requests
   @override
   void dispose() {
@@ -48,16 +59,17 @@ class FMTCTileProvider extends TileProvider {
   /// Get a browsed tile as an image, paint it on the map and save it's bytes to
   /// cache for later (dependent on the [CacheBehavior])
   @override
-  ImageProvider getImage(Coords<num> coords, TileLayer options) =>
+  ImageProvider getImage(TileCoordinates coords, TileLayer options) =>
       FMTCImageProvider(
         provider: this,
         options: options,
         coords: coords,
+        directory: FMTC.instance.rootDirectory.directory.absolute.path,
       );
 
   /// Check whether a specified tile is cached in the current store synchronously
   bool checkTileCached({
-    required Coords<num> coords,
+    required TileCoordinates coords,
     required TileLayer options,
   }) =>
       FMTCRegistry.instance(storeDirectory.storeName).tiles.getSync(
@@ -70,7 +82,7 @@ class FMTCTileProvider extends TileProvider {
   /// Check whether a specified tile is cached in the current store
   /// asynchronously
   Future<bool> checkTileCachedAsync({
-    required Coords<num> coords,
+    required TileCoordinates coords,
     required TileLayer options,
   }) async =>
       await FMTCRegistry.instance(storeDirectory.storeName).tiles.get(

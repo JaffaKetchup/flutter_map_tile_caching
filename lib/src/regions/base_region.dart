@@ -69,15 +69,6 @@ abstract class BaseRegion {
 
   /// Generate the list of all the [LatLng]s forming the outline of this region
   ///
-  /// Not supported on line regions: use `toOutlines()` instead.
-  ///
   /// Returns a `List<LatLng>` which can be used anywhere.
   List<LatLng> toOutline();
-
-  /// 'toList' is deprecated and shouldn't be used. Prefer [toOutline]. This
-  /// redirect will be removed in a future update.
-  @Deprecated(
-    "Prefer 'toOutline'. This redirect will be removed in a future update.",
-  )
-  List<LatLng> toList() => toOutline();
 }

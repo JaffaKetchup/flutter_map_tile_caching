@@ -44,31 +44,89 @@ class FMTCRegistry {
     required List<String>? safeModeSuccessfulIDs,
     required bool debugMode,
   }) async {
-    final recoveryFile = directory >>> '.recovery.isar';
-
+    // Set up initialisation safety features
     bool hasLocatedCorruption = false;
 
-    if (safeModeSuccessfulIDs != null && await recoveryFile.exists()) {
-      await recoveryFile.delete();
+    Future<void> deleteDatabaseAndRelatedFiles(String base) async {
+      try {
+        await Future.wait(
+          await directory
+              .list()
+              .where((e) => e is File && p.basename(e.path).startsWith(base))
+              .map((e) async {
+            if (await e.exists()) return e.delete();
+          }).toList(),
+        );
+        // ignore: empty_catches
+      } catch (e) {}
     }
 
+    Future<void> registerSafeDatabase(String base) async {
+      initialisationSafetyWriteSink?.writeln(base);
+      await initialisationSafetyWriteSink?.flush();
+    }
+
+    // Prepare open database method
+    Future<MapEntry<int, Isar>?> openIsar(String id, File file) async {
+      try {
+        return MapEntry(
+          int.parse(id),
+          await Isar.open(
+            [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
+            name: id,
+            directory: directory.absolute.path,
+            maxSizeMiB: databaseMaxSize,
+            compactOnLaunch: databaseCompactCondition,
+            inspector: debugMode,
+          ),
+        );
+      } catch (err) {
+        await deleteDatabaseAndRelatedFiles(p.basename(file.path));
+        errorHandler?.call(
+          FMTCInitialisationException(
+            'Failed to initialise a store because Isar failed to open the database.',
+            FMTCInitialisationExceptionType.isarFailure,
+            originalError: err,
+          ),
+        );
+        return null;
+      }
+    }
+
+    // Open recovery database
+    if (!(safeModeSuccessfulIDs?.contains('.recovery') ?? true) &&
+        await (directory >>> '.recovery.isar').exists()) {
+      await deleteDatabaseAndRelatedFiles('.recovery');
+      hasLocatedCorruption = true;
+      errorHandler?.call(
+        FMTCInitialisationException(
+          'Failed to open a database because it was not listed as safe/stable on last initialisation.',
+          FMTCInitialisationExceptionType.corruptedDatabase,
+          storeName: '.recovery',
+        ),
+      );
+    }
+    final recoveryDatabase = await Isar.open(
+      [
+        DbRecoverableRegionSchema,
+        if (debugMode) ...[
+          DbStoreDescriptorSchema,
+          DbTileSchema,
+          DbMetadataSchema,
+        ],
+      ],
+      name: '.recovery',
+      directory: directory.absolute.path,
+      maxSizeMiB: databaseMaxSize,
+      compactOnLaunch: databaseCompactCondition,
+      inspector: debugMode,
+    );
+    await registerSafeDatabase('.recovery');
+
+    // Open store databases
     return instance = FMTCRegistry._(
       directory: directory,
-      recoveryDatabase: await Isar.open(
-        [
-          DbRecoverableRegionSchema,
-          if (debugMode) ...[
-            DbStoreDescriptorSchema,
-            DbTileSchema,
-            DbMetadataSchema,
-          ],
-        ],
-        name: '.recovery',
-        directory: directory.absolute.path,
-        maxSizeMiB: databaseMaxSize,
-        compactOnLaunch: databaseCompactCondition,
-        inspector: debugMode,
-      ),
+      recoveryDatabase: recoveryDatabase,
       storeDatabases: Map.fromEntries(
         await directory
             .list()
@@ -78,44 +136,43 @@ class FMTCRegistry {
                   !p.basename(e.path).startsWith('.') &&
                   p.extension(e.path) == '.isar',
             )
-            .asyncMap((f) async {
-              final id = p.basenameWithoutExtension(f.path);
+            .asyncMap((file) async {
+              final id = p.basenameWithoutExtension(file.path);
+              final path = p.basename(file.path);
 
+              // Check whether the database is safe
               if (!hasLocatedCorruption &&
                   safeModeSuccessfulIDs != null &&
                   !safeModeSuccessfulIDs.contains(id)) {
-                try {
-                  await f.delete();
-                  hasLocatedCorruption = true;
-                  errorHandler?.call(FMTCInitialisationException(source: null));
-                  return null;
-                } on FileSystemException catch (_) {
-                  return null;
-                }
-              }
-
-              if (int.tryParse(id) == null) return null;
-
-              final MapEntry<int, Isar> entry;
-              try {
-                entry = MapEntry(
-                  int.parse(id),
-                  await Isar.open(
-                    [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
-                    name: id,
-                    directory: directory.absolute.path,
-                    maxSizeMiB: databaseMaxSize,
-                    compactOnLaunch: databaseCompactCondition,
-                    inspector: debugMode,
+                await deleteDatabaseAndRelatedFiles(path);
+                hasLocatedCorruption = true;
+                errorHandler?.call(
+                  FMTCInitialisationException(
+                    'Failed to open a database because it was not listed as safe/stable on last initialisation.',
+                    FMTCInitialisationExceptionType.corruptedDatabase,
                   ),
                 );
-                initialisationSafetyWriteSink?.writeln(id);
-                await initialisationSafetyWriteSink?.flush();
-              } catch (err) {
-                errorHandler?.call(FMTCInitialisationException(source: err));
                 return null;
               }
 
+              // Open the database
+              MapEntry<int, Isar>? entry = await openIsar(id, file as File);
+              if (entry == null) return null;
+
+              // Correct the database ID (filename) if the store name doesn't
+              // match
+              final storeName = (await entry.value.descriptor).name;
+              final realId = DatabaseTools.hash(storeName);
+              if (realId != int.parse(id)) {
+                await entry.value.close();
+                file = await file
+                    .rename(Directory(p.dirname(file.path)) > '$realId.isar');
+                entry = await openIsar(realId.toString(), file);
+                await deleteDatabaseAndRelatedFiles(path);
+              }
+
+              // Register the database as safe and add it to the registry
+              await registerSafeDatabase(id);
               return entry;
             })
             .whereNotNull()

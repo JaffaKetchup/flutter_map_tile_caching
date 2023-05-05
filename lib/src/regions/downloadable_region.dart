@@ -76,7 +76,7 @@ class DownloadableRegion<P extends List<Object>> {
   final Crs crs;
 
   /// A function that takes any type of error as an argument to be called in the event a tile fetch fails
-  final Function(Object?)? errorHandler;
+  final void Function(Object?)? errorHandler;
 
   DownloadableRegion._({
     required this.points,

@@ -13,24 +13,14 @@ class DownloadManagement {
   /// The store directory to provide access paths to
   final StoreDirectory _storeDirectory;
 
-  /// Used internally to queue download tiles to process in bulk
-  Queue? _queue;
-
-  /// Used internally to keep track of the recovery file
   int? _recoveryId;
-
-  /// Used internally to control bulk downloading
-  StreamController<TileProgress>? _streamController;
-
-  /// Used internally to manage tiles per second progress calculations
+  // ignore: close_sinks
+  StreamController<TileProgress>? _tileProgressStreamController;
+  Completer<void>? _cancelRequestSignal;
+  Completer<void>? _cancelCompleteSignal;
   InternalProgressTimingManagement? _progressManagement;
+  BaseClient? _httpClient;
 
-  /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
-  ///
-  /// Is a singleton to ensure functioning as expected.
-  ///
-  /// The 'fmtc_plus_background_downloading' module must be installed to add the
-  /// background downloading functionality.
   factory DownloadManagement._(StoreDirectory storeDirectory) {
     if (!_instances.keys.contains(storeDirectory)) {
       _instances[storeDirectory] = DownloadManagement.__(storeDirectory);
@@ -38,24 +28,25 @@ class DownloadManagement {
     return _instances[storeDirectory]!;
   }
 
-  /// Provides tools to manage bulk downloading to a specific [StoreDirectory]
-  ///
-  /// Is a singleton to ensure functioning as expected.
-  ///
-  /// The 'fmtc_plus_background_downloading' module must be installed to add the
-  /// background downloading functionality.
   DownloadManagement.__(this._storeDirectory);
 
   /// Contains the intialised instances of [DownloadManagement]s
   static final Map<StoreDirectory, DownloadManagement> _instances = {};
 
-  /// Download a specified [DownloadableRegion] in the foreground
+  /// Download a specified [DownloadableRegion] in the foreground, with a
+  /// recovery session
   ///
   /// To check the number of tiles that need to be downloaded before using this
   /// function, use [check].
   ///
-  /// Unless otherwise specified in [disableRecovery], a recovery session is
-  /// started.
+  /// [httpClient] defaults to a [HttpPlusClient] which supports HTTP/2 and falls
+  /// back to a standard [IOClient]/[HttpClient] for HTTP/1.1 servers. Timeout is
+  /// set to 5 seconds by default.
+  ///
+  /// Streams a [DownloadProgress] object containing statistics and information
+  /// about the download's progression status. This must be listened to.
+  ///
+  /// ---
   ///
   /// [bufferMode] and [bufferLimit] control how this download will use
   /// buffering. For information about buffering, and it's advantages and
@@ -69,21 +60,16 @@ class DownloadManagement {
   /// to 500
   /// - If [bufferMode] is [DownloadBufferMode.bytes], [bufferLimit] will default
   /// to 2000000 (2 MB)
-  ///
-  /// Note that these defaults may not be suitable for your user's devices, and
-  /// you should adjust them to be suitable to your usecase.
-  ///
-  /// Streams a [DownloadProgress] object containing statistics and information
-  /// about the download's progression status.
   Stream<DownloadProgress> startForeground({
     required DownloadableRegion region,
     FMTCTileProviderSettings? tileProviderSettings,
     bool disableRecovery = false,
     DownloadBufferMode bufferMode = DownloadBufferMode.disabled,
     int? bufferLimit,
+    BaseClient? httpClient,
   }) async* {
+    // Start recovery
     _recoveryId = DateTime.now().millisecondsSinceEpoch;
-
     if (!disableRecovery) {
       await FMTC.instance.rootDirectory.recovery._start(
         id: _recoveryId!,
@@ -92,68 +78,34 @@ class DownloadManagement {
       );
     }
 
-    yield* _startDownload(
-      tileProviderSettings: tileProviderSettings,
-      region: region,
-      tiles: await _generateTilesComputer(region),
-      bufferMode: bufferMode,
-      bufferLimit: bufferLimit,
-    );
-  }
+    // Count number of tiles
+    final maxTiles = await check(region);
 
-  /// Check approximately how many downloadable tiles are within a specified
-  /// [DownloadableRegion]
-  ///
-  /// This does not take into account sea tile removal or redownload prevention,
-  /// as these are handled in the download area of the code.
-  ///
-  /// Returns an `int` which is the number of tiles.
-  Future<int> check(DownloadableRegion region) async =>
-      (await _generateTilesComputer(region)).length;
-
-  /// Cancels the ongoing foreground download and recovery session (within the
-  /// current object)
-  ///
-  /// Do not use to cancel background downloads, return `true` from the
-  /// background download callback to cancel a background download. Background
-  /// download cancellations require a few more 'shut-down' steps that can create
-  /// unexpected issues and memory leaks if not carried out.
-  ///
-  /// Note that another instance of this object must be retrieved before another
-  /// download is attempted, as this one is destroyed.
-  Future<void> cancel({Uint8List? latestTileImage}) async {
-    await BulkTileWriter.stop(latestTileImage);
-    _queue?.dispose();
-    unawaited(_streamController?.close());
-    await _progressManagement?.stopTracking();
-
-    if (_recoveryId != null) {
-      await FMTC.instance.rootDirectory.recovery.cancel(_recoveryId!);
-    }
-
-    _instances.remove(_storeDirectory);
-  }
-
-  Stream<DownloadProgress> _startDownload({
-    required FMTCTileProviderSettings? tileProviderSettings,
-    required DownloadableRegion region,
-    required List<Coords<num>> tiles,
-    required DownloadBufferMode bufferMode,
-    required int? bufferLimit,
-  }) async* {
-    _queue = Queue(parallel: region.parallelThreads);
-    _streamController = StreamController();
-
+    // Get the tile provider
     final FMTCTileProvider tileProvider =
         _storeDirectory.getTileProvider(tileProviderSettings);
-    final http.Client client = http.Client();
 
+    // Initialise HTTP client
+    _httpClient = httpClient ??
+        HttpPlusClient(
+          http1Client: IOClient(
+            HttpClient()
+              ..connectionTimeout = const Duration(seconds: 5)
+              ..userAgent = null,
+          ),
+          connectionTimeout: const Duration(seconds: 5),
+        );
+
+    // Initialise the sea tile removal system
     Uint8List? seaTileBytes;
     if (region.seaTileRemoval) {
       try {
-        seaTileBytes = (await client.get(
+        seaTileBytes = (await _httpClient!.get(
           Uri.parse(
-            tileProvider.getTileUrl(Coords(0, 0)..z = 17, region.options),
+            tileProvider.getTileUrl(
+              const TileCoordinates(0, 0, 17),
+              region.options,
+            ),
           ),
         ))
             .bodyBytes;
@@ -162,45 +114,51 @@ class DownloadManagement {
       }
     }
 
+    // Initialise variables
+    final List<String> failedTiles = [];
     int bufferedTiles = 0;
     int bufferedSize = 0;
     int persistedTiles = 0;
     int persistedSize = 0;
-
     int seaTiles = 0;
     int existingTiles = 0;
+    _tileProgressStreamController = StreamController();
+    _cancelRequestSignal = Completer();
+    _cancelCompleteSignal = Completer();
 
-    final List<String> failedTiles = [];
-
+    // Start progress management
     final DateTime startTime = DateTime.now();
+    _progressManagement = InternalProgressTimingManagement()..start();
 
-    _progressManagement = InternalProgressTimingManagement()..startTracking();
-
+    // Start writing isolates
     await BulkTileWriter.start(
       provider: tileProvider,
       bufferMode: bufferMode,
       bufferLimit: bufferLimit,
-      downloadStream: _streamController!,
+      directory: FMTC.instance.rootDirectory.directory.absolute.path,
+      streamController: _tileProgressStreamController!,
     );
 
-    final Stream<TileProgress> downloadStream = bulkDownloader(
-      tiles: tiles,
+    // Start the bulk downloader
+    final Stream<TileProgress> downloadStream = await bulkDownloader(
+      streamController: _tileProgressStreamController!,
+      cancelRequestSignal: _cancelRequestSignal!,
+      cancelCompleteSignal: _cancelCompleteSignal!,
+      region: region,
       provider: tileProvider,
-      options: region.options,
-      client: client,
-      parallelThreads: region.parallelThreads,
-      errorHandler: region.errorHandler,
-      preventRedownload: region.preventRedownload,
       seaTileBytes: seaTileBytes,
-      queue: _queue!,
-      streamController: _streamController!,
-      downloadID: _recoveryId!,
       progressManagement: _progressManagement!,
+      client: _httpClient!,
     );
 
+    // Listen to download progress, and report results
     await for (final TileProgress evt in downloadStream) {
       if (evt.failedUrl == null) {
-        if (!evt.wasCancelOperation) bufferedTiles++;
+        if (!evt.wasCancelOperation) {
+          bufferedTiles++;
+        } else {
+          bufferedTiles = 0;
+        }
         bufferedSize += evt.sizeBytes;
         if (evt.bulkTileWriterResponse != null) {
           persistedTiles = evt.bulkTileWriterResponse![0];
@@ -210,12 +168,12 @@ class DownloadManagement {
         failedTiles.add(evt.failedUrl!);
       }
 
-      seaTiles += evt.wasSeaTile ? 1 : 0;
-      existingTiles += evt.wasExistingTile ? 1 : 0;
+      if (evt.wasSeaTile) seaTiles += 1;
+      if (evt.wasExistingTile) existingTiles += 1;
 
       final DownloadProgress prog = DownloadProgress._(
         downloadID: _recoveryId!,
-        maxTiles: tiles.length,
+        maxTiles: maxTiles,
         successfulTiles: bufferedTiles,
         persistedTiles: persistedTiles,
         failedTiles: failedTiles,
@@ -230,38 +188,54 @@ class DownloadManagement {
       );
 
       yield prog;
-      if (prog.percentageProgress >= 100) {
-        await cancel(latestTileImage: evt.tileImage);
-      }
+      if (prog.percentageProgress >= 100) break;
     }
 
-    client.close();
+    _internalCancel();
   }
 
-  static Future<List<Coords<num>>> _generateTilesComputer(
-    DownloadableRegion region, {
-    bool applyRange = true,
-  }) async {
-    final List<Coords<num>> tiles = await compute(
-      region.type == RegionType.rectangle
-          ? rectangleTiles
-          : region.type == RegionType.circle
-              ? circleTiles
-              : lineTiles,
-      {
-        'rectOutline': LatLngBounds.fromPoints(region.points.cast()),
-        'circleOutline': region.points,
-        'lineOutline': region.points.chunked(4).toList(),
-        'minZoom': region.minZoom,
-        'maxZoom': region.maxZoom,
-        'crs': region.crs,
-        'tileSize':
-            CustomPoint(region.options.tileSize, region.options.tileSize),
-      },
-    );
+  /// Check approximately how many downloadable tiles are within a specified
+  /// [DownloadableRegion]
+  ///
+  /// This does not take into account sea tile removal or redownload prevention,
+  /// as these are handled in the download area of the code.
+  ///
+  /// Returns an `int` which is the number of tiles.
+  Future<int> check(DownloadableRegion region) => compute(
+        region.type == RegionType.rectangle
+            ? TilesCounter.rectangleTiles
+            : region.type == RegionType.circle
+                ? TilesCounter.circleTiles
+                : TilesCounter.lineTiles,
+        generateTileLoopsInput(region),
+      );
 
-    if (!applyRange) return tiles;
-    return tiles.getRange(region.start, region.end ?? tiles.length).toList();
+  /// Cancels the ongoing foreground download and recovery session (within the
+  /// current object)
+  ///
+  /// Do not use to cancel background downloads, return `true` from the
+  /// background download callback to cancel a background download. Background
+  /// download cancellations require a few more 'shut-down' steps that can create
+  /// unexpected issues and memory leaks if not carried out.
+  ///
+  /// Note that another instance of this object must be retrieved before another
+  /// download is attempted, as this one is destroyed.
+  Future<void> cancel() async {
+    _cancelRequestSignal?.complete();
+    await _cancelCompleteSignal?.future;
+
+    _internalCancel();
+  }
+
+  void _internalCancel() {
+    _progressManagement?.stop();
+
+    if (_recoveryId != null) {
+      FMTC.instance.rootDirectory.recovery.cancel(_recoveryId!);
+    }
+    _httpClient?.close();
+
+    _instances.remove(_storeDirectory);
   }
 }
 
@@ -287,12 +261,4 @@ enum DownloadBufferMode {
   /// Tiles will be written to an intermediate memory buffer, then bulk written
   /// to the database once there are more bytes than specified.
   bytes,
-}
-
-extension _ListExtensionsE<E> on List<E> {
-  Iterable<List<E>> chunked(int size) sync* {
-    for (var i = 0; i < length; i += size) {
-      yield sublist(i, (i + size < length) ? i + size : length);
-    }
-  }
 }

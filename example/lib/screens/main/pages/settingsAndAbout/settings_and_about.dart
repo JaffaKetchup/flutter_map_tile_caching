@@ -80,7 +80,7 @@ class _SettingsAndAboutPageState extends State<SettingsAndAboutPage> {
                           context: context,
                           applicationName: 'FMTC Demo',
                           applicationVersion:
-                              'for v7.2.0\n(on ${Platform().operatingSystemFormatted})',
+                              'for v8.0.0\n(on ${Platform().operatingSystemFormatted})',
                           applicationIcon: Image.asset(
                             'assets/icons/ProjectIcon.png',
                             height: 48,

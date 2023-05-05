@@ -16,7 +16,7 @@ class RootStats {
   List<StoreDirectory> get storesAvailable => _registry.storeDatabases.values
       .map(
         (e) => StoreDirectory._(
-          e.storeDescriptor.getSync(0)!.name,
+          e.descriptorSync.name,
           autoCreate: false,
         ),
       )
@@ -26,7 +26,7 @@ class RootStats {
   Future<List<StoreDirectory>> get storesAvailableAsync => Future.wait(
         _registry.storeDatabases.values.map(
           (e) async => StoreDirectory._(
-            (await e.storeDescriptor.get(0))!.name,
+            (await e.descriptor).name,
             autoCreate: false,
           ),
         ),
@@ -104,7 +104,8 @@ class RootStats {
   }) =>
       StreamGroup.merge([
         DirectoryWatcher(FMTC.instance.rootDirectory.directory.absolute.path)
-            .events,
+            .events
+            .where((e) => !path.dirname(e.path).endsWith('import')),
         if (watchRecovery)
           _registry.recoveryDatabase.recovery
               .watchLazy(fireImmediately: fireImmediately),

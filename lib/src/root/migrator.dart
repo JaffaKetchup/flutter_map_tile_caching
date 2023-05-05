@@ -9,18 +9,6 @@ part of flutter_map_tile_caching;
 class RootMigrator {
   const RootMigrator._();
 
-  /// 'fromV4' is deprecated and shouldn't be used. Effort to maintain this
-  /// length of backwards compatibility has become too great, so any structures
-  /// remaining on v4 will need migrating manually or disposing of altogether.
-  /// This remnant will be removed in a future update.
-  @Deprecated(
-    'Effort to maintain this length of backwards compatibility has become too great, so any structures remaining on v4 will need migrating manually or disposing of altogether. This remnant will be removed in a future update',
-  )
-  Future<Never> fromV4({Directory? customSearch}) async =>
-      throw UnsupportedError(
-        "'fromV4' is deprecated and shouldn't be used. Effort to maintain this length of backwards compatibility has become too great, so any structures remaining on v4 will need migrating manually or disposing of altogether. This remnant will be removed in a future update.",
-      );
-
   /// Migrates a v6 file structure to a v7 structure
   ///
   /// Note that this method can be slow on large tilesets, so it's best to offer
