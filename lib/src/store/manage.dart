@@ -168,6 +168,14 @@ class StoreManagement {
     return newStore;
   }
 
+  /// Delete all tiles older that were last modified before [expiry]
+  ///
+  /// Ignores [FMTCTileProviderSettings.cachedValidDuration].
+  Future<void> pruneTilesOlderThan({required DateTime expiry}) => compute(
+        _pruneTilesOlderThanWorker,
+        [_name, _rootDirectory.absolute.path, expiry],
+      );
+
   /// Retrieves the most recently modified tile from the store, extracts it's
   /// bytes, and renders them to an [Image]
   ///
@@ -296,4 +304,26 @@ class StoreManagement {
       cacheHeight: cacheHeight,
     );
   }
+}
+
+Future<void> _pruneTilesOlderThanWorker(List<dynamic> args) async {
+  final db = Isar.openSync(
+    [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
+    name: DatabaseTools.hash(args[0]).toString(),
+    directory: args[1],
+    inspector: false,
+  );
+
+  db.writeTxnSync(
+    () => db.tiles.deleteAllSync(
+      db.tiles
+          .where()
+          .lastModifiedLessThan(args[2])
+          .findAllSync()
+          .map((t) => t.id)
+          .toList(),
+    ),
+  );
+
+  await db.close();
 }
