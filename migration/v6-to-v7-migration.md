@@ -1,5 +1,11 @@
 # v6 -> v7 Migration
 
+{% hint style="warning" %}
+v7 was left in an broken state due to a package upgrading its version without following semantic versioning, meaning that the pub package resolver could never successfully resolve a working v7 package.
+
+v8 contains all functionality from v7, so should be used.
+{% endhint %}
+
 v6 and v7 have significantly different underlying storage systems, and therefore different APIs. Pre-v6 uses a multi-directory filesystem-based structure, whereas v7 uses a multi-database structure based on [Isar](https://isar.dev/).
 
 This page highlights the _biggest changes_ made that will affect the most users - feature additions are not included. Smaller changes are described by in-code documentation or should be self explanatory.

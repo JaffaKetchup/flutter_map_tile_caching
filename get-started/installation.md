@@ -1,7 +1,7 @@
 # Installation
 
 {% hint style="success" %}
-Looking to start using FMTC in your project? Check out the [quickstart.md](quickstart.md "mention") guide!
+Looking to start using FMTC in your project? Check out the [go.md](../quickstart/go.md "mention") guide!
 {% endhint %}
 
 {% hint style="warning" %}

@@ -5,7 +5,7 @@ This package contains a full example application - prebuilt for Android and Wind
 {% hint style="info" %}
 The example app isn't intended for beginners or as a starting point for a project. It is intended for evaluation purposes, to discover FMTC's capabilities, and how it might be implemented into an app.
 
-To start using FMTC in your own app, please check out the [quickstart.md](quickstart.md "mention") guide instead.
+To start using FMTC in your own app, please check out the [go.md](go.md "mention") guide instead.
 {% endhint %}
 
 ## Prebuilt Example Applications

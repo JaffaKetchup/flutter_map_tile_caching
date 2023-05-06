@@ -5,14 +5,14 @@
 
 ## Get Started
 
-* [Quickstart](get-started/quickstart.md)
+* [Quickstart](quickstart/go.md)
 * [Installation](get-started/installation.md)
 * [Additional Setup](get-started/additional-setup.md)
-* [Example Application](get-started/example-application.md)
+* [Example Application](quickstart/example-application.md)
 
 ## Usage
 
-* [Initialisation](usage/initialisation.md)
+* [Initialisation](get-started/initialisation.md)
 * [Using Roots & Stores](usage/roots-and-stores/README.md)
   * [Management](usage/roots-and-stores/management.md)
   * [Statistics](usage/roots-and-stores/statistics.md)
@@ -43,7 +43,7 @@
 
 ## Migration
 
-* [v7 -> v8 Migration](migration/v7-to-v8-migration.md)
+* [v7 -> v8 Migration](quickstart/v7-to-v8-migration.md)
 * [v6 -> v7 Migration](migration/v6-to-v7-migration.md)
 
 ***

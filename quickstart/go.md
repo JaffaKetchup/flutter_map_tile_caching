@@ -16,7 +16,7 @@ OpenStreetMap's can be [found here](https://operations.osmfoundation.org/policie
 
 This page guides you through a simple, fast setup of FMTC that just enables basic browse caching, without any of the bells and whistles that you can discover throughout the rest of this documentation.
 
-## 1. [Install](installation.md)
+## 1. [Install](../get-started/installation.md)
 
 Depend on the latest version of the package from pub.dev, then import it into the appropriate files of your project.
 
@@ -30,7 +30,7 @@ flutter pub add flutter_map_tile_caching
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 ```
 
-## 2. [Initialise](../usage/initialisation.md)
+## 2. [Initialise](../get-started/initialisation.md)
 
 Perform the startup procedure to allow usage of FMTC's APIs and connect to the underlying systems.
 
