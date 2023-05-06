@@ -8,7 +8,7 @@ There is usually only one root (formed of a directory and some miscellaneous dat
 
 ## Chaining
 
-Once you can access `FlutterMapTileCaching.instance` after [initialisation.md](../../get-started/initialisation.md "mention"), chaining of methods and accessors is used to access functionality.
+Once you can access `FlutterMapTileCaching.instance` after [initialisation.md](../initialisation.md "mention"), chaining of methods and accessors is used to access functionality.
 
 1. Base Chains are used as an intermediate step to access functionality on Roots and Stores
 2. Additional Chains are added to Base Chains to reach the actual functionality.

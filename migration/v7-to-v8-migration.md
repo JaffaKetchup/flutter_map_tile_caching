@@ -6,6 +6,8 @@ v8 brings major performance & stability improvements, along with support for Isa
 
 Some migrations are necessary for a **small number of users**. These migrations are listed below, theoretically in decreasing number of affected users.
 
+The underlying storage structure is directly compatible with v7, and so migration for that is not required.
+
 ## Importing
 
 {% hint style="info" %}

@@ -3,26 +3,22 @@
 * [flutter\_map\_tile\_caching](README.md)
 * [Is FMTC Right For Me?](is-fmtc-right-for-me.md)
 
-## Quickstart
-
-* [Quickstart](quickstart/go.md)
-* [Example Application](quickstart/example-application.md)
-* [v7 -> v8 Migration](quickstart/v7-to-v8-migration.md)
-
 ## Get Started
 
+* [Quickstart](get-started/quickstart.md)
 * [Installation](get-started/installation.md)
 * [Additional Setup](get-started/additional-setup.md)
-* [Initialisation](get-started/initialisation.md)
+* [Example Application](get-started/example-application.md)
 
 ## Usage
 
+* [Initialisation](usage/initialisation.md)
 * [Using Roots & Stores](usage/roots-and-stores/README.md)
   * [Management](usage/roots-and-stores/management.md)
   * [Statistics](usage/roots-and-stores/statistics.md)
   * [Metadata](usage/roots-and-stores/metadata.md)
   * [Recovery](usage/roots-and-stores/recovery.md)
-  * [Migrator](http://localhost:5000/s/etKuLqkz5OWV0AkZjLDp/usage/roots-and-stores/migrator)
+  * [Migrator (v6 -> v7)](migration/v6-to-v7-migration.md)
 * [flutter\_map Integration](usage/integration.md)
 * [Global Settings](usage/global-settings.md)
 * [Full API Reference](https://pub.dev/documentation/flutter\_map\_tile\_caching/latest/flutter\_map\_tile\_caching/flutter\_map\_tile\_caching-library.html)
@@ -44,6 +40,11 @@
 * [Introduction](import-and-export/introduction.md)
 * [Importing](import-and-export/importing.md)
 * [Exporting](import-and-export/exporting.md)
+
+## Migration
+
+* [v7 -> v8 Migration](migration/v7-to-v8-migration.md)
+* [v6 -> v7 Migration](migration/v6-to-v7-migration.md)
 
 ***
 
