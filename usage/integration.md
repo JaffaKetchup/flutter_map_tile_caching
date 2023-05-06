@@ -34,8 +34,6 @@ This enumerable contains 3 values, which are used to dictate which logic should 
 ### Obscuring Query Parameters
 
 {% hint style="success" %}
-This feature was added in v7.1.1. Upgrade to that version or later to use this functionality.
-
 A backport of this functionality to v6 is also available - see [this branch on GitHub](https://github.com/JaffaKetchup/flutter\_map\_tile\_caching/tree/v6-backporting), and install it through GitHub: [#from-github.com](../get-started/installation.md#from-github.com "mention").
 {% endhint %}
 
