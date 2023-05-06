@@ -17,6 +17,9 @@ Many thanks to all my sponsors, not matter how much or how little they donated (
 * [@huulbaek](https://github.com/huulbaek)
 * [@andrewames](https://github.com/andrewames)
 * [@ozzy1873](https://github.com/ozzy1873)
+* [@eidolonFIRE](https://github.com/eidolonFIRE)
+* [@weishuhn](https://github.com/weishuhn)
+* [@mohammedX6](https://github.com/mohammedX6)
 * _+ 3 anonymous or private donors_
 
 ## Privacy & Cookie Policy
