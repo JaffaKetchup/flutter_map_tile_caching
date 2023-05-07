@@ -7,13 +7,18 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 * @huulbaek
 * @andrewames
 * @ozzy1873
-* @mohammedX6
+* @eidolonFIRE
 * @weishuhn
+* @mohammedX6
 * and 3 anonymous or private donors
 
 # Changelog
 
-## [8.0.0] - 2023/XX/XX
+## [8.1.0] - 2023/05/XX
+
+* Added `StoreManagement.pruneTilesOlderThan` method
+
+## [8.0.0] - 2023/05/05
 
 * Bulk downloading has been rewritten to use a new implementation that generates tile coordinates at the same time as downloading tiles
   * `check`ing the number of tiles in a region now uses a significantly faster and more efficient implementation

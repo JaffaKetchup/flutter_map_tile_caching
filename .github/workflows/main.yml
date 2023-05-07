@@ -10,7 +10,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
       - name: Run Dart Package Analyser
-        uses: axel-op/dart-package-analyzer@v3
+        uses: axel-op/dart-package-analyzer@master
         id: analysis
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
@@ -33,7 +33,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
       - name: Setup Flutter Environment
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@main
         with:
           channel: "stable"
       - name: Get All Dependencies
@@ -60,7 +60,7 @@ jobs:
           distribution: "temurin"
           java-version: "17"
       - name: Setup Flutter Environment
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@main
         with:
           channel: "stable"
       - name: Remove Existing Prebuilt Applications
@@ -82,7 +82,7 @@ jobs:
         run: iscc "windowsApplicationInstallerSetup.iss"
         working-directory: .
       - name: Commit Output Directory
-        uses: EndBug/add-and-commit@v9.0.1
+        uses: EndBug/add-and-commit@main
         with:
           message: "Built Example Applications"
           add: "prebuiltExampleApplications/"

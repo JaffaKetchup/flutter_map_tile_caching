@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:badges/badges.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -13,7 +11,6 @@ import 'pages/map/map_view.dart';
 import 'pages/recovery/recovery.dart';
 import 'pages/settingsAndAbout/settings_and_about.dart';
 import 'pages/stores/stores.dart';
-import 'pages/update/update.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({
@@ -28,7 +25,6 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  //static const Color backgroundColor = Color(0xFFeaf6f5);
   late final PageController _pageController;
   int _currentPageIndex = 0;
   bool extended = false;
@@ -70,11 +66,6 @@ class _MainScreenState extends State<MainScreen> {
           icon: Icon(Icons.settings),
           label: 'Settings',
         ),
-        if (Platform.isWindows || Platform.isAndroid)
-          const NavigationDestination(
-            icon: Icon(Icons.update),
-            label: 'Update',
-          ),
       ];
 
   List<Widget> get _pages => [
@@ -87,7 +78,6 @@ class _MainScreenState extends State<MainScreen> {
         ),
         RecoveryPage(moveToDownloadPage: () => _onDestinationSelected(2)),
         const SettingsAndAboutPage(),
-        if (Platform.isWindows || Platform.isAndroid) const UpdatePage(),
       ];
 
   void _onDestinationSelected(int index) {

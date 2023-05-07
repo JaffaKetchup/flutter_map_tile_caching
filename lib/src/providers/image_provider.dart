@@ -141,74 +141,71 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       );
     }
 
-    if (needsCreating || needsUpdating) {
-      final StreamedResponse response;
-
-      try {
-        response = await provider.httpClient.send(
-          Request('GET', Uri.parse(networkUrl))
-            ..headers.addAll(provider.headers),
-        );
-      } catch (_) {
-        return finish(
-          bytes: !needsCreating ? bytes : null,
-          throwError: needsCreating
-              ? 'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.'
-              : null,
-          throwErrorType: FMTCBrowsingErrorType.noConnectionDuringFetch,
-          cacheHit: false,
-        );
-      }
-
-      if (response.statusCode != 200) {
-        return finish(
-          bytes: !needsCreating ? bytes : null,
-          throwError: needsCreating
-              ? 'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code of ${response.statusCode}'
-              : null,
-          throwErrorType: FMTCBrowsingErrorType.negativeFetchResponse,
-          cacheHit: false,
-        );
-      }
-
-      int bytesReceivedLength = 0;
-      bytes = [];
-      await for (final byte in response.stream) {
-        bytesReceivedLength += byte.length;
-        bytes.addAll(byte);
-        chunkEvents.add(
-          ImageChunkEvent(
-            cumulativeBytesLoaded: bytesReceivedLength,
-            expectedTotalBytes: response.contentLength,
-          ),
-        );
-      }
-
-      unawaited(
-        db.writeTxn(
-          () => db.tiles.put(DbTile(url: matcherUrl, bytes: bytes!)),
-        ),
-      );
-
-      if (needsCreating && provider.settings.maxStoreLength != 0) {
-        unawaited(
-          _removeOldestQueue.add(
-            () => compute(
-              _removeOldestTile,
-              [
-                provider.storeDirectory.storeName,
-                directory,
-                provider.settings.maxStoreLength,
-              ],
-            ),
-          ),
-        );
-      }
-
-      return finish(bytes: bytes, cacheHit: false);
+    if (!needsCreating && !needsUpdating) {
+      return finish(bytes: bytes, cacheHit: true);
     }
 
-    return finish(bytes: bytes, cacheHit: true);
+    final StreamedResponse response;
+
+    try {
+      response = await provider.httpClient.send(
+        Request('GET', Uri.parse(networkUrl))..headers.addAll(provider.headers),
+      );
+    } catch (_) {
+      return finish(
+        bytes: !needsCreating ? bytes : null,
+        throwError: needsCreating
+            ? 'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.'
+            : null,
+        throwErrorType: FMTCBrowsingErrorType.noConnectionDuringFetch,
+        cacheHit: false,
+      );
+    }
+
+    if (response.statusCode != 200) {
+      return finish(
+        bytes: !needsCreating ? bytes : null,
+        throwError: needsCreating
+            ? 'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code of ${response.statusCode}'
+            : null,
+        throwErrorType: FMTCBrowsingErrorType.negativeFetchResponse,
+        cacheHit: false,
+      );
+    }
+
+    int bytesReceivedLength = 0;
+    bytes = [];
+    await for (final byte in response.stream) {
+      bytesReceivedLength += byte.length;
+      bytes.addAll(byte);
+      chunkEvents.add(
+        ImageChunkEvent(
+          cumulativeBytesLoaded: bytesReceivedLength,
+          expectedTotalBytes: response.contentLength,
+        ),
+      );
+    }
+
+    unawaited(
+      db.writeTxn(() => db.tiles.put(DbTile(url: matcherUrl, bytes: bytes!))),
+    );
+
+    if (needsCreating && provider.settings.maxStoreLength != 0) {
+      unawaited(
+        _removeOldestQueue.add(
+          () => compute(
+            _removeOldestTile,
+            [
+              provider.storeDirectory.storeName,
+              directory,
+              provider.settings.maxStoreLength,
+            ],
+          ),
+        ),
+      );
+    }
+
+    return finish(bytes: bytes, cacheHit: false);
   }
 
   @override

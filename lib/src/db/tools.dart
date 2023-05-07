@@ -28,6 +28,7 @@ class DatabaseTools {
   }
 }
 
+@internal
 extension IsarExts on Isar {
   Future<DbStoreDescriptor> get descriptor async {
     final descriptor = await storeDescriptor.get(0);
