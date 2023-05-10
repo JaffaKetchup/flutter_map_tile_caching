@@ -52,7 +52,7 @@ Create an isolated space to store tiles and other information to be accessed by 
 <pre class="language-dart" data-title="main.dart"><code class="lang-dart">Future&#x3C;void> main() async {
     WidgetsFlutterBinding.ensureInitialized();   
     await FlutterMapTileCaching.initialise();
-<strong>    await FMTC.instance('mapStore').manage.create();
+<strong>    FMTC.instance('mapStore').manage.create();
 </strong>    // ...
     // runApp(MyApp());
 }
