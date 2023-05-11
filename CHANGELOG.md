@@ -14,9 +14,12 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [8.1.0] - 2023/05/XX
+## [8.1.0] - 2023/05/11
 
 * Added `StoreManagement.pruneTilesOlderThan` method
+* Example application updates
+  * Added support for Flutter 3.10
+  * Removed auto-updater
 
 ## [8.0.0] - 2023/05/05
 
@@ -36,57 +39,60 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 * Added support for custom `HttpClient`s/`BaseClient`s
 * Added support for Isar v3.1 (bug fixes & stability improvements)
 
-## [7.2.0] - 2023/03/03
-
-* Stability improvements
-  * Starting multiple downloads no longer causes `LateInitializationErrors`
-  * Migrator storage and memory usage no longer spikes as significantly as previously, thanks to transaction batching
-  * Opening and processing of stores on initialisation is more robust and less error-prone to filename variations
-  * Root statistic watching now works on all platforms
-* Multiple minor bug fixes and documentation improvements
-* Added `maxStoreLength` config to example app
-
-## [7.1.2] - 2023/02/18
-
-* Minor bug fixes
-
-## [7.1.1] - 2023/02/16
-
-* Major bug fixes
-* Added debug mode
-
-## [7.1.0] - 2023/02/14
-
-* Added URL query params obscurer feature
-* Added `headers` and `httpClient` parameters to `getTileProvider`
-* Minor documentation improvements
-* Minor bug fixes
-
-## [7.0.2] - 2023/02/12
-
-* Minor changes to example application
-
-## [7.0.1] - 2023/02/11
-
-* Minor bug fixes
-* Minor improvements
-
-## [7.0.0] - 2023/02/04
-
-* Migrated to Isar database
-* Major performance improvements, thanks to Isar
-* Added buffering to bulk tile downloading
-* Added method to catch tile retrieval errors
-* Removed v4 -> v5 migrator & added v6 -> v7 migrator
-* Removed some synchronous methods from structure management
-* Removed 'fmtc_advanced' import file
-
-Plus the usual:
-
-* Minor performance improvements
-* Bug fixes
-* Dependency updates
-* Documentation improvements
+> **Version 7 was made unstable due to a non-semantic versioning compliant update of a dependency.**  
+> **This means the pub version resolver can never resolve FMTC v7 without introducing compilation errors.**
+>
+> ## [7.2.0] - 2023/03/03
+>
+> * Stability improvements
+>   * Starting multiple downloads no longer causes `LateInitializationErrors`
+>   * Migrator storage and memory usage no longer spikes as significantly as previously, thanks to transaction batching
+>   * Opening and processing of stores on initialisation is more robust and less error-prone to filename variations
+>   * Root statistic watching now works on all platforms
+> * Multiple minor bug fixes and documentation improvements
+> * Added `maxStoreLength` config to example app
+>
+> ## [7.1.2] - 2023/02/18
+>
+> * Minor bug fixes
+>
+> ## [7.1.1] - 2023/02/16
+>
+> * Major bug fixes
+> * Added debug mode
+>
+> ## [7.1.0] - 2023/02/14
+>
+> * Added URL query params obscurer feature
+> * Added `headers` and `httpClient` parameters to `getTileProvider`
+> * Minor documentation improvements
+> * Minor bug fixes
+>
+> ## [7.0.2] - 2023/02/12
+>
+> * Minor changes to example application
+>
+> ## [7.0.1] - 2023/02/11
+>
+> * Minor bug fixes
+> * Minor improvements
+>
+> ## [7.0.0] - 2023/02/04
+>
+> * Migrated to Isar database
+> * Major performance improvements, thanks to Isar
+> * Added buffering to bulk tile downloading
+> * Added method to catch tile retrieval errors
+> * Removed v4 -> v5 migrator & added v6 -> v7 migrator
+> * Removed some synchronous methods from structure management
+> * Removed 'fmtc_advanced' import file
+>
+> Plus the usual:
+>
+> * Minor performance improvements
+> * Bug fixes
+> * Dependency updates
+> * Documentation improvements
 
 ## [6.2.0] - 2022/10/25
 
