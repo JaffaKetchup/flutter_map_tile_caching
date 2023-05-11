@@ -84,9 +84,9 @@ class VerticalLayout extends StatelessWidget {
           const SizedBox(height: 15),
           Expanded(
             child: data.failedTiles.isEmpty
-                ? const Column(
+                ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                    children: const [
                       Icon(Icons.report_off, size: 36),
                       SizedBox(height: 10),
                       Text('No Failed Tiles'),

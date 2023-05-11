@@ -48,33 +48,31 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   }) : db = FMTCRegistry.instance(provider.storeDirectory.storeName);
 
   @override
-  ImageStreamCompleter loadImage(
+  ImageStreamCompleter loadBuffer(
     FMTCImageProvider key,
-    ImageDecoderCallback decode,
+    DecoderBufferCallback decode,
   ) {
+    // ignore: close_sinks
     final StreamController<ImageChunkEvent> chunkEvents =
         StreamController<ImageChunkEvent>();
 
     return MultiFrameImageStreamCompleter(
-      codec: _loadAsync(key, chunkEvents, decode),
+      codec: _loadAsync(key: key, decode: decode, chunkEvents: chunkEvents),
       chunkEvents: chunkEvents.stream,
       scale: 1,
       debugLabel: coords.toString(),
-      informationCollector: () => [
-        DiagnosticsProperty('Tile coordinates', coords),
-        DiagnosticsProperty('Root directory', directory),
-        DiagnosticsProperty('Store name', provider.storeDirectory.storeName),
-        DiagnosticsProperty('Current provider', key),
-      ],
+      informationCollector: () => [DiagnosticsProperty('Coordinates', coords)],
     );
   }
 
-  Future<Codec> _loadAsync(
-    FMTCImageProvider key,
-    StreamController<ImageChunkEvent> chunkEvents,
-    ImageDecoderCallback decode,
-  ) async {
-    Future<void> cacheHitMiss({required bool hit}) =>
+  Future<Codec> _loadAsync({
+    required FMTCImageProvider key,
+    required DecoderBufferCallback decode,
+    required StreamController<ImageChunkEvent> chunkEvents,
+  }) async {
+    Future<void> cacheHitMiss({
+      required bool hit,
+    }) =>
         (hit ? _cacheHitsQueue : _cacheMissesQueue).add(() async {
           if (db.isOpen) {
             await db.writeTxn(() async {

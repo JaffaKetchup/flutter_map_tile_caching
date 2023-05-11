@@ -23,10 +23,10 @@ Widget tileImage({
                 ),
               ),
               if (data.percentageProgress == 100)
-                const Column(
+                Column(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+                  children: const [
                     Icon(
                       Icons.done_all,
                       size: 36,
