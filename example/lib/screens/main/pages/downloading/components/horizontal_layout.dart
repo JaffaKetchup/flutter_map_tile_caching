@@ -114,9 +114,9 @@ class HorizontalLayout extends StatelessWidget {
           const SizedBox(height: 30),
           Expanded(
             child: data.failedTiles.isEmpty
-                ? Column(
+                ? const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(Icons.report_off, size: 36),
                       SizedBox(height: 10),
                       Text('No Failed Tiles'),

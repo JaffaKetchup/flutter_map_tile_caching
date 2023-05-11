@@ -96,9 +96,9 @@ class _SettingsAndAboutPageState extends State<SettingsAndAboutPage> {
                 Expanded(
                   child: SingleChildScrollView(
                     controller: creditsScrollController,
-                    child: Column(
+                    child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           "An example application for the 'flutter_map_tile_caching' project, built by Luka S (JaffaKetchup). Tap on the above button to show more detailed information.\n",
                         ),

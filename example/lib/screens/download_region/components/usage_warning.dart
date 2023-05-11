@@ -6,8 +6,8 @@ class UsageWarning extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Row(
-        children: const [
+  Widget build(BuildContext context) => const Row(
+        children: [
           Icon(
             Icons.warning_amber,
             color: Colors.red,

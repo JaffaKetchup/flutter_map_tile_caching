@@ -191,6 +191,7 @@ class StoreManagement {
     double? size,
     Key? key,
     double scale = 1.0,
+    // ignore: avoid_positional_boolean_parameters
     Widget Function(BuildContext, Widget, int?, bool)? frameBuilder,
     Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
     String? semanticLabel,
@@ -254,6 +255,7 @@ class StoreManagement {
     double? size,
     Key? key,
     double scale = 1.0,
+    // ignore: avoid_positional_boolean_parameters
     Widget Function(BuildContext, Widget, int?, bool)? frameBuilder,
     Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
     String? semanticLabel,
