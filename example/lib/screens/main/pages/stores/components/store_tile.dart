@@ -258,9 +258,9 @@ class _StoreTileState extends State<StoreTile> {
                       : Column(
                           children: [
                             const SizedBox(height: 10),
-                            Row(
+                            const Row(
                               mainAxisSize: MainAxisSize.min,
-                              children: const [
+                              children: [
                                 Icon(Icons.broken_image, size: 34),
                                 Icon(Icons.error, size: 34),
                               ],
