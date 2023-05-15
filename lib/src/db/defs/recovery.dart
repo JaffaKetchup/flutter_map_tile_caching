@@ -4,9 +4,10 @@
 import 'package:isar/isar.dart';
 import 'package:meta/meta.dart';
 
-import '../../../flutter_map_tile_caching.dart';
-
 part 'recovery.g.dart';
+
+@internal
+enum RegionType { rectangle, circle, line }
 
 @internal
 @Collection(accessor: 'recovery')

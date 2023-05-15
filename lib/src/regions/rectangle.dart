@@ -40,12 +40,10 @@ class RectangleRegion extends BaseRegion {
     void Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion._(
-        points: [bounds.northWest, bounds.southEast],
+        this,
         minZoom: minZoom,
         maxZoom: maxZoom,
         options: options,
-        type: RegionType.rectangle,
-        originalRegion: this,
         parallelThreads: parallelThreads,
         preventRedownload: preventRedownload,
         seaTileRemoval: seaTileRemoval,
@@ -76,27 +74,20 @@ class RectangleRegion extends BaseRegion {
             label: label,
             labelStyle: labelStyle,
             labelPlacement: labelPlacement,
-            points: [
-              LatLng(
-                bounds.southEast.latitude,
-                bounds.northWest.longitude,
-              ),
-              bounds.southEast,
-              LatLng(
-                bounds.northWest.latitude,
-                bounds.southEast.longitude,
-              ),
-              bounds.northWest,
-            ],
+            points: toOutline(),
           )
         ],
       );
 
   @override
-  List<LatLng> toOutline() => [
-        LatLng(bounds.southEast.latitude, bounds.northWest.longitude),
-        bounds.southEast,
-        LatLng(bounds.northWest.latitude, bounds.southEast.longitude),
-        bounds.northWest,
-      ];
+  List<LatLng> toOutline() =>
+      [bounds.northEast, bounds.southEast, bounds.southWest, bounds.northWest];
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RectangleRegion && other.bounds == bounds && super == other);
+
+  @override
+  int get hashCode => Object.hashAllUnordered([bounds, super.hashCode]);
 }

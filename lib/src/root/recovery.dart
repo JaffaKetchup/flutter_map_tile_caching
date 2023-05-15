@@ -99,7 +99,11 @@ class RootRecovery {
           id: id,
           storeName: storeName,
           time: DateTime.now(),
-          type: region.type,
+          type: region.when(
+            rectangle: (_) => RegionType.rectangle,
+            circle: (_) => RegionType.circle,
+            line: (_) => RegionType.line,
+          ),
           minZoom: region.minZoom,
           maxZoom: region.maxZoom,
           start: region.start,
@@ -107,52 +111,52 @@ class RootRecovery {
           parallelThreads: region.parallelThreads,
           preventRedownload: region.preventRedownload,
           seaTileRemoval: region.seaTileRemoval,
-          nwLat: region.type == RegionType.rectangle
+          nwLat: region.originalRegion is RectangleRegion
               ? (region.originalRegion as RectangleRegion)
                   .bounds
                   .northWest
                   .latitude
               : null,
-          nwLng: region.type == RegionType.rectangle
+          nwLng: region.originalRegion is RectangleRegion
               ? (region.originalRegion as RectangleRegion)
                   .bounds
                   .northWest
                   .longitude
               : null,
-          seLat: region.type == RegionType.rectangle
+          seLat: region.originalRegion is RectangleRegion
               ? (region.originalRegion as RectangleRegion)
                   .bounds
                   .southEast
                   .latitude
               : null,
-          seLng: region.type == RegionType.rectangle
+          seLng: region.originalRegion is RectangleRegion
               ? (region.originalRegion as RectangleRegion)
                   .bounds
                   .southEast
                   .longitude
               : null,
-          centerLat: region.type == RegionType.circle
+          centerLat: region.originalRegion is CircleRegion
               ? (region.originalRegion as CircleRegion).center.latitude
               : null,
-          centerLng: region.type == RegionType.circle
+          centerLng: region.originalRegion is CircleRegion
               ? (region.originalRegion as CircleRegion).center.longitude
               : null,
-          linePointsLat: region.type == RegionType.line
+          linePointsLat: region.originalRegion is LineRegion
               ? (region.originalRegion as LineRegion)
                   .line
                   .map((c) => c.latitude)
                   .toList()
               : null,
-          linePointsLng: region.type == RegionType.line
+          linePointsLng: region.originalRegion is LineRegion
               ? (region.originalRegion as LineRegion)
                   .line
                   .map((c) => c.longitude)
                   .toList()
               : null,
-          circleRadius: region.type == RegionType.circle
+          circleRadius: region.originalRegion is CircleRegion
               ? (region.originalRegion as CircleRegion).radius
               : null,
-          lineRadius: region.type == RegionType.line
+          lineRadius: region.originalRegion is LineRegion
               ? (region.originalRegion as LineRegion).radius
               : null,
         ),

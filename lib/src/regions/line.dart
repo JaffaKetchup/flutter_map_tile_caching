@@ -94,12 +94,10 @@ class LineRegion extends BaseRegion {
     void Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion._(
-        points: toOutline(),
+        this,
         minZoom: minZoom,
         maxZoom: maxZoom,
         options: options,
-        type: RegionType.line,
-        originalRegion: this,
         parallelThreads: parallelThreads,
         preventRedownload: preventRedownload,
         seaTileRemoval: seaTileRemoval,
@@ -173,4 +171,16 @@ class LineRegion extends BaseRegion {
   @override
   List<LatLng> toOutline([int overlap = 1]) =>
       toOutlines(overlap).expand((x) => x).toList();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LineRegion &&
+          other.line == line &&
+          listEquals(other.line, line) &&
+          other.radius == radius &&
+          super == other);
+
+  @override
+  int get hashCode => Object.hashAllUnordered([line, radius, super.hashCode]);
 }

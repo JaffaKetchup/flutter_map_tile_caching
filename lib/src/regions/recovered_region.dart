@@ -3,13 +3,21 @@
 
 part of flutter_map_tile_caching;
 
-/// A mixture between [BaseRegion] and [DownloadableRegion] containing all the salvaged data from a recovered download
+/// A mixture between [BaseRegion] and [DownloadableRegion] containing all the
+/// salvaged data from a recovered download
 ///
-/// How does recovery work? At the start of a download, a file is created including information about the download. At the end of a download or when a download is correctly cancelled, this file is deleted. However, if there is no ongoing download (controlled by an internal variable) and the recovery file exists, the download has obviously been stopped incorrectly, meaning it can be recovered using the information within the recovery file.
+/// How does recovery work? At the start of a download, a file is created
+/// including information about the download. At the end of a download or when a
+/// download is correctly cancelled, this file is deleted. However, if there is
+/// no ongoing download (controlled by an internal variable) and the recovery
+/// file exists, the download has obviously been stopped incorrectly, meaning it
+/// can be recovered using the information within the recovery file.
 ///
-/// The availability of [bounds], [line], [center] & [radius] depend on the [type] of the recovered region.
+/// The availability of [bounds], [line], [center] & [radius] depend on the
+/// [_type] of the recovered region.
 ///
-/// Should avoid manual construction. Use [toDownloadable] to restore a valid [DownloadableRegion].
+/// Should avoid manual construction. Use [toDownloadable] to restore a valid
+/// [DownloadableRegion].
 class RecoveredRegion {
   /// A unique ID created for every bulk download operation
   ///
@@ -26,8 +34,7 @@ class RecoveredRegion {
   /// Not actually used when converting to [DownloadableRegion].
   final DateTime time;
 
-  /// The shape that this region conforms to
-  final RegionType type;
+  final RegionType _type;
 
   /// The bounds for a rectangular region
   final LatLngBounds? bounds;
@@ -74,7 +81,7 @@ class RecoveredRegion {
     required this.id,
     required this.storeName,
     required this.time,
-    required this.type,
+    required RegionType type,
     required this.bounds,
     required this.center,
     required this.line,
@@ -86,36 +93,38 @@ class RecoveredRegion {
     required this.parallelThreads,
     required this.preventRedownload,
     required this.seaTileRemoval,
-  });
+  }) : _type = type;
 
-  /// Convert this region into a downloadable region
+  /// Convert this region into it's original [BaseRegion], calling the respective
+  /// callback with it
+  T toRegion<T>({
+    required T Function(RectangleRegion rectangle) rectangle,
+    required T Function(CircleRegion circle) circle,
+    required T Function(LineRegion line) line,
+  }) =>
+      switch (_type) {
+        RegionType.rectangle => rectangle(RectangleRegion(bounds!)),
+        RegionType.circle => circle(CircleRegion(center!, radius!)),
+        RegionType.line => line(LineRegion(this.line!, radius!)),
+      };
+
+  /// Convert this region into a [DownloadableRegion]
   DownloadableRegion toDownloadable(
     TileLayer options, {
     Crs crs = const Epsg3857(),
     Function(Object?)? errorHandler,
-  }) {
-    final BaseRegion region = type == RegionType.rectangle
-        ? RectangleRegion(bounds!)
-        : type == RegionType.circle
-            ? CircleRegion(center!, radius!)
-            : LineRegion(line!, radius!);
-
-    return DownloadableRegion._(
-      points: type == RegionType.line
-          ? (region as LineRegion).toOutlines()
-          : region.toOutline(),
-      minZoom: minZoom,
-      maxZoom: maxZoom,
-      options: options,
-      type: type,
-      originalRegion: region,
-      parallelThreads: parallelThreads,
-      preventRedownload: preventRedownload,
-      seaTileRemoval: seaTileRemoval,
-      start: start,
-      end: end,
-      crs: crs,
-      errorHandler: errorHandler,
-    );
-  }
+  }) =>
+      DownloadableRegion._(
+        toRegion(rectangle: (r) => r, circle: (c) => c, line: (l) => l),
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        options: options,
+        parallelThreads: parallelThreads,
+        preventRedownload: preventRedownload,
+        seaTileRemoval: seaTileRemoval,
+        start: start,
+        end: end,
+        crs: crs,
+        errorHandler: errorHandler,
+      );
 }

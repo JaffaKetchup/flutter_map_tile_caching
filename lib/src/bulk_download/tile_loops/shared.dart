@@ -8,7 +8,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/flutter_map.dart' hide Polygon;
 import 'package:latlong2/latlong.dart';
-import 'package:meta/meta.dart';
 
 import '../../../flutter_map_tile_caching.dart';
 
@@ -16,23 +15,18 @@ part 'count.dart';
 part 'generate.dart';
 
 class _Polygon {
-  final CustomPoint<num> nw;
-  final CustomPoint<num> ne;
-  final CustomPoint<num> se;
-  final CustomPoint<num> sw;
+  final CustomPoint<int> nw;
+  final CustomPoint<int> ne;
+  final CustomPoint<int> se;
+  final CustomPoint<int> sw;
 
   _Polygon(this.nw, this.ne, this.se, this.sw);
 
-  List<CustomPoint<num>> get points => [nw, ne, se, sw];
+  List<CustomPoint<int>> get points => [nw, ne, se, sw];
 }
 
-@internal
-Map<String, dynamic> generateTileLoopsInput(DownloadableRegion region) => {
-      'rectOutline': LatLngBounds.fromPoints(region.points.cast()),
-      'circleOutline': region.points,
-      'lineOutline': region.points.slices(4).toList(),
-      'minZoom': region.minZoom,
-      'maxZoom': region.maxZoom,
-      'crs': region.crs,
-      'tileSize': CustomPoint(region.options.tileSize, region.options.tileSize),
-    };
+const _largestInt = 9223372036854775807;
+const _smallestInt = -9223372036854775808;
+
+CustomPoint<double> _getTileSize(DownloadableRegion region) =>
+    CustomPoint(region.options.tileSize, region.options.tileSize);

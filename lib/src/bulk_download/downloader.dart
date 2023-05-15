@@ -36,12 +36,12 @@ Future<Stream<TileProgress>> bulkDownloader({
 
   final recievePort = ReceivePort();
   final tileIsolate = await Isolate.spawn(
-    region.type == RegionType.rectangle
-        ? TilesGenerator.rectangleTiles
-        : region.type == RegionType.circle
-            ? TilesGenerator.circleTiles
-            : TilesGenerator.lineTiles,
-    {'sendPort': recievePort.sendPort, ...generateTileLoopsInput(region)},
+    region.when(
+      rectangle: (_) => TilesGenerator.rectangleTiles,
+      circle: (_) => TilesGenerator.circleTiles,
+      line: (_) => TilesGenerator.lineTiles,
+    ),
+    (sendPort: recievePort.sendPort, region: region),
     onExit: recievePort.sendPort,
   );
   final tileQueue = StreamQueue(
@@ -54,7 +54,7 @@ Future<Stream<TileProgress>> bulkDownloader({
   final requestTilePort = (await tileQueue.next) as SendPort;
 
   final threadCompleters = List.generate(
-    region.parallelThreads + 1,
+    region.parallelThreads,
     (_) => Completer<void>(),
     growable: false,
   );
@@ -64,9 +64,9 @@ Future<Stream<TileProgress>> bulkDownloader({
       while (true) {
         requestTilePort.send(null);
 
-        final List<int>? value;
+        final (int, int, int)? coords;
         try {
-          value = await tileQueue.next;
+          coords = await tileQueue.next;
           // ignore: avoid_catching_errors
         } on StateError {
           threadCompleter.complete();
@@ -86,7 +86,7 @@ Future<Stream<TileProgress>> bulkDownloader({
           break;
         }
 
-        if (value == null) {
+        if (coords == null) {
           await tileQueue.cancel();
 
           threadCompleter.complete();
@@ -100,7 +100,7 @@ Future<Stream<TileProgress>> bulkDownloader({
           break;
         }
 
-        final coord = TileCoordinates(value[0], value[1], value[2]);
+        final coord = TileCoordinates(coords.$1, coords.$2, coords.$3);
 
         final url = provider.getTileUrl(coord, region.options);
         final existingTile = await tiles.tiles.get(DatabaseTools.hash(url));

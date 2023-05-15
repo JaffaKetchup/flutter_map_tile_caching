@@ -24,6 +24,7 @@ class _RecoveryListState extends State<RecoveryList> {
         itemCount: widget.all.length,
         itemBuilder: (context, index) {
           final region = widget.all[index];
+
           return ListTile(
             leading: FutureBuilder<RecoveredRegion?>(
               future: FMTC.instance.rootDirectory.recovery
@@ -31,16 +32,20 @@ class _RecoveryListState extends State<RecoveryList> {
               builder: (context, isFailed) => Icon(
                 isFailed.data != null
                     ? Icons.warning
-                    : region.type == RegionType.circle
-                        ? Icons.circle_outlined
-                        : region.type == RegionType.line
-                            ? Icons.timeline
-                            : Icons.rectangle_outlined,
+                    : region.toRegion(
+                        rectangle: (_) => Icons.rectangle_outlined,
+                        circle: (_) => Icons.circle_outlined,
+                        line: (_) => Icons.timeline,
+                      ),
                 color: isFailed.data != null ? Colors.red : null,
               ),
             ),
             title: Text(
-              '${region.storeName} - ${region.type.name[0].toUpperCase() + region.type.name.substring(1)} Type',
+              '${region.storeName} - ${region.toRegion(
+                rectangle: (_) => 'Rectangle',
+                circle: (_) => 'Circle',
+                line: (_) => 'Line',
+              )} Type',
             ),
             subtitle: FutureBuilder<Place>(
               future: Nominatim.reverseSearch(

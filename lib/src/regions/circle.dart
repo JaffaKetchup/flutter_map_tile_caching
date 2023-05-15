@@ -42,12 +42,10 @@ class CircleRegion extends BaseRegion {
     void Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion._(
-        points: toOutline(),
+        this,
         minZoom: minZoom,
         maxZoom: maxZoom,
         options: options,
-        type: RegionType.circle,
-        originalRegion: this,
         parallelThreads: parallelThreads,
         preventRedownload: preventRedownload,
         seaTileRemoval: seaTileRemoval,
@@ -113,4 +111,15 @@ class CircleRegion extends BaseRegion {
 
     return output;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CircleRegion &&
+          other.center == center &&
+          other.radius == radius &&
+          super == other);
+
+  @override
+  int get hashCode => Object.hashAllUnordered([center, radius, super.hashCode]);
 }

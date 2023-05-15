@@ -202,12 +202,12 @@ class DownloadManagement {
   ///
   /// Returns an `int` which is the number of tiles.
   Future<int> check(DownloadableRegion region) => compute(
-        region.type == RegionType.rectangle
-            ? TilesCounter.rectangleTiles
-            : region.type == RegionType.circle
-                ? TilesCounter.circleTiles
-                : TilesCounter.lineTiles,
-        generateTileLoopsInput(region),
+        region.when(
+          rectangle: (_) => TilesCounter.rectangleTiles,
+          circle: (_) => TilesCounter.circleTiles,
+          line: (_) => TilesCounter.lineTiles,
+        ),
+        region,
       );
 
   /// Cancels the ongoing foreground download and recovery session (within the

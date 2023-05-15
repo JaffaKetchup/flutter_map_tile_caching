@@ -38,9 +38,11 @@ class RecoveryStartButton extends StatelessWidget {
                             context,
                             listen: false,
                           )
-                                ..region = region
-                                    .toDownloadable(TileLayer())
-                                    .originalRegion
+                                ..region = region.toRegion(
+                                  rectangle: (r) => r,
+                                  circle: (c) => c,
+                                  line: (l) => l,
+                                )
                                 ..minZoom = region.minZoom
                                 ..maxZoom = region.maxZoom
                                 ..preventRedownload = region.preventRedownload

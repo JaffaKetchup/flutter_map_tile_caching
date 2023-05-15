@@ -14,7 +14,7 @@ part of flutter_map_tile_caching;
 ///  - [RectangleRegion]
 ///  - [CircleRegion]
 ///  - [LineRegion]
-abstract class BaseRegion {
+sealed class BaseRegion {
   /// Create a geographical region that forms a particular shape
   ///
   /// It can be converted to a:
@@ -42,6 +42,18 @@ abstract class BaseRegion {
   /// _This property is currently redundant, but usage is planned in future
   /// versions._
   final String? name;
+
+  /// Output a value of type [T] dependent on `this` and its type
+  T when<T>({
+    required T Function(RectangleRegion rectangle) rectangle,
+    required T Function(CircleRegion circle) circle,
+    required T Function(LineRegion line) line,
+  }) =>
+      switch (this) {
+        RectangleRegion() => rectangle(this as RectangleRegion),
+        CircleRegion() => circle(this as CircleRegion),
+        LineRegion() => line(this as LineRegion),
+      };
 
   /// Generate the [DownloadableRegion] ready for bulk downloading
   ///
@@ -71,4 +83,15 @@ abstract class BaseRegion {
   ///
   /// Returns a `List<LatLng>` which can be used anywhere.
   List<LatLng> toOutline();
+
+  @override
+  @mustCallSuper
+  @mustBeOverridden
+  bool operator ==(Object other) =>
+      identical(this, other) || (other is BaseRegion && other.name == name);
+
+  @override
+  @mustBeOverridden
+  @mustCallSuper
+  int get hashCode => name.hashCode;
 }

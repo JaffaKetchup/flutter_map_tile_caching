@@ -14,12 +14,14 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [8.1.0] - 2023/05/11
+## [9.0.0] - 2023/XX/XX
 
+* Added support for Flutter 3.10 and Dart 3
+* Added support for flutter_map v5
 * Added `StoreManagement.pruneTilesOlderThan` method
-* Example application updates
-  * Added support for Flutter 3.10
-  * Removed auto-updater
+* Replaced public facing `RegionType`/`type` with Dart 3 exhaustive switch statements through `BaseRegion/DownloadableRegion.when` & `RecoverableRegion.toRegion`
+* Improved performance and fixed bugs
+* Example application improvements
 
 ## [8.0.0] - 2023/05/05
 

@@ -78,7 +78,7 @@ class _MapPageState extends State<MapPage> {
                               ),
                             ),
                           )
-                      : NetworkNoRetryTileProvider(),
+                      : NetworkTileProvider(),
                   maxZoom: 22,
                   userAgentPackageName: 'dev.org.fmtc.example.app',
                   panBuffer: 3,

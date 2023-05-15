@@ -19,10 +19,6 @@ import '../db/registry.dart';
 import '../db/tools.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
-///
-/// TODO: When v9 is released with Isar v4, bump to minimum Dart 3 and
-/// Flutter 3.10, then replace deprecated methods with [loadImage], as in
-/// https://github.com/JaffaKetchup/flutter_map_tile_caching/blob/57eb7c03413c45071944d99a70770b9050fde942/lib/src/providers/image_provider.dart
 class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// An instance of the [FMTCTileProvider] in use
   final FMTCTileProvider provider;
@@ -51,38 +47,32 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required this.directory,
   }) : db = FMTCRegistry.instance(provider.storeDirectory.storeName);
 
-  // TODO: When v9 is released with Isar v4, bump to minimum Dart 3 and
-  // Flutter 3.10, then replace deprecated methods with [loadImage], as in
-  // https://github.com/JaffaKetchup/flutter_map_tile_caching/blob/57eb7c03413c45071944d99a70770b9050fde942/lib/src/providers/image_provider.dart
-
   @override
-  ImageStreamCompleter loadBuffer(
+  ImageStreamCompleter loadImage(
     FMTCImageProvider key,
-    // ignore: deprecated_member_use
-    DecoderBufferCallback decode,
+    ImageDecoderCallback decode,
   ) {
-    // ignore: close_sinks
-    final StreamController<ImageChunkEvent> chunkEvents =
-        StreamController<ImageChunkEvent>();
-
+    final chunkEvents = StreamController<ImageChunkEvent>();
     return MultiFrameImageStreamCompleter(
-      codec: _loadAsync(key: key, decode: decode, chunkEvents: chunkEvents),
+      codec: _loadAsync(key, chunkEvents, decode),
       chunkEvents: chunkEvents.stream,
       scale: 1,
       debugLabel: coords.toString(),
-      informationCollector: () => [DiagnosticsProperty('Coordinates', coords)],
+      informationCollector: () => [
+        DiagnosticsProperty('Tile coordinates', coords),
+        DiagnosticsProperty('Root directory', directory),
+        DiagnosticsProperty('Store name', provider.storeDirectory.storeName),
+        DiagnosticsProperty('Current provider', key),
+      ],
     );
   }
 
-  Future<Codec> _loadAsync({
-    required FMTCImageProvider key,
-    // ignore: deprecated_member_use
-    required DecoderBufferCallback decode,
-    required StreamController<ImageChunkEvent> chunkEvents,
-  }) async {
-    Future<void> cacheHitMiss({
-      required bool hit,
-    }) =>
+  Future<Codec> _loadAsync(
+    FMTCImageProvider key,
+    StreamController<ImageChunkEvent> chunkEvents,
+    ImageDecoderCallback decode,
+  ) async {
+    Future<void> cacheHitMiss({required bool hit}) =>
         (hit ? _cacheHitsQueue : _cacheMissesQueue).add(() async {
           if (db.isOpen) {
             await db.writeTxn(() async {
