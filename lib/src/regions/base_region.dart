@@ -28,7 +28,7 @@ sealed class BaseRegion {
   ///  - [LineRegion]
   BaseRegion({required String? name})
       : name = (name?.isEmpty ?? false)
-            ? throw ArgumentError.value(name, 'name', 'Must not be empty.')
+            ? throw ArgumentError.value(name, 'name', 'Must not be empty')
             : name;
 
   /// The user friendly name for the region

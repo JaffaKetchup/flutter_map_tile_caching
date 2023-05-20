@@ -191,9 +191,8 @@ class StoreManagement {
     double? size,
     Key? key,
     double scale = 1.0,
-    // ignore: avoid_positional_boolean_parameters
-    Widget Function(BuildContext, Widget, int?, bool)? frameBuilder,
-    Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
+    ImageFrameBuilder? frameBuilder,
+    ImageErrorWidgetBuilder? errorBuilder,
     String? semanticLabel,
     bool excludeFromSemantics = false,
     Color? color,
@@ -251,13 +250,13 @@ class StoreManagement {
   ///
   /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
   /// error will be raised.
+  ///
   Future<Image?> tileImageAsync({
     double? size,
     Key? key,
     double scale = 1.0,
-    // ignore: avoid_positional_boolean_parameters
-    Widget Function(BuildContext, Widget, int?, bool)? frameBuilder,
-    Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
+    ImageFrameBuilder? frameBuilder,
+    ImageErrorWidgetBuilder? errorBuilder,
     String? semanticLabel,
     bool excludeFromSemantics = false,
     Color? color,

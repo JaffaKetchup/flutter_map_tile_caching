@@ -7,61 +7,59 @@ import '../../../../../shared/vars/region_mode.dart';
 class ShapeControllerPopup extends StatelessWidget {
   const ShapeControllerPopup({super.key});
 
-  static const Map<String, List<dynamic>> regionShapes = {
-    'Square': [
-      Icons.crop_square_sharp,
-      RegionMode.square,
-    ],
-    'Rectangle (Vertical)': [
-      Icons.crop_portrait_sharp,
-      RegionMode.rectangleVertical,
-    ],
-    'Rectangle (Horizontal)': [
-      Icons.crop_landscape_sharp,
-      RegionMode.rectangleHorizontal,
-    ],
-    'Circle': [
-      Icons.circle_outlined,
-      RegionMode.circle,
-    ],
-    'Line/Path': [
-      Icons.timeline,
-      null,
-    ],
+  static const Map<String, ({IconData icon, RegionMode mode, String? hint})>
+      regionShapes = {
+    'Square': (
+      icon: Icons.crop_square_sharp,
+      mode: RegionMode.square,
+      hint: null,
+    ),
+    'Vertical Rectangle': (
+      icon: Icons.crop_portrait_sharp,
+      mode: RegionMode.rectangleVertical,
+      hint: null,
+    ),
+    'Horizontal Rectangle': (
+      icon: Icons.crop_landscape_sharp,
+      mode: RegionMode.rectangleHorizontal,
+      hint: null,
+    ),
+    'Circle': (
+      icon: Icons.circle_outlined,
+      mode: RegionMode.circle,
+      hint: null,
+    ),
+    'Line/Path': (
+      icon: Icons.timeline,
+      mode: RegionMode.line,
+      hint:
+          'Tap/click to add point to line\nHold/secondary click to remove last point from line',
+    ),
   };
 
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.all(12),
         child: Consumer<DownloadProvider>(
-          builder: (context, provider, _) => ListView.separated(
+          builder: (context, provider, _) => ListView.builder(
             itemCount: regionShapes.length,
             shrinkWrap: true,
             itemBuilder: (context, i) {
-              final String key = regionShapes.keys.toList()[i];
-              final IconData icon = regionShapes.values.toList()[i][0];
-              final RegionMode? mode = regionShapes.values.toList()[i][1];
-
+              final value = regionShapes.values.elementAt(i);
               return ListTile(
                 visualDensity: VisualDensity.compact,
-                title: Text(key),
-                subtitle: i == regionShapes.length - 1
-                    ? const Text('Disabled in example application')
+                title: Text(regionShapes.keys.elementAt(i)),
+                leading: Icon(value.icon),
+                trailing: provider.regionMode == value.mode
+                    ? const Icon(Icons.done)
                     : null,
-                leading: Icon(icon),
-                trailing:
-                    provider.regionMode == mode ? const Icon(Icons.done) : null,
-                onTap: i != regionShapes.length - 1
-                    ? () {
-                        provider.regionMode = mode!;
-                        Navigator.of(context).pop();
-                      }
-                    : null,
-                enabled: i != regionShapes.length - 1,
+                subtitle: value.hint != null ? Text(value.hint!) : null,
+                onTap: () {
+                  provider.regionMode = value.mode;
+                  Navigator.of(context).pop();
+                },
               );
             },
-            separatorBuilder: (context, i) =>
-                i == regionShapes.length - 2 ? const Divider() : Container(),
           ),
         ),
       );

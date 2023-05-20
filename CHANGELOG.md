@@ -17,7 +17,7 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 ## [9.0.0] - 2023/XX/XX
 
 * Added support for Flutter 3.10 and Dart 3
-* Added support for flutter_map v5
+* Added support for flutter_map 'v5'
 * Added `StoreManagement.pruneTilesOlderThan` method
 * Replaced public facing `RegionType`/`type` with Dart 3 exhaustive switch statements through `BaseRegion/DownloadableRegion.when` & `RecoverableRegion.toRegion`
 * Improved performance and fixed bugs

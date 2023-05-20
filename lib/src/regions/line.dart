@@ -16,11 +16,7 @@ class LineRegion extends BaseRegion {
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
   ///  - [Widget] layer to be placed in a map: [toDrawable]
   ///  - list of [LatLng]s forming the outline: [LineRegion.toOutlines]
-  LineRegion(
-    this.line,
-    this.radius, {
-    super.name,
-  });
+  LineRegion(this.line, this.radius, {super.name}) : super();
 
   /// The center line defined by a list of coordinates
   final List<LatLng> line;
@@ -30,51 +26,49 @@ class LineRegion extends BaseRegion {
 
   /// Generate the list of rectangle segments formed from the locus of this line
   ///
-  /// Use the optional `overlap` argument to set the behaviour of the joints
+  /// Use the optional [overlap] argument to set the behaviour of the joints
   /// between segments:
   ///
   /// * -1: joined by closest corners (largest gap)
-  /// * 0 (default): joined by centers (equal gap and overlap)
+  /// * 0 (default): joined by centers
   /// * 1 (as downloaded): joined by further corners (largest overlap)
   List<List<LatLng>> toOutlines([int overlap = 0]) {
     if (overlap < -1 || overlap > 1) {
       throw ArgumentError('`overlap` must be between -1 and 1 inclusive');
     }
 
-    const Distance dist = Distance();
-    final int rad = (radius * math.pi / 4).round();
+    if (line.isEmpty) return [];
+
+    const dist = Distance();
+    final rad = radius * math.pi / 4;
 
     return line.map((pos) {
       if ((line.indexOf(pos) + 1) >= line.length) return [LatLng(0, 0)];
 
-      final List<LatLng> section = [pos, line[line.indexOf(pos) + 1]];
+      final section = [pos, line[line.indexOf(pos) + 1]];
 
-      final double bearing = dist.bearing(section[0], section[1]);
-      final double clockwiseRotation =
+      final bearing = dist.bearing(section[0], section[1]);
+      final clockwiseRotation =
           (90 + bearing) > 360 ? 360 - (90 + bearing) : (90 + bearing);
-      final double anticlockwiseRotation =
+      final anticlockwiseRotation =
           (bearing - 90) < 0 ? 360 + (bearing - 90) : (bearing - 90);
 
-      final LatLng offset1 =
-          dist.offset(section[0], rad, clockwiseRotation); // Top-right
-      final LatLng offset2 =
-          dist.offset(section[1], rad, clockwiseRotation); // Bottom-right
-      final LatLng offset3 =
-          dist.offset(section[1], rad, anticlockwiseRotation); // Bottom-left
-      final LatLng offset4 =
-          dist.offset(section[0], rad, anticlockwiseRotation); // Top-left
+      final topRight = dist.offset(section[0], rad, clockwiseRotation);
+      final bottomRight = dist.offset(section[1], rad, clockwiseRotation);
+      final bottomLeft = dist.offset(section[1], rad, anticlockwiseRotation);
+      final topLeft = dist.offset(section[0], rad, anticlockwiseRotation);
 
-      if (overlap == 0) return [offset1, offset2, offset3, offset4];
+      if (overlap == 0) return [topRight, bottomRight, bottomLeft, topLeft];
 
-      final bool r = overlap == -1;
-      final bool os = line.indexOf(pos) == 0;
-      final bool oe = line.indexOf(pos) == line.length - 2;
+      final r = overlap == -1;
+      final os = line.indexOf(pos) == 0;
+      final oe = line.indexOf(pos) == line.length - 2;
 
       return [
-        os ? offset1 : dist.offset(offset1, r ? rad : -rad, bearing),
-        oe ? offset2 : dist.offset(offset2, r ? -rad : rad, bearing),
-        oe ? offset3 : dist.offset(offset3, r ? -rad : rad, bearing),
-        os ? offset4 : dist.offset(offset4, r ? rad : -rad, bearing),
+        os ? topRight : dist.offset(topRight, r ? rad : -rad, bearing),
+        oe ? bottomRight : dist.offset(bottomRight, r ? -rad : rad, bearing),
+        oe ? bottomLeft : dist.offset(bottomLeft, r ? -rad : rad, bearing),
+        os ? topLeft : dist.offset(topLeft, r ? rad : -rad, bearing),
       ];
     }).toList()
       ..removeLast();
@@ -156,18 +150,15 @@ class LineRegion extends BaseRegion {
 
   /// Flattens the result of [toOutlines] - its documentation is quoted below
   ///
-  /// Prefer [toOutlines]. This method is likely to give a different result than
-  /// expected if used externally.
-  ///
   /// > Generate the list of rectangle segments formed from the locus of this
   /// > line
   /// >
-  /// > Use the optional `overlap` argument to set the behaviour of the joints
+  /// > Use the optional [overlap] argument to set the behaviour of the joints
   /// between segments:
   /// >
   /// > * -1: joined by closest corners (largest gap),
-  /// > * 0: joined by centers (equal gap and overlap)
-  /// > * 1 (default, as downloaded): joined by further corners (most overlap)
+  /// > * 0 (default): joined by centers
+  /// > * 1 (as downloaded): joined by further corners (most overlap)
   @override
   List<LatLng> toOutline([int overlap = 1]) =>
       toOutlines(overlap).expand((x) => x).toList();

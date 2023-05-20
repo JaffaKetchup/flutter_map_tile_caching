@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../vars/region_mode.dart';
 
@@ -10,6 +11,20 @@ class DownloadProvider extends ChangeNotifier {
   RegionMode get regionMode => _regionMode;
   set regionMode(RegionMode newMode) {
     _regionMode = newMode;
+    notifyListeners();
+  }
+
+  double _lineRegionRadius = 1000;
+  double get lineRegionRadius => _lineRegionRadius;
+  set lineRegionRadius(double newNum) {
+    _lineRegionRadius = newNum;
+    notifyListeners();
+  }
+
+  List<LatLng> _lineRegionPoints = [];
+  List<LatLng> get lineRegionPoints => _lineRegionPoints;
+  set lineRegionPoints(List<LatLng> newList) {
+    _lineRegionPoints = newList;
     notifyListeners();
   }
 

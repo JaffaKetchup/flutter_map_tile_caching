@@ -3,4 +3,5 @@ enum RegionMode {
   rectangleVertical,
   rectangleHorizontal,
   circle,
+  line,
 }

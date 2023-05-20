@@ -18,10 +18,7 @@ class RectangleRegion extends BaseRegion {
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
   ///  - [Widget] layer to be placed in a map: [toDrawable]
   ///  - list of [LatLng]s forming the outline: [toOutline]
-  RectangleRegion(
-    this.bounds, {
-    super.name,
-  });
+  RectangleRegion(this.bounds, {super.name}) : super();
 
   /// The coordinate bounds
   final LatLngBounds bounds;

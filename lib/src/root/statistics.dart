@@ -14,21 +14,14 @@ class RootStats {
   /// Prefer [storesAvailableAsync] to avoid blocking the UI thread. Otherwise,
   /// this has slightly better performance.
   List<StoreDirectory> get storesAvailable => _registry.storeDatabases.values
-      .map(
-        (e) => StoreDirectory._(
-          e.descriptorSync.name,
-          autoCreate: false,
-        ),
-      )
+      .map((e) => StoreDirectory._(e.descriptorSync.name, autoCreate: false))
       .toList();
 
   /// List all the available [StoreDirectory]s asynchronously
   Future<List<StoreDirectory>> get storesAvailableAsync => Future.wait(
         _registry.storeDatabases.values.map(
-          (e) async => StoreDirectory._(
-            (await e.descriptor).name,
-            autoCreate: false,
-          ),
+          (e) async =>
+              StoreDirectory._((await e.descriptor).name, autoCreate: false),
         ),
       );
 

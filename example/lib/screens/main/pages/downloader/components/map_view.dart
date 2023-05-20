@@ -31,6 +31,8 @@ class _MapViewState extends State<MapView> {
   final _mapKey = GlobalKey<State<StatefulWidget>>();
   final MapController _mapController = MapController();
 
+  late final DownloadProvider downloadProvider;
+
   late final StreamSubscription _polygonVisualizerStream;
   late final StreamSubscription _tileCounterTriggerStream;
   late final StreamSubscription _manualPolygonRecalcTriggerStream;
@@ -64,20 +66,29 @@ class _MapViewState extends State<MapView> {
   void initState() {
     super.initState();
 
+    downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+
     _manualPolygonRecalcTriggerStream =
-        Provider.of<DownloadProvider>(context, listen: false)
-            .manualPolygonRecalcTrigger
-            .stream
-            .listen((_) {
+        downloadProvider.manualPolygonRecalcTrigger.stream.listen((_) {
+      if (downloadProvider.regionMode == RegionMode.line) {
+        _updateLineRegion();
+        return;
+      }
       _updatePointLatLng();
       _countTiles();
     });
 
-    _polygonVisualizerStream =
-        _mapController.mapEventStream.listen((_) => _updatePointLatLng());
+    _polygonVisualizerStream = _mapController.mapEventStream.listen((_) {
+      if (downloadProvider.regionMode != RegionMode.line) {
+        _updatePointLatLng();
+      }
+    });
+
     _tileCounterTriggerStream = _mapController.mapEventStream
         .debounce(const Duration(seconds: 1))
-        .listen((_) => _countTiles());
+        .listen((_) {
+      if (downloadProvider.regionMode != RegionMode.line) _countTiles();
+    });
   }
 
   @override
@@ -136,6 +147,9 @@ class _MapViewState extends State<MapView> {
                       _updatePointLatLng();
                       _countTiles();
                     },
+                    onTap: (_, point) => _addLinePoint(point),
+                    onSecondaryTap: (_, point) => _removeLinePoint(),
+                    onLongPress: (_, point) => _removeLinePoint(),
                   ),
                   nonRotatedChildren: buildStdAttribution(
                     urlTemplate,
@@ -172,7 +186,16 @@ class _MapViewState extends State<MapView> {
                         ),
                       ),
                     ),
-                    if (_coordsTopLeft != null &&
+                    if (downloadProvider.regionMode == RegionMode.line)
+                      LineRegion(
+                        downloadProvider.lineRegionPoints,
+                        downloadProvider.lineRegionRadius,
+                      ).toDrawable(
+                        borderColor: Colors.black,
+                        borderStrokeWidth: 2,
+                        fillColor: Colors.green.withOpacity(2 / 3),
+                      )
+                    else if (_coordsTopLeft != null &&
                         _coordsBottomRight != null &&
                         downloadProvider.regionMode != RegionMode.circle)
                       _buildTargetPolygon(
@@ -186,7 +209,9 @@ class _MapViewState extends State<MapView> {
                       _buildTargetPolygon(CircleRegion(_center!, _radius!))
                   ],
                 ),
-                if (_crosshairsTop != null && _crosshairsBottom != null) ...[
+                if (downloadProvider.regionMode != RegionMode.line &&
+                    _crosshairsTop != null &&
+                    _crosshairsBottom != null) ...[
                   Positioned(
                     top: _crosshairsTop!.y,
                     left: _crosshairsTop!.x,
@@ -197,16 +222,68 @@ class _MapViewState extends State<MapView> {
                     left: _crosshairsBottom!.x,
                     child: const Crosshairs(),
                   ),
-                ]
+                ],
+                if (downloadProvider.regionMode == RegionMode.line)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.background,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    width: double.infinity,
+                    height: 50,
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        const Text('Radius'),
+                        Expanded(
+                          child: Slider(
+                            value: downloadProvider.lineRegionRadius,
+                            min: 100,
+                            max: 10000,
+                            divisions: 99,
+                            label:
+                                '${downloadProvider.lineRegionRadius.round()} meters',
+                            onChanged: (val) {
+                              downloadProvider.lineRegionRadius = val;
+                              _updateLineRegion();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             );
           },
         ),
       );
 
+  void _updateLineRegion() {
+    downloadProvider.region = LineRegion(
+      downloadProvider.lineRegionPoints,
+      downloadProvider.lineRegionRadius,
+    );
+
+    _countTiles();
+  }
+
+  void _removeLinePoint() {
+    if (downloadProvider.regionMode == RegionMode.line) {
+      downloadProvider.lineRegionPoints.removeLast();
+      _updateLineRegion();
+    }
+  }
+
+  void _addLinePoint(LatLng coord) {
+    if (downloadProvider.regionMode == RegionMode.line) {
+      downloadProvider.lineRegionPoints.add(coord);
+      _updateLineRegion();
+    }
+  }
+
   void _updatePointLatLng() {
-    final DownloadProvider downloadProvider =
-        Provider.of<DownloadProvider>(context, listen: false);
+    if (downloadProvider.regionMode == RegionMode.line) return;
 
     final Size mapSize = _mapKey.currentContext!.size!;
     final bool isHeightLongestSide = mapSize.width < mapSize.height;
@@ -285,6 +362,8 @@ class _MapViewState extends State<MapView> {
             1000;
         setState(() {});
         break;
+      case RegionMode.line:
+        break;
     }
 
     if (downloadProvider.regionMode != RegionMode.circle) {
@@ -307,16 +386,13 @@ class _MapViewState extends State<MapView> {
   }
 
   Future<void> _countTiles() async {
-    final DownloadProvider provider =
-        Provider.of<DownloadProvider>(context, listen: false);
-
-    if (provider.region != null) {
-      provider
+    if (downloadProvider.region != null) {
+      downloadProvider
         ..regionTiles = null
         ..regionTiles = await FMTC.instance('').download.check(
-              provider.region!.toDownloadable(
-                provider.minZoom,
-                provider.maxZoom,
+              downloadProvider.region!.toDownloadable(
+                downloadProvider.minZoom,
+                downloadProvider.maxZoom,
                 TileLayer(),
               ),
             );

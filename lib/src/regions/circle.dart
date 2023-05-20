@@ -16,11 +16,7 @@ class CircleRegion extends BaseRegion {
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
   ///  - [Widget] layer to be placed in a map: [toDrawable]
   ///  - list of [LatLng]s forming the outline: [toOutline]
-  CircleRegion(
-    this.center,
-    this.radius, {
-    super.name,
-  });
+  CircleRegion(this.center, this.radius, {super.name}) : super();
 
   /// Center coordinate
   final LatLng center;

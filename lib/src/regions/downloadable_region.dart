@@ -8,6 +8,9 @@ part of flutter_map_tile_caching;
 /// Construct via [BaseRegion.toDownloadable].
 class DownloadableRegion<R extends BaseRegion> {
   /// A copy of the [BaseRegion] used to form this object
+  ///
+  /// To make decisions based on the type of this region, prefer [when] over
+  /// switching on [R] manually.
   final R originalRegion;
 
   /// The minimum zoom level to fetch tiles for
@@ -93,7 +96,7 @@ class DownloadableRegion<R extends BaseRegion> {
     }
   }
 
-  /// Output a value of type [T] dependent on [originalRegion] and its type
+  /// Output a value of type [T] dependent on [originalRegion] and its type [R]
   ///
   /// Shortcut for [BaseRegion.when].
   T when<T>({
