@@ -67,7 +67,7 @@ jobs:
             with:
               channel: "stable"
           - name: Build
-            run: flutter build apk --obfuscate --split-debug-info=/symbols
+            run: flutter build apk --obfuscate --split-debug-info=./symbols
           - name: Upload Artifact
             uses: actions/upload-artifact@v3.1.2
             with:
@@ -95,7 +95,7 @@ jobs:
             with:
               channel: "stable"
           - name: Build
-            run: flutter build windows --obfuscate --split-debug-info=/symbols
+            run: flutter build windows --obfuscate --split-debug-info=./symbols
           - name: Create Installer
             run: iscc "windowsApplicationInstallerSetup.iss"
             working-directory: .
