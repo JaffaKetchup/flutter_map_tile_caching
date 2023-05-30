@@ -39,7 +39,7 @@ class FlutterMapTileCaching {
     required bool debugMode,
   }) : _debugMode = debugMode;
 
-  /// Initialise and prepare FMTC, by creating all neccessary directories/files
+  /// Initialise and prepare FMTC, by creating all necessary directories/files
   /// and configuring the [FlutterMapTileCaching] singleton
   ///
   /// Prefer to leave [rootDirectory] as `null`, which will use

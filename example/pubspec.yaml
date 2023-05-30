@@ -14,7 +14,7 @@ dependencies:
   better_open_file: ^3.6.4
   flutter:
     sdk: flutter
-  flutter_foreground_task: ^4.1.0
+  flutter_foreground_task: ^5.0.0
   flutter_map: ^5.0.0-dev.1
   flutter_map_tile_caching:
   flutter_speed_dial: ^6.0.0
@@ -23,7 +23,7 @@ dependencies:
   google_fonts: ^4.0.4
   http: ^0.13.4
   intl: ^0.18.0
-  latlong2: ^0.8.1
+  latlong2: ^0.9.0
   osm_nominatim: ^2.0.1
   path: ^1.8.3
   provider: ^6.0.3
@@ -33,8 +33,12 @@ dependencies:
   version: ^3.0.2
 
 dependency_overrides:
+  flutter_map:
+    git:
+      url: https://github.com/fleaflet/flutter_map.git
   flutter_map_tile_caching:
     path: ../
+  http: ^1.0.0
 
 flutter:
   uses-material-design: true

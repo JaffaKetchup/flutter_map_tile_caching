@@ -41,14 +41,14 @@ class _MapPageState extends State<MapPage> {
 
             return FlutterMap(
               options: MapOptions(
-                center: LatLng(51.509364, -0.128928),
+                center: const LatLng(51.509364, -0.128928),
                 zoom: 9.2,
                 maxZoom: 22,
                 maxBounds: LatLngBounds.fromPoints([
-                  LatLng(-90, 180),
-                  LatLng(90, 180),
-                  LatLng(90, -180),
-                  LatLng(-90, -180),
+                  const LatLng(-90, 180),
+                  const LatLng(90, 180),
+                  const LatLng(90, -180),
+                  const LatLng(-90, -180),
                 ]),
                 interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                 scrollWheelVelocity: 0.002,

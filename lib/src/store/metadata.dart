@@ -14,13 +14,8 @@ class StoreMetadata extends _StoreDb {
   /// Add a new key-value pair to the store asynchronously
   ///
   /// Overwrites the value if the key already exists.
-  Future<void> addAsync({
-    required String key,
-    required String value,
-  }) =>
-      _db.writeTxn(
-        () => _db.metadata.put(DbMetadata(name: key, data: value)),
-      );
+  Future<void> addAsync({required String key, required String value}) =>
+      _db.writeTxn(() => _db.metadata.put(DbMetadata(name: key, data: value)));
 
   /// Add a new key-value pair to the store synchronously
   ///
@@ -28,11 +23,7 @@ class StoreMetadata extends _StoreDb {
   ///
   /// Prefer [addAsync] to avoid blocking the UI thread. Otherwise, this has
   /// slightly better performance.
-  void add({
-    required String key,
-    required String value,
-  }) =>
-      _db.writeTxnSync(
+  void add({required String key, required String value}) => _db.writeTxnSync(
         () => _db.metadata.putSync(DbMetadata(name: key, data: value)),
       );
 

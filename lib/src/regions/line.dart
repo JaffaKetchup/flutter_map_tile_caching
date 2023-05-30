@@ -43,7 +43,7 @@ class LineRegion extends BaseRegion {
     final rad = radius * math.pi / 4;
 
     return line.map((pos) {
-      if ((line.indexOf(pos) + 1) >= line.length) return [LatLng(0, 0)];
+      if ((line.indexOf(pos) + 1) >= line.length) return [const LatLng(0, 0)];
 
       final section = [pos, line[line.indexOf(pos) + 1]];
 
