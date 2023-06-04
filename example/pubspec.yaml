@@ -15,13 +15,13 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_foreground_task: ^5.0.0
-  flutter_map: ^5.0.0-dev.1
+  flutter_map: ^5.0.0
   flutter_map_tile_caching:
   flutter_speed_dial: ^6.0.0
   fmtc_plus_background_downloading: ^8.0.0
   fmtc_plus_sharing: ^8.0.0
   google_fonts: ^4.0.4
-  http: ^0.13.4
+  http: ^1.0.0
   intl: ^0.18.0
   latlong2: ^0.9.0
   osm_nominatim: ^2.0.1
@@ -33,9 +33,6 @@ dependencies:
   version: ^3.0.2
 
 dependency_overrides:
-  flutter_map:
-    git:
-      url: https://github.com/fleaflet/flutter_map.git
   flutter_map_tile_caching:
     path: ../
   http: ^1.0.0

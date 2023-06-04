@@ -357,7 +357,7 @@ class _MapViewState extends State<MapView> {
         _radius = const Distance(roundResult: false).distance(
               _center!,
               _mapController
-                  .pointToLatLng(_customPointFromPoint(calculatedTop))!,
+                  .pointToLatLng(_customPointFromPoint(calculatedTop)),
             ) /
             1000;
         setState(() {});

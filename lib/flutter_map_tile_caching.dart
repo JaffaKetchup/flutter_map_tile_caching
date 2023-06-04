@@ -25,7 +25,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart';
 import 'package:http/io_client.dart';
-import 'package:http_plus/http_plus.dart';
 import 'package:isar/isar.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
@@ -49,6 +48,7 @@ import 'src/errors/browsing.dart';
 import 'src/errors/initialisation.dart';
 import 'src/errors/store_not_ready.dart';
 import 'src/misc/exts.dart';
+import 'src/misc/http_plus.dart';
 import 'src/misc/typedefs.dart';
 import 'src/providers/image_provider.dart';
 
