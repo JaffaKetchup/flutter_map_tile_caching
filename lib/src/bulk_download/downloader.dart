@@ -30,7 +30,7 @@ Future<Stream<TileProgress>> bulkDownloader({
   required FMTCTileProvider provider,
   required Uint8List? seaTileBytes,
   required InternalProgressTimingManagement progressManagement,
-  required BaseClient client,
+  required Client client,
 }) async {
   final tiles = FMTCRegistry.instance(provider.storeDirectory.storeName);
 

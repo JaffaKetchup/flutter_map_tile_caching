@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -130,19 +131,21 @@ class _MapViewState extends State<MapView> {
                 FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
-                    center: const LatLng(51.509364, -0.128928),
-                    zoom: 9.2,
+                    initialCenter: const LatLng(51.509364, -0.128928),
+                    initialZoom: 9.2,
                     maxZoom: 22,
-                    maxBounds: LatLngBounds.fromPoints([
-                      const LatLng(-90, 180),
-                      const LatLng(90, 180),
-                      const LatLng(90, -180),
-                      const LatLng(-90, -180),
-                    ]),
-                    interactiveFlags:
-                        InteractiveFlag.all & ~InteractiveFlag.rotate,
-                    scrollWheelVelocity: 0.002,
-                    keepAlive: true,
+                    cameraConstraint: CameraConstraint.contain(
+                      bounds: LatLngBounds.fromPoints([
+                        const LatLng(-90, 180),
+                        const LatLng(90, 180),
+                        const LatLng(90, -180),
+                        const LatLng(-90, -180),
+                      ]),
+                    ),
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                      scrollWheelVelocity: 0.002,
+                    ),
                     onMapReady: () {
                       _updatePointLatLng();
                       _countTiles();
@@ -150,6 +153,7 @@ class _MapViewState extends State<MapView> {
                     onTap: (_, point) => _addLinePoint(point),
                     onSecondaryTap: (_, point) => _removeLinePoint(),
                     onLongPress: (_, point) => _removeLinePoint(),
+                    keepAlive: true,
                   ),
                   nonRotatedChildren: buildStdAttribution(
                     urlTemplate,
@@ -352,11 +356,12 @@ class _MapViewState extends State<MapView> {
         _crosshairsTop = calculatedTop - _crosshairsMovement;
         _crosshairsBottom = centerNormal - _crosshairsMovement;
 
-        _center =
-            _mapController.pointToLatLng(_customPointFromPoint(centerNormal));
+        _center = MapController.of(context)
+            .camera
+            .pointToLatLng(_customPointFromPoint(centerNormal));
         _radius = const Distance(roundResult: false).distance(
               _center!,
-              _mapController
+              _mapController.camera
                   .pointToLatLng(_customPointFromPoint(calculatedTop)),
             ) /
             1000;
@@ -370,9 +375,9 @@ class _MapViewState extends State<MapView> {
       _crosshairsTop = calculatedTopLeft - _crosshairsMovement;
       _crosshairsBottom = calculatedBottomRight - _crosshairsMovement;
 
-      _coordsTopLeft = _mapController
+      _coordsTopLeft = _mapController.camera
           .pointToLatLng(_customPointFromPoint(calculatedTopLeft));
-      _coordsBottomRight = _mapController
+      _coordsBottomRight = _mapController.camera
           .pointToLatLng(_customPointFromPoint(calculatedBottomRight));
 
       setState(() {});

@@ -19,7 +19,7 @@ class DownloadManagement {
   Completer<void>? _cancelRequestSignal;
   Completer<void>? _cancelCompleteSignal;
   InternalProgressTimingManagement? _progressManagement;
-  BaseClient? _httpClient;
+  Client? _httpClient;
 
   factory DownloadManagement._(StoreDirectory storeDirectory) {
     if (!_instances.keys.contains(storeDirectory)) {
@@ -66,7 +66,7 @@ class DownloadManagement {
     bool disableRecovery = false,
     DownloadBufferMode bufferMode = DownloadBufferMode.disabled,
     int? bufferLimit,
-    BaseClient? httpClient,
+    Client? httpClient,
   }) async* {
     // Start recovery
     _recoveryId = DateTime.now().millisecondsSinceEpoch;
@@ -83,7 +83,7 @@ class DownloadManagement {
 
     // Get the tile provider
     final FMTCTileProvider tileProvider =
-        _storeDirectory.getTileProvider(tileProviderSettings);
+        _storeDirectory.getTileProvider(settings: tileProviderSettings);
 
     // Initialise HTTP client
     _httpClient = httpClient ??

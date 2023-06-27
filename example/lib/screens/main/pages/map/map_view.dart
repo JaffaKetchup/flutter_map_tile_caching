@@ -41,17 +41,21 @@ class _MapPageState extends State<MapPage> {
 
             return FlutterMap(
               options: MapOptions(
-                center: const LatLng(51.509364, -0.128928),
-                zoom: 9.2,
+                initialCenter: const LatLng(51.509364, -0.128928),
+                initialZoom: 9.2,
                 maxZoom: 22,
-                maxBounds: LatLngBounds.fromPoints([
-                  const LatLng(-90, 180),
-                  const LatLng(90, 180),
-                  const LatLng(90, -180),
-                  const LatLng(-90, -180),
-                ]),
-                interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                scrollWheelVelocity: 0.002,
+                cameraConstraint: CameraConstraint.contain(
+                  bounds: LatLngBounds.fromPoints([
+                    const LatLng(-90, 180),
+                    const LatLng(90, 180),
+                    const LatLng(90, -180),
+                    const LatLng(-90, -180),
+                  ]),
+                ),
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                  scrollWheelVelocity: 0.002,
+                ),
                 keepAlive: true,
               ),
               nonRotatedChildren: buildStdAttribution(urlTemplate),
@@ -60,7 +64,7 @@ class _MapPageState extends State<MapPage> {
                   urlTemplate: urlTemplate,
                   tileProvider: provider.currentStore != null
                       ? FMTC.instance(provider.currentStore!).getTileProvider(
-                            FMTCTileProviderSettings(
+                            settings: FMTCTileProviderSettings(
                               behavior: CacheBehavior.values
                                   .byName(metadata.data!['behaviour']!),
                               cachedValidDuration: int.parse(

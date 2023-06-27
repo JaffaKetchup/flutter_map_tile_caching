@@ -54,11 +54,11 @@ class StoreDirectory {
   /// Uses [FMTCSettings.defaultTileProviderSettings] by default (and it's
   /// default if unspecified). Alternatively, override [settings] for this get
   /// only.
-  FMTCTileProvider getTileProvider([
+  FMTCTileProvider getTileProvider({
     FMTCTileProviderSettings? settings,
     Map<String, String>? headers,
-    BaseClient? httpClient,
-  ]) =>
+    Client? httpClient,
+  }) =>
       FMTCTileProvider._(
         storeDirectory: this,
         settings: settings,

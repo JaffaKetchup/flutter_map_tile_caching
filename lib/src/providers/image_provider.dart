@@ -2,6 +2,8 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -72,47 +74,25 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     StreamController<ImageChunkEvent> chunkEvents,
     ImageDecoderCallback decode,
   ) async {
-    Future<void> cacheHitMiss({required bool hit}) =>
-        (hit ? _cacheHitsQueue : _cacheMissesQueue).add(() async {
-          if (db.isOpen) {
-            await db.writeTxn(() async {
-              final store = db.isOpen ? await db.descriptor : null;
-              if (store == null) return;
-              if (hit) store.hits += 1;
-              if (!hit) store.misses += 1;
-              await db.storeDescriptor.put(store);
-            });
-          }
-        });
+    Future<Never> finishWithError(FMTCBrowsingError err) async {
+      scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
+      unawaited(chunkEvents.close());
+      await evict();
 
-    Future<Codec> finish({
-      List<int>? bytes,
-      String? throwError,
-      FMTCBrowsingErrorType? throwErrorType,
-      bool? cacheHit,
+      provider.settings.errorHandler?.call(err);
+      throw err;
+    }
+
+    Future<Codec> finishSuccessfully({
+      required Uint8List bytes,
+      required bool cacheHit,
     }) async {
       scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
       unawaited(chunkEvents.close());
+      await evict();
 
-      if (cacheHit != null) unawaited(cacheHitMiss(hit: cacheHit));
-
-      if (throwError != null) {
-        await evict();
-
-        final error = FMTCBrowsingError(throwError, throwErrorType!);
-        provider.settings.errorHandler?.call(error);
-        throw error;
-      }
-
-      if (bytes != null) {
-        return decode(
-          await ImmutableBuffer.fromUint8List(Uint8List.fromList(bytes)),
-        );
-      }
-
-      throw ArgumentError(
-        '`finish` was called with an invalid combination of arguments, or a fall-through situation occurred.',
-      );
+      unawaited(_cacheHitMiss(hit: cacheHit));
+      return decode(await ImmutableBuffer.fromUint8List(bytes));
     }
 
     final networkUrl = provider.getTileUrl(coords, options);
@@ -128,68 +108,124 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
                         existingTile.lastModified.millisecondsSinceEpoch >
                     provider.settings.cachedValidDuration.inMilliseconds));
 
-    List<int>? bytes;
+    // Prepare a list of image bytes and prefill if there's already a cached
+    // tile available
+    Uint8List? bytes;
     if (!needsCreating) bytes = Uint8List.fromList(existingTile.bytes);
 
+    // If there is a cached tile that's in date available, use it
+    if (!needsCreating && !needsUpdating) {
+      return finishSuccessfully(bytes: bytes!, cacheHit: true);
+    }
+
+    // If a tile is not available and cache only mode is in use, just fail
+    // before attempting a network call
     if (provider.settings.behavior == CacheBehavior.cacheOnly &&
         needsCreating) {
-      return finish(
-        throwError:
-            'Failed to load the tile from the cache because it was missing.',
-        throwErrorType: FMTCBrowsingErrorType.missingInCacheOnlyMode,
-        cacheHit: false,
-      );
-    }
-
-    if (!needsCreating && !needsUpdating) {
-      return finish(bytes: bytes, cacheHit: true);
-    }
-
-    final StreamedResponse response;
-
-    try {
-      response = await provider.httpClient.send(
-        Request('GET', Uri.parse(networkUrl))..headers.addAll(provider.headers),
-      );
-    } catch (_) {
-      return finish(
-        bytes: !needsCreating ? bytes : null,
-        throwError: needsCreating
-            ? 'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.'
-            : null,
-        throwErrorType: FMTCBrowsingErrorType.noConnectionDuringFetch,
-        cacheHit: false,
-      );
-    }
-
-    if (response.statusCode != 200) {
-      return finish(
-        bytes: !needsCreating ? bytes : null,
-        throwError: needsCreating
-            ? 'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code of ${response.statusCode}'
-            : null,
-        throwErrorType: FMTCBrowsingErrorType.negativeFetchResponse,
-        cacheHit: false,
-      );
-    }
-
-    int bytesReceivedLength = 0;
-    bytes = [];
-    await for (final byte in response.stream) {
-      bytesReceivedLength += byte.length;
-      bytes.addAll(byte);
-      chunkEvents.add(
-        ImageChunkEvent(
-          cumulativeBytesLoaded: bytesReceivedLength,
-          expectedTotalBytes: response.contentLength,
+      return finishWithError(
+        FMTCBrowsingError(
+          type: FMTCBrowsingErrorType.missingInCacheOnlyMode,
+          networkUrl: networkUrl,
+          matcherUrl: matcherUrl,
         ),
       );
     }
 
+    // From this point, a tile must exist (but it may be outdated). However, an
+    // outdated tile is better than no tile at all, so in the event of an error,
+    // always return the existing tile's bytes
+
+    // Setup a network request for the tile & handle network exceptions
+    final request = Request('GET', Uri.parse(networkUrl))
+      ..headers.addAll(provider.headers);
+    final StreamedResponse response;
+    try {
+      response = await provider.httpClient.send(request);
+    } catch (e) {
+      if (!needsCreating) {
+        return finishSuccessfully(bytes: bytes!, cacheHit: false);
+      }
+      return finishWithError(
+        FMTCBrowsingError(
+          type: e is SocketException
+              ? FMTCBrowsingErrorType.noConnectionDuringFetch
+              : FMTCBrowsingErrorType.unknownFetchException,
+          networkUrl: networkUrl,
+          matcherUrl: matcherUrl,
+          request: request,
+          originalError: e,
+        ),
+      );
+    }
+
+    // Check whether the network response is not 200 OK
+    if (response.statusCode != 200) {
+      if (!needsCreating) {
+        return finishSuccessfully(bytes: bytes!, cacheHit: false);
+      }
+      return finishWithError(
+        FMTCBrowsingError(
+          type: FMTCBrowsingErrorType.negativeFetchResponse,
+          networkUrl: networkUrl,
+          matcherUrl: matcherUrl,
+          request: request,
+          response: response,
+        ),
+      );
+    }
+
+    // Extract the image bytes from the streamed network response
+    final bytesBuilder = BytesBuilder(copy: false);
+    await for (final byte in response.stream) {
+      bytesBuilder.add(byte);
+      chunkEvents.add(
+        ImageChunkEvent(
+          cumulativeBytesLoaded: bytesBuilder.length,
+          expectedTotalBytes: response.contentLength,
+        ),
+      );
+    }
+    final responseBytes = bytesBuilder.takeBytes();
+
+    // Perform a secondary check to ensure that the bytes recieved actually
+    // encode a valid image
+    late final bool isValidImageData;
+    try {
+      isValidImageData = (await (await instantiateImageCodec(
+            responseBytes,
+            targetWidth: 8,
+            targetHeight: 8,
+          ))
+                  .getNextFrame())
+              .image
+              .width >
+          0;
+    } catch (e) {
+      isValidImageData = false;
+    }
+    if (!isValidImageData) {
+      if (!needsCreating) {
+        return finishSuccessfully(bytes: bytes!, cacheHit: false);
+      }
+      return finishWithError(
+        FMTCBrowsingError(
+          type: FMTCBrowsingErrorType.invalidImageData,
+          networkUrl: networkUrl,
+          matcherUrl: matcherUrl,
+          request: request,
+          response: response,
+        ),
+      );
+    }
+
+    // Cache the tile retrieved from the network response
     unawaited(
-      db.writeTxn(() => db.tiles.put(DbTile(url: matcherUrl, bytes: bytes!))),
+      db.writeTxn(
+        () => db.tiles.put(DbTile(url: matcherUrl, bytes: responseBytes)),
+      ),
     );
 
+    // Clear out old tiles if the maximum store length has been exceeded
     if (needsCreating && provider.settings.maxStoreLength != 0) {
       unawaited(
         _removeOldestQueue.add(
@@ -205,8 +241,24 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       );
     }
 
-    return finish(bytes: bytes, cacheHit: false);
+    return finishSuccessfully(bytes: responseBytes, cacheHit: false);
   }
+
+  Future<void> _cacheHitMiss({required bool hit}) =>
+      (hit ? _cacheHitsQueue : _cacheMissesQueue).add(() async {
+        if (db.isOpen) {
+          await db.writeTxn(() async {
+            final store = db.isOpen ? await db.descriptor : null;
+            if (store == null) return;
+            if (hit) {
+              store.hits += 1;
+            } else {
+              store.misses += 1;
+            }
+            await db.storeDescriptor.put(store);
+          });
+        }
+      });
 
   @override
   Future<FMTCImageProvider> obtainKey(ImageConfiguration configuration) =>
