@@ -91,7 +91,7 @@ sealed class BaseRegion {
       identical(this, other) || (other is BaseRegion && other.name == name);
 
   @override
-  @mustBeOverridden
   @mustCallSuper
+  @mustBeOverridden
   int get hashCode => name.hashCode;
 }

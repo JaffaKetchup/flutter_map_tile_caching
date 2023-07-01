@@ -165,6 +165,7 @@ class _MapViewState extends State<MapView> {
                       maxZoom: 20,
                       reset: generalProvider.resetController.stream,
                       keepBuffer: 5,
+                      userAgentPackageName: 'dev.org.fmtc.example.app',
                       backgroundColor: const Color(0xFFaad3df),
                       tileBuilder: (context, widget, tile) =>
                           FutureBuilder<bool?>(

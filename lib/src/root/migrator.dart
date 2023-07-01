@@ -63,12 +63,10 @@ class RootMigrator {
     ];
 
     // Search for the previous structure
-    final Directory normal =
-        (await getApplicationDocumentsDirectory()) >> 'fmtc';
-    final Directory temporary = (await getTemporaryDirectory()) >> 'fmtc';
-    final Directory? custom =
-        customDirectory == null ? null : customDirectory >> 'fmtc';
-    final Directory? root = await normal.exists()
+    final normal = (await getApplicationDocumentsDirectory()) >> 'fmtc';
+    final temporary = (await getTemporaryDirectory()) >> 'fmtc';
+    final custom = customDirectory == null ? null : customDirectory >> 'fmtc';
+    final root = await normal.exists()
         ? normal
         : await temporary.exists()
             ? temporary
