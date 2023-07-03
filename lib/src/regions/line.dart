@@ -79,9 +79,6 @@ class LineRegion extends BaseRegion {
     int minZoom,
     int maxZoom,
     TileLayer options, {
-    int parallelThreads = 10,
-    bool preventRedownload = false,
-    bool seaTileRemoval = false,
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),
@@ -92,13 +89,9 @@ class LineRegion extends BaseRegion {
         minZoom: minZoom,
         maxZoom: maxZoom,
         options: options,
-        parallelThreads: parallelThreads,
-        preventRedownload: preventRedownload,
-        seaTileRemoval: seaTileRemoval,
         start: start,
         end: end,
         crs: crs,
-        errorHandler: errorHandler,
       );
 
   @override

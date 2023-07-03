@@ -60,9 +60,6 @@ class RootRecovery {
               maxZoom: r.maxZoom,
               start: r.start,
               end: r.end,
-              parallelThreads: r.parallelThreads,
-              preventRedownload: r.preventRedownload,
-              seaTileRemoval: r.seaTileRemoval,
             ),
           )
           .toList();
@@ -108,9 +105,6 @@ class RootRecovery {
           maxZoom: region.maxZoom,
           start: region.start,
           end: region.end,
-          parallelThreads: region.parallelThreads,
-          preventRedownload: region.preventRedownload,
-          seaTileRemoval: region.seaTileRemoval,
           nwLat: region.originalRegion is RectangleRegion
               ? (region.originalRegion as RectangleRegion)
                   .bounds
@@ -166,7 +160,8 @@ class RootRecovery {
 
   /// Safely cancel a recoverable region
   Future<void> cancel(int id) async {
-    _downloadsOngoing.remove(id);
-    return _recovery.writeTxn(() => _recovery.recovery.delete(id));
+    if (_downloadsOngoing.remove(id)) {
+      return _recovery.writeTxn(() => _recovery.recovery.delete(id));
+    }
   }
 }

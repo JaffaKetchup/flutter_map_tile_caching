@@ -1,10 +1,6 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-// Not sure why the hell this triggers! It triggers on a documentation comment,
-// and doesn't go away no matter what I do.
-// ignore_for_file: use_late_for_private_fields_and_variables
-
 part of flutter_map_tile_caching;
 
 /// Provides statistics about a [StoreDirectory]

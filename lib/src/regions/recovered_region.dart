@@ -60,23 +60,6 @@ class RecoveredRegion {
   /// Optionally skip a number of tiles 'at the end' of a region
   final int? end;
 
-  /// The number of download threads allowed to run simultaneously
-  ///
-  /// This will significantly increase speed, at the expense of faster battery drain. Note that some servers may forbid multithreading, in which case this should be set to 1, unless another limit is specified.
-  final int parallelThreads;
-
-  /// Whether to skip downloading tiles that already exist
-  final bool preventRedownload;
-
-  /// Whether to remove tiles that are entirely sea
-  ///
-  /// The checks are conducted by comparing the bytes of the tile at x:0, y:0, and z:19 to the bytes of the currently downloading tile. If they match, the tile is deleted, otherwise the tile is kept.
-  ///
-  /// This option is therefore not supported when using satellite tiles (because of the variations from tile to tile), on maps where the tile 0/0/19 is not entirely sea, or on servers where zoom level 19 is not supported. If not supported, set this to `false` to avoid wasting unnecessary time and to avoid errors.
-  ///
-  /// This is a storage saving feature, not a time saving or data saving feature: tiles still have to be fully downloaded before they can be checked.
-  final bool seaTileRemoval;
-
   RecoveredRegion._({
     required this.id,
     required this.storeName,
@@ -90,9 +73,6 @@ class RecoveredRegion {
     required this.maxZoom,
     required this.start,
     required this.end,
-    required this.parallelThreads,
-    required this.preventRedownload,
-    required this.seaTileRemoval,
   }) : _type = type;
 
   /// Convert this region into it's original [BaseRegion], calling the respective
@@ -119,12 +99,8 @@ class RecoveredRegion {
         minZoom: minZoom,
         maxZoom: maxZoom,
         options: options,
-        parallelThreads: parallelThreads,
-        preventRedownload: preventRedownload,
-        seaTileRemoval: seaTileRemoval,
         start: start,
         end: end,
         crs: crs,
-        errorHandler: errorHandler,
       );
 }

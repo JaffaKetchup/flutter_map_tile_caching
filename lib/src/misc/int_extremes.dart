@@ -1,0 +1,2 @@
+const largestInt = 9223372036854775807;
+const smallestInt = -9223372036854775808;

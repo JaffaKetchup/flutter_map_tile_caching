@@ -72,48 +72,33 @@ const DbRecoverableRegionSchema = CollectionSchema(
       name: r'nwLng',
       type: IsarType.float,
     ),
-    r'parallelThreads': PropertySchema(
-      id: 11,
-      name: r'parallelThreads',
-      type: IsarType.byte,
-    ),
-    r'preventRedownload': PropertySchema(
-      id: 12,
-      name: r'preventRedownload',
-      type: IsarType.bool,
-    ),
     r'seLat': PropertySchema(
-      id: 13,
+      id: 11,
       name: r'seLat',
       type: IsarType.float,
     ),
     r'seLng': PropertySchema(
-      id: 14,
+      id: 12,
       name: r'seLng',
       type: IsarType.float,
     ),
-    r'seaTileRemoval': PropertySchema(
-      id: 15,
-      name: r'seaTileRemoval',
-      type: IsarType.bool,
-    ),
     r'start': PropertySchema(
-      id: 16,
+      id: 13,
       name: r'start',
       type: IsarType.int,
     ),
     r'storeName': PropertySchema(
-      id: 17,
+      id: 14,
       name: r'storeName',
       type: IsarType.string,
     ),
     r'time': PropertySchema(
-      id: 18,
+      id: 15,
       name: r'time',
       type: IsarType.dateTime,
     ),
     r'type': PropertySchema(
-      id: 19,
+      id: 16,
       name: r'type',
       type: IsarType.byte,
       enumMap: _DbRecoverableRegiontypeEnumValueMap,
@@ -172,15 +157,12 @@ void _dbRecoverableRegionSerialize(
   writer.writeByte(offsets[8], object.minZoom);
   writer.writeFloat(offsets[9], object.nwLat);
   writer.writeFloat(offsets[10], object.nwLng);
-  writer.writeByte(offsets[11], object.parallelThreads);
-  writer.writeBool(offsets[12], object.preventRedownload);
-  writer.writeFloat(offsets[13], object.seLat);
-  writer.writeFloat(offsets[14], object.seLng);
-  writer.writeBool(offsets[15], object.seaTileRemoval);
-  writer.writeInt(offsets[16], object.start);
-  writer.writeString(offsets[17], object.storeName);
-  writer.writeDateTime(offsets[18], object.time);
-  writer.writeByte(offsets[19], object.type.index);
+  writer.writeFloat(offsets[11], object.seLat);
+  writer.writeFloat(offsets[12], object.seLng);
+  writer.writeInt(offsets[13], object.start);
+  writer.writeString(offsets[14], object.storeName);
+  writer.writeDateTime(offsets[15], object.time);
+  writer.writeByte(offsets[16], object.type.index);
 }
 
 DbRecoverableRegion _dbRecoverableRegionDeserialize(
@@ -202,16 +184,13 @@ DbRecoverableRegion _dbRecoverableRegionDeserialize(
     minZoom: reader.readByte(offsets[8]),
     nwLat: reader.readFloatOrNull(offsets[9]),
     nwLng: reader.readFloatOrNull(offsets[10]),
-    parallelThreads: reader.readByte(offsets[11]),
-    preventRedownload: reader.readBool(offsets[12]),
-    seLat: reader.readFloatOrNull(offsets[13]),
-    seLng: reader.readFloatOrNull(offsets[14]),
-    seaTileRemoval: reader.readBool(offsets[15]),
-    start: reader.readInt(offsets[16]),
-    storeName: reader.readString(offsets[17]),
-    time: reader.readDateTime(offsets[18]),
+    seLat: reader.readFloatOrNull(offsets[11]),
+    seLng: reader.readFloatOrNull(offsets[12]),
+    start: reader.readInt(offsets[13]),
+    storeName: reader.readString(offsets[14]),
+    time: reader.readDateTime(offsets[15]),
     type: _DbRecoverableRegiontypeValueEnumMap[
-            reader.readByteOrNull(offsets[19])] ??
+            reader.readByteOrNull(offsets[16])] ??
         RegionType.rectangle,
   );
   return object;
@@ -247,22 +226,16 @@ P _dbRecoverableRegionDeserializeProp<P>(
     case 10:
       return (reader.readFloatOrNull(offset)) as P;
     case 11:
-      return (reader.readByte(offset)) as P;
+      return (reader.readFloatOrNull(offset)) as P;
     case 12:
-      return (reader.readBool(offset)) as P;
+      return (reader.readFloatOrNull(offset)) as P;
     case 13:
-      return (reader.readFloatOrNull(offset)) as P;
-    case 14:
-      return (reader.readFloatOrNull(offset)) as P;
-    case 15:
-      return (reader.readBool(offset)) as P;
-    case 16:
       return (reader.readInt(offset)) as P;
-    case 17:
+    case 14:
       return (reader.readString(offset)) as P;
-    case 18:
+    case 15:
       return (reader.readDateTime(offset)) as P;
-    case 19:
+    case 16:
       return (_DbRecoverableRegiontypeValueEnumMap[
               reader.readByteOrNull(offset)] ??
           RegionType.rectangle) as P;
@@ -1469,72 +1442,6 @@ extension DbRecoverableRegionQueryFilter on QueryBuilder<DbRecoverableRegion,
   }
 
   QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterFilterCondition>
-      parallelThreadsEqualTo(int value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'parallelThreads',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterFilterCondition>
-      parallelThreadsGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'parallelThreads',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterFilterCondition>
-      parallelThreadsLessThan(
-    int value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'parallelThreads',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterFilterCondition>
-      parallelThreadsBetween(
-    int lower,
-    int upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'parallelThreads',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterFilterCondition>
-      preventRedownloadEqualTo(bool value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'preventRedownload',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterFilterCondition>
       seLatIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -1698,16 +1605,6 @@ extension DbRecoverableRegionQueryFilter on QueryBuilder<DbRecoverableRegion,
         upper: upper,
         includeUpper: includeUpper,
         epsilon: epsilon,
-      ));
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterFilterCondition>
-      seaTileRemovalEqualTo(bool value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'seaTileRemoval',
-        value: value,
       ));
     });
   }
@@ -2152,34 +2049,6 @@ extension DbRecoverableRegionQuerySortBy
   }
 
   QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
-      sortByParallelThreads() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'parallelThreads', Sort.asc);
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
-      sortByParallelThreadsDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'parallelThreads', Sort.desc);
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
-      sortByPreventRedownload() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'preventRedownload', Sort.asc);
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
-      sortByPreventRedownloadDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'preventRedownload', Sort.desc);
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
       sortBySeLat() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'seLat', Sort.asc);
@@ -2204,20 +2073,6 @@ extension DbRecoverableRegionQuerySortBy
       sortBySeLngDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'seLng', Sort.desc);
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
-      sortBySeaTileRemoval() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'seaTileRemoval', Sort.asc);
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
-      sortBySeaTileRemovalDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'seaTileRemoval', Sort.desc);
     });
   }
 
@@ -2421,34 +2276,6 @@ extension DbRecoverableRegionQuerySortThenBy
   }
 
   QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
-      thenByParallelThreads() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'parallelThreads', Sort.asc);
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
-      thenByParallelThreadsDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'parallelThreads', Sort.desc);
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
-      thenByPreventRedownload() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'preventRedownload', Sort.asc);
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
-      thenByPreventRedownloadDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'preventRedownload', Sort.desc);
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
       thenBySeLat() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'seLat', Sort.asc);
@@ -2473,20 +2300,6 @@ extension DbRecoverableRegionQuerySortThenBy
       thenBySeLngDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'seLng', Sort.desc);
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
-      thenBySeaTileRemoval() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'seaTileRemoval', Sort.asc);
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QAfterSortBy>
-      thenBySeaTileRemovalDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'seaTileRemoval', Sort.desc);
     });
   }
 
@@ -2627,20 +2440,6 @@ extension DbRecoverableRegionQueryWhereDistinct
   }
 
   QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QDistinct>
-      distinctByParallelThreads() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'parallelThreads');
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QDistinct>
-      distinctByPreventRedownload() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'preventRedownload');
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QDistinct>
       distinctBySeLat() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'seLat');
@@ -2651,13 +2450,6 @@ extension DbRecoverableRegionQueryWhereDistinct
       distinctBySeLng() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'seLng');
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, DbRecoverableRegion, QDistinct>
-      distinctBySeaTileRemoval() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'seaTileRemoval');
     });
   }
 
@@ -2770,20 +2562,6 @@ extension DbRecoverableRegionQueryProperty
     });
   }
 
-  QueryBuilder<DbRecoverableRegion, int, QQueryOperations>
-      parallelThreadsProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'parallelThreads');
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, bool, QQueryOperations>
-      preventRedownloadProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'preventRedownload');
-    });
-  }
-
   QueryBuilder<DbRecoverableRegion, double?, QQueryOperations> seLatProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'seLat');
@@ -2793,13 +2571,6 @@ extension DbRecoverableRegionQueryProperty
   QueryBuilder<DbRecoverableRegion, double?, QQueryOperations> seLngProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'seLng');
-    });
-  }
-
-  QueryBuilder<DbRecoverableRegion, bool, QQueryOperations>
-      seaTileRemovalProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'seaTileRemoval');
     });
   }
 

@@ -58,7 +58,7 @@ class TilesCounter {
             .unscaleBy(tileSize)
             .floor();
 
-        outlineTileNums[zoomLvl]![tile.x] ??= [_largestInt, _smallestInt];
+        outlineTileNums[zoomLvl]![tile.x] ??= [largestInt, smallestInt];
         outlineTileNums[zoomLvl]![tile.x] = [
           tile.y < outlineTileNums[zoomLvl]![tile.x]![0]
               ? tile.y
@@ -99,16 +99,16 @@ class TilesCounter {
 
           final normal = CustomPoint(p2.y - p1.y, p1.x - p2.x);
 
-          var minA = _largestInt;
-          var maxA = _smallestInt;
+          var minA = largestInt;
+          var maxA = smallestInt;
           for (final p in a.points) {
             final projected = normal.x * p.x + normal.y * p.y;
             if (projected < minA) minA = projected;
             if (projected > maxA) maxA = projected;
           }
 
-          var minB = _largestInt;
-          var maxB = _smallestInt;
+          var minB = largestInt;
+          var maxB = smallestInt;
           for (final p in b.points) {
             final projected = normal.x * p.x + normal.y * p.y;
             if (projected < minB) minB = projected;

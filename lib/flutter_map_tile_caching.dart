@@ -14,6 +14,7 @@ library flutter_map_tile_caching;
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math' as math;
 
 import 'package:async/async.dart';
@@ -34,11 +35,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
-import 'src/bulk_download/bulk_tile_writer.dart';
-import 'src/bulk_download/downloader.dart';
-import 'src/bulk_download/internal_timing_progress_management.dart';
+import 'src/bulk_download/instance.dart';
+import 'src/bulk_download/manager.dart';
 import 'src/bulk_download/tile_loops/shared.dart';
-import 'src/bulk_download/tile_progress.dart';
 import 'src/db/defs/metadata.dart';
 import 'src/db/defs/recovery.dart';
 import 'src/db/defs/store_descriptor.dart';
@@ -59,6 +58,7 @@ export 'src/errors/store_not_ready.dart';
 export 'src/misc/typedefs.dart';
 
 part 'src/bulk_download/download_progress.dart';
+part 'src/bulk_download/tile_event.dart';
 part 'src/fmtc.dart';
 part 'src/misc/store_db_impl.dart';
 part 'src/providers/tile_provider.dart';

@@ -126,7 +126,7 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                               downloadProvider.disableRecovery,
                                           bufferMode:
                                               downloadProvider.bufferMode,
-                                          bufferLimit: downloadProvider
+                                          maxBufferLength: downloadProvider
                                                       .bufferMode ==
                                                   DownloadBufferMode.tiles
                                               ? downloadProvider.bufferingAmount

@@ -62,9 +62,6 @@ sealed class BaseRegion {
     int minZoom,
     int maxZoom,
     TileLayer options, {
-    int parallelThreads = 10,
-    bool preventRedownload = false,
-    bool seaTileRemoval = false,
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),

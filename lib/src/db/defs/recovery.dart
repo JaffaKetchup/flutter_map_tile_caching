@@ -24,10 +24,6 @@ class DbRecoverableRegion {
   final short start;
   final short? end;
 
-  final byte parallelThreads;
-  final bool preventRedownload;
-  final bool seaTileRemoval;
-
   final float? nwLat;
   final float? nwLng;
   final float? seLat;
@@ -50,9 +46,6 @@ class DbRecoverableRegion {
     required this.maxZoom,
     required this.start,
     this.end,
-    required this.parallelThreads,
-    required this.preventRedownload,
-    required this.seaTileRemoval,
     this.nwLat,
     this.nwLng,
     this.seLat,

@@ -1,16 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:path/path.dart' as p;
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import 'screens/main/main.dart';
-import 'shared/state/download_provider.dart';
-import 'shared/state/general_provider.dart';
+import 'package:latlong2/latlong.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,33 +13,64 @@ void main() async {
     ),
   );
 
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  //final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  String? damagedDatabaseDeleted;
+  // String? damagedDatabaseDeleted;
   await FlutterMapTileCaching.initialise(
-    errorHandler: (error) => damagedDatabaseDeleted = error.message,
+    // errorHandler: (error) => damagedDatabaseDeleted = error.message,
     debugMode: true,
   );
 
-  await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: []);
+  // await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: []);
 
-  if (prefs.getBool('reset') ?? false) {
-    await FMTC.instance.rootDirectory.manage.reset();
-  }
+  //if (prefs.getBool('reset') ?? false) {
+  //  await FMTC.instance.rootDirectory.manage.reset();
+  // }
 
-  final File newAppVersionFile = File(
-    p.join(
-      // ignore: invalid_use_of_internal_member, invalid_use_of_protected_member
-      FMTC.instance.rootDirectory.directory.absolute.path,
-      'newAppVersion.${Platform.isWindows ? 'exe' : 'apk'}',
+  //final File newAppVersionFile = File(
+  //   p.join(
+  //     // ignore: invalid_use_of_internal_member, invalid_use_of_protected_member
+  //     FMTC.instance.rootDirectory.directory.absolute.path,
+  //     'newAppVersion.${Platform.isWindows ? 'exe' : 'apk'}',
+  //  ),
+  // );
+  // if (await newAppVersionFile.exists()) await newAppVersionFile.delete();
+
+  final region =
+      RectangleRegion(LatLngBounds(const LatLng(1, 1), const LatLng(-1, -1)))
+          .toDownloadable(
+    1,
+    12,
+    TileLayer(
+      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      userAgentPackageName: 'dev.jaffaketchup.fmtc.demo1',
     ),
   );
-  if (await newAppVersionFile.exists()) await newAppVersionFile.delete();
 
-  runApp(AppContainer(damagedDatabaseDeleted: damagedDatabaseDeleted));
+  FMTC.instance['hello'].download
+      .startForeground(
+        region: region,
+        pruneExistingTiles: false,
+        pruneSeaTiles: false,
+        maxBufferLength: 200,
+      )
+      .listen(
+        (progress) => print(
+          '${progress.successfulTiles} tiles, ${progress.duration}, ${progress.lastTileEvent?.result}',
+        ),
+      );
+  print('DOWNLOAD COMPLETE');
+
+  await Future.delayed(const Duration(seconds: 1));
+
+  print('REQUEST CANCEL');
+  await FMTC.instance['hello'].download.cancel();
+  print('DOWNLOAD CANCELLED');
+
+  //runApp(AppContainer(damagedDatabaseDeleted: damagedDatabaseDeleted));
 }
 
-class AppContainer extends StatelessWidget {
+/*class AppContainer extends StatelessWidget {
   const AppContainer({
     super.key,
     required this.damagedDatabaseDeleted,
@@ -87,3 +110,4 @@ class AppContainer extends StatelessWidget {
         ),
       );
 }
+*/

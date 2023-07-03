@@ -10,6 +10,7 @@ import 'package:flutter_map/flutter_map.dart' hide Polygon;
 import 'package:latlong2/latlong.dart';
 
 import '../../../flutter_map_tile_caching.dart';
+import '../../misc/int_extremes.dart';
 
 part 'count.dart';
 part 'generate.dart';
@@ -24,9 +25,6 @@ class _Polygon {
 
   List<CustomPoint<int>> get points => [nw, ne, se, sw];
 }
-
-const _largestInt = 9223372036854775807;
-const _smallestInt = -9223372036854775808;
 
 CustomPoint<double> _getTileSize(DownloadableRegion region) =>
     CustomPoint(region.options.tileSize, region.options.tileSize);
