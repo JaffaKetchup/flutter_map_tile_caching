@@ -16,29 +16,19 @@ class FMTCTileProvider extends TileProvider {
   /// [FlutterMapTileCaching].
   final FMTCTileProviderSettings settings;
 
-  /// [Client] (such as a [IOClient]) used to make all network requests
+  /// [http.Client] (such as a [IOClient]) used to make all network requests
   ///
-  /// Defaults to a [HttpPlusClient] which supports HTTP/2 and falls back to a
-  /// standard [IOClient]/[HttpClient] for HTTP/1.1 servers. Timeout is set to
-  /// 5 seconds by default.
-  final Client httpClient;
+  /// Defaults to a standard [IOClient]/[HttpClient] for HTTP/1.1 servers.
+  final http.Client httpClient;
 
   FMTCTileProvider._({
     required this.storeDirectory,
     required FMTCTileProviderSettings? settings,
     Map<String, String> headers = const {},
-    Client? httpClient,
+    http.Client? httpClient,
   })  : settings =
             settings ?? FMTC.instance.settings.defaultTileProviderSettings,
-        httpClient = httpClient ??
-            HttpPlusClient(
-              http1Client: IOClient(
-                HttpClient()
-                  ..connectionTimeout = const Duration(seconds: 5)
-                  ..userAgent = null,
-              ),
-              connectionTimeout: const Duration(seconds: 5),
-            ),
+        httpClient = httpClient ?? IOClient(HttpClient()..userAgent = null),
         super(
           headers: {
             ...headers,

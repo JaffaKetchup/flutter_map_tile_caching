@@ -5,82 +5,148 @@ part of flutter_map_tile_caching;
 
 @immutable
 class DownloadProgress {
-  final TileEvent? lastTileEvent;
+  /// The result of the last attempted tile
+  ///
+  /// May be used for UI display, error handling, or debugging purposes.
+  TileEvent get lastTileEvent => _lastTileEvent!;
+  final TileEvent? _lastTileEvent;
 
+  /// The number of new tiles successfully downloaded and cached, that is those
+  /// tiles with the result of [TileEventResult.success]
+  /// ([TileEventResultCategory.cached])
   final int cachedTiles;
+  final double cachedSize;
+  final int bufferedTiles;
+  final double bufferedSize;
   final int prunedTiles;
+  final double prunedSize;
   final int failedTiles;
-
   final int maxTiles;
+  final Duration duration;
+  final bool hasFinished;
 
   int get successfulTiles => cachedTiles + prunedTiles;
+  double get successfulSize => cachedSize + prunedSize;
   int get attemptedTiles => successfulTiles + failedTiles;
   int get remainingTiles => maxTiles - attemptedTiles;
 
-  final Duration duration;
-
   double get percentageProgress => (attemptedTiles / maxTiles) * 100;
-  bool get isFinished => attemptedTiles == maxTiles;
 
-  const DownloadProgress._({
-    required this.lastTileEvent,
+  const DownloadProgress.__({
+    required TileEvent? lastTileEvent,
     required this.cachedTiles,
+    required this.cachedSize,
+    required this.bufferedTiles,
+    required this.bufferedSize,
     required this.prunedTiles,
+    required this.prunedSize,
     required this.failedTiles,
     required this.maxTiles,
     required this.duration,
-  });
+    required this.hasFinished,
+  }) : _lastTileEvent = lastTileEvent;
 
-  factory DownloadProgress.initial({required int maxTiles}) =>
-      DownloadProgress._(
+  factory DownloadProgress._initial({required int maxTiles}) =>
+      DownloadProgress.__(
         lastTileEvent: null,
         cachedTiles: 0,
+        cachedSize: 0,
+        bufferedTiles: 0,
+        bufferedSize: 0,
         prunedTiles: 0,
+        prunedSize: 0,
         failedTiles: 0,
         maxTiles: maxTiles,
         duration: Duration.zero,
+        hasFinished: false,
       );
 
-  DownloadProgress update({
-    TileEvent? newTileEvent,
-    required Duration newDuration,
-  }) =>
-      DownloadProgress._(
-        lastTileEvent: newTileEvent ?? lastTileEvent,
-        cachedTiles: cachedTiles +
-            (newTileEvent?.result.category == TileEventResultCategory.cached
-                ? 1
-                : 0),
-        prunedTiles: prunedTiles +
-            (newTileEvent?.result.category == TileEventResultCategory.pruned
-                ? 1
-                : 0),
-        failedTiles: failedTiles +
-            (newTileEvent?.result.category == TileEventResultCategory.failed
-                ? 1
-                : 0),
+  DownloadProgress _updateDuration(
+    Duration newDuration,
+  ) =>
+      DownloadProgress.__(
+        lastTileEvent: lastTileEvent,
+        cachedTiles: cachedTiles,
+        cachedSize: cachedSize,
+        bufferedTiles: bufferedTiles,
+        bufferedSize: bufferedSize,
+        prunedTiles: prunedTiles,
+        prunedSize: prunedSize,
+        failedTiles: failedTiles,
         maxTiles: maxTiles,
         duration: newDuration,
+        hasFinished: false,
+      );
+
+  DownloadProgress _update({
+    required TileEvent? newTileEvent,
+    required int newBufferedTiles,
+    required double newBufferedSize,
+    required Duration newDuration,
+    bool hasFinished = false,
+  }) =>
+      DownloadProgress.__(
+        lastTileEvent: newTileEvent ?? lastTileEvent,
+        cachedTiles: newTileEvent == null
+            ? cachedTiles
+            : newTileEvent.result.category == TileEventResultCategory.cached
+                ? cachedTiles + 1
+                : cachedTiles,
+        cachedSize: newTileEvent == null
+            ? cachedSize
+            : newTileEvent.result.category == TileEventResultCategory.cached
+                ? cachedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
+                : cachedSize,
+        bufferedTiles: newBufferedTiles,
+        bufferedSize: newBufferedSize,
+        prunedTiles: newTileEvent == null
+            ? prunedTiles
+            : newTileEvent.result.category == TileEventResultCategory.pruned
+                ? prunedTiles + 1
+                : prunedTiles,
+        prunedSize: newTileEvent == null
+            ? prunedSize
+            : newTileEvent.result.category == TileEventResultCategory.pruned
+                ? prunedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
+                : prunedSize,
+        failedTiles: newTileEvent == null
+            ? failedTiles
+            : newTileEvent.result.category == TileEventResultCategory.failed
+                ? failedTiles + 1
+                : failedTiles,
+        maxTiles: maxTiles,
+        duration: newDuration,
+        hasFinished: hasFinished,
       );
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is DownloadProgress &&
-          lastTileEvent == other.lastTileEvent &&
-          successfulTiles == other.successfulTiles &&
+          _lastTileEvent == other._lastTileEvent &&
+          cachedTiles == other.cachedTiles &&
+          cachedSize == other.cachedSize &&
+          bufferedTiles == other.bufferedTiles &&
+          bufferedSize == other.bufferedSize &&
           prunedTiles == other.prunedTiles &&
+          prunedSize == other.prunedSize &&
           failedTiles == other.failedTiles &&
           maxTiles == other.maxTiles &&
-          duration == other.duration);
+          duration == other.duration &&
+          hasFinished == other.hasFinished);
 
   @override
   int get hashCode => Object.hashAllUnordered([
-        lastTileEvent.hashCode,
-        successfulTiles.hashCode,
+        _lastTileEvent.hashCode,
+        cachedTiles.hashCode,
+        cachedSize.hashCode,
+        bufferedTiles.hashCode,
+        bufferedSize.hashCode,
         prunedTiles.hashCode,
+        prunedSize.hashCode,
         failedTiles.hashCode,
         maxTiles.hashCode,
         duration.hashCode,
+        hasFinished.hashCode,
       ]);
 }

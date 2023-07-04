@@ -11,19 +11,21 @@ class StatDisplay extends StatelessWidget {
   final String description;
 
   @override
-  Widget build(BuildContext context) => Column(
-        children: [
-          Text(
-            statistic,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+  Widget build(BuildContext context) => RepaintBoundary(
+        child: Column(
+          children: [
+            Text(
+              statistic,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          Text(
-            description,
-            style: const TextStyle(fontSize: 16),
-          ),
-        ],
+            Text(
+              description,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
       );
 }

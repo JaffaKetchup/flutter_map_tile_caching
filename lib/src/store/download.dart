@@ -33,8 +33,8 @@ class DownloadManagement {
   ///
   /// Streams a [DownloadProgress] object containing statistics and information
   /// about the download's progression status, once per tile and at intervals
-  /// of no longer than [maxReportInterval]. This must be listened to, otherwise
-  /// the download will not start.
+  /// of no longer than [maxReportInterval] (after the first tile). This must be
+  /// listened to, otherwise the download will not start.
   ///
   /// ---
   ///
@@ -130,7 +130,7 @@ class DownloadManagement {
     // Start download thread
     final recievePort = ReceivePort();
     await Isolate.spawn(
-      downloadManager,
+      _downloadManager,
       (
         sendPort: recievePort.sendPort,
         rootDirectory: FMTC.instance.rootDirectory.directory.absolute.path,
@@ -149,29 +149,47 @@ class DownloadManagement {
       debugName: '[FMTC] Master Bulk Download Thread',
     );
 
-    // Setup (part 1) cancel request mechanism
+    // Setup control mechanisms (completers)
     final cancelCompleter = Completer<void>();
+    Completer<void>? pauseCompleter;
 
     await for (final evt in recievePort) {
-      // Handle shutdown (both normal and cancellation)
-      if (evt == null) break;
-
-      // Setup (part 2) cancel request mechanism
-      if (evt is SendPort) {
-        instance.cancelDownloadRequest = () {
-          evt.send(null);
-          return cancelCompleter.future;
-        };
+      // Handle new progress message
+      if (evt is DownloadProgress) {
+        yield evt;
         continue;
       }
 
-      // Ensure message is of `DownloadProgress` in all other cases
-      evt as DownloadProgress;
-      yield evt;
+      // Handle shutdown (both normal and cancellation)
+      if (evt == null) break;
+
+      // Handle pause comms
+      if (evt == 1) {
+        pauseCompleter?.complete();
+        continue;
+      }
+
+      // Setup control mechanisms (senders)
+      if (evt is SendPort) {
+        instance
+          ..requestCancel = () {
+            evt.send(null);
+            return cancelCompleter.future;
+          }
+          ..requestPause = () {
+            evt.send(1);
+            return (pauseCompleter = Completer()).future
+              ..then((_) => instance.isPaused = true);
+          }
+          ..requestResume = () {
+            evt.send(2);
+            instance.isPaused = false;
+          };
+        continue;
+      }
     }
 
     // Handle shutdown (both normal and cancellation)
-    instance.cancelDownloadRequest = null;
     recievePort.close();
     await FMTC.instance.rootDirectory.recovery.cancel(recoveryId);
     DownloadInstance.unregister(instanceId);
@@ -192,21 +210,59 @@ class DownloadManagement {
         region,
       );
 
-  /// Cancels the ongoing foreground download and recovery session
+  /// Cancel the ongoing foreground download and recovery session
   ///
   /// Will return once the cancellation is complete. Note that all running
   /// parallel download threads will be allowed to finish their *current* tile
-  /// download, and tiles will be written. There is no facility to cancel the
-  /// download immediately, as this would likely cause unwanted behaviour.
+  /// download, and buffered tiles will be written. There is no facility to
+  /// cancel the download immediately, as this would likely cause unwanted
+  /// behaviour.
   ///
   /// {@macro num_instances}
   ///
   /// Does nothing (returns immediately) if there is no ongoing download.
   ///
-  /// Do not use to cancel background downloads, return `true` from the
-  /// background download callback to cancel a background download. Background
-  /// download cancellations require a few more 'shut-down' steps that can create
-  /// unexpected issues and memory leaks if not carried out.
+  /// Do not use to interact with background downloads.
   Future<void> cancel({Object instanceId = 0}) async =>
-      await DownloadInstance.get(instanceId)?.cancelDownloadRequest?.call();
+      await DownloadInstance.get(instanceId)?.requestCancel?.call();
+
+  /// Pause the ongoing foreground download
+  ///
+  /// Use [resume] to resume the download. It is also safe to use [cancel]
+  /// without resuming first.
+  ///
+  /// Will return once the pause operation is complete. Note that all running
+  /// parallel download threads will be allowed to finish their *current* tile
+  /// download. Any buffered tiles are not written.
+  ///
+  /// {@macro num_instances}
+  ///
+  /// Does nothing (returns immediately) if there is no ongoing download or the
+  /// download is already paused.
+  ///
+  /// Do not use to interact with background downloads.
+  Future<void> pause({Object instanceId = 0}) async =>
+      await DownloadInstance.get(instanceId)?.requestPause?.call();
+
+  /// Resume (after a [pause]) the ongoing foreground download
+  ///
+  /// {@macro num_instances}
+  ///
+  /// Does nothing if there is no ongoing download or the download is already
+  /// running.
+  ///
+  /// Do not use to interact with background downloads.
+  void resume({Object instanceId = 0}) =>
+      DownloadInstance.get(instanceId)?.requestResume?.call();
+
+  /// Whether the ongoing foreground download is currently paused after a call
+  /// to [pause] (and prior to [resume])
+  ///
+  /// {@macro num_instances}
+  ///
+  /// Also returns `false` if there is no ongoing download.
+  ///
+  /// Do not use to interact with background downloads.
+  bool isPaused({Object instanceId = 0}) =>
+      DownloadInstance.get(instanceId)?.isPaused ?? false;
 }

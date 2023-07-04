@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:fmtc_plus_background_downloading/fmtc_plus_background_downloading.dart';
+//import 'package:fmtc_plus_background_downloading/fmtc_plus_background_downloading.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -57,140 +57,71 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Download Region'),
-        ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RegionInformation(
-                  widget: widget,
-                  circleRegion: circleRegion,
-                  rectangleRegion: rectangleRegion,
+  Widget build(BuildContext context) => Consumer<DownloadProvider>(
+        builder: (context, provider, _) => Scaffold(
+          appBar: AppBar(title: const Text('Configure Bulk Download')),
+          floatingActionButton: provider.selectedStore == null
+              ? null
+              : FloatingActionButton.extended(
+                  onPressed: () async {
+                    final Map<String, String> metadata =
+                        await provider.selectedStore!.metadata.readAsync;
+
+                    provider.setDownloadProgress(
+                      provider.selectedStore!.download
+                          .startForeground(
+                            region: widget.region.toDownloadable(
+                              provider.minZoom,
+                              provider.maxZoom,
+                              TileLayer(
+                                urlTemplate: metadata['sourceURL'],
+                                userAgentPackageName:
+                                    'dev.jaffaketchup.fmtc.demo',
+                              ),
+                            ),
+                            parallelThreads:
+                                (await SharedPreferences.getInstance()).getBool(
+                                          'bypassDownloadThreadsLimitation',
+                                        ) ??
+                                        false
+                                    ? 10
+                                    : 2,
+                            maxBufferLength: provider.bufferingAmount,
+                            pruneExistingTiles: provider.preventRedownload,
+                            pruneSeaTiles: provider.seaTileRemoval,
+                            disableRecovery: provider.disableRecovery,
+                          )
+                          .asBroadcastStream(),
+                    );
+
+                    if (mounted) Navigator.of(context).pop();
+                  },
+                  label: const Text('Start Download'),
+                  icon: const Icon(Icons.save),
                 ),
-                const SectionSeparator(),
-                const StoreSelector(),
-                const SectionSeparator(),
-                const OptionalFunctionality(),
-                const SectionSeparator(),
-                const BufferingConfiguration(),
-                const SectionSeparator(),
-                const BackgroundDownloadBatteryOptimizationsInfo(),
-                const SectionSeparator(),
-                const UsageWarning(),
-                const SectionSeparator(),
-                const Text('START DOWNLOAD IN'),
-                Consumer2<DownloadProvider, GeneralProvider>(
-                  builder: (context, downloadProvider, generalProvider, _) =>
-                      Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: downloadProvider.selectedStore == null
-                              ? null
-                              : () async {
-                                  final Map<String, String> metadata =
-                                      await downloadProvider
-                                          .selectedStore!.metadata.readAsync;
-
-                                  downloadProvider.setDownloadProgress(
-                                    downloadProvider.selectedStore!.download
-                                        .startForeground(
-                                          region: widget.region.toDownloadable(
-                                            downloadProvider.minZoom,
-                                            downloadProvider.maxZoom,
-                                            TileLayer(
-                                              urlTemplate:
-                                                  metadata['sourceURL'],
-                                            ),
-                                            preventRedownload: downloadProvider
-                                                .preventRedownload,
-                                            seaTileRemoval:
-                                                downloadProvider.seaTileRemoval,
-                                            parallelThreads:
-                                                (await SharedPreferences
-                                                                .getInstance())
-                                                            .getBool(
-                                                          'bypassDownloadThreadsLimitation',
-                                                        ) ??
-                                                        false
-                                                    ? 10
-                                                    : 2,
-                                          ),
-                                          disableRecovery:
-                                              downloadProvider.disableRecovery,
-                                          bufferMode:
-                                              downloadProvider.bufferMode,
-                                          maxBufferLength: downloadProvider
-                                                      .bufferMode ==
-                                                  DownloadBufferMode.tiles
-                                              ? downloadProvider.bufferingAmount
-                                              : downloadProvider
-                                                      .bufferingAmount *
-                                                  1000,
-                                        )
-                                        .asBroadcastStream(),
-                                  );
-
-                                  if (mounted) Navigator.of(context).pop();
-                                },
-                          child: const Text('Foreground'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: downloadProvider.selectedStore == null
-                              ? null
-                              : () async {
-                                  final Map<String, String> metadata =
-                                      await downloadProvider
-                                          .selectedStore!.metadata.readAsync;
-
-                                  await downloadProvider.selectedStore!.download
-                                      .startBackground(
-                                    region: widget.region.toDownloadable(
-                                      downloadProvider.minZoom,
-                                      downloadProvider.maxZoom,
-                                      TileLayer(
-                                        urlTemplate: metadata['sourceURL'],
-                                      ),
-                                      preventRedownload:
-                                          downloadProvider.preventRedownload,
-                                      seaTileRemoval:
-                                          downloadProvider.seaTileRemoval,
-                                      parallelThreads: (await SharedPreferences
-                                                      .getInstance())
-                                                  .getBool(
-                                                'bypassDownloadThreadsLimitation',
-                                              ) ??
-                                              false
-                                          ? 10
-                                          : 2,
-                                    ),
-                                    disableRecovery:
-                                        downloadProvider.disableRecovery,
-                                    backgroundNotificationIcon:
-                                        const AndroidResource(
-                                      name: 'ic_notification_icon',
-                                      defType: 'mipmap',
-                                    ),
-                                  );
-
-                                  if (mounted) Navigator.of(context).pop();
-                                },
-                          child: const Text('Background'),
-                        ),
-                      ),
-                    ],
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RegionInformation(
+                    widget: widget,
+                    circleRegion: circleRegion,
+                    rectangleRegion: rectangleRegion,
                   ),
-                ),
-              ],
+                  const SectionSeparator(),
+                  const StoreSelector(),
+                  const SectionSeparator(),
+                  const OptionalFunctionality(),
+                  const SectionSeparator(),
+                  const BufferingConfiguration(),
+                  const SectionSeparator(),
+                  const BackgroundDownloadBatteryOptimizationsInfo(),
+                  const SectionSeparator(),
+                  const UsageWarning(),
+                ],
+              ),
             ),
           ),
         ),

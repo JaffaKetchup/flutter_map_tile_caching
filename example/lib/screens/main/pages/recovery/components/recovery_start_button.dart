@@ -45,8 +45,6 @@ class RecoveryStartButton extends StatelessWidget {
                                 )
                                 ..minZoom = region.minZoom
                                 ..maxZoom = region.maxZoom
-                                ..preventRedownload = region.preventRedownload
-                                ..seaTileRemoval = region.seaTileRemoval
                                 ..setSelectedStore(
                                   FMTC.instance(region.storeName),
                                 )

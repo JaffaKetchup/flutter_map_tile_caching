@@ -24,9 +24,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
-import 'package:http_plus/http_plus.dart';
 import 'package:isar/isar.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
@@ -36,7 +35,7 @@ import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import 'src/bulk_download/instance.dart';
-import 'src/bulk_download/manager.dart';
+
 import 'src/bulk_download/tile_loops/shared.dart';
 import 'src/db/defs/metadata.dart';
 import 'src/db/defs/recovery.dart';
@@ -48,6 +47,7 @@ import 'src/errors/browsing.dart';
 import 'src/errors/initialisation.dart';
 import 'src/errors/store_not_ready.dart';
 import 'src/misc/exts.dart';
+import 'src/misc/int_extremes.dart';
 import 'src/misc/typedefs.dart';
 import 'src/providers/image_provider.dart';
 
@@ -58,6 +58,8 @@ export 'src/errors/store_not_ready.dart';
 export 'src/misc/typedefs.dart';
 
 part 'src/bulk_download/download_progress.dart';
+part 'src/bulk_download/manager.dart';
+part 'src/bulk_download/thread.dart';
 part 'src/bulk_download/tile_event.dart';
 part 'src/fmtc.dart';
 part 'src/misc/store_db_impl.dart';

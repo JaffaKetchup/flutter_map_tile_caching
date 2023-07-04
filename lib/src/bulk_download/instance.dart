@@ -16,5 +16,10 @@ class DownloadInstance {
   static DownloadInstance? get(Object id) => _instances[id];
 
   final Object id;
-  Future<void> Function()? cancelDownloadRequest;
+
+  Future<void> Function()? requestCancel;
+
+  bool isPaused = false;
+  Future<void> Function()? requestPause;
+  void Function()? requestResume;
 }

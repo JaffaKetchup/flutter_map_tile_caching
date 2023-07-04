@@ -1,26 +1,9 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-import 'dart:async';
-import 'dart:io';
-import 'dart:isolate';
-import 'dart:typed_data';
+part of flutter_map_tile_caching;
 
-import 'package:async/async.dart';
-import 'package:collection/collection.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:http/http.dart';
-import 'package:isar/isar.dart';
-import 'package:meta/meta.dart';
-
-import '../../flutter_map_tile_caching.dart';
-import '../db/defs/metadata.dart';
-import '../db/defs/store_descriptor.dart';
-import '../db/defs/tile.dart';
-import '../db/tools.dart';
-
-@internal
-Future<void> singleDownloadThread(
+Future<void> _singleDownloadThread(
   ({
     SendPort sendPort,
     String storeId,
@@ -48,17 +31,13 @@ Future<void> singleDownloadThread(
     inspector: false,
   );
 
-  final httpClient = Client();
+  // Initialise a long lasting HTTP client
+  final httpClient = http.Client();
 
+  // Initialise the tile buffer array
   final tileBuffer = <DbTile>[];
 
   while (true) {
-    // Write tile buffer if necessary
-    if (tileBuffer.length > input.maxBufferLength) {
-      db.writeTxnSync(() => db.tiles.putAllSync(tileBuffer));
-      tileBuffer.clear();
-    }
-
     // Request new tile coords
     send(0);
     final coords = (await tileQueue.next) as (int, int, int)?;
@@ -78,15 +57,17 @@ Future<void> singleDownloadThread(
       Isolate.exit();
     }
 
+    // Get new tile URL & any existing tile
     final url = input.tileProvider.getTileUrl(
       TileCoordinates(coords.$1, coords.$2, coords.$3),
       input.region.options,
     );
     final existingTile = await db.tiles.get(DatabaseTools.hash(url));
 
+    // Skip if tile already exists and user demands existing tile pruning
     if (input.pruneExistingTiles && existingTile != null) {
       send(
-        TileEvent(
+        TileEvent._(
           TileEventResult.alreadyExisting,
           url: url,
           tileImage: Uint8List.fromList(existingTile.bytes),
@@ -95,7 +76,8 @@ Future<void> singleDownloadThread(
       continue;
     }
 
-    final Response response;
+    // Fetch new tile from URL
+    final http.Response response;
     try {
       response = await httpClient.get(
         Uri.parse(url),
@@ -103,7 +85,7 @@ Future<void> singleDownloadThread(
       );
     } catch (e) {
       send(
-        TileEvent(
+        TileEvent._(
           e is SocketException
               ? TileEventResult.noConnectionDuringFetch
               : TileEventResult.unknownFetchException,
@@ -116,7 +98,7 @@ Future<void> singleDownloadThread(
 
     if (response.statusCode != 200) {
       send(
-        TileEvent(
+        TileEvent._(
           TileEventResult.negativeFetchResponse,
           url: url,
           fetchResponse: response,
@@ -125,9 +107,10 @@ Future<void> singleDownloadThread(
       continue;
     }
 
+    // Skip if tile is a sea tile & user demands sea tile pruning
     if (const ListEquality().equals(response.bodyBytes, input.seaTileBytes)) {
       send(
-        TileEvent(
+        TileEvent._(
           TileEventResult.isSeaTile,
           url: url,
           tileImage: response.bodyBytes,
@@ -137,6 +120,7 @@ Future<void> singleDownloadThread(
       continue;
     }
 
+    // Write tile directly to database or place in buffer queue
     final tile = DbTile(url: url, bytes: response.bodyBytes);
     if (input.maxBufferLength == 0) {
       db.writeTxnSync(() => db.tiles.putSync(tile));
@@ -144,12 +128,21 @@ Future<void> singleDownloadThread(
       tileBuffer.add(tile);
     }
 
+    // Write buffer to database if necessary
+    final wasBufferReset = tileBuffer.length >= input.maxBufferLength;
+    if (wasBufferReset) {
+      db.writeTxnSync(() => db.tiles.putAllSync(tileBuffer));
+      tileBuffer.clear();
+    }
+
+    // Return successful response to user
     send(
-      TileEvent(
+      TileEvent._(
         TileEventResult.success,
         url: url,
         tileImage: response.bodyBytes,
         fetchResponse: response,
+        wasBufferReset: wasBufferReset,
       ),
     );
   }

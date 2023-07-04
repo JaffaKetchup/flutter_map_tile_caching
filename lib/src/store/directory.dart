@@ -57,7 +57,7 @@ class StoreDirectory {
   FMTCTileProvider getTileProvider({
     FMTCTileProviderSettings? settings,
     Map<String, String>? headers,
-    Client? httpClient,
+    http.Client? httpClient,
   }) =>
       FMTCTileProvider._(
         storeDirectory: this,

@@ -100,18 +100,14 @@ class DownloadProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  DownloadBufferMode _bufferMode = DownloadBufferMode.tiles;
-  DownloadBufferMode get bufferMode => _bufferMode;
-  set bufferMode(DownloadBufferMode newMode) {
-    _bufferMode = newMode;
-    _bufferingAmount = newMode == DownloadBufferMode.tiles ? 500 : 5000;
-    notifyListeners();
-  }
-
   int _bufferingAmount = 500;
   int get bufferingAmount => _bufferingAmount;
   set bufferingAmount(int newNum) {
     _bufferingAmount = newNum;
     notifyListeners();
   }
+
+  final List<TileEvent> _failedTiles = [];
+  List<TileEvent> get failedTiles => _failedTiles;
+  void addFailedTile(TileEvent e) => _failedTiles.add(e);
 }

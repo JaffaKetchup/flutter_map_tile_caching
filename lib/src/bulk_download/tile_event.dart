@@ -83,12 +83,12 @@ class TileEvent {
   /// Not available if the result category is [TileEventResultCategory.failed].
   final Uint8List? tileImage;
 
-  /// The raw [Response] from the [url], if available
+  /// The raw [http.Response] from the [url], if available
   ///
   /// Not available if [result] is [TileEventResult.noConnectionDuringFetch],
   /// [TileEventResult.unknownFetchException], or
   /// [TileEventResult.alreadyExisting].
-  final Response? fetchResponse;
+  final http.Response? fetchResponse;
 
   /// The raw error thrown when fetching from the [url], if available
   ///
@@ -96,16 +96,35 @@ class TileEvent {
   /// [TileEventResult.unknownFetchException].
   final Object? fetchError;
 
-  /// The raw result of a tile download during bulk downloading
-  ///
-  /// Does not contain information about the download as a whole, that is
-  /// [DownloadProgress]' responsibility.
-  @internal
-  TileEvent(
+  final bool _wasBufferReset;
+
+  TileEvent._(
     this.result, {
     required this.url,
     this.tileImage,
     this.fetchResponse,
     this.fetchError,
-  });
+    bool wasBufferReset = false,
+  }) : _wasBufferReset = wasBufferReset;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TileEvent &&
+          result == other.result &&
+          url == other.url &&
+          tileImage == other.tileImage &&
+          fetchResponse == other.fetchResponse &&
+          fetchError == other.fetchError &&
+          _wasBufferReset == other._wasBufferReset);
+
+  @override
+  int get hashCode => Object.hashAllUnordered([
+        result.hashCode,
+        url.hashCode,
+        tileImage.hashCode,
+        fetchResponse.hashCode,
+        fetchError.hashCode,
+        _wasBufferReset.hashCode,
+      ]);
 }
