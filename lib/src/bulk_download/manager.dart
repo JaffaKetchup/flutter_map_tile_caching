@@ -151,7 +151,7 @@ Future<void> _downloadManager(
     fallbackReportTimer = null;
   }
 
-  // TODO: This might be the wrong place to put this
+  // This might be the wrong place to put this?
   final tileTimer = Stopwatch();
 
   // Start download threads & wait for download to complete/cancelled
