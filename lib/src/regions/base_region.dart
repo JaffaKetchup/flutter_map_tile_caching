@@ -41,6 +41,7 @@ sealed class BaseRegion {
   ///
   /// _This property is currently redundant, but usage is planned in future
   /// versions._
+  @experimental
   final String? name;
 
   /// Output a value of type [T] dependent on `this` and its type

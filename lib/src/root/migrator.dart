@@ -161,7 +161,7 @@ class RootMigrator {
                 },
               ),
             ))
-                .whereNotNull()
+                .nonNulls
                 .toList(),
           ),
         );
@@ -261,5 +261,5 @@ class _FilesystemSanitiserResult {
   }
 
   @override
-  int get hashCode => validOutput.hashCode ^ errorMessages.hashCode;
+  int get hashCode => Object.hash(validOutput, errorMessages);
 }

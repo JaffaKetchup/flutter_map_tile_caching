@@ -14,10 +14,10 @@ enum TileEventResultCategory {
   /// intentionally
   ///
   /// This may be because it:
-  /// - already existed & `pruneExistingTiles` was `true`:
+  /// - already existed & `skipExistingTiles` was `true`:
   /// [TileEventResult.alreadyExisting]
-  /// - was a sea tile & `pruneSeaTiles` was `true`: [TileEventResult.isSeaTile]
-  pruned,
+  /// - was a sea tile & `skipSeaTiles` was `true`: [TileEventResult.isSeaTile]
+  skipped,
 
   /// The associated tile was not successfully downloaded, potentially for a
   /// variety of reasons.
@@ -34,12 +34,12 @@ enum TileEventResult {
   success(TileEventResultCategory.cached),
 
   /// The associated tile was not downloaded (intentionally), becuase it already
-  /// existed & `pruneExistingTiles` was `true`
-  alreadyExisting(TileEventResultCategory.pruned),
+  /// existed & `skipExistingTiles` was `true`
+  alreadyExisting(TileEventResultCategory.skipped),
 
   /// The associated tile was downloaded, but was not cached (intentionally),
-  /// because it was a sea tile & `pruneSeaTiles` was `true`
-  isSeaTile(TileEventResultCategory.pruned),
+  /// because it was a sea tile & `skipSeaTiles` was `true`
+  isSeaTile(TileEventResultCategory.skipped),
 
   /// The associated tile was not successfully downloaded because the tile server
   /// responded with a status code other than HTTP 200 OK
@@ -71,7 +71,7 @@ class TileEvent {
   /// categorization of this result into 3 categories:
   ///
   /// - [TileEventResultCategory.cached] (tile was downloaded and cached)
-  /// - [TileEventResultCategory.pruned] (tile was not cached, but intentionally)
+  /// - [TileEventResultCategory.skipped] (tile was not cached, but intentionally)
   /// - [TileEventResultCategory.failed] (tile was not cached, due to an error)
   final TileEventResult result;
 
@@ -120,11 +120,11 @@ class TileEvent {
 
   @override
   int get hashCode => Object.hashAllUnordered([
-        result.hashCode,
-        url.hashCode,
-        tileImage.hashCode,
-        fetchResponse.hashCode,
-        fetchError.hashCode,
-        _wasBufferReset.hashCode,
+        result,
+        url,
+        tileImage,
+        fetchResponse,
+        fetchError,
+        _wasBufferReset,
       ]);
 }

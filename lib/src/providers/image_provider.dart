@@ -274,11 +274,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
           other.options == options);
 
   @override
-  int get hashCode => Object.hashAllUnordered([
-        coords.hashCode,
-        provider.hashCode,
-        options.hashCode,
-      ]);
+  int get hashCode => Object.hash(coords, provider, options);
 }
 
 Future<void> _removeOldestTile(List<dynamic> args) async {

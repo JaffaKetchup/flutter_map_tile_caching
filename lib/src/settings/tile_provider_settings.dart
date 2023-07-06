@@ -100,10 +100,10 @@ class FMTCTileProviderSettings {
 
   @override
   int get hashCode => Object.hashAllUnordered([
-        behavior.hashCode,
-        cachedValidDuration.hashCode,
-        maxStoreLength.hashCode,
-        errorHandler.hashCode,
-        obscuredQueryParams.hashCode,
+        behavior,
+        cachedValidDuration,
+        maxStoreLength,
+        errorHandler,
+        obscuredQueryParams,
       ]);
 }

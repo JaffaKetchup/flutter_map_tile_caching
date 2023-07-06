@@ -6,7 +6,6 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/main/main.dart';
 import 'shared/state/download_provider.dart';
@@ -21,8 +20,6 @@ void main() async {
     ),
   );
 
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-
   String? damagedDatabaseDeleted;
   await FlutterMapTileCaching.initialise(
     errorHandler: (error) => damagedDatabaseDeleted = error.message,
@@ -30,10 +27,6 @@ void main() async {
   );
 
   await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: []);
-
-  if (prefs.getBool('reset') ?? false) {
-    await FMTC.instance.rootDirectory.manage.reset();
-  }
 
   final newAppVersionFile = File(
     p.join(

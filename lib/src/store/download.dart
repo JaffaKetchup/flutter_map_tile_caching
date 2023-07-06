@@ -46,9 +46,9 @@ class DownloadManagement {
   /// - [maxBufferLength] (defaults to 100 | 0 to disable): number of tiles to
   /// temporarily buffer before writing to the store (split evenly between
   /// [parallelThreads])
-  /// - [pruneExistingTiles] (defaults to `true`): whether to skip downloading
+  /// - [skipExistingTiles] (defaults to `true`): whether to skip downloading
   /// tiles that are already cached
-  /// - [pruneSeaTiles] (defaults to `true`): whether to skip caching tiles that
+  /// - [skipSeaTiles] (defaults to `true`): whether to skip caching tiles that
   /// are entirely sea (this is decided based on a comparison to the tile at
   /// x0y0z17)
   ///
@@ -62,6 +62,18 @@ class DownloadManagement {
   ///
   /// ---
   ///
+  /// Although disabled `null` by default, [rateLimit] can be used to impose a
+  /// limit on the maximum number of tiles requests that can be made per second.
+  /// This is useful to avoid placing too much strain on tile servers and avoid
+  /// rate limiting. Note that the real number of requests per second may exceed
+  /// [rateLimit] by a very small amount.
+  ///
+  /// To check whether the current [DownloadProgress.tilesPerSecond] statistic is
+  /// currently limited by [rateLimit], check
+  /// [DownloadProgress.isTPSArtificiallyCapped].
+  ///
+  /// ---
+  ///
   /// {@macro num_instances}
   @useResult
   Stream<DownloadProgress> startForeground({
@@ -69,9 +81,10 @@ class DownloadManagement {
     FMTCTileProviderSettings? tileProviderSettings,
     int parallelThreads = 5,
     int maxBufferLength = 100,
-    bool pruneExistingTiles = true,
-    bool pruneSeaTiles = true,
+    bool skipExistingTiles = true,
+    bool skipSeaTiles = true,
     Duration? maxReportInterval = const Duration(seconds: 1),
+    int? rateLimit,
     bool disableRecovery = false,
     Object instanceId = 0,
   }) async* {
@@ -96,7 +109,7 @@ class DownloadManagement {
       throw ArgumentError.value(
         parallelThreads,
         'parallelThreads',
-        'must be greater than 0',
+        'must be 1 or greater',
       );
     }
 
@@ -104,7 +117,15 @@ class DownloadManagement {
       throw ArgumentError.value(
         maxBufferLength,
         'maxBufferLength',
-        'must be greater than -1',
+        'must be 0 or greater',
+      );
+    }
+
+    if ((rateLimit ?? 2) < 1) {
+      throw ArgumentError.value(
+        rateLimit,
+        'rateLimit',
+        'must be 1 or greater, or null',
       );
     }
 
@@ -141,9 +162,10 @@ class DownloadManagement {
         ),
         parallelThreads: parallelThreads,
         maxBufferLength: maxBufferLength,
-        pruneExistingTiles: pruneExistingTiles,
-        pruneSeaTiles: pruneSeaTiles,
+        skipExistingTiles: skipExistingTiles,
+        skipSeaTiles: skipSeaTiles,
         maxReportInterval: maxReportInterval,
+        rateLimit: rateLimit,
       ),
       onExit: recievePort.sendPort,
       debugName: '[FMTC] Master Bulk Download Thread',

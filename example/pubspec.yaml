@@ -12,6 +12,7 @@ environment:
 dependencies:
   badges: ^3.0.2
   better_open_file: ^3.6.4
+  file_picker: ^5.2.10
   flutter:
     sdk: flutter
   flutter_foreground_task: ^6.0.0+1
@@ -21,13 +22,13 @@ dependencies:
   fmtc_plus_background_downloading: ^8.0.0
   fmtc_plus_sharing: ^8.0.0
   google_fonts: ^5.1.0
+  gpx: ^2.2.1
   http: ^1.0.0
   intl: ^0.18.0
   latlong2: ^0.9.0
   osm_nominatim: ^2.0.1
   path: ^1.8.3
   provider: ^6.0.3
-  shared_preferences: ^2.0.15
   stream_transform: ^2.0.0
   validators: ^3.0.0
   version: ^3.0.2

@@ -11,7 +11,7 @@ Future<void> _singleDownloadThread(
     DownloadableRegion region,
     FMTCTileProvider tileProvider,
     int maxBufferLength,
-    bool pruneExistingTiles,
+    bool skipExistingTiles,
     Uint8List? seaTileBytes,
   }) input,
 ) async {
@@ -65,7 +65,7 @@ Future<void> _singleDownloadThread(
     final existingTile = await db.tiles.get(DatabaseTools.hash(url));
 
     // Skip if tile already exists and user demands existing tile pruning
-    if (input.pruneExistingTiles && existingTile != null) {
+    if (input.skipExistingTiles && existingTile != null) {
       send(
         TileEvent._(
           TileEventResult.alreadyExisting,

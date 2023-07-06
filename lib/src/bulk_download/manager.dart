@@ -11,9 +11,10 @@ Future<void> _downloadManager(
     FMTCTileProvider tileProvider,
     int parallelThreads,
     int maxBufferLength,
-    bool pruneExistingTiles,
-    bool pruneSeaTiles,
+    bool skipExistingTiles,
+    bool skipSeaTiles,
     Duration? maxReportInterval,
+    int? rateLimit,
   }) input,
 ) async {
   // Count number of tiles
@@ -25,7 +26,7 @@ Future<void> _downloadManager(
 
   // Setup sea tile removal system
   Uint8List? seaTileBytes;
-  if (input.pruneSeaTiles) {
+  if (input.skipSeaTiles) {
     try {
       seaTileBytes = await http.readBytes(
         Uri.parse(
@@ -64,11 +65,22 @@ Future<void> _downloadManager(
     debugName: '[FMTC] Tile Coords Generator Thread',
   );
   final tileQueue = StreamQueue(
-    tileRecievePort.skip(input.region.start).take(
-          input.region.end == null
-              ? largestInt
-              : (input.region.end! - input.region.start),
-        ),
+    input.rateLimit == null
+        ? tileRecievePort.skip(input.region.start).take(
+              input.region.end == null
+                  ? largestInt
+                  : (input.region.end! - input.region.start),
+            )
+        : RateLimitedStream.fromSourceStream(
+            emitEvery: Duration(
+              microseconds: ((1 / input.rateLimit!) * 1000000).ceil(),
+            ),
+            sourceStream: tileRecievePort.skip(input.region.start).take(
+                  input.region.end == null
+                      ? largestInt
+                      : (input.region.end! - input.region.start),
+                ),
+          ).stream,
   );
   final requestTilePort = await tileQueue.next as SendPort;
 
@@ -80,6 +92,10 @@ Future<void> _downloadManager(
   // Start progress tracking
   final downloadDuration = Stopwatch()..start();
   var lastDownloadProgress = DownloadProgress._initial(maxTiles: maxTiles);
+  int mptTileIndex = -1;
+  int mptSlots = 50;
+  final microsecondsPerTile = List<int?>.filled(mptSlots, null, growable: true);
+  final tpsRates = List<double?>.filled(20, null);
 
   // Setup cancel, pause, and resume handling
   final threadPausedStates = List.generate(
@@ -120,9 +136,13 @@ Future<void> _downloadManager(
         if (lastDownloadProgress !=
                 DownloadProgress._initial(maxTiles: maxTiles) &&
             pauseResumeSignal.isCompleted) {
+          final tps = tpsRates.nonNulls.average;
           send(
-            lastDownloadProgress =
-                lastDownloadProgress._updateDuration(downloadDuration.elapsed),
+            lastDownloadProgress = lastDownloadProgress._updateProgress(
+              newDuration: downloadDuration.elapsed,
+              tilesPerSecond: tps,
+              rateLimit: input.rateLimit,
+            ),
           );
         }
       },
@@ -130,6 +150,9 @@ Future<void> _downloadManager(
   } else {
     fallbackReportTimer = null;
   }
+
+  // TODO: This might be the wrong place to put this
+  final tileTimer = Stopwatch();
 
   // Start download threads & wait for download to complete/cancelled
   await Future.wait(
@@ -152,7 +175,7 @@ Future<void> _downloadManager(
             tileProvider: input.tileProvider,
             maxBufferLength:
                 (input.maxBufferLength / input.parallelThreads).ceil(),
-            pruneExistingTiles: input.pruneExistingTiles,
+            skipExistingTiles: input.skipExistingTiles,
             seaTileBytes: seaTileBytes,
           ),
           onExit: downloadThreadRecievePort.sendPort,
@@ -175,6 +198,17 @@ Future<void> _downloadManager(
           (evt) async {
             // Thread is sending tile data
             if (evt is TileEvent) {
+              // Handle progress estimation measurements
+              mptTileIndex++;
+              microsecondsPerTile[mptTileIndex % mptSlots] =
+                  (tileTimer..stop()).elapsedMicroseconds;
+              final rawTPS =
+                  (1 / (microsecondsPerTile.nonNulls.average)) * 1000000;
+              microsecondsPerTile.length = mptSlots = rawTPS.ceil() * 2;
+              tpsRates[mptTileIndex % 20] = rawTPS;
+              final tps = tpsRates.nonNulls.average;
+
+              // If buffering is in use, send a progress update with buffer info
               if (input.maxBufferLength != 0) {
                 if (evt.result == TileEventResult.success) {
                   threadBuffers[threadNo] = (
@@ -189,7 +223,8 @@ Future<void> _downloadManager(
                 }
 
                 send(
-                  lastDownloadProgress = lastDownloadProgress._update(
+                  lastDownloadProgress =
+                      lastDownloadProgress._updateProgressWithTile(
                     newTileEvent: evt,
                     newBufferedTiles: threadBuffers
                         .map((e) => e.tiles)
@@ -198,15 +233,20 @@ Future<void> _downloadManager(
                         .map((e) => e.size)
                         .reduce((a, b) => a + b),
                     newDuration: downloadDuration.elapsed,
+                    tilesPerSecond: tps,
+                    rateLimit: input.rateLimit,
                   ),
                 );
               } else {
                 send(
-                  lastDownloadProgress = lastDownloadProgress._update(
+                  lastDownloadProgress =
+                      lastDownloadProgress._updateProgressWithTile(
                     newTileEvent: evt,
                     newBufferedTiles: 0,
                     newBufferedSize: 0,
                     newDuration: downloadDuration.elapsed,
+                    tilesPerSecond: tps,
+                    rateLimit: input.rateLimit,
                   ),
                 );
               }
@@ -219,6 +259,10 @@ Future<void> _downloadManager(
                 threadPausedStates[threadNo].complete();
                 await pauseResumeSignal.future;
               }
+
+              tileTimer
+                ..reset()
+                ..start();
 
               requestTilePort.send(null);
               try {
@@ -260,12 +304,14 @@ Future<void> _downloadManager(
   // Send final buffer cleared progress report
   fallbackReportTimer?.cancel();
   send(
-    lastDownloadProgress = lastDownloadProgress._update(
+    lastDownloadProgress = lastDownloadProgress._updateProgressWithTile(
       newTileEvent: null,
       newBufferedTiles: 0,
       newBufferedSize: 0,
       newDuration: downloadDuration.elapsed,
-      hasFinished: true,
+      tilesPerSecond: 0,
+      rateLimit: input.rateLimit,
+      isComplete: true,
     ),
   );
 

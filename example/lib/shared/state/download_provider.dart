@@ -79,17 +79,38 @@ class DownloadProvider extends ChangeNotifier {
     if (notify) notifyListeners();
   }
 
-  bool _preventRedownload = false;
-  bool get preventRedownload => _preventRedownload;
-  set preventRedownload(bool newBool) {
-    _preventRedownload = newBool;
+  int _parallelThreads = 5;
+  int get parallelThreads => _parallelThreads;
+  set parallelThreads(int newNum) {
+    _parallelThreads = newNum;
     notifyListeners();
   }
 
-  bool _seaTileRemoval = true;
-  bool get seaTileRemoval => _seaTileRemoval;
-  set seaTileRemoval(bool newBool) {
-    _seaTileRemoval = newBool;
+  int _bufferingAmount = 100;
+  int get bufferingAmount => _bufferingAmount;
+  set bufferingAmount(int newNum) {
+    _bufferingAmount = newNum;
+    notifyListeners();
+  }
+
+  bool _skipExistingTiles = false;
+  bool get skipExistingTiles => _skipExistingTiles;
+  set skipExistingTiles(bool newBool) {
+    _skipExistingTiles = newBool;
+    notifyListeners();
+  }
+
+  bool _skipSeaTiles = true;
+  bool get skipSeaTiles => _skipSeaTiles;
+  set skipSeaTiles(bool newBool) {
+    _skipSeaTiles = newBool;
+    notifyListeners();
+  }
+
+  int? _rateLimit = 100;
+  int? get rateLimit => _rateLimit;
+  set rateLimit(int? newNum) {
+    _rateLimit = newNum;
     notifyListeners();
   }
 
@@ -97,13 +118,6 @@ class DownloadProvider extends ChangeNotifier {
   bool get disableRecovery => _disableRecovery;
   set disableRecovery(bool newBool) {
     _disableRecovery = newBool;
-    notifyListeners();
-  }
-
-  int _bufferingAmount = 500;
-  int get bufferingAmount => _bufferingAmount;
-  set bufferingAmount(int newNum) {
-    _bufferingAmount = newNum;
     notifyListeners();
   }
 

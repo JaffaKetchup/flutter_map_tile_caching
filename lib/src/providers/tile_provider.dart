@@ -93,10 +93,6 @@ class FMTCTileProvider extends TileProvider {
           other.headers == headers);
 
   @override
-  int get hashCode => Object.hashAllUnordered([
-        httpClient.hashCode,
-        settings.hashCode,
-        storeDirectory.hashCode,
-        headers.hashCode,
-      ]);
+  int get hashCode =>
+      Object.hash(httpClient, settings, storeDirectory, headers);
 }

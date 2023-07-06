@@ -110,5 +110,5 @@ class CircleRegion extends BaseRegion {
           super == other);
 
   @override
-  int get hashCode => Object.hashAllUnordered([center, radius, super.hashCode]);
+  int get hashCode => Object.hash(center, radius, super.hashCode);
 }

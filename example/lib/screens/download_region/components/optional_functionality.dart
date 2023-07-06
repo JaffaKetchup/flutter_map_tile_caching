@@ -16,7 +16,7 @@ class OptionalFunctionality extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Text('Only Download New Tiles'),
+                    const Text('Skip Existing Tiles'),
                     const Spacer(),
                     IconButton(
                       onPressed: () {
@@ -32,8 +32,8 @@ class OptionalFunctionality extends StatelessWidget {
                       icon: const Icon(Icons.help_outline),
                     ),
                     Switch(
-                      value: provider.preventRedownload,
-                      onChanged: (val) => provider.preventRedownload = val,
+                      value: provider.skipExistingTiles,
+                      onChanged: (val) => provider.skipExistingTiles = val,
                       activeColor: Theme.of(context).colorScheme.primary,
                     )
                   ],
@@ -41,7 +41,7 @@ class OptionalFunctionality extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Remove Sea Tiles'),
+                    const Text('Skip Sea Tiles'),
                     const Spacer(),
                     IconButton(
                       onPressed: () {
@@ -57,8 +57,8 @@ class OptionalFunctionality extends StatelessWidget {
                       icon: const Icon(Icons.help_outline),
                     ),
                     Switch(
-                      value: provider.seaTileRemoval,
-                      onChanged: (val) => provider.seaTileRemoval = val,
+                      value: provider.skipSeaTiles,
+                      onChanged: (val) => provider.skipSeaTiles = val,
                       activeColor: Theme.of(context).colorScheme.primary,
                     )
                   ],

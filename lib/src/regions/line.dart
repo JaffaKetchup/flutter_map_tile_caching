@@ -166,5 +166,5 @@ class LineRegion extends BaseRegion {
           super == other);
 
   @override
-  int get hashCode => Object.hashAllUnordered([line, radius, super.hashCode]);
+  int get hashCode => Object.hash(line, radius, super.hashCode);
 }

@@ -79,5 +79,5 @@ class RectangleRegion extends BaseRegion {
       (other is RectangleRegion && other.bounds == bounds && super == other);
 
   @override
-  int get hashCode => Object.hashAllUnordered([bounds, super.hashCode]);
+  int get hashCode => Object.hash(bounds, super.hashCode);
 }

@@ -36,6 +36,7 @@ import 'package:watcher/watcher.dart';
 
 import 'src/bulk_download/instance.dart';
 
+import 'src/bulk_download/rate_limited_stream.dart';
 import 'src/bulk_download/tile_loops/shared.dart';
 import 'src/db/defs/metadata.dart';
 import 'src/db/defs/recovery.dart';

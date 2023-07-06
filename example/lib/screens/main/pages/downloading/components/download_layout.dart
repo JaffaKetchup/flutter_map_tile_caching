@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../../shared/state/download_provider.dart';
 import '../../../../../shared/vars/size_formatter.dart';
+import 'main_statistics.dart';
 import 'multi_linear_progress_indicator.dart';
 import 'stat_display.dart';
 
@@ -28,7 +29,7 @@ class DownloadLayout extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: SizedBox.square(
-                      dimension: 256 / 1.25,
+                      dimension: 256,
                       child: download.lastTileEvent.tileImage != null
                           ? Image.memory(
                               download.lastTileEvent.tileImage!,
@@ -41,59 +42,11 @@ class DownloadLayout extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 32),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    StatDisplay(
-                      statistic:
-                          '${download.percentageProgress.toStringAsFixed(2)}%',
-                      description: 'percentage attempted',
-                    ),
-                    StatDisplay(
-                      statistic: download.duration.toString().split('.')[0],
-                      description: 'elapsed duration',
-                    ),
-                    const SizedBox(height: 16),
-                    if (!download.hasFinished)
-                      RepaintBoundary(
-                        child: Row(
-                          children: [
-                            IconButton.outlined(
-                              onPressed: storeDirectory.download.isPaused()
-                                  ? () => storeDirectory.download.resume()
-                                  : () => storeDirectory.download.pause(),
-                              icon: Icon(
-                                storeDirectory.download.isPaused()
-                                    ? Icons.play_arrow
-                                    : Icons.pause,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton.outlined(
-                              onPressed: () => storeDirectory.download.cancel(),
-                              icon: const Icon(Icons.cancel),
-                            )
-                          ],
-                        ),
-                      ),
-                    if (download.hasFinished)
-                      OutlinedButton(
-                        onPressed: () {
-                          WidgetsBinding.instance.addPostFrameCallback(
-                            (_) => Provider.of<DownloadProvider>(
-                              context,
-                              listen: false,
-                            ).setDownloadProgress(null),
-                          );
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 32),
-                          child: Text('Exit'),
-                        ),
-                      ),
-                  ],
+                MainStatistics(
+                  download: download,
+                  storeDirectory: storeDirectory,
                 ),
-                const SizedBox(width: 48),
+                const SizedBox(width: 32),
                 const VerticalDivider(),
                 const SizedBox(width: 16),
                 Expanded(
@@ -101,10 +54,6 @@ class DownloadLayout extends StatelessWidget {
                     children: [
                       TableRow(
                         children: [
-                          StatDisplay(
-                            statistic: '${download.attemptedTiles}',
-                            description: 'attempted tiles',
-                          ),
                           StatDisplay(
                             statistic:
                                 '${download.cachedTiles - download.bufferedTiles} + ${download.bufferedTiles}',
@@ -120,27 +69,19 @@ class DownloadLayout extends StatelessWidget {
                       TableRow(
                         children: [
                           StatDisplay(
-                            statistic: '${download.remainingTiles}',
-                            description: 'remaining tiles',
+                            statistic:
+                                '${download.skippedTiles} (${download.skippedTiles == 0 ? 0 : (100 - ((download.cachedTiles - download.skippedTiles) / download.cachedTiles) * 100).toStringAsFixed(1)}%)',
+                            description: 'skipped tiles (% saving)',
                           ),
                           StatDisplay(
                             statistic:
-                                '${download.prunedTiles} (${download.prunedTiles == 0 ? 0 : (100 - ((download.cachedTiles - download.prunedTiles) / download.cachedTiles) * 100).toStringAsFixed(1)}%)',
-                            description: 'pruned tiles (% saving)',
-                          ),
-                          StatDisplay(
-                            statistic:
-                                '${(download.prunedSize * 1024).asReadableSize} (${download.prunedTiles == 0 ? 0 : (100 - ((download.cachedSize - download.prunedSize) / download.cachedSize) * 100).toStringAsFixed(1)}%)',
-                            description: 'pruned size (% saving)',
+                                '${(download.skippedSize * 1024).asReadableSize} (${download.skippedTiles == 0 ? 0 : (100 - ((download.cachedSize - download.skippedSize) / download.cachedSize) * 100).toStringAsFixed(1)}%)',
+                            description: 'skipped size (% saving)',
                           ),
                         ],
                       ),
                       TableRow(
                         children: [
-                          StatDisplay(
-                            statistic: '${download.maxTiles}',
-                            description: 'total tiles',
-                          ),
                           RepaintBoundary(
                             child: Column(
                               children: [
@@ -163,7 +104,7 @@ class DownloadLayout extends StatelessWidget {
                                         Icons.warning_amber,
                                         color: Colors.red,
                                       ),
-                                    ]
+                                    ],
                                   ],
                                 ),
                                 Text(
@@ -197,7 +138,7 @@ class DownloadLayout extends StatelessWidget {
             progresses: [
               (
                 value: download.cachedTiles +
-                    download.prunedTiles +
+                    download.skippedTiles +
                     download.failedTiles,
                 color: Colors.red,
                 child: Text(
@@ -206,10 +147,10 @@ class DownloadLayout extends StatelessWidget {
                 )
               ),
               (
-                value: download.cachedTiles + download.prunedTiles,
+                value: download.cachedTiles + download.skippedTiles,
                 color: Colors.yellow,
                 child: Text(
-                  '${download.prunedTiles}',
+                  '${download.skippedTiles}',
                   style: const TextStyle(color: Colors.black),
                 )
               ),
@@ -295,69 +236,6 @@ class DownloadLayout extends StatelessWidget {
               ],
             ),
           ),
-          /*Stack(
-            children: [
-              LinearProgressIndicator(
-                value: data.percentageProgress / 100,
-                minHeight: 12,
-                backgroundColor: Colors.grey[300],
-                valueColor: AlwaysStoppedAnimation(
-                  Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                ),
-              ),
-              LinearProgressIndicator(
-                value: data.persistedTiles / data.maxTiles,
-                minHeight: 12,
-                backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation(
-                  Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 30),
-          Expanded(
-            child: data.failedTiles.isEmpty
-                ? const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.report_off, size: 36),
-                      SizedBox(height: 10),
-                      Text('No Failed Tiles'),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      const SizedBox(width: 30),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.warning,
-                            size: 36,
-                          ),
-                          const SizedBox(height: 10),
-                          StatDisplay(
-                            statistic: data.failedTiles.length.toString(),
-                            description: 'failed tiles',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 30),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: data.failedTiles.length,
-                          itemBuilder: (context, index) => ListTile(
-                            title: Text(
-                              data.failedTiles[index],
-                              textAlign: TextAlign.end,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-          ),*/
         ],
       );
 }

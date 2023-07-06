@@ -75,12 +75,12 @@ class DownloadableRegion<R extends BaseRegion> {
 
   @override
   int get hashCode => Object.hashAllUnordered([
-        originalRegion.hashCode,
-        minZoom.hashCode,
-        maxZoom.hashCode,
-        options.hashCode,
-        start.hashCode,
-        end.hashCode,
-        crs.hashCode,
+        originalRegion,
+        minZoom,
+        maxZoom,
+        options,
+        start,
+        end,
+        crs,
       ]);
 }

@@ -18,19 +18,36 @@ class DownloadProgress {
   final double cachedSize;
   final int bufferedTiles;
   final double bufferedSize;
-  final int prunedTiles;
-  final double prunedSize;
+  final int skippedTiles;
+  final double skippedSize;
   final int failedTiles;
   final int maxTiles;
-  final Duration duration;
-  final bool hasFinished;
 
-  int get successfulTiles => cachedTiles + prunedTiles;
-  double get successfulSize => cachedSize + prunedSize;
+  final Duration elapsedDuration;
+  final double tilesPerSecond;
+  final bool isTPSArtificiallyCapped;
+
+  final bool isComplete;
+
+  int get successfulTiles => cachedTiles + skippedTiles;
+  double get successfulSize => cachedSize + skippedSize;
   int get attemptedTiles => successfulTiles + failedTiles;
   int get remainingTiles => maxTiles - attemptedTiles;
 
   double get percentageProgress => (attemptedTiles / maxTiles) * 100;
+
+  Duration get estTotalDuration => isComplete
+      ? elapsedDuration
+      : Duration(
+          seconds:
+              (((maxTiles / tilesPerSecond.clamp(1, largestInt)) / 10).round() *
+                      10)
+                  .clamp(elapsedDuration.inSeconds, largestInt),
+        );
+  Duration get estRemainingDuration =>
+      estTotalDuration - elapsedDuration < Duration.zero
+          ? Duration.zero
+          : estTotalDuration - elapsedDuration;
 
   const DownloadProgress.__({
     required TileEvent? lastTileEvent,
@@ -38,12 +55,14 @@ class DownloadProgress {
     required this.cachedSize,
     required this.bufferedTiles,
     required this.bufferedSize,
-    required this.prunedTiles,
-    required this.prunedSize,
+    required this.skippedTiles,
+    required this.skippedSize,
     required this.failedTiles,
     required this.maxTiles,
-    required this.duration,
-    required this.hasFinished,
+    required this.elapsedDuration,
+    required this.tilesPerSecond,
+    required this.isTPSArtificiallyCapped,
+    required this.isComplete,
   }) : _lastTileEvent = lastTileEvent;
 
   factory DownloadProgress._initial({required int maxTiles}) =>
@@ -53,37 +72,46 @@ class DownloadProgress {
         cachedSize: 0,
         bufferedTiles: 0,
         bufferedSize: 0,
-        prunedTiles: 0,
-        prunedSize: 0,
+        skippedTiles: 0,
+        skippedSize: 0,
         failedTiles: 0,
         maxTiles: maxTiles,
-        duration: Duration.zero,
-        hasFinished: false,
+        elapsedDuration: Duration.zero,
+        tilesPerSecond: 0,
+        isTPSArtificiallyCapped: false,
+        isComplete: false,
       );
 
-  DownloadProgress _updateDuration(
-    Duration newDuration,
-  ) =>
+  DownloadProgress _updateProgress({
+    required Duration newDuration,
+    required double tilesPerSecond,
+    required int? rateLimit,
+  }) =>
       DownloadProgress.__(
         lastTileEvent: lastTileEvent,
         cachedTiles: cachedTiles,
         cachedSize: cachedSize,
         bufferedTiles: bufferedTiles,
         bufferedSize: bufferedSize,
-        prunedTiles: prunedTiles,
-        prunedSize: prunedSize,
+        skippedTiles: skippedTiles,
+        skippedSize: skippedSize,
         failedTiles: failedTiles,
         maxTiles: maxTiles,
-        duration: newDuration,
-        hasFinished: false,
+        elapsedDuration: newDuration,
+        tilesPerSecond: tilesPerSecond,
+        isTPSArtificiallyCapped:
+            tilesPerSecond >= (rateLimit ?? double.infinity) - 0.5,
+        isComplete: false,
       );
 
-  DownloadProgress _update({
+  DownloadProgress _updateProgressWithTile({
     required TileEvent? newTileEvent,
     required int newBufferedTiles,
     required double newBufferedSize,
     required Duration newDuration,
-    bool hasFinished = false,
+    required double tilesPerSecond,
+    required int? rateLimit,
+    bool isComplete = false,
   }) =>
       DownloadProgress.__(
         lastTileEvent: newTileEvent ?? lastTileEvent,
@@ -99,24 +127,27 @@ class DownloadProgress {
                 : cachedSize,
         bufferedTiles: newBufferedTiles,
         bufferedSize: newBufferedSize,
-        prunedTiles: newTileEvent == null
-            ? prunedTiles
-            : newTileEvent.result.category == TileEventResultCategory.pruned
-                ? prunedTiles + 1
-                : prunedTiles,
-        prunedSize: newTileEvent == null
-            ? prunedSize
-            : newTileEvent.result.category == TileEventResultCategory.pruned
-                ? prunedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
-                : prunedSize,
+        skippedTiles: newTileEvent == null
+            ? skippedTiles
+            : newTileEvent.result.category == TileEventResultCategory.skipped
+                ? skippedTiles + 1
+                : skippedTiles,
+        skippedSize: newTileEvent == null
+            ? skippedSize
+            : newTileEvent.result.category == TileEventResultCategory.skipped
+                ? skippedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
+                : skippedSize,
         failedTiles: newTileEvent == null
             ? failedTiles
             : newTileEvent.result.category == TileEventResultCategory.failed
                 ? failedTiles + 1
                 : failedTiles,
         maxTiles: maxTiles,
-        duration: newDuration,
-        hasFinished: hasFinished,
+        elapsedDuration: newDuration,
+        tilesPerSecond: tilesPerSecond,
+        isTPSArtificiallyCapped:
+            tilesPerSecond >= (rateLimit ?? double.infinity) - 0.5,
+        isComplete: isComplete,
       );
 
   @override
@@ -128,25 +159,29 @@ class DownloadProgress {
           cachedSize == other.cachedSize &&
           bufferedTiles == other.bufferedTiles &&
           bufferedSize == other.bufferedSize &&
-          prunedTiles == other.prunedTiles &&
-          prunedSize == other.prunedSize &&
+          skippedTiles == other.skippedTiles &&
+          skippedSize == other.skippedSize &&
           failedTiles == other.failedTiles &&
           maxTiles == other.maxTiles &&
-          duration == other.duration &&
-          hasFinished == other.hasFinished);
+          elapsedDuration == other.elapsedDuration &&
+          tilesPerSecond == other.tilesPerSecond &&
+          isTPSArtificiallyCapped == other.isTPSArtificiallyCapped &&
+          isComplete == other.isComplete);
 
   @override
   int get hashCode => Object.hashAllUnordered([
-        _lastTileEvent.hashCode,
-        cachedTiles.hashCode,
-        cachedSize.hashCode,
-        bufferedTiles.hashCode,
-        bufferedSize.hashCode,
-        prunedTiles.hashCode,
-        prunedSize.hashCode,
-        failedTiles.hashCode,
-        maxTiles.hashCode,
-        duration.hashCode,
-        hasFinished.hashCode,
+        _lastTileEvent,
+        cachedTiles,
+        cachedSize,
+        bufferedTiles,
+        bufferedSize,
+        skippedTiles,
+        skippedSize,
+        failedTiles,
+        maxTiles,
+        elapsedDuration,
+        tilesPerSecond,
+        isTPSArtificiallyCapped,
+        isComplete,
       ]);
 }

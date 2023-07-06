@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:stream_transform/stream_transform.dart';
@@ -235,27 +238,75 @@ class _MapViewState extends State<MapView> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     width: double.infinity,
-                    height: 50,
                     margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        const Text('Radius'),
-                        Expanded(
-                          child: Slider(
-                            value: downloadProvider.lineRegionRadius,
-                            min: 100,
-                            max: 10000,
-                            divisions: 99,
-                            label:
-                                '${downloadProvider.lineRegionRadius.round()} meters',
-                            onChanged: (val) {
-                              downloadProvider.lineRegionRadius = val;
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: IntrinsicHeight(
+                      child: Row(
+                        children: [
+                          const Text('Radius'),
+                          Expanded(
+                            child: Slider(
+                              value: downloadProvider.lineRegionRadius,
+                              min: 50,
+                              max: 5000,
+                              divisions: 99,
+                              label:
+                                  '${downloadProvider.lineRegionRadius.round()} meters',
+                              onChanged: (val) {
+                                downloadProvider.lineRegionRadius = val;
+                                _updateLineRegion();
+                              },
+                            ),
+                          ),
+                          const VerticalDivider(),
+                          IconButton(
+                            onPressed: () async {
+                              final result =
+                                  await FilePicker.platform.pickFiles(
+                                dialogTitle: 'Open GPX',
+                                type: FileType.custom,
+                                allowedExtensions: ['gpx', 'kml'],
+                                allowMultiple: true,
+                              );
+
+                              if (result != null) {
+                                final gpxReader = GpxReader();
+                                for (final path
+                                    in result.files.map((e) => e.path)) {
+                                  downloadProvider.lineRegionPoints.addAll(
+                                    gpxReader
+                                        .fromString(
+                                          await File(path!).readAsString(),
+                                        )
+                                        .trks
+                                        .map(
+                                          (e) => e.trksegs.map(
+                                            (e) => e.trkpts.map(
+                                              (e) => LatLng(e.lat!, e.lon!),
+                                            ),
+                                          ),
+                                        )
+                                        .expand((e) => e)
+                                        .expand((e) => e),
+                                  );
+                                  _updateLineRegion();
+                                }
+                              }
+                            },
+                            icon: const Icon(Icons.download),
+                            tooltip: 'Import from GPX',
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              downloadProvider.lineRegionPoints.clear();
                               _updateLineRegion();
                             },
+                            icon: const Icon(Icons.cancel),
+                            tooltip: 'Clear existing points',
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
               ],
@@ -357,8 +408,7 @@ class _MapViewState extends State<MapView> {
         _crosshairsTop = calculatedTop - _crosshairsMovement;
         _crosshairsBottom = centerNormal - _crosshairsMovement;
 
-        _center = MapController.of(context)
-            .camera
+        _center = _mapController.camera
             .pointToLatLng(_customPointFromPoint(centerNormal));
         _radius = const Distance(roundResult: false).distance(
               _center!,

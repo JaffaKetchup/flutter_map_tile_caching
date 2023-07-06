@@ -41,7 +41,9 @@ class _DownloaderPageState extends State<DownloaderPage> {
         ),
         floatingActionButton: Consumer<DownloadProvider>(
           builder: (context, provider, _) => FloatingActionButton.extended(
-            onPressed: provider.region == null || provider.regionTiles == null
+            onPressed: provider.region == null ||
+                    provider.regionTiles == null ||
+                    provider.regionTiles == 0
                 ? () {}
                 : () => Navigator.of(context).push(
                       MaterialPageRoute<String>(
