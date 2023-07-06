@@ -36,8 +36,7 @@ dependencies:
 dependency_overrides:
   flutter_map:
     git:
-      url: https://github.com/rorystephenson/flutter_map.git
-      ref: flutter-map-state-refactor
+      url: https://github.com/fleaflet/flutter_map.git
   flutter_map_tile_caching:
     path: ../
   http: ^1.0.0
