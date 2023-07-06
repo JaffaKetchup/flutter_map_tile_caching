@@ -200,14 +200,14 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                               const Spacer(),
                               Icon(
                                 Icons.lock,
-                                color: provider.rateLimit == 100
+                                color: provider.rateLimit == 200
                                     ? Colors.amber
                                     : Colors.white.withOpacity(0.2),
                               ),
                               const SizedBox(width: 16),
                               IntrinsicWidth(
                                 child: TextFormField(
-                                  initialValue: '100',
+                                  initialValue: '200',
                                   textAlign: TextAlign.end,
                                   keyboardType: TextInputType.number,
                                   decoration: const InputDecoration(
@@ -219,7 +219,7 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                                     FilteringTextInputFormatter.digitsOnly,
                                     const NumericalRangeFormatter(
                                       min: 1,
-                                      max: 100,
+                                      max: 200,
                                     ),
                                   ],
                                   onChanged: (value) => provider.rateLimit =

@@ -152,6 +152,8 @@ class TilesGenerator {
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
         zoomLvl++) {
+      final generatedTiles = <int>[];
+
       for (final rect in lineOutline) {
         final rotatedRectangle = (
           bottomLeft: rect[0],
@@ -212,6 +214,13 @@ class TilesGenerator {
         for (int x = straightRectangleNW.x; x <= straightRectangleSE.x; x++) {
           bool foundOverlappingTile = false;
           for (int y = straightRectangleNW.y; y <= straightRectangleSE.y; y++) {
+            final tile = _Polygon(
+              CustomPoint(x, y),
+              CustomPoint(x + 1, y),
+              CustomPoint(x + 1, y + 1),
+              CustomPoint(x, y + 1),
+            );
+            if (generatedTiles.contains(tile.hashCode)) continue;
             if (overlap(
               _Polygon(
                 rotatedRectangleNW,
@@ -219,16 +228,12 @@ class TilesGenerator {
                 rotatedRectangleSE,
                 rotatedRectangleSW,
               ),
-              _Polygon(
-                CustomPoint(x, y),
-                CustomPoint(x + 1, y),
-                CustomPoint(x + 1, y + 1),
-                CustomPoint(x, y + 1),
-              ),
+              tile,
             )) {
+              generatedTiles.add(tile.hashCode);
+              foundOverlappingTile = true;
               await requestQueue.next;
               input.sendPort.send((x, y, zoomLvl.toInt()));
-              foundOverlappingTile = true;
             } else if (foundOverlappingTile) {
               break;
             }

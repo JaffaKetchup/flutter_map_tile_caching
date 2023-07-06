@@ -16,14 +16,23 @@ part 'count.dart';
 part 'generate.dart';
 
 class _Polygon {
+  _Polygon(this.nw, this.ne, this.se, this.sw) : points = [nw, ne, se, sw] {
+    hashCode = Object.hashAllUnordered(points);
+  }
+
   final CustomPoint<int> nw;
   final CustomPoint<int> ne;
   final CustomPoint<int> se;
   final CustomPoint<int> sw;
+  final List<CustomPoint<int>> points;
 
-  _Polygon(this.nw, this.ne, this.se, this.sw);
+  @override
+  late final int hashCode;
 
-  List<CustomPoint<int>> get points => [nw, ne, se, sw];
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is _Polygon && hashCode == other.hashCode);
 }
 
 CustomPoint<double> _getTileSize(DownloadableRegion region) =>

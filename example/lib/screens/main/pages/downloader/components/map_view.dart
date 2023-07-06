@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -253,7 +254,10 @@ class _MapViewState extends State<MapView> {
                               divisions: 99,
                               label:
                                   '${downloadProvider.lineRegionRadius.round()} meters',
-                              onChanged: (val) {
+                              onChanged: (val) => setState(
+                                () => downloadProvider.lineRegionRadius = val,
+                              ),
+                              onChangeEnd: (val) {
                                 downloadProvider.lineRegionRadius = val;
                                 _updateLineRegion();
                               },
@@ -262,13 +266,20 @@ class _MapViewState extends State<MapView> {
                           const VerticalDivider(),
                           IconButton(
                             onPressed: () async {
-                              final result =
-                                  await FilePicker.platform.pickFiles(
-                                dialogTitle: 'Open GPX',
-                                type: FileType.custom,
-                                allowedExtensions: ['gpx', 'kml'],
-                                allowMultiple: true,
-                              );
+                              late final FilePickerResult? result;
+                              try {
+                                result = await FilePicker.platform.pickFiles(
+                                  dialogTitle: 'Parse From GPX',
+                                  type: FileType.custom,
+                                  allowedExtensions: ['gpx', 'kml'],
+                                  allowMultiple: true,
+                                );
+                              } on PlatformException catch (_) {
+                                result = await FilePicker.platform.pickFiles(
+                                  dialogTitle: 'Parse From GPX',
+                                  allowMultiple: true,
+                                );
+                              }
 
                               if (result != null) {
                                 final gpxReader = GpxReader();
