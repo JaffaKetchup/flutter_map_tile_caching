@@ -75,10 +75,10 @@ class LineRegion extends BaseRegion {
   }
 
   @override
-  DownloadableRegion toDownloadable(
-    int minZoom,
-    int maxZoom,
-    TileLayer options, {
+  DownloadableRegion toDownloadable({
+    required int minZoom,
+    required int maxZoom,
+    required TileLayer options,
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),

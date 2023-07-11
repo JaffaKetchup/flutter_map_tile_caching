@@ -93,7 +93,7 @@ class DownloadProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool _skipExistingTiles = false;
+  bool _skipExistingTiles = true;
   bool get skipExistingTiles => _skipExistingTiles;
   set skipExistingTiles(bool newBool) {
     _skipExistingTiles = newBool;
@@ -107,7 +107,7 @@ class DownloadProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  int? _rateLimit = 100;
+  int? _rateLimit = 200;
   int? get rateLimit => _rateLimit;
   set rateLimit(int? newNum) {
     _rateLimit = newNum;

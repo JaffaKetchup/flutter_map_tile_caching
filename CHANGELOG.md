@@ -23,9 +23,12 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
   * Improved download speed significantly
   * Added pause and resume functionality (to accompany existing cancel functionality)
   * Added rate limiting support
+  * Added support for multiple simultaneous downloads
   * Fixed instability and bugs when cancelling buffering downloads
   * Fixed generation of `LineRegion` tiles by reducing number of redundant duplicate tiles
+  * Fixed usage of `obscuredQueryParams`
   * Removed support for bulk download buffering by size capacity
+  * Removed support for custom `HttpClient`s
 * Added secondary check to `FMTCImageProvider` to ensure responses are valid images
 * Added `StoreManagement.pruneTilesOlderThan` method
 * Replaced public facing `RegionType`/`type` with Dart 3 exhaustive switch statements through `BaseRegion/DownloadableRegion.when` & `RecoverableRegion.toRegion`

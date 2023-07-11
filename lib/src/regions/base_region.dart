@@ -59,10 +59,10 @@ sealed class BaseRegion {
   /// Generate the [DownloadableRegion] ready for bulk downloading
   ///
   /// For more information see [DownloadableRegion]'s documentation.
-  DownloadableRegion toDownloadable(
-    int minZoom,
-    int maxZoom,
-    TileLayer options, {
+  DownloadableRegion toDownloadable({
+    required int minZoom,
+    required int maxZoom,
+    required TileLayer options,
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),

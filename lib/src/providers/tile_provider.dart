@@ -64,7 +64,10 @@ class FMTCTileProvider extends TileProvider {
   }) =>
       FMTCRegistry.instance(storeDirectory.storeName).tiles.getSync(
             DatabaseTools.hash(
-              settings.obscureQueryParams(getTileUrl(coords, options)),
+              obscureQueryParams(
+                url: getTileUrl(coords, options),
+                obscuredQueryParams: settings.obscuredQueryParams,
+              ),
             ),
           ) !=
       null;
@@ -77,7 +80,10 @@ class FMTCTileProvider extends TileProvider {
   }) async =>
       await FMTCRegistry.instance(storeDirectory.storeName).tiles.get(
             DatabaseTools.hash(
-              settings.obscureQueryParams(getTileUrl(coords, options)),
+              obscureQueryParams(
+                url: getTileUrl(coords, options),
+                obscuredQueryParams: settings.obscuredQueryParams,
+              ),
             ),
           ) !=
       null;

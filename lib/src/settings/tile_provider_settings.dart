@@ -76,18 +76,6 @@ class FMTCTileProviderSettings {
     this.errorHandler,
   }) : obscuredQueryParams = obscuredQueryParams.map((e) => RegExp('$e=[^&]*'));
 
-  /// Apply the [obscuredQueryParams] to the input [url]
-  String obscureQueryParams(String url) {
-    if (!url.contains('?') || obscuredQueryParams.isEmpty) return url;
-
-    String secondPartUrl = url.split('?')[1];
-    for (final r in obscuredQueryParams) {
-      secondPartUrl = secondPartUrl.replaceAll(r, '');
-    }
-
-    return '${url.split('?')[0]}?$secondPartUrl';
-  }
-
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

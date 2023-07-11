@@ -458,9 +458,9 @@ class _MapViewState extends State<MapView> {
         ..regionTiles = null
         ..regionTiles = await FMTC.instance('').download.check(
               downloadProvider.region!.toDownloadable(
-                downloadProvider.minZoom,
-                downloadProvider.maxZoom,
-                TileLayer(),
+                minZoom: downloadProvider.minZoom,
+                maxZoom: downloadProvider.maxZoom,
+                options: TileLayer(),
               ),
             );
     }

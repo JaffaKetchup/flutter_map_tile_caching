@@ -49,6 +49,7 @@ import 'src/errors/initialisation.dart';
 import 'src/errors/store_not_ready.dart';
 import 'src/misc/exts.dart';
 import 'src/misc/int_extremes.dart';
+import 'src/misc/obscure_query_params.dart';
 import 'src/misc/typedefs.dart';
 import 'src/providers/image_provider.dart';
 

@@ -8,11 +8,12 @@ Future<void> _singleDownloadThread(
     SendPort sendPort,
     String storeId,
     String rootDirectory,
-    DownloadableRegion region,
-    FMTCTileProvider tileProvider,
+    TileLayer options,
     int maxBufferLength,
     bool skipExistingTiles,
     Uint8List? seaTileBytes,
+    Iterable<RegExp> obscuredQueryParams,
+    Map<String, String> headers,
   }) input,
 ) async {
   // Setup two-way communications
@@ -58,18 +59,22 @@ Future<void> _singleDownloadThread(
     }
 
     // Get new tile URL & any existing tile
-    final url = input.tileProvider.getTileUrl(
+    final networkUrl = input.options.tileProvider.getTileUrl(
       TileCoordinates(coords.$1, coords.$2, coords.$3),
-      input.region.options,
+      input.options,
     );
-    final existingTile = await db.tiles.get(DatabaseTools.hash(url));
+    final matcherUrl = obscureQueryParams(
+      url: networkUrl,
+      obscuredQueryParams: input.obscuredQueryParams,
+    );
+    final existingTile = await db.tiles.get(DatabaseTools.hash(matcherUrl));
 
     // Skip if tile already exists and user demands existing tile pruning
     if (input.skipExistingTiles && existingTile != null) {
       send(
         TileEvent._(
           TileEventResult.alreadyExisting,
-          url: url,
+          url: networkUrl,
           tileImage: Uint8List.fromList(existingTile.bytes),
         ),
       );
@@ -80,8 +85,8 @@ Future<void> _singleDownloadThread(
     final http.Response response;
     try {
       response = await httpClient.get(
-        Uri.parse(url),
-        headers: input.tileProvider.headers,
+        Uri.parse(networkUrl),
+        headers: input.headers,
       );
     } catch (e) {
       send(
@@ -89,7 +94,7 @@ Future<void> _singleDownloadThread(
           e is SocketException
               ? TileEventResult.noConnectionDuringFetch
               : TileEventResult.unknownFetchException,
-          url: url,
+          url: networkUrl,
           fetchError: e,
         ),
       );
@@ -100,7 +105,7 @@ Future<void> _singleDownloadThread(
       send(
         TileEvent._(
           TileEventResult.negativeFetchResponse,
-          url: url,
+          url: networkUrl,
           fetchResponse: response,
         ),
       );
@@ -112,7 +117,7 @@ Future<void> _singleDownloadThread(
       send(
         TileEvent._(
           TileEventResult.isSeaTile,
-          url: url,
+          url: networkUrl,
           tileImage: response.bodyBytes,
           fetchResponse: response,
         ),
@@ -121,7 +126,7 @@ Future<void> _singleDownloadThread(
     }
 
     // Write tile directly to database or place in buffer queue
-    final tile = DbTile(url: url, bytes: response.bodyBytes);
+    final tile = DbTile(url: matcherUrl, bytes: response.bodyBytes);
     if (input.maxBufferLength == 0) {
       db.writeTxnSync(() => db.tiles.putSync(tile));
     } else {
@@ -139,7 +144,7 @@ Future<void> _singleDownloadThread(
     send(
       TileEvent._(
         TileEventResult.success,
-        url: url,
+        url: networkUrl,
         tileImage: response.bodyBytes,
         fetchResponse: response,
         wasBufferReset: wasBufferReset,

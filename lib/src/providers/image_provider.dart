@@ -19,6 +19,7 @@ import '../db/defs/store_descriptor.dart';
 import '../db/defs/tile.dart';
 import '../db/registry.dart';
 import '../db/tools.dart';
+import '../misc/obscure_query_params.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
 class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
@@ -96,7 +97,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     }
 
     final networkUrl = provider.getTileUrl(coords, options);
-    final matcherUrl = provider.settings.obscureQueryParams(networkUrl);
+    final matcherUrl = obscureQueryParams(
+      url: networkUrl,
+      obscuredQueryParams: provider.settings.obscuredQueryParams,
+    );
 
     final existingTile = await db.tiles.get(DatabaseTools.hash(matcherUrl));
 

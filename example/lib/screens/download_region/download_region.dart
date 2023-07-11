@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
-//import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../shared/state/download_provider.dart';
 import '../../shared/state/general_provider.dart';
@@ -112,9 +111,9 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                           provider.selectedStore!.download
                               .startForeground(
                                 region: widget.region.toDownloadable(
-                                  provider.minZoom,
-                                  provider.maxZoom,
-                                  TileLayer(
+                                  minZoom: provider.minZoom,
+                                  maxZoom: provider.maxZoom,
+                                  options: TileLayer(
                                     urlTemplate: metadata['sourceURL'],
                                     userAgentPackageName:
                                         'dev.jaffaketchup.fmtc.demo',
@@ -170,7 +169,8 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                               const SizedBox(width: 16),
                               IntrinsicWidth(
                                 child: TextFormField(
-                                  initialValue: '5',
+                                  initialValue:
+                                      provider.parallelThreads.toString(),
                                   textAlign: TextAlign.end,
                                   keyboardType: TextInputType.number,
                                   decoration: const InputDecoration(
@@ -207,7 +207,7 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                               const SizedBox(width: 16),
                               IntrinsicWidth(
                                 child: TextFormField(
-                                  initialValue: '200',
+                                  initialValue: provider.rateLimit.toString(),
                                   textAlign: TextAlign.end,
                                   keyboardType: TextInputType.number,
                                   decoration: const InputDecoration(

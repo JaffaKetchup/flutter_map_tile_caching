@@ -43,7 +43,7 @@ class DownloadManagement {
   ///
   /// - [parallelThreads] (defaults to 5 | 1 to disable): number of simultaneous
   /// download threads to run
-  /// - [maxBufferLength] (defaults to 100 | 0 to disable): number of tiles to
+  /// - [maxBufferLength] (defaults to 200 | 0 to disable): number of tiles to
   /// temporarily buffer before writing to the store (split evenly between
   /// [parallelThreads])
   /// - [skipExistingTiles] (defaults to `true`): whether to skip downloading
@@ -74,18 +74,27 @@ class DownloadManagement {
   ///
   /// ---
   ///
+  /// For information about [obscuredQueryParams], see the
+  /// [online documentation](https://fmtc.jaffaketchup.dev/usage/integration#obscuring-query-parameters).
+  /// Will default to the current value in [FMTCSettings].
+  ///
+  /// To set additional headers, set it via [TileProvider.headers] when
+  /// constructing the [DownloadableRegion].
+  ///
+  /// ---
+  ///
   /// {@macro num_instances}
   @useResult
   Stream<DownloadProgress> startForeground({
     required DownloadableRegion region,
-    FMTCTileProviderSettings? tileProviderSettings,
     int parallelThreads = 5,
-    int maxBufferLength = 100,
+    int maxBufferLength = 200,
     bool skipExistingTiles = true,
     bool skipSeaTiles = true,
-    Duration? maxReportInterval = const Duration(seconds: 1),
     int? rateLimit,
+    Duration? maxReportInterval = const Duration(seconds: 1),
     bool disableRecovery = false,
+    List<String>? obscuredQueryParams,
     Object instanceId = 0,
   }) async* {
     // Check input arguments for suitability
@@ -156,16 +165,17 @@ class DownloadManagement {
         sendPort: recievePort.sendPort,
         rootDirectory: FMTC.instance.rootDirectory.directory.absolute.path,
         region: region,
-        tileProvider: _storeDirectory.getTileProvider(
-          settings: tileProviderSettings,
-          headers: region.options.tileProvider.headers,
-        ),
+        storeName: _storeDirectory.storeName,
         parallelThreads: parallelThreads,
         maxBufferLength: maxBufferLength,
         skipExistingTiles: skipExistingTiles,
         skipSeaTiles: skipSeaTiles,
         maxReportInterval: maxReportInterval,
         rateLimit: rateLimit,
+        obscuredQueryParams:
+            obscuredQueryParams?.map((e) => RegExp('$e=[^&]*')) ??
+                FMTC.instance.settings.defaultTileProviderSettings
+                    .obscuredQueryParams,
       ),
       onExit: recievePort.sendPort,
       debugName: '[FMTC] Master Bulk Download Thread',
@@ -220,7 +230,8 @@ class DownloadManagement {
 
   /// Check how many downloadable tiles are within a specified region
   ///
-  /// This does not take into account sea tile removal or redownload prevention.
+  /// This does not include skipped sea tiles or skipped existing tiles, as those
+  /// are handled during download only.
   ///
   /// Returns the number of tiles.
   Future<int> check(DownloadableRegion region) => compute(

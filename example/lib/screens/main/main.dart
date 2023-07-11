@@ -1,7 +1,6 @@
 import 'package:badges/badges.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:fmtc_plus_background_downloading/fmtc_plus_background_downloading.dart';
 import 'package:provider/provider.dart';
 
 import '../../shared/state/download_provider.dart';
@@ -107,80 +106,78 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => FMTCBackgroundDownload(
-        child: Scaffold(
-          bottomNavigationBar: MediaQuery.of(context).size.width > 950
-              ? null
-              : NavigationBar(
-                  backgroundColor:
-                      Theme.of(context).navigationBarTheme.backgroundColor,
-                  onDestinationSelected: _onDestinationSelected,
-                  selectedIndex: _currentPageIndex,
-                  destinations: _destinations,
-                  labelBehavior: MediaQuery.of(context).size.width > 450
-                      ? null
-                      : NavigationDestinationLabelBehavior.alwaysHide,
-                  height: 70,
-                ),
-          body: Row(
-            children: [
-              if (MediaQuery.of(context).size.width > 950)
-                NavigationRail(
-                  onDestinationSelected: _onDestinationSelected,
-                  selectedIndex: _currentPageIndex,
-                  groupAlignment: 0,
-                  extended: extended,
-                  destinations: _destinations
-                      .map(
-                        (d) => NavigationRailDestination(
-                          icon: d.icon,
-                          label: Text(d.label),
-                          padding: const EdgeInsets.all(10),
-                        ),
-                      )
-                      .toList(),
-                  leading: Row(
-                    children: [
-                      AnimatedContainer(
-                        width: extended ? 205 : 0,
+  Widget build(BuildContext context) => Scaffold(
+        bottomNavigationBar: MediaQuery.of(context).size.width > 950
+            ? null
+            : NavigationBar(
+                backgroundColor:
+                    Theme.of(context).navigationBarTheme.backgroundColor,
+                onDestinationSelected: _onDestinationSelected,
+                selectedIndex: _currentPageIndex,
+                destinations: _destinations,
+                labelBehavior: MediaQuery.of(context).size.width > 450
+                    ? null
+                    : NavigationDestinationLabelBehavior.alwaysHide,
+                height: 70,
+              ),
+        body: Row(
+          children: [
+            if (MediaQuery.of(context).size.width > 950)
+              NavigationRail(
+                onDestinationSelected: _onDestinationSelected,
+                selectedIndex: _currentPageIndex,
+                groupAlignment: 0,
+                extended: extended,
+                destinations: _destinations
+                    .map(
+                      (d) => NavigationRailDestination(
+                        icon: d.icon,
+                        label: Text(d.label),
+                        padding: const EdgeInsets.all(10),
+                      ),
+                    )
+                    .toList(),
+                leading: Row(
+                  children: [
+                    AnimatedContainer(
+                      width: extended ? 205 : 0,
+                      duration: kThemeAnimationDuration,
+                      curve: Curves.easeInOut,
+                    ),
+                    IconButton(
+                      icon: AnimatedSwitcher(
                         duration: kThemeAnimationDuration,
-                        curve: Curves.easeInOut,
-                      ),
-                      IconButton(
-                        icon: AnimatedSwitcher(
-                          duration: kThemeAnimationDuration,
-                          switchInCurve: Curves.easeInOut,
-                          switchOutCurve: Curves.easeInOut,
-                          child: Icon(
-                            extended ? Icons.menu_open : Icons.menu,
-                            key: UniqueKey(),
-                          ),
+                        switchInCurve: Curves.easeInOut,
+                        switchOutCurve: Curves.easeInOut,
+                        child: Icon(
+                          key: UniqueKey(),
+                          extended ? Icons.menu_open : Icons.menu,
                         ),
-                        onPressed: () => setState(() => extended = !extended),
-                        tooltip: !extended ? 'Extend Menu' : 'Collapse Menu',
                       ),
-                    ],
-                  ),
-                ),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topLeft: MediaQuery.of(context).size.width > 950
-                        ? const Radius.circular(16)
-                        : Radius.zero,
-                    bottomLeft: MediaQuery.of(context).size.width > 950
-                        ? const Radius.circular(16)
-                        : Radius.zero,
-                  ),
-                  child: PageView(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: _pages,
-                  ),
+                      onPressed: () => setState(() => extended = !extended),
+                      tooltip: !extended ? 'Extend Menu' : 'Collapse Menu',
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.only(
+                  topLeft: MediaQuery.of(context).size.width > 950
+                      ? const Radius.circular(16)
+                      : Radius.zero,
+                  bottomLeft: MediaQuery.of(context).size.width > 950
+                      ? const Radius.circular(16)
+                      : Radius.zero,
+                ),
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: _pages,
+                ),
+              ),
+            ),
+          ],
         ),
       );
 }

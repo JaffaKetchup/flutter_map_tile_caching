@@ -8,15 +8,28 @@ Future<void> _downloadManager(
     SendPort sendPort,
     String rootDirectory,
     DownloadableRegion region,
-    FMTCTileProvider tileProvider,
+    String storeName,
     int parallelThreads,
     int maxBufferLength,
     bool skipExistingTiles,
     bool skipSeaTiles,
     Duration? maxReportInterval,
     int? rateLimit,
+    Iterable<RegExp> obscuredQueryParams,
   }) input,
 ) async {
+  // Precalculate shared inputs for all threads
+  final storeId = DatabaseTools.hash(input.storeName).toString();
+  final threadBufferLength =
+      (input.maxBufferLength / input.parallelThreads).ceil();
+  final headers = {
+    ...input.region.options.tileProvider.headers,
+    'User-Agent': input.region.options.tileProvider.headers['User-Agent'] ==
+            null
+        ? 'flutter_map_tile_caching for flutter_map (unknown)'
+        : 'flutter_map_tile_caching for ${input.region.options.tileProvider.headers['User-Agent']}',
+  };
+
   // Count number of tiles
   final maxTiles = input.region.when(
     rectangle: (_) => TilesCounter.rectangleTiles,
@@ -30,12 +43,12 @@ Future<void> _downloadManager(
     try {
       seaTileBytes = await http.readBytes(
         Uri.parse(
-          input.tileProvider.getTileUrl(
+          input.region.options.tileProvider.getTileUrl(
             const TileCoordinates(0, 0, 17),
             input.region.options,
           ),
         ),
-        headers: input.tileProvider.headers,
+        headers: headers,
       );
     } catch (_) {
       seaTileBytes = null;
@@ -64,22 +77,19 @@ Future<void> _downloadManager(
     onExit: tileRecievePort.sendPort,
     debugName: '[FMTC] Tile Coords Generator Thread',
   );
+  final rawTileStream = tileRecievePort.skip(input.region.start).take(
+        input.region.end == null
+            ? largestInt
+            : (input.region.end! - input.region.start),
+      );
   final tileQueue = StreamQueue(
     input.rateLimit == null
-        ? tileRecievePort.skip(input.region.start).take(
-              input.region.end == null
-                  ? largestInt
-                  : (input.region.end! - input.region.start),
-            )
+        ? rawTileStream
         : RateLimitedStream.fromSourceStream(
             emitEvery: Duration(
               microseconds: ((1 / input.rateLimit!) * 1000000).ceil(),
             ),
-            sourceStream: tileRecievePort.skip(input.region.start).take(
-                  input.region.end == null
-                      ? largestInt
-                      : (input.region.end! - input.region.start),
-                ),
+            sourceStream: rawTileStream,
           ).stream,
   );
   final requestTilePort = await tileQueue.next as SendPort;
@@ -96,6 +106,7 @@ Future<void> _downloadManager(
   int mptSlots = 50;
   final microsecondsPerTile = List<int?>.filled(mptSlots, null, growable: true);
   final tpsRates = List<double?>.filled(20, null);
+  final tileTimer = Stopwatch(); // This might be the wrong place to put this?
 
   // Setup cancel, pause, and resume handling
   final threadPausedStates = List.generate(
@@ -151,9 +162,6 @@ Future<void> _downloadManager(
     fallbackReportTimer = null;
   }
 
-  // This might be the wrong place to put this?
-  final tileTimer = Stopwatch();
-
   // Start download threads & wait for download to complete/cancelled
   await Future.wait(
     List.generate(
@@ -167,16 +175,14 @@ Future<void> _downloadManager(
           _singleDownloadThread,
           (
             sendPort: downloadThreadRecievePort.sendPort,
-            storeId:
-                DatabaseTools.hash(input.tileProvider.storeDirectory.storeName)
-                    .toString(),
+            storeId: storeId,
             rootDirectory: input.rootDirectory,
-            region: input.region,
-            tileProvider: input.tileProvider,
-            maxBufferLength:
-                (input.maxBufferLength / input.parallelThreads).ceil(),
+            options: input.region.options,
+            maxBufferLength: threadBufferLength,
             skipExistingTiles: input.skipExistingTiles,
             seaTileBytes: seaTileBytes,
+            obscuredQueryParams: input.obscuredQueryParams,
+            headers: headers,
           ),
           onExit: downloadThreadRecievePort.sendPort,
           debugName: '[FMTC] Bulk Download Thread #$threadNo',
