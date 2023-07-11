@@ -16,12 +16,21 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 ## [9.0.0] - 2023/XX/XX
 
-* Added support for Flutter 3.10 and Dart 3
-* Added support for flutter_map 'v5'
+* Migrated to Flutter 3.10 and Dart 3
+* Migrated to flutter_map v5
+* Added support for Isar v4 (bug fixes & stability improvements)
+* Bulk downloading reimplementation
+  * Improved download speed significantly
+  * Added pause and resume functionality (to accompany existing cancel functionality)
+  * Added rate limiting support
+  * Fixed instability and bugs when cancelling buffering downloads
+  * Fixed generation of `LineRegion` tiles by reducing number of redundant duplicate tiles
+  * Removed support for bulk download buffering by size capacity
+* Added secondary check to `FMTCImageProvider` to ensure responses are valid images
 * Added `StoreManagement.pruneTilesOlderThan` method
 * Replaced public facing `RegionType`/`type` with Dart 3 exhaustive switch statements through `BaseRegion/DownloadableRegion.when` & `RecoverableRegion.toRegion`
-* Improved performance and fixed bugs
-* Example application improvements
+* Removed HTTP/2 support
+* Improved & simplified example application
 
 ## [8.0.0] - 2023/05/05
 
