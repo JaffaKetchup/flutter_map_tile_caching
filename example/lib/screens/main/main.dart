@@ -4,6 +4,7 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
 import '../../shared/state/download_provider.dart';
+import '../../shared/state/map_provider.dart';
 import 'pages/downloader/downloader.dart';
 import 'pages/downloading/downloading.dart';
 import 'pages/map/map_view.dart';
@@ -115,10 +116,43 @@ class _MainScreenState extends State<MainScreen> {
                 onDestinationSelected: _onDestinationSelected,
                 selectedIndex: _currentPageIndex,
                 destinations: _destinations,
-                labelBehavior: MediaQuery.of(context).size.width > 450
-                    ? null
-                    : NavigationDestinationLabelBehavior.alwaysHide,
+                labelBehavior:
+                    NavigationDestinationLabelBehavior.onlyShowSelected,
                 height: 70,
+              ),
+        floatingActionButton: _currentPageIndex != 0
+            ? null
+            : Consumer<MapProvider>(
+                builder: (context, mapProvider, _) => FloatingActionButton(
+                  onPressed: () {
+                    switch (mapProvider.followState) {
+                      case UserLocationFollowState.off:
+                        mapProvider.followState =
+                            UserLocationFollowState.standard;
+                        mapProvider.trackLocation(navigation: false);
+                        mapProvider.mapController.rotate(0);
+                        break;
+                      case UserLocationFollowState.standard:
+                        mapProvider.followState =
+                            UserLocationFollowState.navigation;
+                        mapProvider.trackLocation(navigation: true);
+                        mapProvider.trackHeading();
+                        break;
+                      case UserLocationFollowState.navigation:
+                        mapProvider.followState = UserLocationFollowState.off;
+                        mapProvider.mapController.rotate(0);
+                        break;
+                    }
+                    setState(() {});
+                  },
+                  child: Icon(
+                    switch (mapProvider.followState) {
+                      UserLocationFollowState.off => Icons.gps_off,
+                      UserLocationFollowState.standard => Icons.gps_fixed,
+                      UserLocationFollowState.navigation => Icons.navigation,
+                    },
+                  ),
+                ),
               ),
         body: Row(
           children: [

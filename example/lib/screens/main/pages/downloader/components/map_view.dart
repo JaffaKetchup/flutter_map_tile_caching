@@ -169,7 +169,7 @@ class _MapViewState extends State<MapView> {
                       maxZoom: 20,
                       reset: generalProvider.resetController.stream,
                       keepBuffer: 5,
-                      userAgentPackageName: 'dev.org.fmtc.example.app',
+                      userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
                       backgroundColor: const Color(0xFFaad3df),
                       tileBuilder: (context, widget, tile) =>
                           FutureBuilder<bool?>(
@@ -266,6 +266,8 @@ class _MapViewState extends State<MapView> {
                           const VerticalDivider(),
                           IconButton(
                             onPressed: () async {
+                              await FilePicker.platform.clearTemporaryFiles();
+
                               late final FilePickerResult? result;
                               try {
                                 result = await FilePicker.platform.pickFiles(

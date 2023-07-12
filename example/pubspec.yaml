@@ -17,6 +17,7 @@ dependencies:
     sdk: flutter
   flutter_foreground_task: ^6.0.0+1
   flutter_map: ^5.0.0
+  flutter_map_location_marker: ^7.0.1
   flutter_map_tile_caching:
   flutter_speed_dial: ^7.0.0
   fmtc_plus_sharing: ^8.0.0
@@ -36,6 +37,10 @@ dependency_overrides:
   flutter_map:
     git:
       url: https://github.com/fleaflet/flutter_map.git
+  flutter_map_location_marker:
+    git:
+      url: https://github.com/JaffaKetchup/_fmlm
+      ref: 'fm-v6'
   flutter_map_tile_caching:
     path: ../
   http: ^1.0.0

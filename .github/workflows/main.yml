@@ -48,7 +48,7 @@ jobs:
             run: dart analyze --fatal-infos --fatal-warnings
 
     build-android:
-        name: "Build Android Example App"
+        name: "Build Android Demo App"
         runs-on: ubuntu-latest
         needs: analyse-code
         defaults:
@@ -76,7 +76,7 @@ jobs:
               if-no-files-found: error
 
     build-windows:
-        name: "Build Windows Example App"
+        name: "Build Windows Demo App"
         runs-on: windows-latest
         needs: analyse-code
         defaults:

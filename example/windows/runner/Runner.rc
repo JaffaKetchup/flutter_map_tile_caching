@@ -89,7 +89,7 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "dev.org.fmtc.example" "\0"
+            VALUE "CompanyName", "dev.jaffaketchup.fmtc.demo" "\0"
             VALUE "FileDescription", "FMTC Demo" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "FMTC Demo" "\0"

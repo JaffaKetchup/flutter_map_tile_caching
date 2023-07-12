@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'screens/main/main.dart';
 import 'shared/state/download_provider.dart';
 import 'shared/state/general_provider.dart';
+import 'shared/state/map_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,9 +54,10 @@ class AppContainer extends StatelessWidget {
         providers: [
           ChangeNotifierProvider(create: (context) => GeneralProvider()),
           ChangeNotifierProvider(create: (context) => DownloadProvider()),
+          ChangeNotifierProvider(create: (context) => MapProvider()),
         ],
         child: MaterialApp(
-          title: 'FMTC Example',
+          title: 'FMTC Demo',
           theme: ThemeData(
             brightness: Brightness.dark,
             useMaterial3: true,

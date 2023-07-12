@@ -53,7 +53,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "dev.org.fmtc.example.fmtc_example"
+        applicationId "dev.jaffaketchup.fmtc.demo"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode flutterVersionCode.toInteger()

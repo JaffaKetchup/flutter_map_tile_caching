@@ -67,6 +67,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "example\build\windows\runner\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "example\build\windows\runner\Release\flutter_windows.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "example\build\windows\runner\Release\geolocator_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "example\build\windows\runner\Release\isar_flutter_libs_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "example\build\windows\runner\Release\isar.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "example\build\windows\runner\Release\share_plus_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
