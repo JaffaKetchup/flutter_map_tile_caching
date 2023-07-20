@@ -24,7 +24,7 @@ class RectangleRegion extends BaseRegion {
   final LatLngBounds bounds;
 
   @override
-  DownloadableRegion toDownloadable({
+  DownloadableRegion<RectangleRegion> toDownloadable({
     required int minZoom,
     required int maxZoom,
     required TileLayer options,

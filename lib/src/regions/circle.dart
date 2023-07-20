@@ -25,7 +25,7 @@ class CircleRegion extends BaseRegion {
   final double radius;
 
   @override
-  DownloadableRegion toDownloadable({
+  DownloadableRegion<CircleRegion> toDownloadable({
     required int minZoom,
     required int maxZoom,
     required TileLayer options,

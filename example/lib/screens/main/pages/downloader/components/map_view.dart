@@ -421,12 +421,10 @@ class _MapViewState extends State<MapView> {
         _crosshairsTop = calculatedTop - _crosshairsMovement;
         _crosshairsBottom = centerNormal - _crosshairsMovement;
 
-        _center = _mapController.camera
-            .pointToLatLng(_customPointFromPoint(centerNormal));
+        _center = _mapController.camera.pointToLatLng(centerNormal);
         _radius = const Distance(roundResult: false).distance(
               _center!,
-              _mapController.camera
-                  .pointToLatLng(_customPointFromPoint(calculatedTop)),
+              _mapController.camera.pointToLatLng(calculatedTop),
             ) /
             1000;
         setState(() {});
@@ -439,10 +437,9 @@ class _MapViewState extends State<MapView> {
       _crosshairsTop = calculatedTopLeft - _crosshairsMovement;
       _crosshairsBottom = calculatedBottomRight - _crosshairsMovement;
 
-      _coordsTopLeft = _mapController.camera
-          .pointToLatLng(_customPointFromPoint(calculatedTopLeft));
-      _coordsBottomRight = _mapController.camera
-          .pointToLatLng(_customPointFromPoint(calculatedBottomRight));
+      _coordsTopLeft = _mapController.camera.pointToLatLng(calculatedTopLeft);
+      _coordsBottomRight =
+          _mapController.camera.pointToLatLng(calculatedBottomRight);
 
       setState(() {});
     }
@@ -468,6 +465,3 @@ class _MapViewState extends State<MapView> {
     }
   }
 }
-
-CustomPoint<E> _customPointFromPoint<E extends num>(Point<E> point) =>
-    CustomPoint(point.x, point.y);

@@ -2,6 +2,7 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:isolate';
+import 'dart:math';
 
 import 'package:async/async.dart';
 import 'package:collection/collection.dart';
@@ -16,16 +17,12 @@ part 'count.dart';
 part 'generate.dart';
 
 class _Polygon {
-  _Polygon(
-    CustomPoint<int> nw,
-    CustomPoint<int> ne,
-    CustomPoint<int> se,
-    CustomPoint<int> sw,
-  ) : points = [nw, ne, se, sw] {
+  _Polygon(Point<int> nw, Point<int> ne, Point<int> se, Point<int> sw)
+      : points = [nw, ne, se, sw] {
     hashCode = Object.hashAll(points);
   }
 
-  final List<CustomPoint<int>> points;
+  final List<Point<int>> points;
 
   @override
   late final int hashCode;
@@ -36,5 +33,5 @@ class _Polygon {
       (other is _Polygon && hashCode == other.hashCode);
 }
 
-CustomPoint<double> _getTileSize(DownloadableRegion region) =>
-    CustomPoint(region.options.tileSize, region.options.tileSize);
+Point<double> _getTileSize(DownloadableRegion region) =>
+    Point(region.options.tileSize, region.options.tileSize);

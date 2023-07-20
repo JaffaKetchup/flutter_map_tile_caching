@@ -52,14 +52,18 @@ class DownloadableRegion<R extends BaseRegion> {
   }
 
   /// Output a value of type [T] dependent on [originalRegion] and its type [R]
-  ///
-  /// Shortcut for [BaseRegion.when].
   T when<T>({
-    required T Function(RectangleRegion rectangle) rectangle,
-    required T Function(CircleRegion circle) circle,
-    required T Function(LineRegion line) line,
+    required T Function(DownloadableRegion<RectangleRegion> rectangle)
+        rectangle,
+    required T Function(DownloadableRegion<CircleRegion> circle) circle,
+    required T Function(DownloadableRegion<LineRegion> line) line,
   }) =>
-      originalRegion.when(rectangle: rectangle, circle: circle, line: line);
+      switch (originalRegion) {
+        RectangleRegion() =>
+          rectangle(this as DownloadableRegion<RectangleRegion>),
+        CircleRegion() => circle(this as DownloadableRegion<CircleRegion>),
+        LineRegion() => line(this as DownloadableRegion<LineRegion>),
+      };
 
   @override
   bool operator ==(Object other) =>

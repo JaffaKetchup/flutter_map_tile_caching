@@ -5,14 +5,12 @@ part of 'shared.dart';
 
 class TilesGenerator {
   static Future<void> rectangleTiles(
-    ({SendPort sendPort, DownloadableRegion region}) input,
+    ({SendPort sendPort, DownloadableRegion<RectangleRegion> region}) input,
   ) async {
     final region = input.region;
     final tileSize = _getTileSize(region);
-    final northWest =
-        (region.originalRegion as RectangleRegion).bounds.northWest;
-    final southEast =
-        (region.originalRegion as RectangleRegion).bounds.southEast;
+    final northWest = region.originalRegion.bounds.northWest;
+    final southEast = region.originalRegion.bounds.southEast;
 
     final recievePort = ReceivePort();
     input.sendPort.send(recievePort.sendPort);
@@ -21,18 +19,18 @@ class TilesGenerator {
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
         zoomLvl++) {
-      final nwCustomPoint = region.crs
+      final nwPoint = region.crs
           .latLngToPoint(northWest, zoomLvl)
           .unscaleBy(tileSize)
           .floor();
-      final seCustomPoint = region.crs
+      final sePoint = region.crs
               .latLngToPoint(southEast, zoomLvl)
               .unscaleBy(tileSize)
               .ceil() -
-          const CustomPoint(1, 1);
+          const Point(1, 1);
 
-      for (int x = nwCustomPoint.x; x <= seCustomPoint.x; x++) {
-        for (int y = nwCustomPoint.y; y <= seCustomPoint.y; y++) {
+      for (int x = nwPoint.x; x <= sePoint.x; x++) {
+        for (int y = nwPoint.y; y <= sePoint.y; y++) {
           await requestQueue.next;
           input.sendPort.send((x, y, zoomLvl.toInt()));
         }
@@ -43,7 +41,7 @@ class TilesGenerator {
   }
 
   static Future<void> circleTiles(
-    ({SendPort sendPort, DownloadableRegion region}) input,
+    ({SendPort sendPort, DownloadableRegion<CircleRegion> region}) input,
   ) async {
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given a `LatLng` for every x degrees on a circle's circumference, convert it into a tile number
@@ -54,7 +52,7 @@ class TilesGenerator {
 
     final region = input.region;
     final tileSize = _getTileSize(region);
-    final circleOutline = (region.originalRegion as CircleRegion).toOutline();
+    final circleOutline = region.originalRegion.toOutline();
 
     final recievePort = ReceivePort();
     input.sendPort.send(recievePort.sendPort);
@@ -97,7 +95,7 @@ class TilesGenerator {
   }
 
   static Future<void> lineTiles(
-    ({SendPort sendPort, DownloadableRegion region}) input,
+    ({SendPort sendPort, DownloadableRegion<LineRegion> region}) input,
   ) async {
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given 4 `LatLng` points, create a 'straight' rectangle around the 'rotated' rectangle, that can be defined with just 2 `LatLng` points
@@ -116,7 +114,7 @@ class TilesGenerator {
           final p1 = polygon.points[i1];
           final p2 = polygon.points[i2];
 
-          final normal = CustomPoint(p2.y - p1.y, p1.x - p2.x);
+          final normal = Point(p2.y - p1.y, p1.x - p2.x);
 
           var minA = largestInt;
           var maxA = smallestInt;
@@ -143,7 +141,7 @@ class TilesGenerator {
 
     final region = input.region;
     final tileSize = _getTileSize(region);
-    final lineOutline = (region.originalRegion as LineRegion).toOutlines(1);
+    final lineOutline = region.originalRegion.toOutlines(1);
 
     final recievePort = ReceivePort();
     input.sendPort.send(recievePort.sendPort);
@@ -183,17 +181,17 @@ class TilesGenerator {
                 .latLngToPoint(rotatedRectangle.topRight, zoomLvl)
                 .unscaleBy(tileSize)
                 .ceil() -
-            const CustomPoint(1, 0);
+            const Point(1, 0);
         final rotatedRectangleSW = region.crs
                 .latLngToPoint(rotatedRectangle.bottomLeft, zoomLvl)
                 .unscaleBy(tileSize)
                 .ceil() -
-            const CustomPoint(0, 1);
+            const Point(0, 1);
         final rotatedRectangleSE = region.crs
                 .latLngToPoint(rotatedRectangle.bottomRight, zoomLvl)
                 .unscaleBy(tileSize)
                 .ceil() -
-            const CustomPoint(1, 1);
+            const Point(1, 1);
 
         final straightRectangleNW = region.crs
             .latLngToPoint(
@@ -209,16 +207,16 @@ class TilesGenerator {
                 )
                 .unscaleBy(tileSize)
                 .ceil() -
-            const CustomPoint(1, 1);
+            const Point(1, 1);
 
         for (int x = straightRectangleNW.x; x <= straightRectangleSE.x; x++) {
           bool foundOverlappingTile = false;
           for (int y = straightRectangleNW.y; y <= straightRectangleSE.y; y++) {
             final tile = _Polygon(
-              CustomPoint(x, y),
-              CustomPoint(x + 1, y),
-              CustomPoint(x + 1, y + 1),
-              CustomPoint(x, y + 1),
+              Point(x, y),
+              Point(x + 1, y),
+              Point(x + 1, y + 1),
+              Point(x, y + 1),
             );
             if (generatedTiles.contains(tile.hashCode)) continue;
             if (overlap(

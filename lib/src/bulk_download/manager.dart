@@ -32,10 +32,10 @@ Future<void> _downloadManager(
 
   // Count number of tiles
   final maxTiles = input.region.when(
-    rectangle: (_) => TilesCounter.rectangleTiles,
-    circle: (_) => TilesCounter.circleTiles,
-    line: (_) => TilesCounter.lineTiles,
-  )(input.region);
+    rectangle: TilesCounter.rectangleTiles,
+    circle: TilesCounter.circleTiles,
+    line: TilesCounter.lineTiles,
+  );
 
   // Setup sea tile removal system
   Uint8List? seaTileBytes;
@@ -72,7 +72,7 @@ Future<void> _downloadManager(
       rectangle: (_) => TilesGenerator.rectangleTiles,
       circle: (_) => TilesGenerator.circleTiles,
       line: (_) => TilesGenerator.lineTiles,
-    ),
+    ) as dynamic,
     (sendPort: tileRecievePort.sendPort, region: input.region),
     onExit: tileRecievePort.sendPort,
     debugName: '[FMTC] Tile Coords Generator Thread',

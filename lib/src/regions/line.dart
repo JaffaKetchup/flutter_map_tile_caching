@@ -75,7 +75,7 @@ class LineRegion extends BaseRegion {
   }
 
   @override
-  DownloadableRegion toDownloadable({
+  DownloadableRegion<LineRegion> toDownloadable({
     required int minZoom,
     required int maxZoom,
     required TileLayer options,

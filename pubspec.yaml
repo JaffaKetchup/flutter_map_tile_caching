@@ -46,5 +46,11 @@ dev_dependencies:
   build_runner: ^2.3.2
   flutter_lints: ^2.0.1
   isar_generator: ^3.1.0+1
+  test: ^1.24.4
+
+dependency_overrides:
+  flutter_map:
+    git:
+      url: https://github.com/fleaflet/flutter_map.git
 
 flutter: null
