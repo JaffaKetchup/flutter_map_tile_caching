@@ -6,7 +6,7 @@ import 'package:meta/meta.dart';
 @internal
 class DownloadInstance {
   DownloadInstance._(this.id);
-  static final Map<Object, DownloadInstance> _instances = {};
+  static final _instances = <Object, DownloadInstance>{};
 
   static DownloadInstance? registerIfAvailable(Object id) =>
       _instances.containsKey(id)
@@ -22,4 +22,11 @@ class DownloadInstance {
   bool isPaused = false;
   Future<void> Function()? requestPause;
   void Function()? requestResume;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || (other is DownloadInstance && id == other.id);
+
+  @override
+  int get hashCode => id.hashCode;
 }

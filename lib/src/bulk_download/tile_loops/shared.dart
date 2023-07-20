@@ -16,14 +16,15 @@ part 'count.dart';
 part 'generate.dart';
 
 class _Polygon {
-  _Polygon(this.nw, this.ne, this.se, this.sw) : points = [nw, ne, se, sw] {
-    hashCode = Object.hashAllUnordered(points);
+  _Polygon(
+    CustomPoint<int> nw,
+    CustomPoint<int> ne,
+    CustomPoint<int> se,
+    CustomPoint<int> sw,
+  ) : points = [nw, ne, se, sw] {
+    hashCode = Object.hashAll(points);
   }
 
-  final CustomPoint<int> nw;
-  final CustomPoint<int> ne;
-  final CustomPoint<int> se;
-  final CustomPoint<int> sw;
   final List<CustomPoint<int>> points;
 
   @override

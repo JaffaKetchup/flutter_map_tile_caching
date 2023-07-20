@@ -8,19 +8,24 @@ part of flutter_map_tile_caching;
 /// The 'fmtc_plus_background_downloading' module must be installed to add the
 /// background downloading functionality.
 ///
+/// ---
+///
 /// {@template num_instances}
 /// By default, only one download per store at the same time is tolerated.
 /// Attempting to start more than one at the same time may cause poor
 /// performance or other poor behaviour.
 ///
 /// However, if necessary, multiple can be started by setting methods'
-/// `instanceId` argument to a unique value on methods. Note that this unique
+/// `instanceId` argument to a unique value on methods. Whatever object
+/// `instanceId` is, it must have a valid and useful equality and `hashCode`
+/// implementation, as it is used as the key in a `Map`. Note that this unique
 /// value must be known and remembered to control the state of the download.
 /// {@endtemplate}
 ///
+/// ---
+///
 /// Does not keep state. State and download instances are held internally by
 /// [DownloadInstance].
-@immutable
 class DownloadManagement {
   const DownloadManagement._(this._storeDirectory);
   final StoreDirectory _storeDirectory;
@@ -63,10 +68,11 @@ class DownloadManagement {
   /// ---
   ///
   /// Although disabled `null` by default, [rateLimit] can be used to impose a
-  /// limit on the maximum number of tiles requests that can be made per second.
-  /// This is useful to avoid placing too much strain on tile servers and avoid
-  /// rate limiting. Note that the real number of requests per second may exceed
-  /// [rateLimit] by a very small amount.
+  /// limit on the maximum number of tiles that can be attempted per second. This
+  /// is useful to avoid placing too much strain on tile servers and avoid
+  /// external rate limiting. Note that the [rateLimit] is only approximate. Also
+  /// note that all tile attempts are rate limited, even ones that do not need a
+  /// server request.
   ///
   /// To check whether the current [DownloadProgress.tilesPerSecond] statistic is
   /// currently limited by [rateLimit], check

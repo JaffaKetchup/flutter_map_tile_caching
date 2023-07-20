@@ -72,9 +72,10 @@ class _DownloadingPageState extends State<DownloadingPage>
                           );
                         }
 
-                        if (snapshot.data!.lastTileEvent.result.category ==
+                        if (snapshot.data!.latestTileEvent.result.category ==
                             TileEventResultCategory.failed) {
-                          provider.addFailedTile(snapshot.data!.lastTileEvent);
+                          provider
+                              .addFailedTile(snapshot.data!.latestTileEvent);
                         }
 
                         return DownloadLayout(

@@ -30,9 +30,9 @@ class DownloadLayout extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     child: SizedBox.square(
                       dimension: 256,
-                      child: download.lastTileEvent.tileImage != null
+                      child: download.latestTileEvent.tileImage != null
                           ? Image.memory(
-                              download.lastTileEvent.tileImage!,
+                              download.latestTileEvent.tileImage!,
                               gaplessPlayback: true,
                             )
                           : const Center(

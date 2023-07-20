@@ -3,39 +3,139 @@
 
 part of flutter_map_tile_caching;
 
+/// Statistics and information about the current progress of the download
+///
+/// See the documentation on each individual property for more information.
 @immutable
 class DownloadProgress {
-  /// The result of the last attempted tile
+  /// The result of the latest attempted tile
   ///
   /// May be used for UI display, error handling, or debugging purposes.
-  TileEvent get lastTileEvent => _lastTileEvent!;
-  final TileEvent? _lastTileEvent;
+  ///
+  /// It is not recommended to construct or keep a list of all these results, as
+  /// that will consume memory quickly.
+  TileEvent get latestTileEvent => _latestTileEvent!;
+  final TileEvent? _latestTileEvent;
 
-  /// The number of new tiles successfully downloaded and cached, that is those
-  /// tiles with the result of [TileEventResult.success]
-  /// ([TileEventResultCategory.cached])
+  /// The number of new tiles successfully downloaded and in the tile buffer or
+  /// cached
+  ///
+  /// [TileEvent]s with the result category of [TileEventResultCategory.cached].
+  ///
+  /// Includes [bufferedTiles].
   final int cachedTiles;
+
+  /// The total size (in KiB) of new tiles successfully downloaded and in the
+  /// tile buffer or cached
+  ///
+  /// [TileEvent]s with the result category of [TileEventResultCategory.cached].
+  ///
+  /// Includes [bufferedSize].
   final double cachedSize;
+
+  /// The number of new tiles successfully downloaded and in the tile buffer
+  /// waiting to be cached
+  ///
+  /// [TileEvent]s with the result category of [TileEventResultCategory.cached].
+  ///
+  /// Part of [cachedTiles].
   final int bufferedTiles;
+
+  /// The total size (in KiB) of new tiles successfully downloaded and in the
+  /// tile buffer waiting to be cached
+  ///
+  /// [TileEvent]s with the result category of [TileEventResultCategory.cached].
+  ///
+  /// Part of [cachedSize].
   final double bufferedSize;
+
+  /// The number of tiles that were skipped (not cached) because they either:
+  ///  - already existed & `skipExistingTiles` was `true`
+  ///  - were a sea tile & `skipSeaTiles` was `true`
+  ///
+  /// [TileEvent]s with the result category of [TileEventResultCategory.skipped].
   final int skippedTiles;
+
+  /// The total size (in KiB) of tiles that were skipped (not cached) because
+  /// they either:
+  ///  - already existed & `skipExistingTiles` was `true`
+  ///  - were a sea tile & `skipSeaTiles` was `true`
+  ///
+  /// [TileEvent]s with the result category of [TileEventResultCategory.skipped].
   final double skippedSize;
+
+  /// The number of tiles that were not successfully downloaded, potentially for
+  /// a variety of reasons
+  ///
+  /// [TileEvent]s with the result category of [TileEventResultCategory.failed].
+  ///
+  /// To check why these tiles failed, use [latestTileEvent] to construct a list
+  /// of tiles that failed.
   final int failedTiles;
+
+  /// The total number of tiles available to be potentially downloaded and
+  /// cached
   final int maxTiles;
 
+  /// The current elapsed duration of the download
+  ///
+  /// Will be accurate to within `maxReportInterval` or better.
   final Duration elapsedDuration;
+
+  /// The approximate/estimated number of attempted tiles per second (TPS)
+  ///
+  /// Note that this value is not raw. It goes through multiple layers of
+  /// smoothing which takes into account more than just the previous second.
+  /// It may or may not be accurate.
   final double tilesPerSecond;
+
+  /// Whether the number of [tilesPerSecond] could be higher, but is currently
+  /// capped by the set `rateLimit`
+  ///
+  /// This is only an approximate indicator.
   final bool isTPSArtificiallyCapped;
 
+  /// Whether the download is now complete
+  ///
+  /// There will be no more events after this event.
+  ///
+  /// Prefer using this over checking any other statistics for completion.
   final bool isComplete;
 
+  /// The number of tiles that were either cached, in buffer, or skipped
+  ///
+  /// Equal to [cachedTiles] + [skippedTiles].
   int get successfulTiles => cachedTiles + skippedTiles;
+
+  /// The total size (in KiB) of tiles that were either cached, in buffer, or
+  /// skipped
+  ///
+  /// Equal to [cachedSize] + [skippedSize].
   double get successfulSize => cachedSize + skippedSize;
+
+  /// The number of tiles that have been attempted, with any result
+  ///
+  /// Equal to [successfulTiles] + [failedTiles].
   int get attemptedTiles => successfulTiles + failedTiles;
+
+  /// The number of tiles that have not yet been attempted
+  ///
+  /// Equal to [maxTiles] - [attemptedTiles].
   int get remainingTiles => maxTiles - attemptedTiles;
 
+  /// The number of attempted tiles over the number of available tiles as a
+  /// percentage
+  ///
+  /// Equal to [attemptedTiles] / [maxTiles] multiplied by 100.
   double get percentageProgress => (attemptedTiles / maxTiles) * 100;
 
+  /// The estimated total duration of the download
+  ///
+  /// It may or may not be accurate, except when [isComplete] is `true`, in which
+  /// event, this will always equal [elapsedDuration].
+  ///
+  /// It is not recommended to display this value directly to your user. Instead,
+  /// prefer using language such as 'about 𝑥 minutes remaining'.
   Duration get estTotalDuration => isComplete
       ? elapsedDuration
       : Duration(
@@ -44,13 +144,20 @@ class DownloadProgress {
                       10)
                   .clamp(elapsedDuration.inSeconds, largestInt),
         );
+
+  /// The estimated remaining duration of the download.
+  ///
+  /// It may or may not be accurate.
+  ///
+  /// It is not recommended to display this value directly to your user. Instead,
+  /// prefer using language such as 'about 𝑥 minutes remaining'.
   Duration get estRemainingDuration =>
       estTotalDuration - elapsedDuration < Duration.zero
           ? Duration.zero
           : estTotalDuration - elapsedDuration;
 
   const DownloadProgress.__({
-    required TileEvent? lastTileEvent,
+    required TileEvent? latestTileEvent,
     required this.cachedTiles,
     required this.cachedSize,
     required this.bufferedTiles,
@@ -63,11 +170,11 @@ class DownloadProgress {
     required this.tilesPerSecond,
     required this.isTPSArtificiallyCapped,
     required this.isComplete,
-  }) : _lastTileEvent = lastTileEvent;
+  }) : _latestTileEvent = latestTileEvent;
 
   factory DownloadProgress._initial({required int maxTiles}) =>
       DownloadProgress.__(
-        lastTileEvent: null,
+        latestTileEvent: null,
         cachedTiles: 0,
         cachedSize: 0,
         bufferedTiles: 0,
@@ -88,7 +195,7 @@ class DownloadProgress {
     required int? rateLimit,
   }) =>
       DownloadProgress.__(
-        lastTileEvent: lastTileEvent,
+        latestTileEvent: latestTileEvent,
         cachedTiles: cachedTiles,
         cachedSize: cachedSize,
         bufferedTiles: bufferedTiles,
@@ -114,7 +221,7 @@ class DownloadProgress {
     bool isComplete = false,
   }) =>
       DownloadProgress.__(
-        lastTileEvent: newTileEvent ?? lastTileEvent,
+        latestTileEvent: newTileEvent ?? latestTileEvent,
         cachedTiles: newTileEvent == null
             ? cachedTiles
             : newTileEvent.result.category == TileEventResultCategory.cached
@@ -154,7 +261,7 @@ class DownloadProgress {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is DownloadProgress &&
-          _lastTileEvent == other._lastTileEvent &&
+          _latestTileEvent == other._latestTileEvent &&
           cachedTiles == other.cachedTiles &&
           cachedSize == other.cachedSize &&
           bufferedTiles == other.bufferedTiles &&
@@ -170,7 +277,7 @@ class DownloadProgress {
 
   @override
   int get hashCode => Object.hashAllUnordered([
-        _lastTileEvent,
+        _latestTileEvent,
         cachedTiles,
         cachedSize,
         bufferedTiles,
