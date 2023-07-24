@@ -5,9 +5,9 @@ part of 'shared.dart';
 
 class TilesGenerator {
   static Future<void> rectangleTiles(
-    ({SendPort sendPort, DownloadableRegion<RectangleRegion> region}) input,
+    ({SendPort sendPort, DownloadableRegion region}) input,
   ) async {
-    final region = input.region;
+    final region = input.region as DownloadableRegion<RectangleRegion>;
     final tileSize = _getTileSize(region);
     final northWest = region.originalRegion.bounds.northWest;
     final southEast = region.originalRegion.bounds.southEast;
@@ -41,7 +41,7 @@ class TilesGenerator {
   }
 
   static Future<void> circleTiles(
-    ({SendPort sendPort, DownloadableRegion<CircleRegion> region}) input,
+    ({SendPort sendPort, DownloadableRegion region}) input,
   ) async {
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given a `LatLng` for every x degrees on a circle's circumference, convert it into a tile number
@@ -50,7 +50,7 @@ class TilesGenerator {
     // 4. Loop over these XY values and add them to the list
     // Theoretically, this could have been done using the same method as `lineTiles`, but `lineTiles` was built after this algorithm and this makes more sense for a circle
 
-    final region = input.region;
+    final region = input.region as DownloadableRegion<CircleRegion>;
     final tileSize = _getTileSize(region);
     final circleOutline = region.originalRegion.toOutline();
 
@@ -95,7 +95,7 @@ class TilesGenerator {
   }
 
   static Future<void> lineTiles(
-    ({SendPort sendPort, DownloadableRegion<LineRegion> region}) input,
+    ({SendPort sendPort, DownloadableRegion region}) input,
   ) async {
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given 4 `LatLng` points, create a 'straight' rectangle around the 'rotated' rectangle, that can be defined with just 2 `LatLng` points
@@ -139,7 +139,7 @@ class TilesGenerator {
       return true;
     }
 
-    final region = input.region;
+    final region = input.region as DownloadableRegion<LineRegion>;
     final tileSize = _getTileSize(region);
     final lineOutline = region.originalRegion.toOutlines(1);
 

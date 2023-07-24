@@ -39,7 +39,7 @@ void main() {
 
     test(
       'Circle Region Count',
-      () => expect(TilesCounter.circleTiles(circleRegion), 2994818),
+      () => expect(TilesCounter.circleTiles(circleRegion), 2989468),
     );
 
     test(

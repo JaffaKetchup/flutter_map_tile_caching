@@ -57,6 +57,7 @@ class CircleRegion extends BaseRegion {
       PolygonLayer(
         polygons: [
           Polygon(
+            points: toOutline().toList(),
             isFilled: fillColor != null,
             color: fillColor ?? Colors.transparent,
             borderColor: borderColor,
@@ -65,40 +66,19 @@ class CircleRegion extends BaseRegion {
             label: label,
             labelStyle: labelStyle,
             labelPlacement: labelPlacement,
-            points: toOutline(),
           )
         ],
       );
 
   @override
-  List<LatLng> toOutline() {
-    final double rad = radius / 1.852 / 3437.670013352;
-    final double lat = center.latitudeInRad;
-    final double lon = center.longitudeInRad;
-    final List<LatLng> output = [];
+  Iterable<LatLng> toOutline() sync* {
+    const dist = Distance(roundResult: false, calculator: Haversine());
 
-    for (int x = 0; x <= 360; x++) {
-      final double brng = x * math.pi / 180;
-      final double latRadians = math.asin(
-        math.sin(lat) * math.cos(rad) +
-            math.cos(lat) * math.sin(rad) * math.cos(brng),
-      );
-      final double lngRadians = lon +
-          math.atan2(
-            math.sin(brng) * math.sin(rad) * math.cos(lat),
-            math.cos(rad) - math.sin(lat) * math.sin(latRadians),
-          );
+    final radius = this.radius * 1000;
 
-      output.add(
-        LatLng(
-          latRadians * 180 / math.pi,
-          (lngRadians * 180 / math.pi)
-              .clamp(-180, 180), // Clamped to fix errors with flutter_map
-        ),
-      );
+    for (int angle = -180; angle <= 180; angle++) {
+      yield dist.offset(center, radius, angle);
     }
-
-    return output;
   }
 
   @override

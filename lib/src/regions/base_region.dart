@@ -8,7 +8,7 @@ part of flutter_map_tile_caching;
 /// It can be converted to a:
 ///  - [DownloadableRegion] for downloading: [toDownloadable]
 ///  - [Widget] layer to be placed in a map: [toDrawable]
-///  - list of [LatLng]s forming the outline: [toOutline]/[LineRegion.toOutlines]
+///  - list of [LatLng]s forming the outline: [toOutline]
 ///
 /// Extended/implemented by:
 ///  - [RectangleRegion]
@@ -20,7 +20,7 @@ sealed class BaseRegion {
   /// It can be converted to a:
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
   ///  - [Widget] layer to be placed in a map: [toDrawable]
-  ///  - list of [LatLng]s forming the outline: [toOutline]/[LineRegion.toOutlines]
+  ///  - list of [LatLng]s forming the outline: [toOutline]
   ///
   /// Extended/implemented by:
   ///  - [RectangleRegion]
@@ -79,8 +79,8 @@ sealed class BaseRegion {
 
   /// Generate the list of all the [LatLng]s forming the outline of this region
   ///
-  /// Returns a `List<LatLng>` which can be used anywhere.
-  List<LatLng> toOutline();
+  /// Returns a `Iterable<LatLng>` which can be used anywhere.
+  Iterable<LatLng> toOutline();
 
   @override
   @mustCallSuper

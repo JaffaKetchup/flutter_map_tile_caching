@@ -32,46 +32,44 @@ class LineRegion extends BaseRegion {
   /// * -1: joined by closest corners (largest gap)
   /// * 0 (default): joined by centers
   /// * 1 (as downloaded): joined by further corners (largest overlap)
-  List<List<LatLng>> toOutlines([int overlap = 0]) {
+  Iterable<List<LatLng>> toOutlines([int overlap = 0]) sync* {
     if (overlap < -1 || overlap > 1) {
       throw ArgumentError('`overlap` must be between -1 and 1 inclusive');
     }
 
-    if (line.isEmpty) return [];
+    if (line.isEmpty) return;
 
     const dist = Distance();
     final rad = radius * math.pi / 4;
 
-    return line.map((pos) {
-      if ((line.indexOf(pos) + 1) >= line.length) return [const LatLng(0, 0)];
+    for (int i = 0; i < line.length - 1; i++) {
+      final cp = line[i];
+      final np = line[i + 1];
 
-      final section = [pos, line[line.indexOf(pos) + 1]];
-
-      final bearing = dist.bearing(section[0], section[1]);
+      final bearing = dist.bearing(cp, np);
       final clockwiseRotation =
           (90 + bearing) > 360 ? 360 - (90 + bearing) : (90 + bearing);
       final anticlockwiseRotation =
           (bearing - 90) < 0 ? 360 + (bearing - 90) : (bearing - 90);
 
-      final topRight = dist.offset(section[0], rad, clockwiseRotation);
-      final bottomRight = dist.offset(section[1], rad, clockwiseRotation);
-      final bottomLeft = dist.offset(section[1], rad, anticlockwiseRotation);
-      final topLeft = dist.offset(section[0], rad, anticlockwiseRotation);
+      final topRight = dist.offset(cp, rad, clockwiseRotation);
+      final bottomRight = dist.offset(np, rad, clockwiseRotation);
+      final bottomLeft = dist.offset(np, rad, anticlockwiseRotation);
+      final topLeft = dist.offset(cp, rad, anticlockwiseRotation);
 
-      if (overlap == 0) return [topRight, bottomRight, bottomLeft, topLeft];
+      if (overlap == 0) yield [topRight, bottomRight, bottomLeft, topLeft];
 
       final r = overlap == -1;
-      final os = line.indexOf(pos) == 0;
-      final oe = line.indexOf(pos) == line.length - 2;
+      final os = i == 0;
+      final oe = i == line.length - 2;
 
-      return [
+      yield [
         os ? topRight : dist.offset(topRight, r ? rad : -rad, bearing),
         oe ? bottomRight : dist.offset(bottomRight, r ? -rad : rad, bearing),
         oe ? bottomLeft : dist.offset(bottomLeft, r ? -rad : rad, bearing),
         os ? topLeft : dist.offset(topLeft, r ? rad : -rad, bearing),
       ];
-    }).toList()
-      ..removeLast();
+    }
   }
 
   @override
@@ -153,8 +151,8 @@ class LineRegion extends BaseRegion {
   /// > * 0 (default): joined by centers
   /// > * 1 (as downloaded): joined by further corners (most overlap)
   @override
-  List<LatLng> toOutline([int overlap = 1]) =>
-      toOutlines(overlap).expand((x) => x).toList();
+  Iterable<LatLng> toOutline([int overlap = 1]) =>
+      toOutlines(overlap).expand((x) => x);
 
   @override
   bool operator ==(Object other) =>

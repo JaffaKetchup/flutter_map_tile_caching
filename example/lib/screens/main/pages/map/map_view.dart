@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -111,15 +112,20 @@ class MapPage extends StatelessWidget {
                             UserLocationFollowState.navigation
                         ? TurnOnHeadingUpdate.always
                         : TurnOnHeadingUpdate.never,
-                    style: const LocationMarkerStyle(
+                    headingStream: Platform.isAndroid || Platform.isIOS
+                        ? null
+                        : const Stream.empty(),
+                    style: LocationMarkerStyle(
                       marker: DefaultLocationMarker(
-                        child: Icon(
-                          Icons.navigation,
-                          color: Colors.white,
-                          size: 18,
-                        ),
+                        child: Platform.isAndroid || Platform.isIOS
+                            ? const Icon(
+                                Icons.navigation,
+                                color: Colors.white,
+                                size: 18,
+                              )
+                            : null,
                       ),
-                      markerSize: Size(30, 30),
+                      markerSize: const Size(30, 30),
                       markerDirection: MarkerDirection.heading,
                     ),
                   ),

@@ -72,7 +72,7 @@ Future<void> _downloadManager(
       rectangle: (_) => TilesGenerator.rectangleTiles,
       circle: (_) => TilesGenerator.circleTiles,
       line: (_) => TilesGenerator.lineTiles,
-    ) as dynamic,
+    ),
     (sendPort: tileRecievePort.sendPort, region: input.region),
     onExit: tileRecievePort.sendPort,
     debugName: '[FMTC] Tile Coords Generator Thread',

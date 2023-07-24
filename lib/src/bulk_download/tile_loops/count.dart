@@ -4,7 +4,9 @@
 part of 'shared.dart';
 
 class TilesCounter {
-  static int rectangleTiles(DownloadableRegion<RectangleRegion> region) {
+  static int rectangleTiles(DownloadableRegion region) {
+    region as DownloadableRegion<RectangleRegion>;
+
     final tileSize = _getTileSize(region);
     final northWest = region.originalRegion.bounds.northWest;
     final southEast = region.originalRegion.bounds.southEast;
@@ -31,7 +33,9 @@ class TilesCounter {
     return numberOfTiles;
   }
 
-  static int circleTiles(DownloadableRegion<CircleRegion> region) {
+  static int circleTiles(DownloadableRegion region) {
+    region as DownloadableRegion<CircleRegion>;
+
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given a `LatLng` for every x degrees on a circle's circumference, convert it into a tile number
     // 2. Using a `Map` per zoom level, record all the X values in it without duplicates
@@ -77,7 +81,9 @@ class TilesCounter {
     return numberOfTiles;
   }
 
-  static int lineTiles(DownloadableRegion<LineRegion> region) {
+  static int lineTiles(DownloadableRegion region) {
+    region as DownloadableRegion<LineRegion>;
+
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given 4 `LatLng` points, create a 'straight' rectangle around the 'rotated' rectangle, that can be defined with just 2 `LatLng` points
     // 2. Convert the straight rectangle into tile numbers, and loop through the same as `rectangleTiles`

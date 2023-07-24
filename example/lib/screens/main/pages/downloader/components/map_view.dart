@@ -58,7 +58,7 @@ class _MapViewState extends State<MapView> {
               const LatLng(90, -180),
               const LatLng(-90, -180),
             ],
-            holePointsList: [region.toOutline()],
+            holePointsList: [region.toOutline().toList()],
             isFilled: true,
             borderColor: Colors.black,
             borderStrokeWidth: 2,
@@ -203,6 +203,7 @@ class _MapViewState extends State<MapView> {
                         borderColor: Colors.black,
                         borderStrokeWidth: 2,
                         fillColor: Colors.green.withOpacity(2 / 3),
+                        prettyPaint: false,
                       )
                     else if (_coordsTopLeft != null &&
                         _coordsBottomRight != null &&
