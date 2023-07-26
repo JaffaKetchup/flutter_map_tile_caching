@@ -51,6 +51,18 @@ class DownloadableRegion<R extends BaseRegion> {
     }
   }
 
+  /// Cast [originalRegion] from [R] to [N]
+  @optionalTypeArgs
+  DownloadableRegion<N> _cast<N extends BaseRegion>() => DownloadableRegion._(
+        originalRegion as N,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        options: options,
+        start: start,
+        end: end,
+        crs: crs,
+      );
+
   /// Output a value of type [T] dependent on [originalRegion] and its type [R]
   T when<T>({
     required T Function(DownloadableRegion<RectangleRegion> rectangle)
@@ -59,10 +71,9 @@ class DownloadableRegion<R extends BaseRegion> {
     required T Function(DownloadableRegion<LineRegion> line) line,
   }) =>
       switch (originalRegion) {
-        RectangleRegion() =>
-          rectangle(this as DownloadableRegion<RectangleRegion>),
-        CircleRegion() => circle(this as DownloadableRegion<CircleRegion>),
-        LineRegion() => line(this as DownloadableRegion<LineRegion>),
+        RectangleRegion() => rectangle(_cast()),
+        CircleRegion() => circle(_cast()),
+        LineRegion() => line(_cast()),
       };
 
   @override

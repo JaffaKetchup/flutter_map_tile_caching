@@ -151,7 +151,8 @@ class _MapViewState extends State<MapView> {
                       scrollWheelVelocity: 0.002,
                     ),
                     onMapReady: () {
-                      _updatePointLatLng();
+                      WidgetsBinding.instance
+                          .addPostFrameCallback((_) => _updatePointLatLng());
                       _countTiles();
                     },
                     onTap: (_, point) => _addLinePoint(point),
@@ -353,7 +354,8 @@ class _MapViewState extends State<MapView> {
   }
 
   void _updatePointLatLng() {
-    if (downloadProvider.regionMode == RegionMode.line) return;
+    if (downloadProvider.regionMode == RegionMode.line ||
+        _mapKey.currentContext == null) return;
 
     final Size mapSize = _mapKey.currentContext!.size!;
     final bool isHeightLongestSide = mapSize.width < mapSize.height;

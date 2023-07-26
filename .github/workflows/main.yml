@@ -46,6 +46,19 @@ jobs:
             run: dart format --output=none --set-exit-if-changed .
           - name: Check Lints
             run: dart analyze --fatal-infos --fatal-warnings
+    
+    run-tests:
+        name: "Run Tests"
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout Repository
+            uses: actions/checkout@v3
+          - name: Setup Flutter Environment
+            uses: subosito/flutter-action@v2
+            with:
+              channel: "stable"
+          - name: Run Tests
+            run: flutter test -r expanded
 
     build-android:
         name: "Build Android Demo App"

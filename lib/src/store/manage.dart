@@ -213,6 +213,7 @@ class StoreManagement {
         .tiles
         .where(sort: Sort.desc)
         .anyLastModified()
+        .limit(1)
         .findFirstSync();
     if (latestTile == null) return null;
 
@@ -277,6 +278,7 @@ class StoreManagement {
         .tiles
         .where(sort: Sort.desc)
         .anyLastModified()
+        .limit(1)
         .findFirst();
     if (latestTile == null) return null;
 
