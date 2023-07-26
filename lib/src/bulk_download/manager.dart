@@ -100,22 +100,23 @@ Future<void> _downloadManager(
   send(rootRecievePort.sendPort);
 
   // Start progress tracking
-  final downloadDuration = Stopwatch()..start();
-  var lastDownloadProgress = DownloadProgress._initial(maxTiles: maxTiles);
-  int mptTileIndex = -1;
-  int mptSlots = 50;
+  final initialDownloadProgress = DownloadProgress._initial(maxTiles: maxTiles);
+  var lastDownloadProgress = initialDownloadProgress;
+  int tileNumber = -1;
+  int mptSlots = 70;
   final microsecondsPerTile = List<int?>.filled(mptSlots, null, growable: true);
-  final tpsRates = List<double?>.filled(20, null);
-  final tileTimer = Stopwatch(); // This might be the wrong place to put this?
+  final tpsRates = List<double?>.filled(40, null);
+  final tileTimer = Stopwatch(); // Could be a black spot for bugs
+  final downloadDuration = Stopwatch()..start();
 
   // Setup cancel, pause, and resume handling
   final threadPausedStates = List.generate(
     input.parallelThreads,
-    (_) => Completer(),
+    (_) => Completer<void>(),
     growable: false,
   );
   final cancelSignal = Completer<void>();
-  Completer<void> pauseResumeSignal = Completer()..complete();
+  var pauseResumeSignal = Completer<void>()..complete();
   rootRecievePort.listen(
     (e) async {
       if (e == null) {
@@ -124,9 +125,9 @@ Future<void> _downloadManager(
           // ignore: avoid_catching_errors, empty_catches
         } on StateError {}
       } else if (e == 1) {
-        pauseResumeSignal = Completer();
+        pauseResumeSignal = Completer<void>();
         for (int i = 0; i < input.parallelThreads; i++) {
-          threadPausedStates[i] = Completer();
+          threadPausedStates[i] = Completer<void>();
         }
         await Future.wait(threadPausedStates.map((e) => e.future));
         downloadDuration.stop();
@@ -139,28 +140,23 @@ Future<void> _downloadManager(
   );
 
   // Setup progress report fallback
-  final Timer? fallbackReportTimer;
-  if (input.maxReportInterval case final maxReportInterval?) {
-    fallbackReportTimer = Timer.periodic(
-      maxReportInterval,
-      (_) {
-        if (lastDownloadProgress !=
-                DownloadProgress._initial(maxTiles: maxTiles) &&
-            pauseResumeSignal.isCompleted) {
-          final tps = tpsRates.nonNulls.average;
-          send(
-            lastDownloadProgress = lastDownloadProgress._updateProgress(
-              newDuration: downloadDuration.elapsed,
-              tilesPerSecond: tps,
-              rateLimit: input.rateLimit,
-            ),
-          );
-        }
-      },
-    );
-  } else {
-    fallbackReportTimer = null;
-  }
+  final fallbackReportTimer = input.maxReportInterval == null
+      ? null
+      : Timer.periodic(
+          input.maxReportInterval!,
+          (_) {
+            if (lastDownloadProgress != initialDownloadProgress &&
+                pauseResumeSignal.isCompleted) {
+              send(
+                lastDownloadProgress = lastDownloadProgress._updateProgress(
+                  newDuration: downloadDuration.elapsed,
+                  tilesPerSecond: tpsRates.nonNulls.average,
+                  rateLimit: input.rateLimit,
+                ),
+              );
+            }
+          },
+        );
 
   // Start download threads & wait for download to complete/cancelled
   await Future.wait(
@@ -197,7 +193,8 @@ Future<void> _downloadManager(
         // kill all threads
         unawaited(
           cancelSignal.future
-              .then((_) async => (await sendPortCompleter.future).send(null)),
+              .then((_) => sendPortCompleter.future)
+              .then((sp) => sp.send(null)),
         );
 
         downloadThreadRecievePort.listen(
@@ -205,13 +202,13 @@ Future<void> _downloadManager(
             // Thread is sending tile data
             if (evt is TileEvent) {
               // Handle progress estimation measurements
-              mptTileIndex++;
-              microsecondsPerTile[mptTileIndex % mptSlots] =
+              tileNumber++;
+              microsecondsPerTile[tileNumber % mptSlots] =
                   (tileTimer..stop()).elapsedMicroseconds;
               final rawTPS =
                   (1 / (microsecondsPerTile.nonNulls.average)) * 1000000;
               microsecondsPerTile.length = mptSlots = rawTPS.ceil() * 2;
-              tpsRates[mptTileIndex % 20] = rawTPS;
+              tpsRates[tileNumber % 40] = rawTPS;
               final tps = tpsRates.nonNulls.average;
 
               // If buffering is in use, send a progress update with buffer info
