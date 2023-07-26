@@ -40,8 +40,10 @@ jobs:
             uses: subosito/flutter-action@v2
             with:
               channel: "stable"
-          - name: Get All Dependencies
+          - name: Get Package & Example Dependencies
             run: flutter pub get
+          - name: Get Test Tile Server Dependencies
+            run: dart pub get -C test/tools/tile_server
           - name: Check Formatting
             run: dart format --output=none --set-exit-if-changed .
           - name: Check Lints
