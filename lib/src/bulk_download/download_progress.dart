@@ -97,9 +97,14 @@ class DownloadProgress {
 
   /// Whether the download is now complete
   ///
-  /// There will be no more events after this event.
+  /// There will be no more events after this event, regardless of other
+  /// statistics.
   ///
-  /// Prefer using this over checking any other statistics for completion.
+  /// Prefer using this over checking any other statistics for completion. If all
+  /// threads have unexpectedly quit due to an error (for example, the store
+  /// becomes full to [FMTCSettings.databaseMaxSize]), the other statistics will
+  /// not indicate the the download has stopped/finished/completed, but this will
+  /// be `true`.
   final bool isComplete;
 
   /// The number of tiles that were either cached, in buffer, or skipped

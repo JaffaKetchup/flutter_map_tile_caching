@@ -24,7 +24,7 @@ void main() async {
   String? damagedDatabaseDeleted;
   await FlutterMapTileCaching.initialise(
     errorHandler: (error) => damagedDatabaseDeleted = error.message,
-    settings: FMTCSettings(databaseMaxSize: 10000),
+    settings: FMTCSettings(databaseMaxSize: 51200),
     debugMode: true,
   );
 

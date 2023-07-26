@@ -21,7 +21,7 @@ Future<void> _downloadManager(
   // Precalculate shared inputs for all threads
   final storeId = DatabaseTools.hash(input.storeName).toString();
   final threadBufferLength =
-      (input.maxBufferLength / input.parallelThreads).ceil();
+      (input.maxBufferLength / input.parallelThreads).floor();
   final headers = {
     ...input.region.options.tileProvider.headers,
     'User-Agent': input.region.options.tileProvider.headers['User-Agent'] ==
@@ -102,12 +102,27 @@ Future<void> _downloadManager(
   // Start progress tracking
   final initialDownloadProgress = DownloadProgress._initial(maxTiles: maxTiles);
   var lastDownloadProgress = initialDownloadProgress;
-  int tileNumber = -1;
-  int mptSlots = 70;
-  final microsecondsPerTile = List<int?>.filled(mptSlots, null, growable: true);
-  final tpsRates = List<double?>.filled(40, null);
-  final tileTimer = Stopwatch(); // Could be a black spot for bugs
-  final downloadDuration = Stopwatch()..start();
+  final downloadDuration = Stopwatch();
+  final tileCompletionTimestamps = <DateTime>[];
+  const tpsSmoothingFactor = 0.5;
+  final tpsSmoothingStorage = List<int?>.filled(
+    (400 * tpsSmoothingFactor).round(),
+    null,
+    growable: true,
+  );
+  int currentTPSSmoothingIndex = 0;
+  double getCurrentTPS({required bool registerNewTPS}) {
+    if (registerNewTPS) tileCompletionTimestamps.add(DateTime.now());
+    tileCompletionTimestamps.removeWhere(
+      (e) => e.isBefore(DateTime.now().subtract(const Duration(seconds: 1))),
+    );
+    currentTPSSmoothingIndex++;
+    tpsSmoothingStorage[currentTPSSmoothingIndex % tpsSmoothingStorage.length] =
+        tileCompletionTimestamps.length;
+    final tps = tpsSmoothingStorage.nonNulls.average;
+    tpsSmoothingStorage.length = (tps * tpsSmoothingFactor).ceil();
+    return tps;
+  }
 
   // Setup cancel, pause, and resume handling
   final threadPausedStates = List.generate(
@@ -150,7 +165,7 @@ Future<void> _downloadManager(
               send(
                 lastDownloadProgress = lastDownloadProgress._updateProgress(
                   newDuration: downloadDuration.elapsed,
-                  tilesPerSecond: tpsRates.nonNulls.average,
+                  tilesPerSecond: getCurrentTPS(registerNewTPS: false),
                   rateLimit: input.rateLimit,
                 ),
               );
@@ -159,6 +174,7 @@ Future<void> _downloadManager(
         );
 
   // Start download threads & wait for download to complete/cancelled
+  downloadDuration.start();
   await Future.wait(
     List.generate(
       input.parallelThreads,
@@ -201,16 +217,6 @@ Future<void> _downloadManager(
           (evt) async {
             // Thread is sending tile data
             if (evt is TileEvent) {
-              // Handle progress estimation measurements
-              tileNumber++;
-              microsecondsPerTile[tileNumber % mptSlots] =
-                  (tileTimer..stop()).elapsedMicroseconds;
-              final rawTPS =
-                  (1 / (microsecondsPerTile.nonNulls.average)) * 1000000;
-              microsecondsPerTile.length = mptSlots = rawTPS.ceil() * 2;
-              tpsRates[tileNumber % 40] = rawTPS;
-              final tps = tpsRates.nonNulls.average;
-
               // If buffering is in use, send a progress update with buffer info
               if (input.maxBufferLength != 0) {
                 if (evt.result == TileEventResult.success) {
@@ -236,7 +242,7 @@ Future<void> _downloadManager(
                         .map((e) => e.size)
                         .reduce((a, b) => a + b),
                     newDuration: downloadDuration.elapsed,
-                    tilesPerSecond: tps,
+                    tilesPerSecond: getCurrentTPS(registerNewTPS: true),
                     rateLimit: input.rateLimit,
                   ),
                 );
@@ -248,7 +254,7 @@ Future<void> _downloadManager(
                     newBufferedTiles: 0,
                     newBufferedSize: 0,
                     newDuration: downloadDuration.elapsed,
-                    tilesPerSecond: tps,
+                    tilesPerSecond: getCurrentTPS(registerNewTPS: true),
                     rateLimit: input.rateLimit,
                   ),
                 );
@@ -262,10 +268,6 @@ Future<void> _downloadManager(
                 threadPausedStates[threadNo].complete();
                 await pauseResumeSignal.future;
               }
-
-              tileTimer
-                ..reset()
-                ..start();
 
               requestTilePort.send(null);
               try {
@@ -303,6 +305,7 @@ Future<void> _downloadManager(
       growable: false,
     ),
   );
+  downloadDuration.stop();
 
   // Send final buffer cleared progress report
   fallbackReportTimer?.cancel();
@@ -319,7 +322,6 @@ Future<void> _downloadManager(
   );
 
   // Cleanup resources and shutdown
-  downloadDuration.stop();
   rootRecievePort.close();
   tileIsolate.kill(priority: Isolate.immediate);
   await tileQueue.cancel(immediate: true);
