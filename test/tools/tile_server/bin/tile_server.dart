@@ -123,7 +123,7 @@ Future<void> main(List<String> _) async {
   // Output basic console instructions
   console
     ..setTextStyle(italic: true)
-    ..write('Now serving tiles to all requests to 0.0.0.0:8080\n\n')
+    ..write('Now serving tiles to all requests to 127.0.0.1:8080\n\n')
     ..write("Press 'q' to kill server\n")
     ..write(
       'Press UP or DOWN to manipulate artificial delay by ${artificialDelayChangeAmount.inMilliseconds} ms\n\n',
