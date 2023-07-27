@@ -8,7 +8,10 @@ import 'dart:math';
 
 import 'package:dart_console/dart_console.dart';
 import 'package:jaguar/jaguar.dart';
-import 'package:path/path.dart' as p;
+
+import '../static/generated/favicon.dart';
+import '../static/generated/land.dart';
+import '../static/generated/sea.dart';
 
 Future<void> main(List<String> _) async {
   // Initialise console
@@ -21,11 +24,6 @@ Future<void> main(List<String> _) async {
     ..write(
       "Miniature fake tile server designed to test FMTC's throughput and download speeds\n\n",
     );
-
-  // Find path to '/static/' directory
-  final execPath = p.split(Platform.script.toFilePath());
-  final staticPath =
-      p.joinAll([...execPath.getRange(0, execPath.length - 2), 'static']);
 
   // Monitor requests per second measurement (tps)
   final requestTimestamps = <DateTime>[];
@@ -86,13 +84,17 @@ Future<void> main(List<String> _) async {
     },
   );
 
-  // Preload tile responses
+  // Preload responses
+  final faviconReponse = ByteResponse(
+    body: faviconTileBytes,
+    mimeType: 'image/vnd.microsoft.icon',
+  );
   final landTileResponse = ByteResponse(
-    body: File(p.join(staticPath, 'tiles', 'land.png')).readAsBytesSync(),
+    body: landTileBytes,
     mimeType: MimeTypes.png,
   );
   final seaTileResponse = ByteResponse(
-    body: File(p.join(staticPath, 'tiles', 'sea.png')).readAsBytesSync(),
+    body: seaTileBytes,
     mimeType: MimeTypes.png,
   );
 
@@ -101,7 +103,7 @@ Future<void> main(List<String> _) async {
 
   server
     // Serve 'favicon.ico'
-    ..staticFile('/favicon.ico', p.join(staticPath, 'favicon.ico'))
+    ..get('/favicon.ico', (_) => faviconReponse)
     // Serve tiles to all other requests
     ..get(
       '*',

@@ -117,27 +117,27 @@ jobs:
               if-no-files-found: error
     
     build-tile-server-windows:
-      name: "Build Tile Server (Windows)"
-      runs-on: windows-latest
-      #needs: [analyse-code, run-tests, score-package]
-      defaults:
-        run:
-          working-directory: ./test/tools/tile_server
-      steps:
-        - name: Checkout Repository
-          uses: actions/checkout@v3
-        - name: Setup Dart Environment
-          uses: dart-lang/setup-dart@v1.5.0
-        - name: Get Dependencies
-          run: dart pub get
-        - name: Compile
-          run: dart compile exe bin/tile_server.dart
-        - name: Upload Artifact
-          uses: actions/upload-artifact@v3.1.2
-          with:
-            name: windows-ts
-            path: test/tools/tile_server/bin/tile_server.exe
-            if-no-files-found: error
+        name: "Build Tile Server (Windows)"
+        runs-on: windows-latest
+        #needs: [analyse-code, run-tests, score-package]
+        defaults:
+          run:
+            working-directory: ./test/tools/tile_server
+        steps:
+          - name: Checkout Repository
+            uses: actions/checkout@v3
+          - name: Setup Dart Environment
+            uses: dart-lang/setup-dart@v1.5.0
+          - name: Get Dependencies
+            run: dart pub get
+          - name: Compile
+            run: dart compile exe bin/tile_server.dart
+          - name: Upload Artifact
+            uses: actions/upload-artifact@v3.1.2
+            with:
+              name: windows-ts
+              path: test/tools/tile_server/bin/tile_server.exe
+              if-no-files-found: error
     
     build-tile-server-linux:
         name: "Build Tile Server (Linux/Ubuntu)"
