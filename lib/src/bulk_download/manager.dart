@@ -105,11 +105,7 @@ Future<void> _downloadManager(
   final downloadDuration = Stopwatch();
   final tileCompletionTimestamps = <DateTime>[];
   const tpsSmoothingFactor = 0.5;
-  final tpsSmoothingStorage = List<int?>.filled(
-    (400 * tpsSmoothingFactor).round(),
-    null,
-    growable: true,
-  );
+  final tpsSmoothingStorage = <int?>[null];
   int currentTPSSmoothingIndex = 0;
   double getCurrentTPS({required bool registerNewTPS}) {
     if (registerNewTPS) tileCompletionTimestamps.add(DateTime.now());
@@ -120,7 +116,8 @@ Future<void> _downloadManager(
     tpsSmoothingStorage[currentTPSSmoothingIndex % tpsSmoothingStorage.length] =
         tileCompletionTimestamps.length;
     final tps = tpsSmoothingStorage.nonNulls.average;
-    tpsSmoothingStorage.length = (tps * tpsSmoothingFactor).ceil();
+    tpsSmoothingStorage.length =
+        (tps * tpsSmoothingFactor).ceil().clamp(1, 1000);
     return tps;
   }
 
@@ -163,7 +160,8 @@ Future<void> _downloadManager(
             if (lastDownloadProgress != initialDownloadProgress &&
                 pauseResumeSignal.isCompleted) {
               send(
-                lastDownloadProgress = lastDownloadProgress._updateProgress(
+                lastDownloadProgress =
+                    lastDownloadProgress._fallbackReportUpdate(
                   newDuration: downloadDuration.elapsed,
                   tilesPerSecond: getCurrentTPS(registerNewTPS: false),
                   rateLimit: input.rateLimit,

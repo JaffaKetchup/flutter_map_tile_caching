@@ -13,7 +13,8 @@ class DownloadProgress {
   /// May be used for UI display, error handling, or debugging purposes.
   ///
   /// It is not recommended to construct or keep a list of all these results, as
-  /// that will consume memory quickly.
+  /// that may consume memory in large quanities. Instead, prefer counting events
+  /// that are of importance only.
   TileEvent get latestTileEvent => _latestTileEvent!;
   final TileEvent? _latestTileEvent;
 
@@ -194,13 +195,13 @@ class DownloadProgress {
         isComplete: false,
       );
 
-  DownloadProgress _updateProgress({
+  DownloadProgress _fallbackReportUpdate({
     required Duration newDuration,
     required double tilesPerSecond,
     required int? rateLimit,
   }) =>
       DownloadProgress.__(
-        latestTileEvent: latestTileEvent,
+        latestTileEvent: latestTileEvent._repeat(),
         cachedTiles: cachedTiles,
         cachedSize: cachedSize,
         bufferedTiles: bufferedTiles,
@@ -227,33 +228,28 @@ class DownloadProgress {
   }) =>
       DownloadProgress.__(
         latestTileEvent: newTileEvent ?? latestTileEvent,
-        cachedTiles: newTileEvent == null
-            ? cachedTiles
-            : newTileEvent.result.category == TileEventResultCategory.cached
-                ? cachedTiles + 1
-                : cachedTiles,
-        cachedSize: newTileEvent == null
-            ? cachedSize
-            : newTileEvent.result.category == TileEventResultCategory.cached
-                ? cachedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
-                : cachedSize,
+        cachedTiles: newTileEvent != null &&
+                newTileEvent.result.category == TileEventResultCategory.cached
+            ? cachedTiles + 1
+            : cachedTiles,
+        cachedSize: newTileEvent != null &&
+                newTileEvent.result.category == TileEventResultCategory.cached
+            ? cachedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
+            : cachedSize,
         bufferedTiles: newBufferedTiles,
         bufferedSize: newBufferedSize,
-        skippedTiles: newTileEvent == null
-            ? skippedTiles
-            : newTileEvent.result.category == TileEventResultCategory.skipped
-                ? skippedTiles + 1
-                : skippedTiles,
-        skippedSize: newTileEvent == null
-            ? skippedSize
-            : newTileEvent.result.category == TileEventResultCategory.skipped
-                ? skippedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
-                : skippedSize,
-        failedTiles: newTileEvent == null
-            ? failedTiles
-            : newTileEvent.result.category == TileEventResultCategory.failed
-                ? failedTiles + 1
-                : failedTiles,
+        skippedTiles: newTileEvent != null &&
+                newTileEvent.result.category == TileEventResultCategory.skipped
+            ? skippedTiles + 1
+            : skippedTiles,
+        skippedSize: newTileEvent != null &&
+                newTileEvent.result.category == TileEventResultCategory.skipped
+            ? skippedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
+            : skippedSize,
+        failedTiles: newTileEvent != null &&
+                newTileEvent.result.category == TileEventResultCategory.failed
+            ? failedTiles + 1
+            : failedTiles,
         maxTiles: maxTiles,
         elapsedDuration: newDuration,
         tilesPerSecond: tilesPerSecond,

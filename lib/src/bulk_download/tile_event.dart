@@ -64,6 +64,7 @@ enum TileEventResult {
 ///
 /// Does not contain information about the download as a whole, that is
 /// [DownloadProgress]' responsibility.
+@immutable
 class TileEvent {
   /// The status of this event, the result of attempting to cache this tile
   ///
@@ -73,14 +74,20 @@ class TileEvent {
   /// - [TileEventResultCategory.cached] (tile was downloaded and cached)
   /// - [TileEventResultCategory.skipped] (tile was not cached, but intentionally)
   /// - [TileEventResultCategory.failed] (tile was not cached, due to an error)
+  ///
+  /// Remember to check [isRepeat] before keeping track of this value.
   final TileEventResult result;
 
   /// The URL used to request the tile
+  ///
+  /// Remember to check [isRepeat] before keeping track of this value.
   final String url;
 
   /// The raw bytes that were fetched from the [url], if available
   ///
   /// Not available if the result category is [TileEventResultCategory.failed].
+  ///
+  /// Remember to check [isRepeat] before keeping track of this value.
   final Uint8List? tileImage;
 
   /// The raw [http.Response] from the [url], if available
@@ -88,24 +95,46 @@ class TileEvent {
   /// Not available if [result] is [TileEventResult.noConnectionDuringFetch],
   /// [TileEventResult.unknownFetchException], or
   /// [TileEventResult.alreadyExisting].
+  ///
+  /// Remember to check [isRepeat] before keeping track of this value.
   final http.Response? fetchResponse;
 
   /// The raw error thrown when fetching from the [url], if available
   ///
   /// Only available if [result] is [TileEventResult.noConnectionDuringFetch] or
   /// [TileEventResult.unknownFetchException].
+  ///
+  /// Remember to check [isRepeat] before keeping track of this value.
   final Object? fetchError;
+
+  /// Whether this event is a repeat of the last event
+  ///
+  /// Events will occasionally be repeated due to the `maxReportInterval`
+  /// functionality. If using other members, such as [result], to keep count of
+  /// important events, do not count an event where this is `true`.
+  final bool isRepeat;
 
   final bool _wasBufferReset;
 
-  TileEvent._(
+  const TileEvent._(
     this.result, {
     required this.url,
     this.tileImage,
     this.fetchResponse,
     this.fetchError,
+    this.isRepeat = false,
     bool wasBufferReset = false,
   }) : _wasBufferReset = wasBufferReset;
+
+  TileEvent _repeat() => TileEvent._(
+        result,
+        url: url,
+        tileImage: tileImage,
+        fetchResponse: fetchResponse,
+        fetchError: fetchError,
+        isRepeat: true,
+        wasBufferReset: _wasBufferReset,
+      );
 
   @override
   bool operator ==(Object other) =>
@@ -116,6 +145,7 @@ class TileEvent {
           tileImage == other.tileImage &&
           fetchResponse == other.fetchResponse &&
           fetchError == other.fetchError &&
+          isRepeat == other.isRepeat &&
           _wasBufferReset == other._wasBufferReset);
 
   @override
@@ -125,6 +155,7 @@ class TileEvent {
         tileImage,
         fetchResponse,
         fetchError,
+        isRepeat,
         _wasBufferReset,
       ]);
 }
