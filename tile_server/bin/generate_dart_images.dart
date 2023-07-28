@@ -27,6 +27,7 @@ void main(List<String> _) {
       p.join(
         staticPath,
         'source',
+        'images',
         '${staticFile.name}.${staticFile.extension}',
       ),
     );
