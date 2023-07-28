@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -9,7 +8,7 @@ const staticFilesInfo = [
   (name: 'favicon', extension: 'ico'),
 ];
 
-Future<void> main(List<String> _) async {
+void main(List<String> _) {
   final execPath = p.split(Platform.script.toFilePath());
   final staticPath =
       p.joinAll([...execPath.getRange(0, execPath.length - 2), 'static']);

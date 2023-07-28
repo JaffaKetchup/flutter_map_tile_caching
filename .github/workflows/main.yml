@@ -43,7 +43,7 @@ jobs:
           - name: Get Package & Example Dependencies
             run: flutter pub get
           - name: Get Test Tile Server Dependencies
-            run: dart pub get -C test/tools/tile_server
+            run: dart pub get -C tile_server
           - name: Check Formatting
             run: dart format --output=none --set-exit-if-changed .
           - name: Check Lints
@@ -122,7 +122,7 @@ jobs:
         #needs: [analyse-code, run-tests, score-package]
         defaults:
           run:
-            working-directory: ./test/tools/tile_server
+            working-directory: ./tile_server
         steps:
           - name: Checkout Repository
             uses: actions/checkout@v3
@@ -130,13 +130,15 @@ jobs:
             uses: dart-lang/setup-dart@v1.5.0
           - name: Get Dependencies
             run: dart pub get
+          - name: Run Pre-Compile Generator
+            run: dart run bin/generate_dart_images.dart
           - name: Compile
             run: dart compile exe bin/tile_server.dart
           - name: Upload Artifact
             uses: actions/upload-artifact@v3.1.2
             with:
               name: windows-ts
-              path: test/tools/tile_server/bin/tile_server.exe
+              path: tile_server/bin/tile_server.exe
               if-no-files-found: error
     
     build-tile-server-linux:
@@ -145,7 +147,7 @@ jobs:
         #needs: [analyse-code, run-tests, score-package]
         defaults:
           run:
-            working-directory: ./test/tools/tile_server
+            working-directory: ./tile_server
         steps:
           - name: Checkout Repository
             uses: actions/checkout@v3
@@ -153,11 +155,13 @@ jobs:
             uses: dart-lang/setup-dart@v1.5.0
           - name: Get Dependencies
             run: dart pub get
+          - name: Run Pre-Compile Generator
+            run: dart run bin/generate_dart_images.dart
           - name: Compile
             run: dart compile exe bin/tile_server.dart
           - name: Upload Artifact
             uses: actions/upload-artifact@v3.1.2
             with:
               name: linux-ts
-              path: test/tools/tile_server/bin/tile_server.exe
+              path: tile_server/bin/tile_server.exe
               if-no-files-found: error 
