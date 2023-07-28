@@ -20,9 +20,10 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 * Migrated to flutter_map v5
 * Added support for Isar v4 (bug fixes & stability improvements)
 * Bulk downloading reimplementation
+  * Improved developer experience by re-organizing scope of `DownloadableRegion`s and `startForeground`
   * Improved download speed significantly
   * Added pause and resume functionality (to accompany existing cancel functionality)
-  * Added rate limiting support
+  * Added support for rate limiting
   * Added support for multiple simultaneous downloads
   * Fixed instability and bugs when cancelling buffering downloads
   * Fixed generation of `LineRegion` tiles by reducing number of redundant duplicate tiles
@@ -31,9 +32,18 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
   * Removed support for custom `HttpClient`s
 * Added secondary check to `FMTCImageProvider` to ensure responses are valid images
 * Added `StoreManagement.pruneTilesOlderThan` method
+* Improved performance of `tileImage` methods
+* Improved error objects
 * Replaced public facing `RegionType`/`type` with Dart 3 exhaustive switch statements through `BaseRegion/DownloadableRegion.when` & `RecoverableRegion.toRegion`
 * Removed HTTP/2 support
+
+Also:
+
+* Created a miniature testing tile server
+* Created automated tests for tile generation
 * Improved & simplified example application
+  * Removed update mechanism
+  * Added user location tracking
 
 ## [8.0.0] - 2023/05/05
 
