@@ -41,7 +41,7 @@ Future<Stream<TileProgress>> bulkDownloader({
         : region.type == RegionType.circle
             ? TilesGenerator.circleTiles
             : TilesGenerator.lineTiles,
-    {'sendPort': recievePort.sendPort, ...generateTileLoopsInput(region)},
+    {'sendPort': recievePort.sendPort, 'region': region},
     onExit: recievePort.sendPort,
   );
   final tileQueue = StreamQueue(
@@ -64,7 +64,7 @@ Future<Stream<TileProgress>> bulkDownloader({
       while (true) {
         requestTilePort.send(null);
 
-        final List<int>? value;
+        final List<num>? value;
         try {
           value = await tileQueue.next;
           // ignore: avoid_catching_errors
@@ -100,7 +100,11 @@ Future<Stream<TileProgress>> bulkDownloader({
           break;
         }
 
-        final coord = TileCoordinates(value[0], value[1], value[2]);
+        final coord = TileCoordinates(
+          value[0].toInt(),
+          value[1].toInt(),
+          value[2].toInt(),
+        );
 
         final url = provider.getTileUrl(coord, region.options);
         final existingTile = await tiles.tiles.get(DatabaseTools.hash(url));

@@ -207,7 +207,7 @@ class DownloadManagement {
             : region.type == RegionType.circle
                 ? TilesCounter.circleTiles
                 : TilesCounter.lineTiles,
-        generateTileLoopsInput(region),
+        region,
       );
 
   /// Cancels the ongoing foreground download and recovery session (within the

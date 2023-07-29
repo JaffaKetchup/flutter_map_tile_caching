@@ -8,7 +8,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/flutter_map.dart' hide Polygon;
 import 'package:latlong2/latlong.dart';
-import 'package:meta/meta.dart';
 
 import '../../../flutter_map_tile_caching.dart';
 
@@ -26,13 +25,5 @@ class _Polygon {
   List<CustomPoint<num>> get points => [nw, ne, se, sw];
 }
 
-@internal
-Map<String, dynamic> generateTileLoopsInput(DownloadableRegion region) => {
-      'rectOutline': LatLngBounds.fromPoints(region.points.cast()),
-      'circleOutline': region.points,
-      'lineOutline': region.points.slices(4).toList(),
-      'minZoom': region.minZoom,
-      'maxZoom': region.maxZoom,
-      'crs': region.crs,
-      'tileSize': CustomPoint(region.options.tileSize, region.options.tileSize),
-    };
+CustomPoint<double> _getTileSize(DownloadableRegion region) =>
+    CustomPoint(region.options.tileSize, region.options.tileSize);
