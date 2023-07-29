@@ -122,11 +122,12 @@ Future<void> _downloadManager(
   }
 
   // Setup cancel, pause, and resume handling
-  final threadPausedStates = List.generate(
-    input.parallelThreads,
-    (_) => Completer<void>(),
-    growable: false,
-  );
+  List<Completer<void>> generateThreadPausedStates() => List.generate(
+        input.parallelThreads,
+        (_) => Completer<void>(),
+        growable: false,
+      );
+  final threadPausedStates = generateThreadPausedStates();
   final cancelSignal = Completer<void>();
   var pauseResumeSignal = Completer<void>()..complete();
   rootRecievePort.listen(
@@ -138,9 +139,7 @@ Future<void> _downloadManager(
         } on StateError {}
       } else if (e == 1) {
         pauseResumeSignal = Completer<void>();
-        for (int i = 0; i < input.parallelThreads; i++) {
-          threadPausedStates[i] = Completer<void>();
-        }
+        threadPausedStates.setAll(0, generateThreadPausedStates());
         await Future.wait(threadPausedStates.map((e) => e.future));
         downloadDuration.stop();
         send(1);
