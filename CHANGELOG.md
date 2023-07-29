@@ -13,6 +13,10 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [8.0.1] - 2023/05/05
+
+* Fixed bugs when generating tiles for `LineRegion`
+
 ## [8.0.0] - 2023/XX/XX
 
 * Bulk downloading has been rewritten to use a new implementation that generates tile coordinates at the same time as downloading tiles

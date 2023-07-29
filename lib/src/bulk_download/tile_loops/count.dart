@@ -4,20 +4,17 @@
 part of 'shared.dart';
 
 class TilesCounter {
-  static int rectangleTiles(Map<String, dynamic> input) {
-    final LatLngBounds bounds = input['rectOutline'];
-    final int minZoom = input['minZoom'];
-    final int maxZoom = input['maxZoom'];
-    final Crs crs = input['crs'];
-    final CustomPoint<double> tileSize = input['tileSize'];
+  static int rectangleTiles(DownloadableRegion region) {
+    final tileSize = _getTileSize(region);
+    final bounds = (region.originalRegion as RectangleRegion).bounds;
 
     int numberOfTiles = 0;
-    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-      final CustomPoint<num> nwCustomPoint = crs
+    for (int zoomLvl = region.minZoom; zoomLvl <= region.maxZoom; zoomLvl++) {
+      final CustomPoint<num> nwCustomPoint = region.crs
           .latLngToPoint(bounds.northWest, zoomLvl.toDouble())
           .unscaleBy(tileSize)
           .floor();
-      final CustomPoint<num> seCustomPoint = crs
+      final CustomPoint<num> seCustomPoint = region.crs
               .latLngToPoint(bounds.southEast, zoomLvl.toDouble())
               .unscaleBy(tileSize)
               .ceil() -
@@ -29,7 +26,7 @@ class TilesCounter {
     return numberOfTiles;
   }
 
-  static int circleTiles(Map<String, dynamic> input) {
+  static int circleTiles(DownloadableRegion region) {
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given a `LatLng` for every x degrees on a circle's circumference, convert it into a tile number
     // 2. Using a `Map` per zoom level, record all the X values in it without duplicates
@@ -37,22 +34,19 @@ class TilesCounter {
     // 4. Loop over these XY values and add them to the list
     // Theoretically, this could have been done using the same method as `lineTiles`, but `lineTiles` was built after this algorithm and this makes more sense for a circle
 
-    final List<LatLng> circleOutline = input['circleOutline'];
-    final int minZoom = input['minZoom'];
-    final int maxZoom = input['maxZoom'];
-    final Crs crs = input['crs'];
-    final CustomPoint<double> tileSize = input['tileSize'];
+    final tileSize = _getTileSize(region);
+    final circleOutline = region.originalRegion.toOutline();
 
     // Format: Map<z, Map<x, List<y>>>
     final Map<int, Map<int, List<int>>> outlineTileNums = {};
 
     int numberOfTiles = 0;
 
-    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
+    for (int zoomLvl = region.minZoom; zoomLvl <= region.maxZoom; zoomLvl++) {
       outlineTileNums[zoomLvl] = <int, List<int>>{};
 
       for (final LatLng node in circleOutline) {
-        final CustomPoint<num> tile = crs
+        final CustomPoint<num> tile = region.crs
             .latLngToPoint(node, zoomLvl.toDouble())
             .unscaleBy(tileSize)
             .floor();
@@ -82,7 +76,7 @@ class TilesCounter {
     return numberOfTiles;
   }
 
-  static int lineTiles(Map<String, dynamic> input) {
+  static int lineTiles(DownloadableRegion region) {
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given 4 `LatLng` points, create a 'straight' rectangle around the 'rotated' rectangle, that can be defined with just 2 `LatLng` points
     // 2. Convert the straight rectangle into tile numbers, and loop through the same as `rectangleTiles`
@@ -130,16 +124,13 @@ class TilesCounter {
       return true;
     }
 
-    final List<List<LatLng>> rects = input['lineOutline'];
-    final int minZoom = input['minZoom'];
-    final int maxZoom = input['maxZoom'];
-    final Crs crs = input['crs'];
-    final CustomPoint<double> tileSize = input['tileSize'];
+    final tileSize = _getTileSize(region);
+    final lineOutline = (region.originalRegion as LineRegion).toOutlines(1);
 
     int numberOfTiles = 0;
 
-    for (int zoomLvl = minZoom; zoomLvl <= maxZoom; zoomLvl++) {
-      for (final List<LatLng> rect in rects) {
+    for (int zoomLvl = region.minZoom; zoomLvl <= region.maxZoom; zoomLvl++) {
+      for (final rect in lineOutline) {
         final LatLng rrBottomLeft = rect[0];
         final LatLng rrBottomRight = rect[1];
         final LatLng rrTopRight = rect[2];
@@ -158,34 +149,34 @@ class TilesCounter {
           rrBottomRight.longitude,
         ];
 
-        final CustomPoint<num> rrNorthWest = crs
+        final CustomPoint<num> rrNorthWest = region.crs
             .latLngToPoint(rrTopLeft, zoomLvl.toDouble())
             .unscaleBy(tileSize)
             .floor();
-        final CustomPoint<num> rrNorthEast = crs
+        final CustomPoint<num> rrNorthEast = region.crs
                 .latLngToPoint(rrTopRight, zoomLvl.toDouble())
                 .unscaleBy(tileSize)
                 .ceil() -
             const CustomPoint(1, 0);
-        final CustomPoint<num> rrSouthWest = crs
+        final CustomPoint<num> rrSouthWest = region.crs
                 .latLngToPoint(rrBottomLeft, zoomLvl.toDouble())
                 .unscaleBy(tileSize)
                 .ceil() -
             const CustomPoint(0, 1);
-        final CustomPoint<num> rrSouthEast = crs
+        final CustomPoint<num> rrSouthEast = region.crs
                 .latLngToPoint(rrBottomRight, zoomLvl.toDouble())
                 .unscaleBy(tileSize)
                 .ceil() -
             const CustomPoint(1, 1);
 
-        final CustomPoint<num> srNorthWest = crs
+        final CustomPoint<num> srNorthWest = region.crs
             .latLngToPoint(
               LatLng(rrAllLat.max, rrAllLon.min),
               zoomLvl.toDouble(),
             )
             .unscaleBy(tileSize)
             .floor();
-        final CustomPoint<num> srSouthEast = crs
+        final CustomPoint<num> srSouthEast = region.crs
                 .latLngToPoint(
                   LatLng(rrAllLat.min, rrAllLon.max),
                   zoomLvl.toDouble(),
