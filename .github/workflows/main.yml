@@ -65,7 +65,7 @@ jobs:
     build-demo-android:
         name: "Build Demo App (Android)"
         runs-on: ubuntu-latest
-        #needs: [analyse-code, run-tests, score-package]
+        needs: [analyse-code, run-tests, score-package]
         defaults:
           run:
             working-directory: ./example
@@ -93,7 +93,7 @@ jobs:
     build-demo-windows:
         name: "Build Demo App (Windows)"
         runs-on: windows-latest
-        #needs: [analyse-code, run-tests, score-package]
+        needs: [analyse-code, run-tests, score-package]
         defaults:
           run:
             working-directory: ./example
@@ -119,7 +119,7 @@ jobs:
     build-tile-server-windows:
         name: "Build Tile Server (Windows)"
         runs-on: windows-latest
-        #needs: [analyse-code, run-tests, score-package]
+        needs: [analyse-code, run-tests, score-package]
         defaults:
           run:
             working-directory: ./tile_server
@@ -144,7 +144,7 @@ jobs:
     build-tile-server-linux:
         name: "Build Tile Server (Linux/Ubuntu)"
         runs-on: ubuntu-latest
-        #needs: [analyse-code, run-tests, score-package]
+        needs: [analyse-code, run-tests, score-package]
         defaults:
           run:
             working-directory: ./tile_server
