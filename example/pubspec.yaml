@@ -16,7 +16,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_foreground_task: ^6.0.0+1
-  flutter_map: ^5.0.0
+  flutter_map: ^6.0.0-dev.2
   flutter_map_location_marker: ^7.0.1
   flutter_map_tile_caching:
   flutter_speed_dial: ^7.0.0
@@ -26,7 +26,7 @@ dependencies:
   http: ^1.0.0
   intl: ^0.18.0
   latlong2: ^0.9.0
-  osm_nominatim: ^2.0.1
+  osm_nominatim: ^3.0.0
   path: ^1.8.3
   provider: ^6.0.3
   stream_transform: ^2.0.0
@@ -34,16 +34,12 @@ dependencies:
   version: ^3.0.2
 
 dependency_overrides:
-  flutter_map:
-    git:
-      url: https://github.com/fleaflet/flutter_map.git
   flutter_map_location_marker:
     git:
       url: https://github.com/JaffaKetchup/_fmlm
       ref: 'fm-v6'
   flutter_map_tile_caching:
     path: ../
-  http: ^1.0.0
 
 flutter:
   uses-material-design: true
