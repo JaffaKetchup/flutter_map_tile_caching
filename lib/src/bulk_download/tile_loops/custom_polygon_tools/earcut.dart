@@ -1,3 +1,6 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 // ignore_for_file: parameter_assignments
 
 import 'dart:math';

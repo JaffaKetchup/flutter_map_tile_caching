@@ -1,10 +1,13 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 // ignore_for_file: avoid_print
 
 import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:flutter_map_tile_caching/src/bulk_download/tile_loops/custom_polygon_tools/earcut.dart';
 import 'package:flutter_map_tile_caching/src/bulk_download/tile_loops/shared.dart';
-import 'package:flutter_map_tile_caching/src/misc/earcut.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:test/test.dart';
 
