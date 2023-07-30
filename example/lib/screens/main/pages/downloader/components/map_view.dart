@@ -268,7 +268,9 @@ class _MapViewState extends State<MapView> {
                           const VerticalDivider(),
                           IconButton(
                             onPressed: () async {
-                              await FilePicker.platform.clearTemporaryFiles();
+                              if (Platform.isAndroid || Platform.isIOS) {
+                                await FilePicker.platform.clearTemporaryFiles();
+                              }
 
                               late final FilePickerResult? result;
                               try {
