@@ -225,4 +225,60 @@ class TilesCounter {
 
     return numberOfTiles;
   }
+
+  static int customPolygonTiles(DownloadableRegion region) {
+    region as DownloadableRegion<CustomPolygonRegion>;
+
+    final customPolygonOutline = region.originalRegion.toOutline();
+
+    int numberOfTiles = 0;
+
+    for (double zoomLvl = region.minZoom.toDouble();
+        zoomLvl <= region.maxZoom;
+        zoomLvl++) {
+      final tiles = <Point<int>>{};
+      final outlineTiles = <Point<int>>{};
+
+      for (final triangle in Earcut.triangulateFromPoints(
+        customPolygonOutline.map(region.crs.projection.project),
+      ).map(customPolygonOutline.elementAt).slices(3)) {
+        final vertex1 = region.crs.latLngToPoint(triangle[0], zoomLvl).round();
+        final vertex2 = region.crs.latLngToPoint(triangle[1], zoomLvl).round();
+        final vertex3 = region.crs.latLngToPoint(triangle[2], zoomLvl).round();
+
+        outlineTiles.addAll([
+          ...bresenhamsLGA(
+            Point(vertex1.x, vertex1.y),
+            Point(vertex2.x, vertex2.y),
+          ).map((e) => (e / region.options.tileSize).floor()),
+          ...bresenhamsLGA(
+            Point(vertex2.x, vertex2.y),
+            Point(vertex3.x, vertex3.y),
+          ).map((e) => (e / region.options.tileSize).floor()),
+          ...bresenhamsLGA(
+            Point(vertex3.x, vertex3.y),
+            Point(vertex1.x, vertex1.y),
+          ).map((e) => (e / region.options.tileSize).floor()),
+        ]);
+      }
+
+      tiles.addAll(outlineTiles);
+
+      final byY = <int, List<int>>{};
+      for (final tile in outlineTiles) {
+        (byY[tile.y] ?? (byY[tile.y] = [])).add(tile.x);
+      }
+
+      for (int y = byY.keys.min; y <= byY.keys.max; y++) {
+        byY[y]!.sort();
+        for (int x = byY[y]!.first + 1; x < byY[y]!.last; x++) {
+          tiles.add(Point(x, y));
+        }
+      }
+
+      numberOfTiles += tiles.length;
+    }
+
+    return numberOfTiles;
+  }
 }

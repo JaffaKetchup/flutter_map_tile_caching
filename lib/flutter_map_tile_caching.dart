@@ -68,6 +68,7 @@ part 'src/misc/store_db_impl.dart';
 part 'src/providers/tile_provider.dart';
 part 'src/regions/base_region.dart';
 part 'src/regions/circle.dart';
+part 'src/regions/custom_polygon.dart';
 part 'src/regions/downloadable_region.dart';
 part 'src/regions/line.dart';
 part 'src/regions/recovered_region.dart';

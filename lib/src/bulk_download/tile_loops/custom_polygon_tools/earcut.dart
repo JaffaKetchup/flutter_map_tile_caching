@@ -6,8 +6,8 @@
 import 'dart:math';
 
 /// Earcutting triangulation algorithm, ported (with minor API differences) from
-/// [earcut4j/earcut4j](https://github.com/earcut4j/earcut4j) which itself is
-/// ported from [mapbox/earcut](https://github.com/mapbox/earcut).
+/// [earcut4j/earcut4j](https://github.com/earcut4j/earcut4j) and
+/// [mapbox/earcut](https://github.com/mapbox/earcut).
 final class Earcut {
   /// Triangulates the given polygon
   ///
@@ -20,7 +20,7 @@ final class Earcut {
   ///
   /// Returns a list of vertice indicies where a group of 3 forms a triangle.
   static List<int> triangulateFromPoints(
-    List<Point<double>> polygonVertices, {
+    Iterable<Point<double>> polygonVertices, {
     List<int>? holeIndices,
   }) =>
       triangulateRaw(

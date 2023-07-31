@@ -35,6 +35,7 @@ Future<void> _downloadManager(
     rectangle: TilesCounter.rectangleTiles,
     circle: TilesCounter.circleTiles,
     line: TilesCounter.lineTiles,
+    customPolygon: TilesCounter.customPolygonTiles,
   );
 
   // Setup sea tile removal system
@@ -72,6 +73,7 @@ Future<void> _downloadManager(
       rectangle: (_) => TilesGenerator.rectangleTiles,
       circle: (_) => TilesGenerator.circleTiles,
       line: (_) => TilesGenerator.lineTiles,
+      customPolygon: (_) => throw UnimplementedError(),
     ),
     (sendPort: tileRecievePort.sendPort, region: input.region),
     onExit: tileRecievePort.sendPort,

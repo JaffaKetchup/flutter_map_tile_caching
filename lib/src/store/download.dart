@@ -245,6 +245,7 @@ class DownloadManagement {
           rectangle: (_) => TilesCounter.rectangleTiles,
           circle: (_) => TilesCounter.circleTiles,
           line: (_) => TilesCounter.lineTiles,
+          customPolygon: (_) => TilesCounter.customPolygonTiles,
         ),
         region,
       );

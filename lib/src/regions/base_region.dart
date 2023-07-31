@@ -49,11 +49,13 @@ sealed class BaseRegion {
     required T Function(RectangleRegion rectangle) rectangle,
     required T Function(CircleRegion circle) circle,
     required T Function(LineRegion line) line,
+    required T Function(CustomPolygonRegion customPolygon) customPolygon,
   }) =>
       switch (this) {
         RectangleRegion() => rectangle(this as RectangleRegion),
         CircleRegion() => circle(this as CircleRegion),
         LineRegion() => line(this as LineRegion),
+        CustomPolygonRegion() => customPolygon(this as CustomPolygonRegion),
       };
 
   /// Generate the [DownloadableRegion] ready for bulk downloading

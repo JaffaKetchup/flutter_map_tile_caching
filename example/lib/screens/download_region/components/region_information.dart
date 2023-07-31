@@ -101,6 +101,7 @@ class RegionInformation extends StatelessWidget {
                         ),
                       ];
                     },
+                    customPolygon: (_) => throw UnimplementedError(),
                   ),
                   const SizedBox(height: 10),
                   const Text('MIN/MAX ZOOM LEVELS'),

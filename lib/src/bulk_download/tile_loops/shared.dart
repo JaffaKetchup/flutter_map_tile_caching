@@ -12,6 +12,8 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../flutter_map_tile_caching.dart';
 import '../../misc/int_extremes.dart';
+import 'custom_polygon_tools/bres.dart';
+import 'custom_polygon_tools/earcut.dart';
 
 part 'count.dart';
 part 'generate.dart';

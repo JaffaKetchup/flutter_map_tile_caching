@@ -86,6 +86,36 @@ void main() {
         ).average} ms',
       ),
     );
+
+    final customPolygonRegion = CustomPolygonRegion([
+      const LatLng(51.45818683312154, -0.9674646220840917),
+      const LatLng(51.55859639937614, -0.9185366064186982),
+      const LatLng(51.476641197796724, -0.7494743298246318),
+      const LatLng(51.56029831737391, -0.5322770067805148),
+      const LatLng(51.235701626195365, -0.5746290119276093),
+      const LatLng(51.38781341753136, -0.6779891095601829),
+    ]).toDownloadable(minZoom: 2, maxZoom: 18, options: TileLayer());
+
+    test(
+      'Custom Polygon Region Count',
+      () => expect(TilesCounter.customPolygonTiles(customPolygonRegion), 79895),
+    );
+
+    test(
+      'Custom Polygon Region Duration',
+      () => print(
+        '${List.generate(
+          100,
+          (index) {
+            final clock = Stopwatch()..start();
+            TilesCounter.customPolygonTiles(customPolygonRegion);
+            clock.stop();
+            return clock.elapsedMilliseconds;
+          },
+          growable: false,
+        ).average} ms',
+      ),
+    );
   });
 
   group('Test Earcutting Triangulation', () {

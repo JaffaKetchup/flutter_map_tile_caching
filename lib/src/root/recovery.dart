@@ -100,6 +100,7 @@ class RootRecovery {
             rectangle: (_) => RegionType.rectangle,
             circle: (_) => RegionType.circle,
             line: (_) => RegionType.line,
+            customPolygon: (_) => throw UnimplementedError(),
           ),
           minZoom: region.minZoom,
           maxZoom: region.maxZoom,

@@ -69,11 +69,14 @@ class DownloadableRegion<R extends BaseRegion> {
         rectangle,
     required T Function(DownloadableRegion<CircleRegion> circle) circle,
     required T Function(DownloadableRegion<LineRegion> line) line,
+    required T Function(DownloadableRegion<CustomPolygonRegion> customPolygon)
+        customPolygon,
   }) =>
       switch (originalRegion) {
         RectangleRegion() => rectangle(_cast()),
         CircleRegion() => circle(_cast()),
         LineRegion() => line(_cast()),
+        CustomPolygonRegion() => customPolygon(_cast()),
       };
 
   @override
