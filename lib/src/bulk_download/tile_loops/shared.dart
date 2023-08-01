@@ -34,6 +34,3 @@ class _Polygon {
       identical(this, other) ||
       (other is _Polygon && hashCode == other.hashCode);
 }
-
-Point<double> _getTileSize(DownloadableRegion region) =>
-    Point(region.options.tileSize, region.options.tileSize);

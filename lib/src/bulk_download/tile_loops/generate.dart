@@ -8,7 +8,6 @@ class TilesGenerator {
     ({SendPort sendPort, DownloadableRegion region}) input,
   ) async {
     final region = input.region as DownloadableRegion<RectangleRegion>;
-    final tileSize = _getTileSize(region);
     final northWest = region.originalRegion.bounds.northWest;
     final southEast = region.originalRegion.bounds.southEast;
 
@@ -19,13 +18,11 @@ class TilesGenerator {
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
         zoomLvl++) {
-      final nwPoint = region.crs
-          .latLngToPoint(northWest, zoomLvl)
-          .unscaleBy(tileSize)
+      final nwPoint = (region.crs.latLngToPoint(northWest, zoomLvl) /
+              region.options.tileSize)
           .floor();
-      final sePoint = region.crs
-              .latLngToPoint(southEast, zoomLvl)
-              .unscaleBy(tileSize)
+      final sePoint = (region.crs.latLngToPoint(southEast, zoomLvl) /
+                  region.options.tileSize)
               .ceil() -
           const Point(1, 1);
 
@@ -51,7 +48,6 @@ class TilesGenerator {
     // Theoretically, this could have been done using the same method as `lineTiles`, but `lineTiles` was built after this algorithm and this makes more sense for a circle
 
     final region = input.region as DownloadableRegion<CircleRegion>;
-    final tileSize = _getTileSize(region);
     final circleOutline = region.originalRegion.toOutline();
 
     final recievePort = ReceivePort();
@@ -65,9 +61,8 @@ class TilesGenerator {
       outlineTileNums[zoomLvl] = {};
 
       for (final node in circleOutline) {
-        final tile = region.crs
-            .latLngToPoint(node, zoomLvl.toDouble())
-            .unscaleBy(tileSize)
+        final tile = (region.crs.latLngToPoint(node, zoomLvl.toDouble()) /
+                region.options.tileSize)
             .floor();
 
         outlineTileNums[zoomLvl]![tile.x] ??= [largestInt, smallestInt];
@@ -140,7 +135,6 @@ class TilesGenerator {
     }
 
     final region = input.region as DownloadableRegion<LineRegion>;
-    final tileSize = _getTileSize(region);
     final lineOutline = region.originalRegion.toOutlines(1);
 
     final recievePort = ReceivePort();
@@ -173,39 +167,40 @@ class TilesGenerator {
           rotatedRectangle.bottomRight.longitude,
         ];
 
-        final rotatedRectangleNW = region.crs
-            .latLngToPoint(rotatedRectangle.topLeft, zoomLvl)
-            .unscaleBy(tileSize)
-            .floor();
-        final rotatedRectangleNE = region.crs
-                .latLngToPoint(rotatedRectangle.topRight, zoomLvl)
-                .unscaleBy(tileSize)
-                .ceil() -
-            const Point(1, 0);
-        final rotatedRectangleSW = region.crs
-                .latLngToPoint(rotatedRectangle.bottomLeft, zoomLvl)
-                .unscaleBy(tileSize)
-                .ceil() -
-            const Point(0, 1);
-        final rotatedRectangleSE = region.crs
-                .latLngToPoint(rotatedRectangle.bottomRight, zoomLvl)
-                .unscaleBy(tileSize)
-                .ceil() -
-            const Point(1, 1);
+        final rotatedRectangleNW =
+            (region.crs.latLngToPoint(rotatedRectangle.topLeft, zoomLvl) /
+                    region.options.tileSize)
+                .floor();
+        final rotatedRectangleNE =
+            (region.crs.latLngToPoint(rotatedRectangle.topRight, zoomLvl) /
+                        region.options.tileSize)
+                    .ceil() -
+                const Point(1, 0);
+        final rotatedRectangleSW =
+            (region.crs.latLngToPoint(rotatedRectangle.bottomLeft, zoomLvl) /
+                        region.options.tileSize)
+                    .ceil() -
+                const Point(0, 1);
+        final rotatedRectangleSE =
+            (region.crs.latLngToPoint(rotatedRectangle.bottomRight, zoomLvl) /
+                        region.options.tileSize)
+                    .ceil() -
+                const Point(1, 1);
 
-        final straightRectangleNW = region.crs
-            .latLngToPoint(
-              LatLng(rotatedRectangleLats.max, rotatedRectangleLngs.min),
-              zoomLvl,
-            )
-            .unscaleBy(tileSize)
-            .floor();
-        final straightRectangleSE = region.crs
-                .latLngToPoint(
-                  LatLng(rotatedRectangleLats.min, rotatedRectangleLngs.max),
+        final straightRectangleNW = (region.crs.latLngToPoint(
+                  LatLng(rotatedRectangleLats.max, rotatedRectangleLngs.min),
                   zoomLvl,
-                )
-                .unscaleBy(tileSize)
+                ) /
+                region.options.tileSize)
+            .floor();
+        final straightRectangleSE = (region.crs.latLngToPoint(
+                      LatLng(
+                        rotatedRectangleLats.min,
+                        rotatedRectangleLngs.max,
+                      ),
+                      zoomLvl,
+                    ) /
+                    region.options.tileSize)
                 .ceil() -
             const Point(1, 1);
 
@@ -257,11 +252,12 @@ class TilesGenerator {
         zoomLvl <= region.maxZoom;
         zoomLvl++) {
       final tiles = <Point<int>>{};
-      final outlineTiles = <Point<int>>{};
 
       for (final triangle in Earcut.triangulateFromPoints(
         customPolygonOutline.map(region.crs.projection.project),
       ).map(customPolygonOutline.elementAt).slices(3)) {
+        final outlineTiles = <Point<int>>{};
+
         final vertex1 = region.crs.latLngToPoint(triangle[0], zoomLvl).round();
         final vertex2 = region.crs.latLngToPoint(triangle[1], zoomLvl).round();
         final vertex3 = region.crs.latLngToPoint(triangle[2], zoomLvl).round();
@@ -270,35 +266,37 @@ class TilesGenerator {
           ...bresenhamsLGA(
             Point(vertex1.x, vertex1.y),
             Point(vertex2.x, vertex2.y),
-          ).map((e) => (e / region.options.tileSize).floor()),
+            unscaleBy: region.options.tileSize,
+          ),
           ...bresenhamsLGA(
             Point(vertex2.x, vertex2.y),
             Point(vertex3.x, vertex3.y),
-          ).map((e) => (e / region.options.tileSize).floor()),
+            unscaleBy: region.options.tileSize,
+          ),
           ...bresenhamsLGA(
             Point(vertex3.x, vertex3.y),
             Point(vertex1.x, vertex1.y),
-          ).map((e) => (e / region.options.tileSize).floor()),
+            unscaleBy: region.options.tileSize,
+          ),
         ]);
-      }
 
-      tiles.addAll(outlineTiles);
+        tiles.addAll(outlineTiles);
 
-      final byY = <int, List<int>>{};
-      for (final tile in outlineTiles) {
-        (byY[tile.y] ?? (byY[tile.y] = [])).add(tile.x);
-      }
-
-      for (int y = byY.keys.min; y <= byY.keys.max; y++) {
-        byY[y]!.sort();
-        for (int x = byY[y]!.first + 1; x < byY[y]!.last; x++) {
-          tiles.add(Point(x, y));
+        final byY = <int, Set<int>>{};
+        for (final Point(:x, :y) in outlineTiles) {
+          (byY[y] ?? (byY[y] = {})).add(x);
         }
-      }
 
-      for (final tile in tiles) {
-        await requestQueue.next;
-        input.sendPort.send((tile.x, tile.y, zoomLvl.toInt()));
+        for (final MapEntry(key: y, value: xs) in byY.entries) {
+          for (int x = xs.min + 1; x < xs.max; x++) {
+            tiles.add(Point(x, y));
+          }
+        }
+
+        for (final tile in tiles) {
+          await requestQueue.next;
+          input.sendPort.send((tile.x, tile.y, zoomLvl.toInt()));
+        }
       }
     }
 

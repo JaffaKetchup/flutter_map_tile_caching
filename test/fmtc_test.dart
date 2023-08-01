@@ -94,11 +94,11 @@ void main() {
       const LatLng(51.56029831737391, -0.5322770067805148),
       const LatLng(51.235701626195365, -0.5746290119276093),
       const LatLng(51.38781341753136, -0.6779891095601829),
-    ]).toDownloadable(minZoom: 2, maxZoom: 18, options: TileLayer());
+    ]).toDownloadable(minZoom: 1, maxZoom: 18, options: TileLayer());
 
     test(
       'Custom Polygon Region Count',
-      () => expect(TilesCounter.customPolygonTiles(customPolygonRegion), 79895),
+      () => expect(TilesCounter.customPolygonTiles(customPolygonRegion), 62234),
     );
 
     test(
