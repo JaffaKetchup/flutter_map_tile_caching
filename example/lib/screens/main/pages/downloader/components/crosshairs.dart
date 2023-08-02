@@ -4,7 +4,7 @@ class Crosshairs extends StatelessWidget {
   const Crosshairs({
     super.key,
     this.size = 20,
-    this.thickness = 2,
+    this.thickness = 3,
   });
 
   final double size;

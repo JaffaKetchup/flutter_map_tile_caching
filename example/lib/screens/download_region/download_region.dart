@@ -30,7 +30,7 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
     final String? currentStore =
         Provider.of<GeneralProvider>(context, listen: false).currentStore;
     if (currentStore != null) {
-      Provider.of<DownloadProvider>(context, listen: false)
+      Provider.of<DownloaderProvider>(context, listen: false)
           .setSelectedStore(FMTC.instance(currentStore), notify: false);
     }
 
@@ -38,7 +38,7 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
   }
 
   @override
-  Widget build(BuildContext context) => Consumer<DownloadProvider>(
+  Widget build(BuildContext context) => Consumer<DownloaderProvider>(
         builder: (context, provider, _) => Scaffold(
           appBar: AppBar(title: const Text('Configure Bulk Download')),
           floatingActionButton: provider.selectedStore == null

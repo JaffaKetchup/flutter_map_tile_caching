@@ -1,36 +1,230 @@
-import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:stream_transform/stream_transform.dart';
 
-import '../../../../../shared/components/loading_indicator.dart';
+import '../../../../../shared/misc/region_selection_method.dart';
+import '../../../../../shared/misc/region_type.dart';
 import '../../../../../shared/state/download_provider.dart';
-import '../../../../../shared/state/general_provider.dart';
-import '../../../../../shared/vars/region_mode.dart';
 import '../../map/build_attribution.dart';
 import 'crosshairs.dart';
+import 'custom_polygon_snapping_indicator.dart';
+import 'region_shape.dart';
+import 'side_panel.dart';
+import 'usage_instructions.dart';
 
 class MapView extends StatefulWidget {
-  const MapView({
-    super.key,
-  });
+  const MapView({super.key});
 
   @override
   State<MapView> createState() => _MapViewState();
 }
 
 class _MapViewState extends State<MapView> {
-  static const double _shapePadding = 15;
+  final mapController = MapController();
+  final urlTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+  late final mapOptions = MapOptions(
+    initialCenter: const LatLng(51.509364, -0.128928),
+    initialZoom: 11,
+    maxZoom: 20,
+    cameraConstraint: CameraConstraint.contain(
+      bounds: LatLngBounds.fromPoints([
+        const LatLng(-90, 180),
+        const LatLng(90, 180),
+        const LatLng(90, -180),
+        const LatLng(-90, -180),
+      ]),
+    ),
+    interactionOptions: const InteractionOptions(
+      flags: InteractiveFlag.all &
+          ~InteractiveFlag.rotate &
+          ~InteractiveFlag.doubleTapZoom,
+      scrollWheelVelocity: 0.002,
+    ),
+    keepAlive: true,
+    onTap: (_, __) {
+      final provider = Provider.of<DownloaderProvider>(context, listen: false);
+
+      if (provider.isCustomPolygonComplete) return;
+
+      final List<LatLng> coords;
+      if (provider.customPolygonSnap &&
+          provider.regionType == RegionType.customPolygon) {
+        coords = provider.addCoordinate(provider.coordinates.first);
+        provider.customPolygonSnap = false;
+      } else {
+        coords = provider.addCoordinate(provider.currentNewPointPos);
+      }
+
+      if (coords.length < 2) return;
+
+      switch (provider.regionType) {
+        case RegionType.square:
+          if (coords.length == 2) {
+            provider.region = RectangleRegion(LatLngBounds.fromPoints(coords));
+            break;
+          }
+          provider
+            ..clearCoordinates()
+            ..addCoordinate(provider.currentNewPointPos);
+
+          break;
+        case RegionType.circle:
+          if (coords.length == 2) {
+            provider.region = CircleRegion(
+              coords[0],
+              const Distance(roundResult: false)
+                      .distance(coords[0], coords[1]) /
+                  1000,
+            );
+            break;
+          }
+          provider
+            ..clearCoordinates()
+            ..addCoordinate(provider.currentNewPointPos);
+
+          break;
+        case RegionType.line:
+          provider.region = LineRegion(coords, provider.lineRadius);
+          break;
+        case RegionType.customPolygon:
+          if (!provider.isCustomPolygonComplete) break;
+          provider.region = CustomPolygonRegion(coords);
+          break;
+      }
+    },
+    onSecondaryTap: (_, __) =>
+        Provider.of<DownloaderProvider>(context, listen: false)
+            .removeLastCoordinate(),
+    onLongPress: (_, __) =>
+        Provider.of<DownloaderProvider>(context, listen: false)
+            .removeLastCoordinate(),
+    onPointerHover: (evt, point) {
+      final provider = Provider.of<DownloaderProvider>(context, listen: false);
+
+      if (provider.regionSelectionMethod == RegionSelectionMethod.usePointer) {
+        provider.currentNewPointPos = point;
+      }
+
+      if (provider.regionType == RegionType.customPolygon) {
+        final coords = provider.coordinates;
+        if (coords.length > 1) {
+          final newPointPos =
+              mapController.camera.latLngToScreenPoint(coords.first).toOffset();
+          provider.customPolygonSnap = coords.first != coords.last &&
+              sqrt(
+                    pow(newPointPos.dx - evt.localPosition.dx, 2) +
+                        pow(newPointPos.dy - evt.localPosition.dy, 2),
+                  ) <
+                  15;
+        }
+      }
+    },
+    onPositionChanged: (position, _) {
+      final provider = Provider.of<DownloaderProvider>(context, listen: false);
+
+      if (provider.regionSelectionMethod ==
+          RegionSelectionMethod.useMapCenter) {
+        provider.currentNewPointPos = position.center!;
+      }
+
+      if (provider.regionType == RegionType.customPolygon) {
+        final coords = provider.coordinates;
+        if (coords.length > 1) {
+          final newPointPos =
+              mapController.camera.latLngToScreenPoint(coords.first).toOffset();
+          final centerPos = mapController.camera
+              .latLngToScreenPoint(provider.currentNewPointPos)
+              .toOffset();
+          provider.customPolygonSnap = coords.first != coords.last &&
+              sqrt(
+                    pow(newPointPos.dx - centerPos.dx, 2) +
+                        pow(newPointPos.dy - centerPos.dy, 2),
+                  ) <
+                  30;
+        }
+      }
+    },
+  );
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) => Stack(
+          children: [
+            MouseRegion(
+              opaque: false,
+              cursor: context.select<DownloaderProvider, RegionSelectionMethod>(
+                        (p) => p.regionSelectionMethod,
+                      ) ==
+                      RegionSelectionMethod.useMapCenter
+                  ? MouseCursor.defer
+                  : context.select<DownloaderProvider, bool>(
+                      (p) => p.customPolygonSnap,
+                    )
+                      ? SystemMouseCursors.none
+                      : SystemMouseCursors.precise,
+              child: FlutterMap(
+                mapController: mapController,
+                options: mapOptions,
+                nonRotatedChildren: buildStdAttribution(
+                  urlTemplate,
+                  alignment: AttributionAlignment.bottomLeft,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: urlTemplate,
+                    maxZoom: 20,
+                    //reset: generalProvider.resetController.stream,
+                    keepBuffer: 5,
+                    userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
+                    backgroundColor: const Color(0xFFaad3df),
+                    /*tileBuilder: (context, widget, tile) => FutureBuilder<bool?>(
+                          future: generalProvider.currentStore == null
+                              ? Future.sync(() => null)
+                              : FMTC
+                                  .instance(generalProvider.currentStore!)
+                                  .getTileProvider()
+                                  .checkTileCachedAsync(
+                                    coords: tile.coordinates,
+                                    options: TileLayer(
+                                      urlTemplate: urlTemplate,
+                                    ),
+                                  ),
+                          builder: (context, snapshot) => DecoratedBox(
+                            position: DecorationPosition.foreground,
+                            decoration: BoxDecoration(
+                              color: (snapshot.data ?? false)
+                                  ? Colors.deepOrange.withOpacity(0.33)
+                                  : Colors.transparent,
+                            ),
+                            child: widget,
+                          ),
+                        ),*/
+                  ),
+                  const RegionShape(),
+                  const CustomPolygonSnappingIndicator(),
+                ],
+              ),
+            ),
+            SidePanel(constraints: constraints),
+            if (context.select<DownloaderProvider, RegionSelectionMethod>(
+                      (p) => p.regionSelectionMethod,
+                    ) ==
+                    RegionSelectionMethod.useMapCenter &&
+                !context.select<DownloaderProvider, bool>(
+                  (p) => p.customPolygonSnap,
+                ))
+              const Center(child: Crosshairs()),
+            UsageInstructions(constraints: constraints),
+          ],
+        ),
+      );
+  /*static const double _shapePadding = 15;
   static const _crosshairsMovement = Point<double>(10, 10);
 
   final _mapKey = GlobalKey<State<StatefulWidget>>();
@@ -468,5 +662,5 @@ class _MapViewState extends State<MapView> {
               ),
             );
     }
-  }
+  }*/
 }

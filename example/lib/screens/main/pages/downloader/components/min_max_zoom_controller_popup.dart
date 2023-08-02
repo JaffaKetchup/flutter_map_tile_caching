@@ -18,7 +18,7 @@ class MinMaxZoomControllerPopup extends StatelessWidget {
           right: 12,
           bottom: 12 + MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: Consumer<DownloadProvider>(
+        child: Consumer<DownloaderProvider>(
           child: Text(
             'Change Min/Max Zoom Levels',
             style: GoogleFonts.openSans(

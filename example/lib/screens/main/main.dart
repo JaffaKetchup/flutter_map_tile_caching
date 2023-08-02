@@ -3,10 +3,10 @@ import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../shared/state/download_provider.dart';
+//import '../../shared/state/download_provider.dart';
 import '../../shared/state/map_provider.dart';
 import 'pages/downloader/downloader.dart';
-import 'pages/downloading/downloading.dart';
+//import 'pages/downloading/downloading.dart';
 import 'pages/map/map_view.dart';
 import 'pages/recovery/recovery.dart';
 import 'pages/stores/stores.dart';
@@ -66,11 +66,12 @@ class _MainScreenState extends State<MainScreen> {
   List<Widget> get _pages => [
         const MapPage(),
         const StoresPage(),
-        Consumer<DownloadProvider>(
+        const DownloaderPage(),
+        /*Consumer<DownloaderProvider>(
           builder: (context, provider, _) => provider.downloadProgress == null
               ? const DownloaderPage()
               : const DownloadingPage(),
-        ),
+        ),*/
         RecoveryPage(moveToDownloadPage: () => _onDestinationSelected(2)),
       ];
 

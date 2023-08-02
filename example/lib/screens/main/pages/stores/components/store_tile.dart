@@ -3,8 +3,8 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:fmtc_plus_sharing/fmtc_plus_sharing.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../../shared/misc/size_formatter.dart';
 import '../../../../../shared/state/general_provider.dart';
-import '../../../../../shared/vars/size_formatter.dart';
 import '../../../../store_editor/store_editor.dart';
 import 'stat_display.dart';
 

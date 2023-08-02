@@ -25,7 +25,7 @@ class _DownloadingPageState extends State<DownloadingPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Consumer<DownloadProvider>(
+              Consumer<DownloaderProvider>(
                 builder: (context, provider, _) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -48,7 +48,7 @@ class _DownloadingPageState extends State<DownloadingPage>
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(6),
-                  child: Consumer<DownloadProvider>(
+                  child: Consumer<DownloaderProvider>(
                     builder: (context, provider, _) =>
                         StreamBuilder<DownloadProgress>(
                       stream: provider.downloadProgress,

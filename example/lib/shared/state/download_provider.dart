@@ -1,18 +1,87 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../vars/region_mode.dart';
+import '../misc/region_selection_method.dart';
+import '../misc/region_type.dart';
 
-class DownloadProvider extends ChangeNotifier {
-  RegionMode _regionMode = RegionMode.square;
-  RegionMode get regionMode => _regionMode;
-  set regionMode(RegionMode newMode) {
-    _regionMode = newMode;
+class DownloaderProvider extends ChangeNotifier {
+  RegionSelectionMethod _regionSelectionMethod =
+      Platform.isAndroid || Platform.isIOS
+          ? RegionSelectionMethod.useMapCenter
+          : RegionSelectionMethod.usePointer;
+  RegionSelectionMethod get regionSelectionMethod => _regionSelectionMethod;
+  set regionSelectionMethod(RegionSelectionMethod newMethod) {
+    _regionSelectionMethod = newMethod;
     notifyListeners();
   }
+
+  LatLng _currentNewPointPos = const LatLng(51.509364, -0.128928);
+  LatLng get currentNewPointPos => _currentNewPointPos;
+  set currentNewPointPos(LatLng newPos) {
+    _currentNewPointPos = newPos;
+    notifyListeners();
+  }
+
+  RegionType _regionType = RegionType.square;
+  RegionType get regionType => _regionType;
+  set regionType(RegionType newType) {
+    _regionType = newType;
+    notifyListeners();
+  }
+
+  BaseRegion? _region;
+  BaseRegion? get region => _region;
+  set region(BaseRegion? newRegion) {
+    _region = newRegion;
+    notifyListeners();
+  }
+
+  final List<LatLng> _coordinates = [];
+  List<LatLng> get coordinates => List.from(_coordinates);
+  List<LatLng> addCoordinate(LatLng coord) {
+    _coordinates.add(coord);
+    notifyListeners();
+    return _coordinates;
+  }
+
+  void clearCoordinates() {
+    _coordinates.clear();
+    _region = null;
+    notifyListeners();
+  }
+
+  void removeLastCoordinate() {
+    _coordinates.removeLast();
+    if (_regionType == RegionType.customPolygon
+        ? !isCustomPolygonComplete
+        : _coordinates.length < 2) _region = null;
+    notifyListeners();
+  }
+
+  double _lineRadius = 100;
+  double get lineRadius => _lineRadius;
+  set lineRadius(double newNum) {
+    _lineRadius = newNum;
+    notifyListeners();
+  }
+
+  bool _customPolygonSnap = false;
+  bool get customPolygonSnap => _customPolygonSnap;
+  set customPolygonSnap(bool newState) {
+    _customPolygonSnap = newState;
+    notifyListeners();
+  }
+
+  bool get isCustomPolygonComplete =>
+      _regionType == RegionType.customPolygon &&
+      _coordinates.length >= 2 &&
+      _coordinates.first == _coordinates.last;
+
+  // OLD
 
   double _lineRegionRadius = 1000;
   double get lineRegionRadius => _lineRegionRadius;
@@ -25,13 +94,6 @@ class DownloadProvider extends ChangeNotifier {
   List<LatLng> get lineRegionPoints => _lineRegionPoints;
   set lineRegionPoints(List<LatLng> newList) {
     _lineRegionPoints = newList;
-    notifyListeners();
-  }
-
-  BaseRegion? _region;
-  BaseRegion? get region => _region;
-  set region(BaseRegion? newRegion) {
-    _region = newRegion;
     notifyListeners();
   }
 

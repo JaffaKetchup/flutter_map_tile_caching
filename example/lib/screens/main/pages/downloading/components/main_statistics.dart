@@ -114,7 +114,7 @@ class _MainStatisticsState extends State<MainStatistics> {
                 child: OutlinedButton(
                   onPressed: () {
                     WidgetsBinding.instance.addPostFrameCallback(
-                      (_) => Provider.of<DownloadProvider>(
+                      (_) => Provider.of<DownloaderProvider>(
                         context,
                         listen: false,
                       ).setDownloadProgress(null),

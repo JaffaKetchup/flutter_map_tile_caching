@@ -18,7 +18,7 @@ class _StoreSelectorState extends State<StoreSelector> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('CHOOSE A STORE'),
-          Consumer2<DownloadProvider, GeneralProvider>(
+          Consumer2<DownloaderProvider, GeneralProvider>(
             builder: (context, downloadProvider, generalProvider, _) =>
                 FutureBuilder<List<StoreDirectory>>(
               future: FMTC.instance.rootDirectory.stats.storesAvailableAsync,

@@ -54,7 +54,7 @@ class AppContainer extends StatelessWidget {
   Widget build(BuildContext context) => MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => GeneralProvider()),
-          ChangeNotifierProvider(create: (context) => DownloadProvider()),
+          ChangeNotifierProvider(create: (context) => DownloaderProvider()),
           ChangeNotifierProvider(create: (context) => MapProvider()),
         ],
         child: MaterialApp(
@@ -63,7 +63,7 @@ class AppContainer extends StatelessWidget {
             brightness: Brightness.dark,
             useMaterial3: true,
             textTheme: GoogleFonts.openSansTextTheme(const TextTheme()),
-            colorSchemeSeed: Colors.deepOrange,
+            colorSchemeSeed: Colors.red,
             switchTheme: SwitchThemeData(
               thumbIcon: MaterialStateProperty.resolveWith(
                 (states) => Icon(

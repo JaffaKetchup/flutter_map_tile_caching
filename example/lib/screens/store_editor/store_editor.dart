@@ -44,7 +44,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
   }
 
   @override
-  Widget build(BuildContext context) => Consumer<DownloadProvider>(
+  Widget build(BuildContext context) => Consumer<DownloaderProvider>(
         builder: (context, downloadProvider, _) => WillPopScope(
           onWillPop: () async {
             scaffoldMessenger.showSnackBar(

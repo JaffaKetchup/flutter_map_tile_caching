@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:provider/provider.dart';
+//import 'package:provider/provider.dart';
 
-import '../../../../../shared/state/download_provider.dart';
-import '../../../../download_region/download_region.dart';
+//import '../../../../../shared/state/download_provider.dart';
+//import '../../../../download_region/download_region.dart';
 
 class RecoveryStartButton extends StatelessWidget {
   const RecoveryStartButton({
@@ -33,8 +33,8 @@ class RecoveryStartButton extends StatelessWidget {
                   onPressed: isFailed.data == null
                       ? null
                       : () async {
-                          final DownloadProvider downloadProvider =
-                              Provider.of<DownloadProvider>(
+                          /* final DownloaderProvider downloadProvider =
+                              Provider.of<DownloaderProvider>(
                             context,
                             listen: false,
                           )
@@ -60,7 +60,7 @@ class RecoveryStartButton extends StatelessWidget {
                             ),
                           );
 
-                          moveToDownloadPage();
+                          moveToDownloadPage();*/
                         },
                 )
               : const Padding(

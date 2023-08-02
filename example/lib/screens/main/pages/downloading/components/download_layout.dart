@@ -3,8 +3,8 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../../shared/misc/size_formatter.dart';
 import '../../../../../shared/state/download_provider.dart';
-import '../../../../../shared/vars/size_formatter.dart';
 import 'main_statistics.dart';
 import 'multi_linear_progress_indicator.dart';
 import 'stat_display.dart';
@@ -189,7 +189,7 @@ class DownloadLayout extends StatelessWidget {
                 ),
                 Expanded(
                   child: RepaintBoundary(
-                    child: Consumer<DownloadProvider>(
+                    child: Consumer<DownloaderProvider>(
                       builder: (context, provider, _) => provider
                               .failedTiles.isEmpty
                           ? const Column(

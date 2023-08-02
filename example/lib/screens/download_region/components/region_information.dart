@@ -105,7 +105,7 @@ class RegionInformation extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   const Text('MIN/MAX ZOOM LEVELS'),
-                  Consumer<DownloadProvider>(
+                  Consumer<DownloaderProvider>(
                     builder: (context, provider, _) =>
                         provider.regionTiles == null
                             ? Padding(
@@ -140,7 +140,7 @@ class RegionInformation extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   const Text('TOTAL TILES'),
-                  Consumer<DownloadProvider>(
+                  Consumer<DownloaderProvider>(
                     builder: (context, provider, _) =>
                         provider.regionTiles == null
                             ? Padding(

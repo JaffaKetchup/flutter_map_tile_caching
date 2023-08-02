@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../../shared/state/download_provider.dart';
+//import '../../../shared/state/download_provider.dart';
 import '../../../shared/state/general_provider.dart';
 import '../store_editor.dart';
 
@@ -50,12 +50,12 @@ AppBar buildHeader({
                   : await existingStore.manage.rename(newValues['storeName']!);
               if (!mounted) return;
 
-              final downloadProvider =
-                  Provider.of<DownloadProvider>(context, listen: false);
-              if (existingStore != null &&
+              /*final downloadProvider =
+                  Provider.of<DownloaderProvider>(context, listen: false);
+             if (existingStore != null &&
                   downloadProvider.selectedStore == existingStore) {
                 downloadProvider.setSelectedStore(newStore);
-              }
+              }*/
 
               await newStore.manage.createAsync();
 
