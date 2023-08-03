@@ -1,12 +1,10 @@
-// ignore_for_file: implementation_imports
-
 import 'dart:math';
 
 import 'package:collection/collection.dart';
+import 'package:dart_earcut/dart_earcut.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:flutter_map_tile_caching/src/bulk_download/tile_loops/custom_polygon_tools/earcut.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 

@@ -261,17 +261,17 @@ class TilesGenerator {
         final vertex3 = region.crs.latLngToPoint(triangle[2], zoomLvl).round();
 
         final outlineTiles = {
-          ...bresenhamsLGA(
+          ..._bresenhamsLGA(
             Point(vertex1.x, vertex1.y),
             Point(vertex2.x, vertex2.y),
             unscaleBy: region.options.tileSize,
           ),
-          ...bresenhamsLGA(
+          ..._bresenhamsLGA(
             Point(vertex2.x, vertex2.y),
             Point(vertex3.x, vertex3.y),
             unscaleBy: region.options.tileSize,
           ),
-          ...bresenhamsLGA(
+          ..._bresenhamsLGA(
             Point(vertex3.x, vertex3.y),
             Point(vertex1.x, vertex1.y),
             unscaleBy: region.options.tileSize,
