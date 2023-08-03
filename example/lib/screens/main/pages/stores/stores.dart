@@ -64,9 +64,7 @@ class _StoresPageState extends State<StoresPage> {
                                       ),
                                     ),
                                   )
-                            : const LoadingIndicator(
-                                message: 'Loading Stores...',
-                              ),
+                            : const LoadingIndicator('Retrieving Stores'),
                   ),
                 ),
               ],

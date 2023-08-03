@@ -1,3 +1,6 @@
+// Copyright © Luka S (JaffaKetchup) under GPL-v3
+// A full license can be found at .\LICENSE
+
 import 'dart:math';
 
 /// Bresenham’s line generation algorithm, ported (with minor API differences)

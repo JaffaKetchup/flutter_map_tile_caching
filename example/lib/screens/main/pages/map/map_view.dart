@@ -32,10 +32,7 @@ class MapPage extends StatelessWidget {
             if (!metadata.hasData ||
                 metadata.data == null ||
                 (provider.currentStore != null && metadata.data!.isEmpty)) {
-              return const LoadingIndicator(
-                message:
-                    'Loading Map...\n\nSeeing this screen for a long time?\nThere may be a misconfiguration of the\nstore. Try disabling caching and deleting\n faulty stores.',
-              );
+              return const LoadingIndicator('Preparing Map');
             }
 
             final String urlTemplate =
@@ -73,6 +70,10 @@ class MapPage extends StatelessWidget {
               children: [
                 TileLayer(
                   urlTemplate: urlTemplate,
+                  userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
+                  backgroundColor: const Color(0xFFaad3df),
+                  maxNativeZoom: 20,
+                  panBuffer: 5,
                   tileProvider: provider.currentStore != null
                       ? FMTC.instance(provider.currentStore!).getTileProvider(
                             settings: FMTCTileProviderSettings(
@@ -94,10 +95,6 @@ class MapPage extends StatelessWidget {
                             ),
                           )
                       : NetworkTileProvider(),
-                  maxZoom: 22,
-                  userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
-                  panBuffer: 3,
-                  backgroundColor: const Color(0xFFaad3df),
                 ),
                 Consumer<MapProvider>(
                   builder: (context, mapProvider, _) => CurrentLocationLayer(

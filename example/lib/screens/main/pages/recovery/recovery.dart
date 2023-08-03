@@ -60,7 +60,7 @@ class _RecoveryPageState extends State<RecoveryPage> {
                                 moveToDownloadPage: widget.moveToDownloadPage,
                               )
                         : const LoadingIndicator(
-                            message: 'Loading Recoverable Downloads...',
+                            'Retrieving Recoverable Downloads',
                           ),
                   ),
                 ),

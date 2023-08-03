@@ -92,7 +92,6 @@ class RecoveredRegion {
   DownloadableRegion toDownloadable(
     TileLayer options, {
     Crs crs = const Epsg3857(),
-    Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion._(
         toRegion(rectangle: (r) => r, circle: (c) => c, line: (l) => l),

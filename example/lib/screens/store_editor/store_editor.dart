@@ -74,10 +74,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                           .readAsync,
                   builder: (context, metadata) {
                     if (!metadata.hasData || metadata.data == null) {
-                      return const LoadingIndicator(
-                        message:
-                            'Loading Settings...\n\nSeeing this screen for a long time?\nThere may be a misconfiguration of the\nstore. Try disabling caching and deleting\n faulty stores.',
-                      );
+                      return const LoadingIndicator('Retrieving Settings');
                     }
                     return Form(
                       key: _formKey,
@@ -87,7 +84,6 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                             TextFormField(
                               decoration: const InputDecoration(
                                 labelText: 'Store Name',
-                                helperText: 'Must be valid directory name',
                                 prefixIcon: Icon(Icons.text_fields),
                                 isDense: true,
                               ),
@@ -117,29 +113,33 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                             const SizedBox(height: 5),
                             TextFormField(
                               decoration: const InputDecoration(
-                                labelText: 'Map Source URL (protocol required)',
+                                labelText: 'Map Source URL',
                                 helperText:
-                                    "Use '{x}', '{y}', '{z}' as placeholders. Omit subdomain.",
+                                    "Use '{x}', '{y}', '{z}' as placeholders. Include protocol. Omit subdomain.",
                                 prefixIcon: Icon(Icons.link),
                                 isDense: true,
                               ),
                               onChanged: (i) async {
-                                _httpRequestFailed = await http
-                                    .get(
-                                      Uri.parse(
-                                        NetworkTileProvider().getTileUrl(
-                                          const TileCoordinates(1, 1, 1),
-                                          TileLayer(urlTemplate: i),
-                                        ),
-                                      ),
-                                    )
-                                    .then(
+                                final uri = Uri.tryParse(
+                                  NetworkTileProvider().getTileUrl(
+                                    const TileCoordinates(0, 0, 0),
+                                    TileLayer(urlTemplate: i),
+                                  ),
+                                );
+
+                                if (uri == null) {
+                                  setState(
+                                    () => _httpRequestFailed = 'Invalid URL',
+                                  );
+                                  return;
+                                }
+
+                                _httpRequestFailed = await http.get(uri).then(
                                       (res) => res.statusCode == 200
                                           ? null
                                           : 'HTTP Request Failed',
                                       onError: (_) => 'HTTP Request Failed',
                                     );
-
                                 setState(() {});
                               },
                               validator: (i) {
@@ -174,7 +174,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                             TextFormField(
                               decoration: const InputDecoration(
                                 labelText: 'Valid Cache Duration',
-                                helperText: 'Use 0 days for infinite duration',
+                                helperText: 'Use 0 to disable expiry',
                                 suffixText: 'days',
                                 prefixIcon: Icon(Icons.timelapse),
                                 isDense: true,
@@ -204,8 +204,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                             TextFormField(
                               decoration: const InputDecoration(
                                 labelText: 'Maximum Length',
-                                helperText:
-                                    'Use 0 days for infinite number of tiles',
+                                helperText: 'Use 0 to disable limit',
                                 suffixText: 'tiles',
                                 prefixIcon: Icon(Icons.disc_full),
                                 isDense: true,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
-import 'components/header.dart';
-import 'components/map_view.dart';
+import '../../../../shared/state/general_provider.dart';
+import 'map_view.dart';
 
 class DownloaderPage extends StatefulWidget {
   const DownloaderPage({super.key});
@@ -15,10 +17,36 @@ class _DownloaderPageState extends State<DownloaderPage> {
   Widget build(BuildContext context) => Scaffold(
         body: Column(
           children: [
-            const SafeArea(
+            SafeArea(
               child: Padding(
-                padding: EdgeInsets.all(12),
-                child: Header(),
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Downloader',
+                          style: GoogleFonts.openSans(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
+                        ),
+                        Consumer<GeneralProvider>(
+                          builder: (context, provider, _) => provider
+                                      .currentStore ==
+                                  null
+                              ? const SizedBox.shrink()
+                              : const Text(
+                                  'Existing tiles will appear in red',
+                                  style: TextStyle(fontStyle: FontStyle.italic),
+                                ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             Expanded(

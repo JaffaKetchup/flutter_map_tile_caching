@@ -5,7 +5,6 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
 import '../../shared/state/download_provider.dart';
-import '../../shared/state/general_provider.dart';
 import 'components/region_information.dart';
 import 'components/section_separator.dart';
 import 'components/store_selector.dart';
@@ -14,9 +13,13 @@ class DownloadRegionPopup extends StatefulWidget {
   const DownloadRegionPopup({
     super.key,
     required this.region,
+    required this.minZoom,
+    required this.maxZoom,
   });
 
   final BaseRegion region;
+  final int minZoom;
+  final int maxZoom;
 
   @override
   State<DownloadRegionPopup> createState() => _DownloadRegionPopupState();
@@ -24,18 +27,6 @@ class DownloadRegionPopup extends StatefulWidget {
 
 class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
   bool isReady = false;
-
-  @override
-  void didChangeDependencies() {
-    final String? currentStore =
-        Provider.of<GeneralProvider>(context, listen: false).currentStore;
-    if (currentStore != null) {
-      Provider.of<DownloaderProvider>(context, listen: false)
-          .setSelectedStore(FMTC.instance(currentStore), notify: false);
-    }
-
-    super.didChangeDependencies();
-  }
 
   @override
   Widget build(BuildContext context) => Consumer<DownloaderProvider>(
@@ -147,7 +138,11 @@ class _DownloadRegionPopupState extends State<DownloadRegionPopup> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      RegionInformation(region: widget.region),
+                      RegionInformation(
+                        region: widget.region,
+                        minZoom: widget.minZoom,
+                        maxZoom: widget.maxZoom,
+                      ),
                       const SectionSeparator(),
                       const StoreSelector(),
                       const SectionSeparator(),

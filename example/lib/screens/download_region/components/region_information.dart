@@ -1,18 +1,47 @@
+// ignore_for_file: implementation_imports
+
+import 'dart:math';
+
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:flutter_map_tile_caching/src/bulk_download/tile_loops/custom_polygon_tools/earcut.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:provider/provider.dart';
 
-import '../../../shared/state/download_provider.dart';
-
-class RegionInformation extends StatelessWidget {
+class RegionInformation extends StatefulWidget {
   const RegionInformation({
     super.key,
     required this.region,
+    required this.minZoom,
+    required this.maxZoom,
   });
 
   final BaseRegion region;
+  final int minZoom;
+  final int maxZoom;
+
+  @override
+  State<RegionInformation> createState() => _RegionInformationState();
+}
+
+class _RegionInformationState extends State<RegionInformation> {
+  final distance = const Distance(roundResult: false).distance;
+
+  late Future<int> numOfTiles;
+
+  @override
+  void initState() {
+    super.initState();
+    numOfTiles = FMTC.instance('').download.check(
+          widget.region.toDownloadable(
+            minZoom: widget.minZoom,
+            maxZoom: widget.maxZoom,
+            options: TileLayer(),
+          ),
+        );
+  }
 
   @override
   Widget build(BuildContext context) => Column(
@@ -25,8 +54,17 @@ class RegionInformation extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ...region.when(
+                  ...widget.region.when(
                     rectangle: (rectangle) => [
+                      const Text('TOTAL AREA'),
+                      Text(
+                        '${(distance(rectangle.bounds.northWest, rectangle.bounds.northEast) * distance(rectangle.bounds.northEast, rectangle.bounds.southEast) / 1000000).toStringAsFixed(3)} km²',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       const Text('APPROX. NORTH WEST'),
                       Text(
                         '${rectangle.bounds.northWest.latitude.toStringAsFixed(3)}, ${rectangle.bounds.northWest.longitude.toStringAsFixed(3)}',
@@ -46,9 +84,9 @@ class RegionInformation extends StatelessWidget {
                       ),
                     ],
                     circle: (circle) => [
-                      const Text('APPROX. CENTER'),
+                      const Text('TOTAL AREA'),
                       Text(
-                        '${circle.center.latitude.toStringAsFixed(3)}, ${circle.center.longitude.toStringAsFixed(3)}',
+                        '${(pi * pow(circle.radius, 2)).toStringAsFixed(3)} km²',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 24,
@@ -63,13 +101,22 @@ class RegionInformation extends StatelessWidget {
                           fontSize: 24,
                         ),
                       ),
+                      const SizedBox(height: 10),
+                      const Text('APPROX. CENTER'),
+                      Text(
+                        '${circle.center.latitude.toStringAsFixed(3)}, ${circle.center.longitude.toStringAsFixed(3)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                        ),
+                      ),
                     ],
                     line: (line) {
-                      const distCalc = Distance(roundResult: false);
                       double totalDistance = 0;
+
                       for (int i = 0; i < line.line.length - 1; i++) {
                         totalDistance +=
-                            distCalc.distance(line.line[i], line.line[i + 1]);
+                            distance(line.line[i], line.line[i + 1]);
                       }
 
                       return [
@@ -101,74 +148,77 @@ class RegionInformation extends StatelessWidget {
                         ),
                       ];
                     },
-                    customPolygon: (_) => throw UnimplementedError(),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text('MIN/MAX ZOOM LEVELS'),
-                  Consumer<DownloaderProvider>(
-                    builder: (context, provider, _) =>
-                        provider.regionTiles == null
-                            ? Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: SizedBox(
-                                  height: 36,
-                                  width: 36,
-                                  child: Center(
-                                    child: SizedBox(
-                                      height: 28,
-                                      width: 28,
-                                      child: CircularProgressIndicator(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .secondary,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : Text(
-                                '${provider.minZoom} - ${provider.maxZoom}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 24,
-                                ),
-                              ),
+                    customPolygon: (customPolygon) {
+                      double area = 0;
+
+                      for (final triangle in Earcut.triangulateFromPoints(
+                        customPolygon.outline
+                            .map(const Epsg3857().projection.project),
+                      ).map(customPolygon.outline.elementAt).slices(3)) {
+                        final a = distance(triangle[0], triangle[1]);
+                        final b = distance(triangle[1], triangle[2]);
+                        final c = distance(triangle[2], triangle[0]);
+
+                        area += 0.25 *
+                            sqrt(
+                              4 * a * a * b * b - pow(a * a + b * b - c * c, 2),
+                            );
+                      }
+
+                      return [
+                        const Text('TOTAL AREA'),
+                        Text(
+                          '${(area / 1000000).toStringAsFixed(3)} km²',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
+                        ),
+                      ];
+                    },
                   ),
                 ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  const Text('MIN/MAX ZOOM LEVELS'),
+                  Text(
+                    '${widget.minZoom} - ${widget.maxZoom}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   const Text('TOTAL TILES'),
-                  Consumer<DownloaderProvider>(
-                    builder: (context, provider, _) =>
-                        provider.regionTiles == null
-                            ? Padding(
-                                padding: const EdgeInsets.only(top: 4),
+                  FutureBuilder<int>(
+                    future: numOfTiles,
+                    builder: (context, snapshot) => snapshot.data == null
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: SizedBox(
+                              height: 36,
+                              width: 36,
+                              child: Center(
                                 child: SizedBox(
-                                  height: 36,
-                                  width: 36,
-                                  child: Center(
-                                    child: SizedBox(
-                                      height: 28,
-                                      width: 28,
-                                      child: CircularProgressIndicator(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .secondary,
-                                      ),
-                                    ),
+                                  height: 28,
+                                  width: 28,
+                                  child: CircularProgressIndicator(
+                                    color:
+                                        Theme.of(context).colorScheme.secondary,
                                   ),
                                 ),
-                              )
-                            : Text(
-                                NumberFormat('###,###')
-                                    .format(provider.regionTiles),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 24,
-                                ),
                               ),
+                            ),
+                          )
+                        : Text(
+                            NumberFormat('###,###').format(snapshot.data),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 24,
+                            ),
+                          ),
                   ),
                 ],
               ),

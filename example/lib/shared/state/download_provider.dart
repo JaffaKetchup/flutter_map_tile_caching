@@ -48,6 +48,12 @@ class DownloaderProvider extends ChangeNotifier {
     return _coordinates;
   }
 
+  List<LatLng> addCoordinates(Iterable<LatLng> coords) {
+    _coordinates.addAll(coords);
+    notifyListeners();
+    return _coordinates;
+  }
+
   void clearCoordinates() {
     _coordinates.clear();
     _region = null;
@@ -81,26 +87,10 @@ class DownloaderProvider extends ChangeNotifier {
       _coordinates.length >= 2 &&
       _coordinates.first == _coordinates.last;
 
-  // OLD
-
-  double _lineRegionRadius = 1000;
-  double get lineRegionRadius => _lineRegionRadius;
-  set lineRegionRadius(double newNum) {
-    _lineRegionRadius = newNum;
-    notifyListeners();
-  }
-
-  List<LatLng> _lineRegionPoints = [];
-  List<LatLng> get lineRegionPoints => _lineRegionPoints;
-  set lineRegionPoints(List<LatLng> newList) {
-    _lineRegionPoints = newList;
-    notifyListeners();
-  }
-
-  int? _regionTiles;
-  int? get regionTiles => _regionTiles;
-  set regionTiles(int? newNum) {
-    _regionTiles = newNum;
+  bool _openAdjustZoomLevelsSlider = false;
+  bool get openAdjustZoomLevelsSlider => _openAdjustZoomLevelsSlider;
+  set openAdjustZoomLevelsSlider(bool newState) {
+    _openAdjustZoomLevelsSlider = newState;
     notifyListeners();
   }
 
@@ -118,18 +108,14 @@ class DownloaderProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // OLD
+
   StoreDirectory? _selectedStore;
   StoreDirectory? get selectedStore => _selectedStore;
   void setSelectedStore(StoreDirectory? newStore, {bool notify = true}) {
     _selectedStore = newStore;
     if (notify) notifyListeners();
   }
-
-  final StreamController<void> _manualPolygonRecalcTrigger =
-      StreamController.broadcast();
-  StreamController<void> get manualPolygonRecalcTrigger =>
-      _manualPolygonRecalcTrigger;
-  void triggerManualPolygonRecalc() => _manualPolygonRecalcTrigger.add(null);
 
   Stream<DownloadProgress>? _downloadProgress;
   Stream<DownloadProgress>? get downloadProgress => _downloadProgress;

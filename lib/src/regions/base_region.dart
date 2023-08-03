@@ -68,7 +68,6 @@ sealed class BaseRegion {
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),
-    void Function(Object?)? errorHandler,
   });
 
   /// Generate a graphical layer to be placed in a [FlutterMap]

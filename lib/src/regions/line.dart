@@ -80,7 +80,6 @@ class LineRegion extends BaseRegion {
     int start = 0,
     int? end,
     Crs crs = const Epsg3857(),
-    void Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion._(
         this,
