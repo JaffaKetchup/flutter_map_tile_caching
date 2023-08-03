@@ -251,18 +251,16 @@ class TilesGenerator {
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
         zoomLvl++) {
-      final tiles = <Point<int>>{};
+      final allOutlineTiles = <Point<int>>{};
 
       for (final triangle in Earcut.triangulateFromPoints(
         customPolygonOutline.map(region.crs.projection.project),
       ).map(customPolygonOutline.elementAt).slices(3)) {
-        final outlineTiles = <Point<int>>{};
-
         final vertex1 = region.crs.latLngToPoint(triangle[0], zoomLvl).round();
         final vertex2 = region.crs.latLngToPoint(triangle[1], zoomLvl).round();
         final vertex3 = region.crs.latLngToPoint(triangle[2], zoomLvl).round();
 
-        outlineTiles.addAll([
+        final outlineTiles = {
           ...bresenhamsLGA(
             Point(vertex1.x, vertex1.y),
             Point(vertex2.x, vertex2.y),
@@ -278,9 +276,8 @@ class TilesGenerator {
             Point(vertex1.x, vertex1.y),
             unscaleBy: region.options.tileSize,
           ),
-        ]);
-
-        tiles.addAll(outlineTiles);
+        };
+        allOutlineTiles.addAll(outlineTiles);
 
         final byY = <int, Set<int>>{};
         for (final Point(:x, :y) in outlineTiles) {
@@ -288,15 +285,26 @@ class TilesGenerator {
         }
 
         for (final MapEntry(key: y, value: xs) in byY.entries) {
-          for (int x = xs.min + 1; x < xs.max; x++) {
-            tiles.add(Point(x, y));
+          final xsRawMin = xs.min;
+          int i = 0;
+          for (; xs.contains(xsRawMin + i); i++) {}
+          final xsMin = xsRawMin + i;
+
+          final xsRawMax = xs.max;
+          i = 0;
+          for (; xs.contains(xsRawMax - i); i++) {}
+          final xsMax = xsRawMax - i;
+
+          for (int x = xsMin; x <= xsMax; x++) {
+            await requestQueue.next;
+            input.sendPort.send((x, y, zoomLvl.toInt()));
           }
         }
+      }
 
-        for (final tile in tiles) {
-          await requestQueue.next;
-          input.sendPort.send((tile.x, tile.y, zoomLvl.toInt()));
-        }
+      for (final Point(:x, :y) in allOutlineTiles) {
+        await requestQueue.next;
+        input.sendPort.send((x, y, zoomLvl.toInt()));
       }
     }
 

@@ -73,7 +73,7 @@ Future<void> _downloadManager(
       rectangle: (_) => TilesGenerator.rectangleTiles,
       circle: (_) => TilesGenerator.circleTiles,
       line: (_) => TilesGenerator.lineTiles,
-      customPolygon: (_) => throw UnimplementedError(),
+      customPolygon: (_) => TilesGenerator.customPolygonTiles,
     ),
     (sendPort: tileRecievePort.sendPort, region: input.region),
     onExit: tileRecievePort.sendPort,
@@ -96,11 +96,6 @@ Future<void> _downloadManager(
   );
   final requestTilePort = await tileQueue.next as SendPort;
 
-  // Setup two-way communications with root
-  final rootRecievePort = ReceivePort();
-  void send(Object? m) => input.sendPort.send(m);
-  send(rootRecievePort.sendPort);
-
   // Start progress tracking
   final initialDownloadProgress = DownloadProgress._initial(maxTiles: maxTiles);
   var lastDownloadProgress = initialDownloadProgress;
@@ -122,6 +117,10 @@ Future<void> _downloadManager(
         (tps * tpsSmoothingFactor).ceil().clamp(1, 1000);
     return tps;
   }
+
+  // Setup two-way communications with root
+  final rootRecievePort = ReceivePort();
+  void send(Object? m) => input.sendPort.send(m);
 
   // Setup cancel, pause, and resume handling
   List<Completer<void>> generateThreadPausedStates() => List.generate(
@@ -171,6 +170,9 @@ Future<void> _downloadManager(
             }
           },
         );
+
+  // Now it's safe, start accepting communications from the root
+  send(rootRecievePort.sendPort);
 
   // Start download threads & wait for download to complete/cancelled
   downloadDuration.start();

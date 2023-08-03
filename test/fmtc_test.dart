@@ -3,30 +3,66 @@
 
 // ignore_for_file: avoid_print
 
+import 'dart:isolate';
+
 import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:flutter_map_tile_caching/src/bulk_download/tile_loops/custom_polygon_tools/earcut.dart';
 import 'package:flutter_map_tile_caching/src/bulk_download/tile_loops/shared.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('Test Region Tile Generation', () {
+  Future<int> countByGenerator(DownloadableRegion<BaseRegion> region) async {
+    final tileRecievePort = ReceivePort();
+    final tileIsolate = await Isolate.spawn(
+      region.when(
+        rectangle: (_) => TilesGenerator.rectangleTiles,
+        circle: (_) => TilesGenerator.circleTiles,
+        line: (_) => TilesGenerator.lineTiles,
+        customPolygon: (_) => TilesGenerator.customPolygonTiles,
+      ),
+      (sendPort: tileRecievePort.sendPort, region: region),
+      onExit: tileRecievePort.sendPort,
+      debugName: '[FMTC] Tile Coords Generator Thread',
+    );
+    late final SendPort requestTilePort;
+
+    int evts = -1;
+
+    await for (final evt in tileRecievePort) {
+      if (evt == null) break;
+      if (evt is SendPort) requestTilePort = evt;
+      requestTilePort.send(null);
+      evts++;
+    }
+
+    tileIsolate.kill(priority: Isolate.immediate);
+    tileRecievePort.close();
+
+    return evts;
+  }
+
+  group('Rectangle Region', () {
     final rectRegion =
-        RectangleRegion(LatLngBounds(const LatLng(-2, -2), const LatLng(2, 2)))
-            .toDownloadable(minZoom: 1, maxZoom: 18, options: TileLayer());
+        RectangleRegion(LatLngBounds(const LatLng(-1, -1), const LatLng(1, 1)))
+            .toDownloadable(minZoom: 1, maxZoom: 15, options: TileLayer());
 
     test(
-      'Rectangle Region Count',
-      () => expect(TilesCounter.rectangleTiles(rectRegion), 11329252),
+      'Count By Counter',
+      () => expect(TilesCounter.rectangleTiles(rectRegion), 45240),
     );
 
     test(
-      'Rectangle Region Duration',
+      'Count By Generator',
+      () async => expect(await countByGenerator(rectRegion), 45240),
+    );
+
+    test(
+      'Counter Duration',
       () => print(
         '${List.generate(
-          1000,
+          2000,
           (index) {
             final clock = Stopwatch()..start();
             TilesCounter.rectangleTiles(rectRegion);
@@ -38,19 +74,36 @@ void main() {
       ),
     );
 
-    final circleRegion = CircleRegion(const LatLng(0, 0), 1000)
-        .toDownloadable(minZoom: 1, maxZoom: 18, options: TileLayer());
+    test(
+      'Generator Duration',
+      () async {
+        final clock = Stopwatch()..start();
+        await countByGenerator(rectRegion);
+        clock.stop();
+        print('${clock.elapsedMilliseconds / 1000} s');
+      },
+    );
+  });
+
+  group('Circle Region', () {
+    final circleRegion = CircleRegion(const LatLng(0, 0), 200)
+        .toDownloadable(minZoom: 1, maxZoom: 15, options: TileLayer());
 
     test(
-      'Circle Region Count',
-      () => expect(TilesCounter.circleTiles(circleRegion), 2989468),
+      'Count By Counter',
+      () => expect(TilesCounter.circleTiles(circleRegion), 61564),
     );
 
     test(
-      'Circle Region Duration',
+      'Count By Generator',
+      () async => expect(await countByGenerator(circleRegion), 61564),
+    );
+
+    test(
+      'Counter Duration',
       () => print(
         '${List.generate(
-          1000,
+          500,
           (index) {
             final clock = Stopwatch()..start();
             TilesCounter.circleTiles(circleRegion);
@@ -62,20 +115,37 @@ void main() {
       ),
     );
 
+    test(
+      'Generator Duration',
+      () async {
+        final clock = Stopwatch()..start();
+        await countByGenerator(circleRegion);
+        clock.stop();
+        print('${clock.elapsedMilliseconds / 1000} s');
+      },
+    );
+  });
+
+  group('Line Region', () {
     final lineRegion =
-        LineRegion([const LatLng(-1, -1), const LatLng(1, 1)], 100)
-            .toDownloadable(minZoom: 1, maxZoom: 16, options: TileLayer());
+        LineRegion([const LatLng(-1, -1), const LatLng(1, 1)], 5000)
+            .toDownloadable(minZoom: 1, maxZoom: 15, options: TileLayer());
 
     test(
-      'Line Region Count',
-      () => expect(TilesCounter.lineTiles(lineRegion), 2936),
+      'Count By Counter',
+      () => expect(TilesCounter.lineTiles(lineRegion), 3131),
     );
 
     test(
-      'Line Region Duration',
+      'Count By Generator',
+      () async => expect(await countByGenerator(lineRegion), 3131),
+    );
+
+    test(
+      'Counter Duration',
       () => print(
         '${List.generate(
-          100,
+          300,
           (index) {
             final clock = Stopwatch()..start();
             TilesCounter.lineTiles(lineRegion);
@@ -87,6 +157,18 @@ void main() {
       ),
     );
 
+    test(
+      'Generator Duration',
+      () async {
+        final clock = Stopwatch()..start();
+        await countByGenerator(lineRegion);
+        clock.stop();
+        print('${clock.elapsedMilliseconds / 1000} s');
+      },
+    );
+  });
+
+  group('Custom Polygon Region', () {
     final customPolygonRegion = CustomPolygonRegion([
       const LatLng(51.45818683312154, -0.9674646220840917),
       const LatLng(51.55859639937614, -0.9185366064186982),
@@ -94,18 +176,23 @@ void main() {
       const LatLng(51.56029831737391, -0.5322770067805148),
       const LatLng(51.235701626195365, -0.5746290119276093),
       const LatLng(51.38781341753136, -0.6779891095601829),
-    ]).toDownloadable(minZoom: 1, maxZoom: 18, options: TileLayer());
+    ]).toDownloadable(minZoom: 1, maxZoom: 17, options: TileLayer());
 
     test(
-      'Custom Polygon Region Count',
-      () => expect(TilesCounter.customPolygonTiles(customPolygonRegion), 62234),
+      'Count By Counter',
+      () => expect(TilesCounter.customPolygonTiles(customPolygonRegion), 15961),
     );
 
     test(
-      'Custom Polygon Region Duration',
+      'Count By Generator',
+      () async => expect(await countByGenerator(customPolygonRegion), 15961),
+    );
+
+    test(
+      'Counter Duration',
       () => print(
         '${List.generate(
-          100,
+          500,
           (index) {
             final clock = Stopwatch()..start();
             TilesCounter.customPolygonTiles(customPolygonRegion);
@@ -116,83 +203,15 @@ void main() {
         ).average} ms',
       ),
     );
-  });
-
-  group('Test Earcutting Triangulation', () {
-    test(
-      'Simple Triangle',
-      () => expect(Earcut.triangulateRaw([0, 0, 0, 50, 50, 00]), [1, 0, 2]),
-    );
 
     test(
-      'Complex Triangle',
-      () => expect(
-        Earcut.triangulateRaw([0, 0, 0, 25, 0, 50, 25, 25, 50, 0, 25, 0]),
-        [1, 0, 5, 5, 4, 3, 3, 2, 1, 1, 5, 3],
-      ),
-    );
-
-    test(
-      'L Shape',
-      () => expect(
-        Earcut.triangulateRaw([0, 0, 10, 0, 10, 5, 5, 5, 5, 15, 0, 15]),
-        [4, 5, 0, 0, 1, 2, 3, 4, 0, 0, 2, 3],
-      ),
-    );
-
-    test(
-      'Simple Polygon',
-      () => expect(
-        Earcut.triangulateRaw([10, 0, 0, 50, 60, 60, 70, 10]),
-        [1, 0, 3, 3, 2, 1],
-      ),
-    );
-
-    test(
-      'Polygon With Hole',
-      () => expect(
-        Earcut.triangulateRaw(
-          [0, 0, 100, 0, 100, 100, 0, 100, 20, 20, 80, 20, 80, 80, 20, 80],
-          holeIndices: [4],
-        ),
-        [
-          3,
-          0,
-          4,
-          5,
-          4,
-          0,
-          3,
-          4,
-          7,
-          5,
-          0,
-          1,
-          2,
-          3,
-          7,
-          6,
-          5,
-          1,
-          2,
-          7,
-          6,
-          6,
-          1,
-          2
-        ],
-      ),
-    );
-
-    test(
-      'Polygon With 3D Coords',
-      () => expect(
-        Earcut.triangulateRaw(
-          [10, 0, 1, 0, 50, 2, 60, 60, 3, 70, 10, 4],
-          dimensions: 3,
-        ),
-        [1, 0, 3, 3, 2, 1],
-      ),
+      'Generator Duration',
+      () async {
+        final clock = Stopwatch()..start();
+        await countByGenerator(customPolygonRegion);
+        clock.stop();
+        print('${clock.elapsedMilliseconds / 1000} s');
+      },
     );
   });
 }

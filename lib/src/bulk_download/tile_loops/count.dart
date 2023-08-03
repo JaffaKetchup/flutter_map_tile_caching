@@ -224,25 +224,23 @@ class TilesCounter {
   static int customPolygonTiles(DownloadableRegion region) {
     region as DownloadableRegion<CustomPolygonRegion>;
 
-    final customPolygonOutline = region.originalRegion.toOutline();
+    final customPolygonOutline = region.originalRegion.outline;
 
     int numberOfTiles = 0;
 
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
         zoomLvl++) {
-      final tiles = <Point<int>>{};
+      final allOutlineTiles = <Point<int>>{};
 
       for (final triangle in Earcut.triangulateFromPoints(
         customPolygonOutline.map(region.crs.projection.project),
       ).map(customPolygonOutline.elementAt).slices(3)) {
-        final outlineTiles = <Point<int>>{};
-
         final vertex1 = region.crs.latLngToPoint(triangle[0], zoomLvl).round();
         final vertex2 = region.crs.latLngToPoint(triangle[1], zoomLvl).round();
         final vertex3 = region.crs.latLngToPoint(triangle[2], zoomLvl).round();
 
-        outlineTiles.addAll([
+        final outlineTiles = {
           ...bresenhamsLGA(
             Point(vertex1.x, vertex1.y),
             Point(vertex2.x, vertex2.y),
@@ -258,23 +256,30 @@ class TilesCounter {
             Point(vertex1.x, vertex1.y),
             unscaleBy: region.options.tileSize,
           ),
-        ]);
-
-        tiles.addAll(outlineTiles);
+        };
+        allOutlineTiles.addAll(outlineTiles);
 
         final byY = <int, Set<int>>{};
         for (final Point(:x, :y) in outlineTiles) {
           (byY[y] ?? (byY[y] = {})).add(x);
         }
 
-        for (final MapEntry(key: y, value: xs) in byY.entries) {
-          for (int x = xs.min + 1; x < xs.max; x++) {
-            tiles.add(Point(x, y));
-          }
+        for (final xs in byY.values) {
+          final xsRawMin = xs.min;
+          int i = 0;
+          for (; xs.contains(xsRawMin + i); i++) {}
+          final xsMin = xsRawMin + i;
+
+          final xsRawMax = xs.max;
+          i = 0;
+          for (; xs.contains(xsRawMax - i); i++) {}
+          final xsMax = xsRawMax - i;
+
+          if (xsMin <= xsMax) numberOfTiles += (xsMax - xsMin) + 1;
         }
       }
 
-      numberOfTiles += tiles.length;
+      numberOfTiles += allOutlineTiles.length;
     }
 
     return numberOfTiles;
