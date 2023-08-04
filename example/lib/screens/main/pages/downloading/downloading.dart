@@ -53,7 +53,8 @@ class _DownloadingPageState extends State<DownloadingPage>
                   child: StreamBuilder<DownloadProgress>(
                     stream: context
                         .select<DownloadingProvider, Stream<DownloadProgress>?>(
-                            (provider) => provider.downloadProgress,),
+                      (provider) => provider.downloadProgress,
+                    ),
                     builder: (context, snapshot) {
                       if (snapshot.data == null) {
                         return const Center(
