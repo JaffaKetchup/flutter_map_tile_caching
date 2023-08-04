@@ -42,13 +42,11 @@ class RootRecovery {
               center: r.type == RegionType.circle
                   ? LatLng(r.centerLat!, r.centerLng!)
                   : null,
-              line: r.type == RegionType.line
+              line: r.type == RegionType.line ||
+                      r.type == RegionType.customPolygon
                   ? List.generate(
                       r.linePointsLat!.length,
-                      (i) => LatLng(
-                        r.linePointsLat![i],
-                        r.linePointsLng![i],
-                      ),
+                      (i) => LatLng(r.linePointsLat![i], r.linePointsLng![i]),
                     )
                   : null,
               radius: r.type != RegionType.rectangle
@@ -100,7 +98,7 @@ class RootRecovery {
             rectangle: (_) => RegionType.rectangle,
             circle: (_) => RegionType.circle,
             line: (_) => RegionType.line,
-            customPolygon: (_) => throw UnimplementedError(),
+            customPolygon: (_) => RegionType.customPolygon,
           ),
           minZoom: region.minZoom,
           maxZoom: region.maxZoom,
@@ -141,13 +139,23 @@ class RootRecovery {
                   .line
                   .map((c) => c.latitude)
                   .toList()
-              : null,
+              : region.originalRegion is CustomPolygonRegion
+                  ? (region.originalRegion as CustomPolygonRegion)
+                      .outline
+                      .map((c) => c.latitude)
+                      .toList()
+                  : null,
           linePointsLng: region.originalRegion is LineRegion
               ? (region.originalRegion as LineRegion)
                   .line
                   .map((c) => c.longitude)
                   .toList()
-              : null,
+              : region.originalRegion is CustomPolygonRegion
+                  ? (region.originalRegion as CustomPolygonRegion)
+                      .outline
+                      .map((c) => c.longitude)
+                      .toList()
+                  : null,
           circleRadius: region.originalRegion is CircleRegion
               ? (region.originalRegion as CircleRegion).radius
               : null,

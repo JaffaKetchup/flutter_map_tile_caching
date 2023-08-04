@@ -18,13 +18,14 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 * Migrated to Flutter 3.10 and Dart 3
 * Migrated to flutter_map v5
-* Added support for Isar v4 (bug fixes & stability improvements)
+* Migrated to Isar v4 (bug fixes & stability improvements)
 * Bulk downloading reimplementation
-  * Improved developer experience by re-organizing scope of `DownloadableRegion`s and `startForeground`
-  * Improved download speed significantly
-  * Added pause and resume functionality (to accompany existing cancel functionality)
-  * Added support for rate limiting
+  * Added `CustomPolygonRegion`, a `BaseRegion` that is formed of any* outline
+  * Added pause and resume functionality
+  * Added rate limiting functionality
   * Added support for multiple simultaneous downloads
+  * Improved developer experience by refactoring `DownloadableRegion` and `startForeground`
+  * Improved download speed significantly
   * Fixed instability and bugs when cancelling buffering downloads
   * Fixed generation of `LineRegion` tiles by reducing number of redundant duplicate tiles
   * Fixed usage of `obscuredQueryParams`

@@ -5,16 +5,19 @@ part of flutter_map_tile_caching;
 
 /// Statistics and information about the current progress of the download
 ///
+/// Note that there a number of things to keep in mind when tracking the progress
+/// of a download. See https://fmtc.jaffaketchup.dev/bulk-downloading/foreground
+/// for more information.
+///
 /// See the documentation on each individual property for more information.
 @immutable
 class DownloadProgress {
   /// The result of the latest attempted tile
   ///
-  /// May be used for UI display, error handling, or debugging purposes.
-  ///
-  /// It is not recommended to construct or keep a list of all these results, as
-  /// that may consume memory in large quanities. Instead, prefer counting events
-  /// that are of importance only.
+  /// Note that there a number of things to keep in mind when tracking the
+  /// progress of a download. See
+  /// https://fmtc.jaffaketchup.dev/bulk-downloading/foreground for more
+  /// information.
   TileEvent get latestTileEvent => _latestTileEvent!;
   final TileEvent? _latestTileEvent;
 

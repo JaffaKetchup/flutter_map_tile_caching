@@ -127,18 +127,19 @@ void main() {
   });
 
   group('Line Region', () {
-    final lineRegion =
-        LineRegion([const LatLng(-1, -1), const LatLng(1, 1)], 5000)
-            .toDownloadable(minZoom: 1, maxZoom: 15, options: TileLayer());
+    final lineRegion = LineRegion(
+      [const LatLng(-1, -1), const LatLng(1, 1), const LatLng(1, -1)],
+      5000,
+    ).toDownloadable(minZoom: 1, maxZoom: 15, options: TileLayer());
 
     test(
       'Count By Counter',
-      () => expect(TilesCounter.lineTiles(lineRegion), 3131),
+      () => expect(TilesCounter.lineTiles(lineRegion), 5040),
     );
 
     test(
       'Count By Generator',
-      () async => expect(await countByGenerator(lineRegion), 3131),
+      () async => expect(await countByGenerator(lineRegion), 5040),
     );
 
     test(

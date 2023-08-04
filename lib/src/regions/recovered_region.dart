@@ -39,7 +39,8 @@ class RecoveredRegion {
   /// The bounds for a rectangular region
   final LatLngBounds? bounds;
 
-  /// The line making a line-based region
+  /// The line making a line-based region or the outline making a custom polygon
+  /// region
   final List<LatLng>? line;
 
   /// The center of a circular region
@@ -81,11 +82,14 @@ class RecoveredRegion {
     required T Function(RectangleRegion rectangle) rectangle,
     required T Function(CircleRegion circle) circle,
     required T Function(LineRegion line) line,
+    required T Function(CustomPolygonRegion customPolygon) customPolygon,
   }) =>
       switch (_type) {
         RegionType.rectangle => rectangle(RectangleRegion(bounds!)),
         RegionType.circle => circle(CircleRegion(center!, radius!)),
         RegionType.line => line(LineRegion(this.line!, radius!)),
+        RegionType.customPolygon =>
+          customPolygon(CustomPolygonRegion(this.line!)),
       };
 
   /// Convert this region into a [DownloadableRegion]
@@ -94,7 +98,12 @@ class RecoveredRegion {
     Crs crs = const Epsg3857(),
   }) =>
       DownloadableRegion._(
-        toRegion(rectangle: (r) => r, circle: (c) => c, line: (l) => l),
+        toRegion(
+          rectangle: (r) => r,
+          circle: (c) => c,
+          line: (l) => l,
+          customPolygon: (p) => p,
+        ),
         minZoom: minZoom,
         maxZoom: maxZoom,
         options: options,

@@ -7,7 +7,7 @@ import 'package:meta/meta.dart';
 part 'recovery.g.dart';
 
 @internal
-enum RegionType { rectangle, circle, line }
+enum RegionType { rectangle, circle, line, customPolygon }
 
 @internal
 @Collection(accessor: 'recovery')

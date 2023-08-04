@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
+import '../../../../../shared/misc/circular_buffer.dart';
+
 class DownloadingProvider extends ChangeNotifier {
   Stream<DownloadProgress>? _downloadProgress;
   Stream<DownloadProgress>? get downloadProgress => _downloadProgress;
@@ -57,4 +59,8 @@ class DownloadingProvider extends ChangeNotifier {
   final List<TileEvent> _failedTiles = [];
   List<TileEvent> get failedTiles => _failedTiles;
   void addFailedTile(TileEvent e) => _failedTiles.add(e);
+
+  final CircularBuffer<TileEvent> _skippedTiles = CircularBuffer(50);
+  CircularBuffer<TileEvent> get skippedTiles => _skippedTiles;
+  void addSkippedTile(TileEvent e) => _skippedTiles.add(e);
 }

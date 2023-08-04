@@ -38,8 +38,7 @@ class DownloadManagement {
   ///
   /// Streams a [DownloadProgress] object containing statistics and information
   /// about the download's progression status, once per tile and at intervals
-  /// of no longer than [maxReportInterval] (after the first tile). This must be
-  /// listened to, otherwise the download will not start.
+  /// of no longer than [maxReportInterval] (after the first tile).
   ///
   /// ---
   ///
@@ -54,8 +53,7 @@ class DownloadManagement {
   /// - [skipExistingTiles] (defaults to `true`): whether to skip downloading
   /// tiles that are already cached
   /// - [skipSeaTiles] (defaults to `true`): whether to skip caching tiles that
-  /// are entirely sea (this is decided based on a comparison to the tile at
-  /// x0y0z17)
+  /// are entirely sea (based on a comparison to the tile at x0,y0,z17)
   ///
   /// Using too many parallel threads may place significant strain on the tile
   /// server, so check your tile server's ToS for more information.
@@ -64,6 +62,9 @@ class DownloadManagement {
   /// app closure, [cancel] is safe) will result in losing the tiles that are
   /// currently in the buffer. It will also increase the memory (RAM) required.
   /// The output stream's statistics do not account for buffering.
+  ///
+  /// Note that skipping sea tiles will not reduce the number of downloads -
+  /// tiles must be downloaded to be compared against the sample sea tile.
   ///
   /// ---
   ///

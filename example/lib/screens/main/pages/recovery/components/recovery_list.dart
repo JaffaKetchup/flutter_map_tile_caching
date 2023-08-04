@@ -33,9 +33,10 @@ class _RecoveryListState extends State<RecoveryList> {
                 isFailed.data != null
                     ? Icons.warning
                     : region.toRegion(
-                        rectangle: (_) => Icons.rectangle_outlined,
+                        rectangle: (_) => Icons.square_outlined,
                         circle: (_) => Icons.circle_outlined,
-                        line: (_) => Icons.timeline,
+                        line: (_) => Icons.polyline_outlined,
+                        customPolygon: (_) => Icons.pentagon_outlined,
                       ),
                 color: isFailed.data != null ? Colors.red : null,
               ),
@@ -45,6 +46,7 @@ class _RecoveryListState extends State<RecoveryList> {
                 rectangle: (_) => 'Rectangle',
                 circle: (_) => 'Circle',
                 line: (_) => 'Line',
+                customPolygon: (_) => 'Custom Polygon',
               )} Type',
             ),
             subtitle: FutureBuilder<Place>(

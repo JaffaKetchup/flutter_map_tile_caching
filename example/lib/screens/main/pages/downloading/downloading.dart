@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,6 +18,35 @@ class DownloadingPage extends StatefulWidget {
 
 class _DownloadingPageState extends State<DownloadingPage>
     with AutomaticKeepAliveClientMixin {
+  StreamSubscription<DownloadProgress>? downloadProgressStreamSubscription;
+
+  @override
+  void didChangeDependencies() {
+    final provider = context.read<DownloadingProvider>();
+
+    downloadProgressStreamSubscription?.cancel();
+    downloadProgressStreamSubscription =
+        provider.downloadProgress!.listen((event) {
+      final latestTileEvent = event.latestTileEvent;
+      if (latestTileEvent.isRepeat) return;
+
+      if (latestTileEvent.result.category == TileEventResultCategory.failed) {
+        provider.addFailedTile(latestTileEvent);
+      }
+      if (latestTileEvent.result.category == TileEventResultCategory.skipped) {
+        provider.addSkippedTile(latestTileEvent);
+      }
+    });
+
+    super.didChangeDependencies();
+  }
+
+  @override
+  void dispose() {
+    downloadProgressStreamSubscription?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -73,16 +104,6 @@ class _DownloadingPageState extends State<DownloadingPage>
                             ],
                           ),
                         );
-                      }
-
-                      final latestTileEvent = snapshot.data!.latestTileEvent;
-
-                      if (latestTileEvent.result.category ==
-                              TileEventResultCategory.failed &&
-                          !latestTileEvent.isRepeat) {
-                        context
-                            .read<DownloadingProvider>()
-                            .addFailedTile(latestTileEvent);
                       }
 
                       return DownloadLayout(

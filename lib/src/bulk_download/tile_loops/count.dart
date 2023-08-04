@@ -261,7 +261,7 @@ class TilesCounter {
 
         final byY = <int, Set<int>>{};
         for (final Point(:x, :y) in outlineTiles) {
-          (byY[y] ?? (byY[y] = {})).add(x);
+          (byY[y] ??= {}).add(x);
         }
 
         for (final xs in byY.values) {

@@ -281,7 +281,7 @@ class TilesGenerator {
 
         final byY = <int, Set<int>>{};
         for (final Point(:x, :y) in outlineTiles) {
-          (byY[y] ?? (byY[y] = {})).add(x);
+          (byY[y] ??= {}).add(x);
         }
 
         for (final MapEntry(key: y, value: xs) in byY.entries) {

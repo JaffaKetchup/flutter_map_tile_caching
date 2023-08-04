@@ -29,7 +29,7 @@ class DownloadLayout extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: SizedBox.square(
-                      dimension: 256,
+                      dimension: 216,
                       child: download.latestTileEvent.tileImage != null
                           ? Image.memory(
                               download.latestTileEvent.tileImage!,
@@ -220,7 +220,7 @@ class DownloadLayout extends StatelessWidget {
                                 subtitle: Text(
                                   switch (failedTiles[index].result) {
                                     TileEventResult.noConnectionDuringFetch =>
-                                      'Failed to establish a connection to the network. Check your Internet connection!',
+                                      'Failed to establish a connection to the network',
                                     TileEventResult.unknownFetchException =>
                                       'There was an unknown error when trying to download this tile, of type ${failedTiles[index].fetchError.runtimeType}',
                                     TileEventResult.negativeFetchResponse =>
@@ -230,6 +230,60 @@ class DownloadLayout extends StatelessWidget {
                                 ),
                               ),
                             ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                RotatedBox(
+                  quarterTurns: 3,
+                  child: Text(
+                    'SKIPPED TILES',
+                    style: GoogleFonts.ubuntu(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: RepaintBoundary(
+                    child: Selector<DownloadingProvider, List<TileEvent>>(
+                      selector: (context, provider) => provider.skippedTiles,
+                      builder: (context, skippedTiles, _) =>
+                          skippedTiles.isEmpty
+                              ? const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.task_alt, size: 48),
+                                    SizedBox(height: 10),
+                                    Text('Any skipped tiles will appear here'),
+                                  ],
+                                )
+                              : ListView.builder(
+                                  reverse: true,
+                                  addRepaintBoundaries: false,
+                                  itemCount: skippedTiles.length,
+                                  itemBuilder: (context, index) => ListTile(
+                                    leading: Icon(
+                                      switch (skippedTiles[index].result) {
+                                        TileEventResult.alreadyExisting =>
+                                          Icons.disabled_visible,
+                                        TileEventResult.isSeaTile =>
+                                          Icons.water_drop,
+                                        _ => Icons.abc,
+                                      },
+                                    ),
+                                    title: Text(skippedTiles[index].url),
+                                    subtitle: Text(
+                                      switch (skippedTiles[index].result) {
+                                        TileEventResult.alreadyExisting =>
+                                          'Tile already exists',
+                                        TileEventResult.isSeaTile =>
+                                          'Tile is a sea tile',
+                                        _ => throw Error(),
+                                      },
+                                    ),
+                                  ),
+                                ),
                     ),
                   ),
                 ),
