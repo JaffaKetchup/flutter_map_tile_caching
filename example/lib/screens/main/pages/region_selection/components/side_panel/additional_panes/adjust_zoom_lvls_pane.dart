@@ -9,7 +9,7 @@ class AdjustZoomLvlsPane extends StatelessWidget {
   final Axis layoutDirection;
 
   @override
-  Widget build(BuildContext context) => Consumer<DownloaderProvider>(
+  Widget build(BuildContext context) => Consumer<RegionSelectionProvider>(
         builder: (context, provider, _) => Flex(
           direction: layoutDirection,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -37,11 +37,11 @@ class AdjustZoomLvlsPane extends StatelessWidget {
                       ),
                       onChanged: (v) {
                         provider
-                          ..minZoom = v.start.toInt()
-                          ..maxZoom = v.end.toInt();
+                          ..minZoom = v.start.round()
+                          ..maxZoom = v.end.round();
                       },
                       max: 22,
-                      divisions: 23,
+                      divisions: 22,
                     ),
                   ),
                 ),

@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../../shared/misc/region_selection_method.dart';
 import '../../../../../shared/misc/region_type.dart';
-import '../../../../../shared/state/download_provider.dart';
+import '../state/region_selection_provider.dart';
 
 class UsageInstructions extends StatelessWidget {
   UsageInstructions({
@@ -36,7 +36,7 @@ class UsageInstructions extends StatelessWidget {
                   fontSize: 20,
                   color: Colors.white,
                 ),
-                child: Consumer<DownloaderProvider>(
+                child: Consumer<RegionSelectionProvider>(
                   builder: (context, provider, _) => AnimatedOpacity(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeInOut,

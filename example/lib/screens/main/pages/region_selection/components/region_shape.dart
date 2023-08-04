@@ -6,7 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../shared/misc/region_type.dart';
-import '../../../../../shared/state/download_provider.dart';
+import '../state/region_selection_provider.dart';
 
 class RegionShape extends StatelessWidget {
   const RegionShape({
@@ -14,7 +14,7 @@ class RegionShape extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Consumer<DownloaderProvider>(
+  Widget build(BuildContext context) => Consumer<RegionSelectionProvider>(
         builder: (context, provider, _) {
           if (provider.regionType == RegionType.line) {
             if (provider.coordinates.isEmpty) return const SizedBox.shrink();

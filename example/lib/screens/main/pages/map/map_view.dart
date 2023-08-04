@@ -8,10 +8,10 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../shared/components/build_attribution.dart';
 import '../../../../shared/components/loading_indicator.dart';
 import '../../../../shared/state/general_provider.dart';
-import '../../../../shared/state/map_provider.dart';
-import 'build_attribution.dart';
+import 'state/map_provider.dart';
 
 enum UserLocationFollowState {
   off,

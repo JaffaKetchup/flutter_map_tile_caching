@@ -7,10 +7,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
+import 'screens/configure_download/state/configure_download_provider.dart';
 import 'screens/main/main.dart';
-import 'shared/state/download_provider.dart';
+import 'screens/main/pages/downloading/state/downloading_provider.dart';
+import 'screens/main/pages/map/state/map_provider.dart';
+import 'screens/main/pages/region_selection/state/region_selection_provider.dart';
 import 'shared/state/general_provider.dart';
-import 'shared/state/map_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,16 +55,30 @@ class AppContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (context) => GeneralProvider()),
-          ChangeNotifierProvider(create: (context) => DownloaderProvider()),
-          ChangeNotifierProvider(create: (context) => MapProvider()),
+          ChangeNotifierProvider(create: (_) => GeneralProvider()),
+          ChangeNotifierProvider(
+            create: (_) => MapProvider(),
+            lazy: true,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => RegionSelectionProvider(),
+            lazy: true,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => ConfigureDownloadProvider(),
+            lazy: true,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => DownloadingProvider(),
+            lazy: true,
+          ),
         ],
         child: MaterialApp(
           title: 'FMTC Demo',
           theme: ThemeData(
             brightness: Brightness.dark,
             useMaterial3: true,
-            textTheme: GoogleFonts.openSansTextTheme(const TextTheme()),
+            textTheme: GoogleFonts.ubuntuTextTheme(const TextTheme()),
             colorSchemeSeed: Colors.red,
             switchTheme: SwitchThemeData(
               thumbIcon: MaterialStateProperty.resolveWith(

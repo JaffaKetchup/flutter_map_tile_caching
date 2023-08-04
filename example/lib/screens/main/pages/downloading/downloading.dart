@@ -3,8 +3,9 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../shared/state/download_provider.dart';
+import '../region_selection/state/region_selection_provider.dart';
 import 'components/download_layout.dart';
+import 'state/downloading_provider.dart';
 
 class DownloadingPage extends StatefulWidget {
   const DownloadingPage({super.key});
@@ -25,19 +26,20 @@ class _DownloadingPageState extends State<DownloadingPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Consumer<DownloaderProvider>(
-                builder: (context, provider, _) => Column(
+              Selector<RegionSelectionProvider, StoreDirectory?>(
+                selector: (context, provider) => provider.selectedStore,
+                builder: (context, selectedStore, _) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Downloading',
-                      style: GoogleFonts.openSans(
+                      style: GoogleFonts.ubuntu(
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
                       ),
                     ),
                     Text(
-                      'Downloading To: ${provider.selectedStore!.storeName}',
+                      'Downloading To: ${selectedStore!.storeName}',
                       overflow: TextOverflow.fade,
                       softWrap: false,
                     ),
@@ -48,44 +50,48 @@ class _DownloadingPageState extends State<DownloadingPage>
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(6),
-                  child: Consumer<DownloaderProvider>(
-                    builder: (context, provider, _) =>
-                        StreamBuilder<DownloadProgress>(
-                      stream: provider.downloadProgress,
-                      builder: (context, snapshot) {
-                        if (snapshot.data == null) {
-                          return const Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CircularProgressIndicator(),
-                                SizedBox(height: 16),
-                                Text(
-                                  'Taking a while?',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  'Please wait for the download to start...',
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
-                        final latestTileEvent = snapshot.data!.latestTileEvent;
-
-                        if (latestTileEvent.result.category ==
-                                TileEventResultCategory.failed &&
-                            !latestTileEvent.isRepeat) {
-                          provider.addFailedTile(latestTileEvent);
-                        }
-
-                        return DownloadLayout(
-                          storeDirectory: provider.selectedStore!,
-                          download: snapshot.data!,
+                  child: StreamBuilder<DownloadProgress>(
+                    stream: context
+                        .select<DownloadingProvider, Stream<DownloadProgress>?>(
+                            (provider) => provider.downloadProgress,),
+                    builder: (context, snapshot) {
+                      if (snapshot.data == null) {
+                        return const Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 16),
+                              Text(
+                                'Taking a while?',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                'Please wait for the download to start...',
+                              ),
+                            ],
+                          ),
                         );
-                      },
-                    ),
+                      }
+
+                      final latestTileEvent = snapshot.data!.latestTileEvent;
+
+                      if (latestTileEvent.result.category ==
+                              TileEventResultCategory.failed &&
+                          !latestTileEvent.isRepeat) {
+                        context
+                            .read<DownloadingProvider>()
+                            .addFailedTile(latestTileEvent);
+                      }
+
+                      return DownloadLayout(
+                        storeDirectory: context
+                            .select<RegionSelectionProvider, StoreDirectory?>(
+                          (provider) => provider.selectedStore,
+                        )!,
+                        download: snapshot.data!,
+                      );
+                    },
                   ),
                 ),
               ),

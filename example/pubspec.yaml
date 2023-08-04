@@ -14,7 +14,7 @@ dependencies:
   badges: ^3.0.2
   better_open_file: ^3.6.4
   collection: ^1.17.1
-  dart_earcut: ^1.0.0
+  dart_earcut: ^1.0.1
   file_picker: ^5.2.10
   flutter:
     sdk: flutter

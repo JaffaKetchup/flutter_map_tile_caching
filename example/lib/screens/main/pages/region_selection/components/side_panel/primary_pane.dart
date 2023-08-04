@@ -4,9 +4,12 @@ class _PrimaryPane extends StatelessWidget {
   const _PrimaryPane({
     required this.constraints,
     required this.layoutDirection,
+    required this.pushToConfigureDownload,
   });
 
   final BoxConstraints constraints;
+  final void Function() pushToConfigureDownload;
+
   final Axis layoutDirection;
 
   static const regionShapes = {
@@ -56,7 +59,7 @@ class _PrimaryPane extends StatelessWidget {
                             ? constraints.maxHeight
                             : constraints.maxWidth) <
                         500
-                    ? Consumer<DownloaderProvider>(
+                    ? Consumer<RegionSelectionProvider>(
                         builder: (context, provider, _) => IconButton(
                           icon: Icon(
                             regionShapes[provider.regionType]!.selectedIcon,
@@ -100,7 +103,7 @@ class _PrimaryPane extends StatelessWidget {
                   direction: layoutDirection,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Selector<DownloaderProvider, RegionSelectionMethod>(
+                    Selector<RegionSelectionProvider, RegionSelectionMethod>(
                       selector: (context, provider) =>
                           provider.regionSelectionMethod,
                       builder: (context, method, _) => IconButton(
@@ -110,7 +113,7 @@ class _PrimaryPane extends StatelessWidget {
                               : Icons.ads_click,
                         ),
                         onPressed: () => context
-                                .read<DownloaderProvider>()
+                                .read<RegionSelectionProvider>()
                                 .regionSelectionMethod =
                             method == RegionSelectionMethod.useMapCenter
                                 ? RegionSelectionMethod.usePointer
@@ -121,9 +124,9 @@ class _PrimaryPane extends StatelessWidget {
                     const SizedBox.square(dimension: 12),
                     IconButton(
                       icon: const Icon(Icons.delete_forever),
-                      onPressed: () => context.read<DownloaderProvider>()
-                        ..clearCoordinates()
-                        ..region = null,
+                      onPressed: () => context
+                          .read<RegionSelectionProvider>()
+                          .clearCoordinates(),
                       tooltip: 'Remove All Points',
                     ),
                   ],
@@ -136,7 +139,7 @@ class _PrimaryPane extends StatelessWidget {
                   borderRadius: BorderRadius.circular(1028),
                 ),
                 padding: const EdgeInsets.all(12),
-                child: Consumer<DownloaderProvider>(
+                child: Consumer<RegionSelectionProvider>(
                   builder: (context, provider, _) => Flex(
                     direction: layoutDirection,
                     mainAxisSize: MainAxisSize.min,
@@ -160,16 +163,7 @@ class _PrimaryPane extends StatelessWidget {
                       IconButton.filled(
                         icon: const Icon(Icons.done),
                         onPressed: provider.region != null
-                            ? () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => DownloadRegionPopup(
-                                      region: provider.region!,
-                                      minZoom: provider.minZoom,
-                                      maxZoom: provider.maxZoom,
-                                    ),
-                                    fullscreenDialog: true,
-                                  ),
-                                )
+                            ? pushToConfigureDownload
                             : null,
                       ),
                     ],

@@ -8,18 +8,18 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../shared/components/build_attribution.dart';
 import '../../../../shared/components/loading_indicator.dart';
 import '../../../../shared/misc/region_selection_method.dart';
 import '../../../../shared/misc/region_type.dart';
-import '../../../../shared/state/download_provider.dart';
 import '../../../../shared/state/general_provider.dart';
-import '../../../download_region/download_region.dart';
-import '../map/build_attribution.dart';
+import '../../../configure_download/configure_download.dart';
 import 'components/crosshairs.dart';
 import 'components/custom_polygon_snapping_indicator.dart';
 import 'components/region_shape.dart';
 import 'components/side_panel/parent.dart';
 import 'components/usage_instructions.dart';
+import 'state/region_selection_provider.dart';
 
 class MapView extends StatefulWidget {
   const MapView({super.key});
@@ -51,7 +51,7 @@ class _MapViewState extends State<MapView> {
     ),
     keepAlive: true,
     onTap: (_, __) {
-      final provider = context.read<DownloaderProvider>();
+      final provider = context.read<RegionSelectionProvider>();
 
       if (provider.isCustomPolygonComplete) return;
 
@@ -102,11 +102,11 @@ class _MapViewState extends State<MapView> {
       }
     },
     onSecondaryTap: (_, __) =>
-        context.read<DownloaderProvider>().removeLastCoordinate(),
+        context.read<RegionSelectionProvider>().removeLastCoordinate(),
     onLongPress: (_, __) =>
-        context.read<DownloaderProvider>().removeLastCoordinate(),
+        context.read<RegionSelectionProvider>().removeLastCoordinate(),
     onPointerHover: (evt, point) {
-      final provider = context.read<DownloaderProvider>();
+      final provider = context.read<RegionSelectionProvider>();
 
       if (provider.regionSelectionMethod == RegionSelectionMethod.usePointer) {
         provider.currentNewPointPos = point;
@@ -128,7 +128,7 @@ class _MapViewState extends State<MapView> {
       }
     },
     onPositionChanged: (position, _) {
-      final provider = context.read<DownloaderProvider>();
+      final provider = context.read<RegionSelectionProvider>();
 
       if (provider.regionSelectionMethod ==
           RegionSelectionMethod.useMapCenter) {
@@ -156,23 +156,60 @@ class _MapViewState extends State<MapView> {
   );
 
   bool keyboardHandler(KeyEvent event) {
-    final provider = context.read<DownloaderProvider>();
+    if (event is! KeyDownEvent) return false;
+
+    final provider = context.read<RegionSelectionProvider>();
+
     if (provider.region != null &&
-        event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.enter) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => DownloadRegionPopup(
-            region: provider.region!,
-            minZoom: provider.minZoom,
-            maxZoom: provider.maxZoom,
-          ),
-          fullscreenDialog: true,
-        ),
-      );
+      pushToConfigureDownload();
+    } else if (event.logicalKey == LogicalKeyboardKey.escape ||
+        event.logicalKey == LogicalKeyboardKey.delete) {
+      provider.clearCoordinates();
+    } else if (event.logicalKey == LogicalKeyboardKey.backspace) {
+      provider.removeLastCoordinate();
+    } else if (provider.regionType != RegionType.square &&
+        event.logicalKey == LogicalKeyboardKey.keyZ) {
+      provider
+        ..regionType = RegionType.square
+        ..clearCoordinates();
+    } else if (provider.regionType != RegionType.circle &&
+        event.logicalKey == LogicalKeyboardKey.keyX) {
+      provider
+        ..regionType = RegionType.circle
+        ..clearCoordinates();
+    } else if (provider.regionType != RegionType.line &&
+        event.logicalKey == LogicalKeyboardKey.keyC) {
+      provider
+        ..regionType = RegionType.line
+        ..clearCoordinates();
+    } else if (provider.regionType != RegionType.customPolygon &&
+        event.logicalKey == LogicalKeyboardKey.keyV) {
+      provider
+        ..regionType = RegionType.customPolygon
+        ..clearCoordinates();
     }
 
     return false;
+  }
+
+  void pushToConfigureDownload() {
+    final provider = context.read<RegionSelectionProvider>();
+    ServicesBinding.instance.keyboard.removeHandler(keyboardHandler);
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (context) => ConfigureDownloadPopup(
+              region: provider.region!,
+              minZoom: provider.minZoom,
+              maxZoom: provider.maxZoom,
+            ),
+            fullscreenDialog: true,
+          ),
+        )
+        .then(
+          (_) => ServicesBinding.instance.keyboard.addHandler(keyboardHandler),
+        );
   }
 
   @override
@@ -208,13 +245,13 @@ class _MapViewState extends State<MapView> {
 
                   return MouseRegion(
                     opaque: false,
-                    cursor: context.select<DownloaderProvider,
+                    cursor: context.select<RegionSelectionProvider,
                                 RegionSelectionMethod>(
                               (p) => p.regionSelectionMethod,
                             ) ==
                             RegionSelectionMethod.useMapCenter
                         ? MouseCursor.defer
-                        : context.select<DownloaderProvider, bool>(
+                        : context.select<RegionSelectionProvider, bool>(
                             (p) => p.customPolygonSnap,
                           )
                             ? SystemMouseCursors.none
@@ -260,12 +297,15 @@ class _MapViewState extends State<MapView> {
                 },
               ),
             ),
-            SidePanel(constraints: constraints),
-            if (context.select<DownloaderProvider, RegionSelectionMethod>(
+            SidePanel(
+              constraints: constraints,
+              pushToConfigureDownload: pushToConfigureDownload,
+            ),
+            if (context.select<RegionSelectionProvider, RegionSelectionMethod>(
                       (p) => p.regionSelectionMethod,
                     ) ==
                     RegionSelectionMethod.useMapCenter &&
-                !context.select<DownloaderProvider, bool>(
+                !context.select<RegionSelectionProvider, bool>(
                   (p) => p.customPolygonSnap,
                 ))
               const Center(child: Crosshairs()),

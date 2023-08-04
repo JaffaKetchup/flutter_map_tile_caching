@@ -7,8 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:validators/validators.dart' as validators;
 
 import '../../shared/components/loading_indicator.dart';
-import '../../shared/state/download_provider.dart';
 import '../../shared/state/general_provider.dart';
+import '../main/pages/region_selection/state/region_selection_provider.dart';
 import 'components/header.dart';
 
 class StoreEditorPopup extends StatefulWidget {
@@ -44,7 +44,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
   }
 
   @override
-  Widget build(BuildContext context) => Consumer<DownloaderProvider>(
+  Widget build(BuildContext context) => Consumer<RegionSelectionProvider>(
         builder: (context, downloadProvider, _) => WillPopScope(
           onWillPop: () async {
             scaffoldMessenger.showSnackBar(

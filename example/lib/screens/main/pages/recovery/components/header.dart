@@ -9,7 +9,7 @@ class Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         'Recovery',
-        style: GoogleFonts.openSans(
+        style: GoogleFonts.ubuntu(
           fontWeight: FontWeight.bold,
           fontSize: 24,
         ),

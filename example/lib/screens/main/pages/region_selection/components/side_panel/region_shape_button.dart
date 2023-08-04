@@ -14,7 +14,7 @@ class _RegionShapeButton extends StatelessWidget {
   final String tooltip;
 
   @override
-  Widget build(BuildContext context) => Consumer<DownloaderProvider>(
+  Widget build(BuildContext context) => Consumer<RegionSelectionProvider>(
         builder: (context, provider, _) => IconButton(
           icon: unselectedIcon,
           selectedIcon: selectedIcon,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../../shared/state/download_provider.dart';
+import '../state/downloading_provider.dart';
 import 'stat_display.dart';
 
 class MainStatistics extends StatefulWidget {
@@ -114,10 +114,9 @@ class _MainStatisticsState extends State<MainStatistics> {
                 child: OutlinedButton(
                   onPressed: () {
                     WidgetsBinding.instance.addPostFrameCallback(
-                      (_) => Provider.of<DownloaderProvider>(
-                        context,
-                        listen: false,
-                      ).setDownloadProgress(null),
+                      (_) => context
+                          .read<DownloadingProvider>()
+                          .setDownloadProgress(null),
                     );
                   },
                   child: const Padding(

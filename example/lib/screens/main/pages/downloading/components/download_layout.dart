@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../shared/misc/size_formatter.dart';
-import '../../../../../shared/state/download_provider.dart';
+import '../state/downloading_provider.dart';
 import 'main_statistics.dart';
 import 'multi_linear_progress_indicator.dart';
 import 'stat_display.dart';
@@ -189,9 +189,9 @@ class DownloadLayout extends StatelessWidget {
                 ),
                 Expanded(
                   child: RepaintBoundary(
-                    child: Consumer<DownloaderProvider>(
-                      builder: (context, provider, _) => provider
-                              .failedTiles.isEmpty
+                    child: Selector<DownloadingProvider, List<TileEvent>>(
+                      selector: (context, provider) => provider.failedTiles,
+                      builder: (context, failedTiles, _) => failedTiles.isEmpty
                           ? const Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -203,10 +203,10 @@ class DownloadLayout extends StatelessWidget {
                           : ListView.builder(
                               reverse: true,
                               addRepaintBoundaries: false,
-                              itemCount: provider.failedTiles.length,
+                              itemCount: failedTiles.length,
                               itemBuilder: (context, index) => ListTile(
                                 leading: Icon(
-                                  switch (provider.failedTiles[index].result) {
+                                  switch (failedTiles[index].result) {
                                     TileEventResult.noConnectionDuringFetch =>
                                       Icons.wifi_off,
                                     TileEventResult.unknownFetchException =>
@@ -216,16 +216,16 @@ class DownloadLayout extends StatelessWidget {
                                     _ => Icons.abc,
                                   },
                                 ),
-                                title: Text(provider.failedTiles[index].url),
+                                title: Text(failedTiles[index].url),
                                 subtitle: Text(
-                                  switch (provider.failedTiles[index].result) {
+                                  switch (failedTiles[index].result) {
                                     TileEventResult.noConnectionDuringFetch =>
                                       'Failed to establish a connection to the network. Check your Internet connection!',
                                     TileEventResult.unknownFetchException =>
-                                      'There was an unknown error when trying to download this tile, of type ${provider.failedTiles[index].fetchError.runtimeType}',
+                                      'There was an unknown error when trying to download this tile, of type ${failedTiles[index].fetchError.runtimeType}',
                                     TileEventResult.negativeFetchResponse =>
-                                      'The tile server responded with an HTTP status code of ${provider.failedTiles[index].fetchResponse!.statusCode} (${provider.failedTiles[index].fetchResponse!.reasonPhrase})',
-                                    _ => '',
+                                      'The tile server responded with an HTTP status code of ${failedTiles[index].fetchResponse!.statusCode} (${failedTiles[index].fetchResponse!.reasonPhrase})',
+                                    _ => throw Error(),
                                   },
                                 ),
                               ),

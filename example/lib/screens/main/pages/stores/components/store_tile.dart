@@ -120,7 +120,7 @@ class _StoreTileState extends State<StoreTile> {
                     )
                   : snapshot.data!,
             ),
-            if (MediaQuery.of(context).size.width > 675)
+            if (MediaQuery.sizeOf(context).width > 675)
               ...stats
             else
               Column(children: stats),

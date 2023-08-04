@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 
-import '../../screens/main/pages/map/map_view.dart';
+import '../map_view.dart';
 
 class MapProvider extends ChangeNotifier {
   UserLocationFollowState _followState = UserLocationFollowState.standard;

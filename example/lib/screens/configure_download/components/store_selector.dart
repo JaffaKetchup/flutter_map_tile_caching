@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../../shared/state/download_provider.dart';
 import '../../../shared/state/general_provider.dart';
+import '../../main/pages/region_selection/state/region_selection_provider.dart';
 
 class StoreSelector extends StatefulWidget {
   const StoreSelector({super.key});
@@ -18,7 +18,7 @@ class _StoreSelectorState extends State<StoreSelector> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('CHOOSE A STORE'),
-          Consumer2<DownloaderProvider, GeneralProvider>(
+          Consumer2<RegionSelectionProvider, GeneralProvider>(
             builder: (context, downloadProvider, generalProvider, _) =>
                 FutureBuilder<List<StoreDirectory>>(
               future: FMTC.instance.rootDirectory.stats.storesAvailableAsync,

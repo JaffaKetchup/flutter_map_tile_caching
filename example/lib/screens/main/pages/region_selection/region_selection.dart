@@ -5,14 +5,14 @@ import 'package:provider/provider.dart';
 import '../../../../shared/state/general_provider.dart';
 import 'map_view.dart';
 
-class DownloaderPage extends StatefulWidget {
-  const DownloaderPage({super.key});
+class RegionSelectionPage extends StatefulWidget {
+  const RegionSelectionPage({super.key});
 
   @override
-  State<DownloaderPage> createState() => _DownloaderPageState();
+  State<RegionSelectionPage> createState() => _RegionSelectionPageState();
 }
 
-class _DownloaderPageState extends State<DownloaderPage> {
+class _RegionSelectionPageState extends State<RegionSelectionPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         body: Column(
@@ -28,7 +28,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
                       children: [
                         Text(
                           'Downloader',
-                          style: GoogleFonts.openSans(
+                          style: GoogleFonts.ubuntu(
                             fontWeight: FontWeight.bold,
                             fontSize: 24,
                           ),
@@ -54,7 +54,7 @@ class _DownloaderPageState extends State<DownloaderPage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(20),
-                    topRight: MediaQuery.of(context).size.width <= 950
+                    topRight: MediaQuery.sizeOf(context).width <= 950
                         ? const Radius.circular(20)
                         : Radius.zero,
                   ),

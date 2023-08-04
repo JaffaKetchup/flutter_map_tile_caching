@@ -9,7 +9,7 @@ class LineRegionPane extends StatelessWidget {
   final Axis layoutDirection;
 
   @override
-  Widget build(BuildContext context) => Consumer<DownloaderProvider>(
+  Widget build(BuildContext context) => Consumer<RegionSelectionProvider>(
         builder: (context, provider, _) => Flex(
           direction: layoutDirection,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -17,7 +17,7 @@ class LineRegionPane extends StatelessWidget {
           children: [
             IconButton(
               onPressed: () async {
-                final provider = context.read<DownloaderProvider>();
+                final provider = context.read<RegionSelectionProvider>();
 
                 if (Platform.isAndroid || Platform.isIOS) {
                   await FilePicker.platform.clearTemporaryFiles();

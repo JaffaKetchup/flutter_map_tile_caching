@@ -10,7 +10,7 @@ class _AdditionalPane extends StatelessWidget {
   final Axis layoutDirection;
 
   @override
-  Widget build(BuildContext context) => Consumer<DownloaderProvider>(
+  Widget build(BuildContext context) => Consumer<RegionSelectionProvider>(
         builder: (context, provider, _) => Stack(
           fit: StackFit.passthrough,
           children: [

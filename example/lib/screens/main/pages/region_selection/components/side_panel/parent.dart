@@ -9,25 +9,27 @@ import 'package:provider/provider.dart';
 
 import '../../../../../../shared/misc/region_selection_method.dart';
 import '../../../../../../shared/misc/region_type.dart';
-import '../../../../../../shared/state/download_provider.dart';
-import '../../../../../download_region/download_region.dart';
+import '../../state/region_selection_provider.dart';
 
 part 'additional_panes/additional_pane.dart';
 part 'additional_panes/adjust_zoom_lvls_pane.dart';
 part 'additional_panes/line_region_pane.dart';
+part 'additional_panes/slider_panel_base.dart';
 part 'custom_slider_track_shape.dart';
 part 'primary_pane.dart';
 part 'region_shape_button.dart';
-part 'additional_panes/slider_panel_base.dart';
 
 class SidePanel extends StatelessWidget {
   SidePanel({
     super.key,
     required this.constraints,
+    required this.pushToConfigureDownload,
   }) : layoutDirection =
             constraints.maxWidth > 850 ? Axis.vertical : Axis.horizontal;
 
   final BoxConstraints constraints;
+  final void Function() pushToConfigureDownload;
+
   final Axis layoutDirection;
 
   @override
@@ -43,12 +45,14 @@ class SidePanel extends StatelessWidget {
                     child: _PrimaryPane(
                       constraints: constraints,
                       layoutDirection: layoutDirection,
+                      pushToConfigureDownload: pushToConfigureDownload,
                     ),
                   )
                 : IntrinsicWidth(
                     child: _PrimaryPane(
                       constraints: constraints,
                       layoutDirection: layoutDirection,
+                      pushToConfigureDownload: pushToConfigureDownload,
                     ),
                   ),
           ),
