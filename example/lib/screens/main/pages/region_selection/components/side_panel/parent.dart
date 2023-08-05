@@ -7,6 +7,7 @@ import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../../../shared/misc/exts/interleave.dart';
 import '../../../../../../shared/misc/region_selection_method.dart';
 import '../../../../../../shared/misc/region_type.dart';
 import '../../state/region_selection_provider.dart';
@@ -58,13 +59,4 @@ class SidePanel extends StatelessWidget {
           ),
         ),
       );
-}
-
-extension _IterableExt<E> on Iterable<E> {
-  Iterable<E> interleave(E separator) sync* {
-    for (int i = 0; i < length; i++) {
-      yield elementAt(i);
-      if (i < length - 1) yield separator;
-    }
-  }
 }

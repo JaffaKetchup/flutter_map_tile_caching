@@ -84,10 +84,8 @@ Future<void> _singleDownloadThread(
     // Fetch new tile from URL
     final http.Response response;
     try {
-      response = await httpClient.get(
-        Uri.parse(networkUrl),
-        headers: input.headers,
-      );
+      response =
+          await httpClient.get(Uri.parse(networkUrl), headers: input.headers);
     } catch (e) {
       send(
         TileEvent._(

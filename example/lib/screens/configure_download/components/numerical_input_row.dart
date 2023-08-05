@@ -19,7 +19,7 @@ class NumericalInputRow extends StatelessWidget {
   final String suffixText;
   final int Function(ConfigureDownloadProvider provider) value;
   final int min;
-  final int max;
+  final int? max;
   final void Function(ConfigureDownloadProvider provider, int value) onChanged;
 
   @override
@@ -30,13 +30,18 @@ class NumericalInputRow extends StatelessWidget {
       children: [
         Text(label),
         const Spacer(),
-        Icon(
-          Icons.lock,
-          color: currentValue == max
-              ? Colors.amber
-              : Colors.white.withOpacity(0.2),
-        ),
-        const SizedBox(width: 16),
+        if (max != null) ...[
+          Tooltip(
+            message: currentValue == max ? 'Limited in the example app' : '',
+            child: Icon(
+              Icons.lock,
+              color: currentValue == max
+                  ? Colors.amber
+                  : Colors.white.withOpacity(0.2),
+            ),
+          ),
+          const SizedBox(width: 16),
+        ],
         IntrinsicWidth(
           child: TextFormField(
             initialValue: currentValue.toString(),
@@ -49,7 +54,10 @@ class NumericalInputRow extends StatelessWidget {
             ),
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.digitsOnly,
-              _NumericalRangeFormatter(min: min, max: max),
+              _NumericalRangeFormatter(
+                min: min,
+                max: max ?? 9223372036854775807,
+              ),
             ],
             onChanged: (newVal) => onChanged(
               context.read<ConfigureDownloadProvider>(),

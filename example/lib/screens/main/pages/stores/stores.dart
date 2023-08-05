@@ -72,7 +72,7 @@ class _StoresPageState extends State<StoresPage> {
           ),
         ),
         floatingActionButton: SpeedDial(
-          icon: Icons.create_new_folder,
+          icon: Icons.add,
           activeIcon: Icons.close,
           children: [
             SpeedDialChild(
@@ -85,7 +85,7 @@ class _StoresPageState extends State<StoresPage> {
                   fullscreenDialog: true,
                 ),
               ),
-              child: const Icon(Icons.add),
+              child: const Icon(Icons.add_box),
               label: 'Create New Store',
             ),
             SpeedDialChild(

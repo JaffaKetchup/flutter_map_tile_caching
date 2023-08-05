@@ -30,18 +30,22 @@ class _MainScreenState extends State<MainScreen> {
 
   List<NavigationDestination> get _destinations => [
         const NavigationDestination(
-          icon: Icon(Icons.map),
           label: 'Map',
+          icon: Icon(Icons.map_outlined),
+          selectedIcon: Icon(Icons.map),
         ),
         const NavigationDestination(
-          icon: Icon(Icons.folder),
           label: 'Stores',
+          icon: Icon(Icons.inventory_2_outlined),
+          selectedIcon: Icon(Icons.inventory_2),
         ),
         const NavigationDestination(
-          icon: Icon(Icons.download),
           label: 'Download',
+          icon: Icon(Icons.download_outlined),
+          selectedIcon: Icon(Icons.download),
         ),
         NavigationDestination(
+          label: 'Recover',
           icon: StreamBuilder(
             stream: FMTC.instance.rootDirectory.stats
                 .watchChanges()
@@ -55,11 +59,10 @@ class _MainScreenState extends State<MainScreen> {
                 ),
                 showBadge: _currentPageIndex != 3 &&
                     (snapshot.data?.isNotEmpty ?? false),
-                child: const Icon(Icons.running_with_errors),
+                child: const Icon(Icons.support),
               ),
             ),
           ),
-          label: 'Recover',
         ),
       ];
 
@@ -161,50 +164,32 @@ class _MainScreenState extends State<MainScreen> {
               NavigationRail(
                 onDestinationSelected: _onDestinationSelected,
                 selectedIndex: _currentPageIndex,
+                labelType: NavigationRailLabelType.all,
                 groupAlignment: 0,
-                extended: extended,
                 destinations: _destinations
                     .map(
                       (d) => NavigationRailDestination(
-                        icon: d.icon,
                         label: Text(d.label),
-                        padding: const EdgeInsets.all(10),
+                        icon: d.icon,
+                        selectedIcon: d.selectedIcon,
+                        padding: const EdgeInsets.symmetric(vertical: 6),
                       ),
                     )
                     .toList(),
-                leading: Row(
-                  children: [
-                    AnimatedContainer(
-                      width: extended ? 205 : 0,
-                      duration: kThemeAnimationDuration,
-                      curve: Curves.easeInOut,
-                    ),
-                    IconButton(
-                      icon: AnimatedSwitcher(
-                        duration: kThemeAnimationDuration,
-                        switchInCurve: Curves.easeInOut,
-                        switchOutCurve: Curves.easeInOut,
-                        child: Icon(
-                          key: UniqueKey(),
-                          extended ? Icons.menu_open : Icons.menu,
-                        ),
-                      ),
-                      onPressed: () => setState(() => extended = !extended),
-                      tooltip: !extended ? 'Extend Menu' : 'Collapse Menu',
-                    ),
-                  ],
-                ),
               ),
             Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topLeft: MediaQuery.sizeOf(context).width > 950
-                      ? const Radius.circular(16)
-                      : Radius.zero,
-                  bottomLeft: MediaQuery.sizeOf(context).width > 950
-                      ? const Radius.circular(16)
-                      : Radius.zero,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: MediaQuery.sizeOf(context).width > 950
+                        ? BorderSide(color: Theme.of(context).dividerColor)
+                        : BorderSide.none,
+                    bottom: MediaQuery.sizeOf(context).width <= 950
+                        ? BorderSide(color: Theme.of(context).dividerColor)
+                        : BorderSide.none,
+                  ),
                 ),
+                position: DecorationPosition.foreground,
                 child: PageView(
                   controller: _pageController,
                   physics: const NeverScrollableScrollPhysics(),

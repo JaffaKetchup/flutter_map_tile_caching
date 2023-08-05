@@ -3,7 +3,7 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../../shared/misc/size_formatter.dart';
+import '../../../../../shared/misc/exts/size_formatter.dart';
 import '../state/downloading_provider.dart';
 import 'main_statistics.dart';
 import 'multi_linear_progress_indicator.dart';

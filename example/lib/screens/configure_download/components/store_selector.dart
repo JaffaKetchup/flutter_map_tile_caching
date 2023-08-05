@@ -14,35 +14,38 @@ class StoreSelector extends StatefulWidget {
 
 class _StoreSelectorState extends State<StoreSelector> {
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) => Row(
         children: [
-          const Text('CHOOSE A STORE'),
-          Consumer2<RegionSelectionProvider, GeneralProvider>(
-            builder: (context, downloadProvider, generalProvider, _) =>
-                FutureBuilder<List<StoreDirectory>>(
-              future: FMTC.instance.rootDirectory.stats.storesAvailableAsync,
-              builder: (context, snapshot) => DropdownButton<StoreDirectory>(
-                items: snapshot.data
-                    ?.map(
-                      (e) => DropdownMenuItem<StoreDirectory>(
-                        value: e,
-                        child: Text(e.storeName),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (store) => downloadProvider.setSelectedStore(store),
-                value: downloadProvider.selectedStore ??
-                    (generalProvider.currentStore == null
-                        ? null
-                        : FMTC.instance(generalProvider.currentStore!)),
-                isExpanded: true,
-                hint: Text(
-                  snapshot.data == null
-                      ? 'Loading...'
-                      : snapshot.data!.isEmpty
-                          ? 'None Available'
-                          : 'None Selected',
+          const Text('Store'),
+          const Spacer(),
+          IntrinsicWidth(
+            child: Consumer2<RegionSelectionProvider, GeneralProvider>(
+              builder: (context, downloadProvider, generalProvider, _) =>
+                  FutureBuilder<List<StoreDirectory>>(
+                future: FMTC.instance.rootDirectory.stats.storesAvailableAsync,
+                builder: (context, snapshot) => DropdownButton<StoreDirectory>(
+                  items: snapshot.data
+                      ?.map(
+                        (e) => DropdownMenuItem<StoreDirectory>(
+                          value: e,
+                          child: Text(e.storeName),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (store) =>
+                      downloadProvider.setSelectedStore(store),
+                  value: downloadProvider.selectedStore ??
+                      (generalProvider.currentStore == null
+                          ? null
+                          : FMTC.instance(generalProvider.currentStore!)),
+                  hint: Text(
+                    snapshot.data == null
+                        ? 'Loading...'
+                        : snapshot.data!.isEmpty
+                            ? 'None Available'
+                            : 'None Selected',
+                  ),
+                  padding: const EdgeInsets.only(left: 12),
                 ),
               ),
             ),
