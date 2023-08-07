@@ -1,2 +1,2 @@
 @echo off
-start cmd /C "dart compile exe tile_server/bin/tile_server.dart && start /b tile_server/bin/tile_server.exe"
+start cmd /C "dart compile exe bin/tile_server.dart && start /b bin/tile_server.exe"

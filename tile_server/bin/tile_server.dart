@@ -47,7 +47,7 @@ Future<void> main(List<String> _) async {
       final requestTime = ctx.at;
       requestTimestamps.add(requestTime);
       console.write(
-        '[$requestTime] ${ctx.method} ${ctx.path}\t\t$servedSeaTiles sea tiles\t\t\t$lastRate tps  -  ${currentArtificialDelay.inMilliseconds} ms delay\n',
+        '[$requestTime] ${ctx.method} ${ctx.path}: ${ctx.response.statusCode}\t\t$servedSeaTiles sea tiles this session\t\t\t$lastRate tps  -  ${currentArtificialDelay.inMilliseconds} ms delay\n',
       );
     },
   );
@@ -106,15 +106,31 @@ Future<void> main(List<String> _) async {
     ..get('/favicon.ico', (_) => faviconReponse)
     // Serve tiles to all other requests
     ..get(
-      '*',
+      '/:z/:x/:y',
       (ctx) async {
+        // Get tile request segments
+        final z = ctx.pathParams.getInt('z', -1)!;
+        final x = ctx.pathParams.getInt('x', -1)!;
+        final y = ctx.pathParams.getInt('y', -1)!;
+
+        // Check if tile request is in valid format
+        if (z == -1 || x == -1 || y == -1) {
+          return Response(statusCode: 400);
+        }
+
+        // Check if tile request is inside valid range
+        final maxTileNum = sqrt(pow(4, z)) - 1;
+        if (x > maxTileNum || y > maxTileNum) {
+          return Response(statusCode: 400);
+        }
+
         // Create artificial delay if applicable
         if (currentArtificialDelay > Duration.zero) {
           await Future.delayed(currentArtificialDelay);
         }
 
         // Serve either sea or land tile
-        if (ctx.path == '/17/0/0.png' || random.nextInt(10) == 0) {
+        if (ctx.path == '/17/0/0' || random.nextInt(10) == 0) {
           servedSeaTiles += 1;
           return seaTileResponse;
         }
@@ -125,7 +141,7 @@ Future<void> main(List<String> _) async {
   // Output basic console instructions
   console
     ..setTextStyle(italic: true)
-    ..write('Now serving tiles to all requests to 127.0.0.1:8080\n\n')
+    ..write('Now serving tiles at 127.0.0.1:8080/{z}/{x}/{y}\n\n')
     ..write("Press 'q' to kill server\n")
     ..write(
       'Press UP or DOWN to manipulate artificial delay by ${artificialDelayChangeAmount.inMilliseconds} ms\n\n',

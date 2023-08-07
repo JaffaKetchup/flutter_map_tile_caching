@@ -253,27 +253,26 @@ class TilesGenerator {
         zoomLvl++) {
       final allOutlineTiles = <Point<int>>{};
 
-      for (final triangle in Earcut.triangulateFromPoints(
-        customPolygonOutline.map(region.crs.projection.project),
-      ).map(customPolygonOutline.elementAt).slices(3)) {
-        final vertex1 = region.crs.latLngToPoint(triangle[0], zoomLvl).round();
-        final vertex2 = region.crs.latLngToPoint(triangle[1], zoomLvl).round();
-        final vertex3 = region.crs.latLngToPoint(triangle[2], zoomLvl).round();
+      final pointsOutline = customPolygonOutline
+          .map((e) => region.crs.latLngToPoint(e, zoomLvl).floor());
 
+      for (final triangle in Earcut.triangulateFromPoints(
+        pointsOutline.map((e) => e.toDoublePoint()),
+      ).map(pointsOutline.elementAt).slices(3)) {
         final outlineTiles = {
           ..._bresenhamsLGA(
-            Point(vertex1.x, vertex1.y),
-            Point(vertex2.x, vertex2.y),
+            Point(triangle[0].x, triangle[0].y),
+            Point(triangle[1].x, triangle[1].y),
             unscaleBy: region.options.tileSize,
           ),
           ..._bresenhamsLGA(
-            Point(vertex2.x, vertex2.y),
-            Point(vertex3.x, vertex3.y),
+            Point(triangle[1].x, triangle[1].y),
+            Point(triangle[2].x, triangle[2].y),
             unscaleBy: region.options.tileSize,
           ),
           ..._bresenhamsLGA(
-            Point(vertex3.x, vertex3.y),
-            Point(vertex1.x, vertex1.y),
+            Point(triangle[2].x, triangle[2].y),
+            Point(triangle[0].x, triangle[0].y),
             unscaleBy: region.options.tileSize,
           ),
         };
