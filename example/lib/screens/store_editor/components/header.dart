@@ -101,6 +101,6 @@ AppBar buildHeader({
               );
             }
           },
-        )
+        ),
       ],
     );

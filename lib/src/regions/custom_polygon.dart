@@ -62,7 +62,7 @@ class CustomPolygonRegion extends BaseRegion {
             label: label,
             labelStyle: labelStyle,
             labelPlacement: labelPlacement,
-          )
+          ),
         ],
       );
 

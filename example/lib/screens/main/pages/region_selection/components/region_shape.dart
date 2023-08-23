@@ -23,7 +23,7 @@ class RegionShape extends StatelessWidget {
                 Polyline(
                   points: [
                     ...provider.coordinates,
-                    provider.currentNewPointPos
+                    provider.currentNewPointPos,
                   ],
                   borderColor: Colors.black,
                   borderStrokeWidth: 2,

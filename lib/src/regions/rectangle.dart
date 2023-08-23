@@ -64,7 +64,7 @@ class RectangleRegion extends BaseRegion {
             labelStyle: labelStyle,
             labelPlacement: labelPlacement,
             points: toOutline(),
-          )
+          ),
         ],
       );
 

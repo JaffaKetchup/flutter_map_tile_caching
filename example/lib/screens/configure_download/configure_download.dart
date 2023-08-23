@@ -99,7 +99,7 @@ class ConfigureDownloadPopup extends StatelessWidget {
                                   .skipExistingTiles = val,
                               activeColor:
                                   Theme.of(context).colorScheme.primary,
-                            )
+                            ),
                           ],
                         ),
                         Row(
@@ -115,7 +115,7 @@ class ConfigureDownloadPopup extends StatelessWidget {
                                   .skipSeaTiles = val,
                               activeColor:
                                   Theme.of(context).colorScheme.primary,
-                            )
+                            ),
                           ],
                         ),
                       ],
