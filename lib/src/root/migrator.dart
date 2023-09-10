@@ -150,8 +150,16 @@ class RootMigrator {
                     }
 
                     return DbTile(
-                      url:
-                          TileLayer().templateFunction(e[2], placeholderValues),
+                      url: e[2].replaceAllMapped(
+                        TileProvider.templatePlaceholderElement,
+                        (match) {
+                          final value = placeholderValues[match.group(1)!];
+                          if (value != null) return value;
+                          throw ArgumentError(
+                            'Missing value for placeholder: {${match.group(1)}}',
+                          );
+                        },
+                      ),
                       bytes: await f.readAsBytes(),
                     );
                   }

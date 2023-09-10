@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:io';
+//import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
+//import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -96,7 +96,7 @@ class MapPage extends StatelessWidget {
                           )
                       : NetworkTileProvider(),
                 ),
-                Consumer<MapProvider>(
+                /*Consumer<MapProvider>(
                   builder: (context, mapProvider, _) => CurrentLocationLayer(
                     followCurrentLocationStream:
                         mapProvider.trackLocationStream,
@@ -126,7 +126,7 @@ class MapPage extends StatelessWidget {
                       markerDirection: MarkerDirection.heading,
                     ),
                   ),
-                ),
+                ),*/
               ],
             );
           },
