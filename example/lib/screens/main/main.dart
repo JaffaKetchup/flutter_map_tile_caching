@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'pages/downloading/downloading.dart';
 import 'pages/downloading/state/downloading_provider.dart';
 import 'pages/map/map_view.dart';
-import 'pages/map/state/map_provider.dart';
 import 'pages/recovery/recovery.dart';
 import 'pages/region_selection/region_selection.dart';
 import 'pages/stores/stores.dart';
@@ -123,40 +122,6 @@ class _MainScreenState extends State<MainScreen> {
                 labelBehavior:
                     NavigationDestinationLabelBehavior.onlyShowSelected,
                 height: 70,
-              ),
-        floatingActionButton: _currentPageIndex != 0
-            ? null
-            : Consumer<MapProvider>(
-                builder: (context, mapProvider, _) => FloatingActionButton(
-                  onPressed: () {
-                    switch (mapProvider.followState) {
-                      case UserLocationFollowState.off:
-                        mapProvider.followState =
-                            UserLocationFollowState.standard;
-                        mapProvider.trackLocation(navigation: false);
-                        mapProvider.mapController.rotate(0);
-                        break;
-                      case UserLocationFollowState.standard:
-                        mapProvider.followState =
-                            UserLocationFollowState.navigation;
-                        mapProvider.trackLocation(navigation: true);
-                        mapProvider.trackHeading();
-                        break;
-                      case UserLocationFollowState.navigation:
-                        mapProvider.followState = UserLocationFollowState.off;
-                        mapProvider.mapController.rotate(0);
-                        break;
-                    }
-                    setState(() {});
-                  },
-                  child: Icon(
-                    switch (mapProvider.followState) {
-                      UserLocationFollowState.off => Icons.gps_off,
-                      UserLocationFollowState.standard => Icons.gps_fixed,
-                      UserLocationFollowState.navigation => Icons.navigation,
-                    },
-                  ),
-                ),
               ),
         body: Row(
           children: [

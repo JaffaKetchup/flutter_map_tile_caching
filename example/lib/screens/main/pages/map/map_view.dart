@@ -1,9 +1,7 @@
 import 'dart:async';
-//import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-//import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -12,12 +10,6 @@ import '../../../../shared/components/build_attribution.dart';
 import '../../../../shared/components/loading_indicator.dart';
 import '../../../../shared/state/general_provider.dart';
 import 'state/map_provider.dart';
-
-enum UserLocationFollowState {
-  off,
-  standard,
-  navigation,
-}
 
 class MapPage extends StatelessWidget {
   const MapPage({super.key});
@@ -42,36 +34,20 @@ class MapPage extends StatelessWidget {
 
             return FlutterMap(
               mapController: Provider.of<MapProvider>(context).mapController,
-              options: MapOptions(
-                initialCenter: const LatLng(51.509364, -0.128928),
+              options: const MapOptions(
+                initialCenter: LatLng(51.509364, -0.128928),
                 initialZoom: 16,
-                maxZoom: 22,
-                cameraConstraint: CameraConstraint.contain(
-                  bounds: LatLngBounds.fromPoints([
-                    const LatLng(-90, 180),
-                    const LatLng(90, 180),
-                    const LatLng(90, -180),
-                    const LatLng(-90, -180),
-                  ]),
-                ),
-                interactionOptions: const InteractionOptions(
-                  // flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                interactionOptions: InteractionOptions(
+                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                   scrollWheelVelocity: 0.002,
                 ),
                 keepAlive: true,
-                onPointerDown: (_, __) =>
-                    Provider.of<MapProvider>(context, listen: false)
-                        .followState = UserLocationFollowState.off,
-              ),
-              nonRotatedChildren: buildStdAttribution(
-                urlTemplate,
-                alignment: AttributionAlignment.bottomLeft,
+                backgroundColor: Color(0xFFaad3df),
               ),
               children: [
                 TileLayer(
                   urlTemplate: urlTemplate,
                   userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
-                  backgroundColor: const Color(0xFFaad3df),
                   maxNativeZoom: 20,
                   panBuffer: 5,
                   tileProvider: provider.currentStore != null
@@ -95,6 +71,10 @@ class MapPage extends StatelessWidget {
                             ),
                           )
                       : NetworkTileProvider(),
+                ),
+                StandardAttribution(
+                  urlTemplate: urlTemplate,
+                  alignment: AttributionAlignment.bottomLeft,
                 ),
                 /*Consumer<MapProvider>(
                   builder: (context, mapProvider, _) => CurrentLocationLayer(

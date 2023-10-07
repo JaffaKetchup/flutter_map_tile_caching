@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -34,15 +33,6 @@ class _RegionSelectionPageState extends State<RegionSelectionPage> {
   late final mapOptions = MapOptions(
     initialCenter: const LatLng(51.509364, -0.128928),
     initialZoom: 11,
-    maxZoom: 22,
-    cameraConstraint: CameraConstraint.contain(
-      bounds: LatLngBounds.fromPoints([
-        const LatLng(-90, 180),
-        const LatLng(90, 180),
-        const LatLng(90, -180),
-        const LatLng(-90, -180),
-      ]),
-    ),
     interactionOptions: const InteractionOptions(
       flags: InteractiveFlag.all &
           ~InteractiveFlag.rotate &
@@ -50,6 +40,7 @@ class _RegionSelectionPageState extends State<RegionSelectionPage> {
       scrollWheelVelocity: 0.002,
     ),
     keepAlive: true,
+    backgroundColor: const Color(0xFFaad3df),
     onTap: (_, __) {
       final provider = context.read<RegionSelectionProvider>();
 
@@ -259,13 +250,11 @@ class _RegionSelectionPageState extends State<RegionSelectionPage> {
                     child: FlutterMap(
                       mapController: mapController,
                       options: mapOptions,
-                      nonRotatedChildren: buildStdAttribution(urlTemplate),
                       children: [
                         TileLayer(
                           urlTemplate: urlTemplate,
                           userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
                           maxNativeZoom: 20,
-                          backgroundColor: const Color(0xFFaad3df),
                           tileBuilder: (context, widget, tile) =>
                               FutureBuilder<bool?>(
                             future: currentStore == null
@@ -291,6 +280,7 @@ class _RegionSelectionPageState extends State<RegionSelectionPage> {
                         ),
                         const RegionShape(),
                         const CustomPolygonSnappingIndicator(),
+                        StandardAttribution(urlTemplate: urlTemplate),
                       ],
                     ),
                   );

@@ -11,34 +11,31 @@ class CustomPolygonSnappingIndicator extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => MarkerLayer(
-        markers: [
-          if (context
-                  .select<RegionSelectionProvider, List<LatLng>>(
-                    (p) => p.coordinates,
-                  )
-                  .isNotEmpty &&
-              context.select<RegionSelectionProvider, bool>(
-                (p) => p.customPolygonSnap,
-              ))
-            Marker(
-              height: 25,
-              width: 25,
-              point: context
-                  .select<RegionSelectionProvider, List<LatLng>>(
-                    (p) => p.coordinates,
-                  )
-                  .first,
-              builder: (context) => DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  borderRadius: BorderRadius.circular(1028),
-                ),
-                child: const Center(
-                  child: Icon(Icons.auto_awesome, size: 15),
-                ),
+  Widget build(BuildContext context) {
+    final coords = context
+        .select<RegionSelectionProvider, List<LatLng>>((p) => p.coordinates);
+
+    return MarkerLayer(
+      markers: [
+        if (coords.isNotEmpty &&
+            context.select<RegionSelectionProvider, bool>(
+              (p) => p.customPolygonSnap,
+            ))
+          Marker(
+            height: 25,
+            width: 25,
+            point: coords.first,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(1028),
+              ),
+              child: const Center(
+                child: Icon(Icons.auto_awesome, size: 15),
               ),
             ),
-        ],
-      );
+          ),
+      ],
+    );
+  }
 }

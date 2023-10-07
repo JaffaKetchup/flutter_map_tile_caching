@@ -23,7 +23,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:isar/isar.dart';
@@ -35,7 +34,6 @@ import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import 'src/bulk_download/instance.dart';
-
 import 'src/bulk_download/rate_limited_stream.dart';
 import 'src/bulk_download/tile_loops/shared.dart';
 import 'src/db/defs/metadata.dart';

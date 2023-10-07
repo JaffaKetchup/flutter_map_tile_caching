@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 
-List<Widget> buildStdAttribution(
-  String urlTemplate, {
-  AttributionAlignment alignment = AttributionAlignment.bottomRight,
-}) =>
-    [
-      RichAttributionWidget(
+class StandardAttribution extends StatelessWidget {
+  const StandardAttribution({
+    super.key,
+    required this.urlTemplate,
+    this.alignment = AttributionAlignment.bottomRight,
+  });
+
+  final String urlTemplate;
+  final AttributionAlignment alignment;
+
+  @override
+  Widget build(BuildContext context) => RichAttributionWidget(
         alignment: alignment,
         popupInitialDisplayDuration: const Duration(seconds: 3),
         popupBorderRadius: alignment == AttributionAlignment.bottomRight
@@ -29,5 +35,5 @@ List<Widget> buildStdAttribution(
             tooltip: 'flutter_map_tile_caching',
           ),
         ],
-      ),
-    ];
+      );
+}
