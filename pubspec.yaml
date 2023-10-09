@@ -32,9 +32,7 @@ dependencies:
   dart_earcut: ^1.0.1
   flutter:
     sdk: flutter
-  flutter_map:
-    git:
-      url: https://github.com/fleaflet/flutter_map.git
+  flutter_map: ^6.0.0
   http: ^1.1.0
   isar: ^3.1.0+1
   isar_flutter_libs: ^3.1.0+1
