@@ -10,7 +10,9 @@ import 'components/download_layout.dart';
 import 'state/downloading_provider.dart';
 
 class DownloadingPage extends StatefulWidget {
-  const DownloadingPage({super.key});
+  const DownloadingPage({super.key, required this.moveToMapPage});
+
+  final void Function() moveToMapPage;
 
   @override
   State<DownloadingPage> createState() => _DownloadingPageState();
@@ -112,6 +114,7 @@ class _DownloadingPageState extends State<DownloadingPage>
                           (provider) => provider.selectedStore,
                         )!,
                         download: snapshot.data!,
+                        moveToMapPage: widget.moveToMapPage,
                       );
                     },
                   ),

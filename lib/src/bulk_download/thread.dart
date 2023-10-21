@@ -41,10 +41,10 @@ Future<void> _singleDownloadThread(
   while (true) {
     // Request new tile coords
     send(0);
-    final coords = (await tileQueue.next) as (int, int, int)?;
+    final rawCoords = (await tileQueue.next) as (int, int, int)?;
 
     // Cleanup resources and shutdown if no more coords available
-    if (coords == null) {
+    if (rawCoords == null) {
       recievePort.close();
       await tileQueue.cancel(immediate: true);
 
@@ -58,11 +58,13 @@ Future<void> _singleDownloadThread(
       Isolate.exit();
     }
 
+    // Generate `TileCoordinates`
+    final coordinates =
+        TileCoordinates(rawCoords.$1, rawCoords.$2, rawCoords.$3);
+
     // Get new tile URL & any existing tile
-    final networkUrl = input.options.tileProvider.getTileUrl(
-      TileCoordinates(coords.$1, coords.$2, coords.$3),
-      input.options,
-    );
+    final networkUrl =
+        input.options.tileProvider.getTileUrl(coordinates, input.options);
     final matcherUrl = obscureQueryParams(
       url: networkUrl,
       obscuredQueryParams: input.obscuredQueryParams,
@@ -75,6 +77,7 @@ Future<void> _singleDownloadThread(
         TileEvent._(
           TileEventResult.alreadyExisting,
           url: networkUrl,
+          coordinates: coordinates,
           tileImage: Uint8List.fromList(existingTile.bytes),
         ),
       );
@@ -93,6 +96,7 @@ Future<void> _singleDownloadThread(
               ? TileEventResult.noConnectionDuringFetch
               : TileEventResult.unknownFetchException,
           url: networkUrl,
+          coordinates: coordinates,
           fetchError: e,
         ),
       );
@@ -104,6 +108,7 @@ Future<void> _singleDownloadThread(
         TileEvent._(
           TileEventResult.negativeFetchResponse,
           url: networkUrl,
+          coordinates: coordinates,
           fetchResponse: response,
         ),
       );
@@ -116,6 +121,7 @@ Future<void> _singleDownloadThread(
         TileEvent._(
           TileEventResult.isSeaTile,
           url: networkUrl,
+          coordinates: coordinates,
           tileImage: response.bodyBytes,
           fetchResponse: response,
         ),
@@ -143,6 +149,7 @@ Future<void> _singleDownloadThread(
       TileEvent._(
         TileEventResult.success,
         url: networkUrl,
+        coordinates: coordinates,
         tileImage: response.bodyBytes,
         fetchResponse: response,
         wasBufferReset: wasBufferReset,

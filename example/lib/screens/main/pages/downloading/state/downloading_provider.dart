@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 import '../../../../../shared/misc/circular_buffer.dart';
@@ -53,6 +56,35 @@ class DownloadingProvider extends ChangeNotifier {
   bool get disableRecovery => _disableRecovery;
   set disableRecovery(bool newBool) {
     _disableRecovery = newBool;
+    notifyListeners();
+  }
+
+  bool _showQuitTilesPreviewIndicator = false;
+  bool get showQuitTilesPreviewIndicator => _showQuitTilesPreviewIndicator;
+  set showQuitTilesPreviewIndicator(bool newBool) {
+    _showQuitTilesPreviewIndicator = newBool;
+    notifyListeners();
+  }
+
+  StreamSubscription<DownloadProgress>? _tilesPreviewStreamSub;
+  StreamSubscription<DownloadProgress>? get tilesPreviewStreamSub =>
+      _tilesPreviewStreamSub;
+  set tilesPreviewStreamSub(
+    StreamSubscription<DownloadProgress>? newStreamSub,
+  ) {
+    _tilesPreviewStreamSub = newStreamSub;
+    notifyListeners();
+  }
+
+  final _tilesPreview = <TileCoordinates, Uint8List?>{};
+  Map<TileCoordinates, Uint8List?> get tilesPreview => _tilesPreview;
+  void addTilePreview(TileCoordinates coords, Uint8List? image) {
+    _tilesPreview[coords] = image;
+    notifyListeners();
+  }
+
+  void clearTilesPreview() {
+    _tilesPreview.clear();
     notifyListeners();
   }
 

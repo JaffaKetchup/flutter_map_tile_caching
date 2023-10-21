@@ -83,6 +83,11 @@ class TileEvent {
   /// Remember to check [isRepeat] before keeping track of this value.
   final String url;
 
+  /// The (x, y, z) coordinates of this tile
+  ///
+  /// Remember to check [isRepeat] before keeping track of this value.
+  final TileCoordinates coordinates;
+
   /// The raw bytes that were fetched from the [url], if available
   ///
   /// Not available if the result category is [TileEventResultCategory.failed].
@@ -119,6 +124,7 @@ class TileEvent {
   const TileEvent._(
     this.result, {
     required this.url,
+    required this.coordinates,
     this.tileImage,
     this.fetchResponse,
     this.fetchError,
@@ -129,6 +135,7 @@ class TileEvent {
   TileEvent _repeat() => TileEvent._(
         result,
         url: url,
+        coordinates: coordinates,
         tileImage: tileImage,
         fetchResponse: fetchResponse,
         fetchError: fetchError,
@@ -142,6 +149,7 @@ class TileEvent {
       (other is TileEvent &&
           result == other.result &&
           url == other.url &&
+          coordinates == other.coordinates &&
           tileImage == other.tileImage &&
           fetchResponse == other.fetchResponse &&
           fetchError == other.fetchError &&
@@ -152,6 +160,7 @@ class TileEvent {
   int get hashCode => Object.hashAllUnordered([
         result,
         url,
+        coordinates,
         tileImage,
         fetchResponse,
         fetchError,

@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
+import '../../map/state/map_provider.dart';
 import '../state/downloading_provider.dart';
 import 'stat_display.dart';
+
+const _tileSize = 256;
+const _offset = Offset(-(_tileSize / 2), -(_tileSize / 2));
 
 class MainStatistics extends StatefulWidget {
   const MainStatistics({
     super.key,
     required this.download,
     required this.storeDirectory,
+    required this.moveToMapPage,
   });
 
   final DownloadProgress download;
   final StoreDirectory storeDirectory;
+  final void Function() moveToMapPage;
 
   @override
   State<MainStatistics> createState() => _MainStatisticsState();
@@ -85,6 +92,49 @@ class _MainStatisticsState extends State<MainStatistics> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    IconButton.filled(
+                      onPressed: () {
+                        final mp = context.read<MapProvider>();
+
+                        final dp = context.read<DownloadingProvider>();
+
+                        dp
+                          ..tilesPreviewStreamSub =
+                              dp.downloadProgress?.listen((prog) {
+                            final lte = prog.latestTileEvent;
+                            if (!lte.isRepeat) {
+                              if (dp.tilesPreview.isNotEmpty &&
+                                  lte.coordinates.z !=
+                                      dp.tilesPreview.keys.first.z) {
+                                dp.clearTilesPreview();
+                              }
+                              dp.addTilePreview(lte.coordinates, lte.tileImage);
+                            }
+
+                            final zoom = lte.coordinates.z.toDouble();
+
+                            mp.animateTo(
+                              dest: mp.mapController.camera.unproject(
+                                lte.coordinates.toIntPoint() * _tileSize,
+                                zoom,
+                              ),
+                              zoom: zoom,
+                              offset: _offset,
+                            );
+                          })
+                          ..showQuitTilesPreviewIndicator = true;
+
+                        Future.delayed(
+                          const Duration(seconds: 3),
+                          () => dp.showQuitTilesPreviewIndicator = false,
+                        );
+
+                        widget.moveToMapPage();
+                      },
+                      icon: const Icon(Icons.visibility),
+                      tooltip: 'Follow Download On Map',
+                    ),
+                    const SizedBox(width: 24),
                     IconButton.outlined(
                       onPressed: () async {
                         if (widget.storeDirectory.download.isPaused()) {

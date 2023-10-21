@@ -14,10 +14,12 @@ class DownloadLayout extends StatelessWidget {
     super.key,
     required this.storeDirectory,
     required this.download,
+    required this.moveToMapPage,
   });
 
   final StoreDirectory storeDirectory;
   final DownloadProgress download;
+  final void Function() moveToMapPage;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -45,6 +47,7 @@ class DownloadLayout extends StatelessWidget {
                 MainStatistics(
                   download: download,
                   storeDirectory: storeDirectory,
+                  moveToMapPage: moveToMapPage,
                 ),
                 const SizedBox(width: 32),
                 const VerticalDivider(),

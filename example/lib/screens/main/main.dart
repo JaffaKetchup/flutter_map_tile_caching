@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'pages/downloading/downloading.dart';
 import 'pages/downloading/state/downloading_provider.dart';
-import 'pages/map/map_view.dart';
+import 'pages/map/map_page.dart';
 import 'pages/recovery/recovery.dart';
 import 'pages/region_selection/region_selection.dart';
 import 'pages/stores/stores.dart';
@@ -72,17 +72,31 @@ class _MainScreenState extends State<MainScreen> {
           selector: (context, provider) => provider.downloadProgress,
           builder: (context, downloadProgress, _) => downloadProgress == null
               ? const RegionSelectionPage()
-              : const DownloadingPage(),
+              : DownloadingPage(
+                  moveToMapPage: () =>
+                      _onDestinationSelected(0, cancelTilesPreview: false),
+                ),
         ),
         RecoveryPage(moveToDownloadPage: () => _onDestinationSelected(2)),
       ];
 
-  void _onDestinationSelected(int index) {
+  void _onDestinationSelected(int index, {bool cancelTilesPreview = true}) {
     setState(() => _currentPageIndex = index);
-    _pageController.animateToPage(
+    _pageController
+        .animateToPage(
       _currentPageIndex,
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
+    )
+        .then(
+      (_) {
+        if (cancelTilesPreview) {
+          final dp = context.read<DownloadingProvider>();
+          dp.tilesPreviewStreamSub
+              ?.cancel()
+              .then((_) => dp.tilesPreviewStreamSub = null);
+        }
+      },
     );
   }
 
@@ -114,8 +128,6 @@ class _MainScreenState extends State<MainScreen> {
         bottomNavigationBar: MediaQuery.sizeOf(context).width > 950
             ? null
             : NavigationBar(
-                backgroundColor:
-                    Theme.of(context).navigationBarTheme.backgroundColor,
                 onDestinationSelected: _onDestinationSelected,
                 selectedIndex: _currentPageIndex,
                 destinations: _destinations,
@@ -137,7 +149,10 @@ class _MainScreenState extends State<MainScreen> {
                         label: Text(d.label),
                         icon: d.icon,
                         selectedIcon: d.selectedIcon,
-                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 6,
+                          horizontal: 3,
+                        ),
                       ),
                     )
                     .toList(),
