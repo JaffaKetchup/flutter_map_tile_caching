@@ -60,7 +60,7 @@ class QuitTilesPreviewIndicator extends StatelessWidget {
                 const SizedBox.square(dimension: 6),
                 RotatedBox(
                   quarterTurns: isNarrow ? 1 : 0,
-                  child: const Icon(Icons.disabled_visible, size: 32),
+                  child: const Icon(Icons.visibility_off, size: 32),
                 ),
               ],
             ),

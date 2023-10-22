@@ -1,21 +1,27 @@
 import 'package:flutter/foundation.dart';
 
 class ConfigureDownloadProvider extends ChangeNotifier {
-  int _parallelThreads = 5;
+  static const defaultValues = {
+    'parallelThreads': 5,
+    'rateLimit': 200,
+    'maxBufferLength': 500,
+  };
+
+  int _parallelThreads = defaultValues['parallelThreads']!;
   int get parallelThreads => _parallelThreads;
   set parallelThreads(int newNum) {
     _parallelThreads = newNum;
     notifyListeners();
   }
 
-  int _rateLimit = 200;
+  int _rateLimit = defaultValues['rateLimit']!;
   int get rateLimit => _rateLimit;
   set rateLimit(int newNum) {
     _rateLimit = newNum;
     notifyListeners();
   }
 
-  int _maxBufferLength = 500;
+  int _maxBufferLength = defaultValues['maxBufferLength']!;
   int get maxBufferLength => _maxBufferLength;
   set maxBufferLength(int newNum) {
     _maxBufferLength = newNum;

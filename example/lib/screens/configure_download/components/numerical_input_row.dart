@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../state/configure_download_provider.dart';
 
-class NumericalInputRow extends StatelessWidget {
+class NumericalInputRow extends StatefulWidget {
   const NumericalInputRow({
     super.key,
     required this.label,
@@ -12,6 +12,7 @@ class NumericalInputRow extends StatelessWidget {
     required this.value,
     required this.min,
     required this.max,
+    this.maxEligibleTilesPreview,
     required this.onChanged,
   });
 
@@ -20,54 +21,87 @@ class NumericalInputRow extends StatelessWidget {
   final int Function(ConfigureDownloadProvider provider) value;
   final int min;
   final int? max;
+  final int? maxEligibleTilesPreview;
   final void Function(ConfigureDownloadProvider provider, int value) onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    final currentValue = context.select<ConfigureDownloadProvider, int>(value);
+  State<NumericalInputRow> createState() => _NumericalInputRowState();
+}
 
-    return Row(
-      children: [
-        Text(label),
-        const Spacer(),
-        if (max != null) ...[
-          Tooltip(
-            message: currentValue == max ? 'Limited in the example app' : '',
-            child: Icon(
-              Icons.lock,
-              color: currentValue == max
-                  ? Colors.amber
-                  : Colors.white.withOpacity(0.2),
-            ),
-          ),
-          const SizedBox(width: 16),
-        ],
-        IntrinsicWidth(
-          child: TextFormField(
-            initialValue: currentValue.toString(),
-            textAlign: TextAlign.end,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              isDense: true,
-              counterText: '',
-              suffixText: ' $suffixText',
-            ),
-            inputFormatters: <TextInputFormatter>[
-              FilteringTextInputFormatter.digitsOnly,
-              _NumericalRangeFormatter(
-                min: min,
-                max: max ?? 9223372036854775807,
+class _NumericalInputRowState extends State<NumericalInputRow> {
+  TextEditingController? tec;
+
+  @override
+  Widget build(BuildContext context) =>
+      Selector<ConfigureDownloadProvider, int>(
+        selector: (context, provider) => widget.value(provider),
+        builder: (context, currentValue, _) {
+          tec ??= TextEditingController(text: currentValue.toString());
+
+          return Row(
+            children: [
+              Text(widget.label),
+              const Spacer(),
+              if (widget.maxEligibleTilesPreview != null) ...[
+                IconButton(
+                  icon: const Icon(Icons.visibility),
+                  disabledColor: Colors.green,
+                  tooltip: currentValue > widget.maxEligibleTilesPreview!
+                      ? 'Tap to enable following download live'
+                      : 'Eligible to follow download live',
+                  onPressed: currentValue > widget.maxEligibleTilesPreview!
+                      ? () {
+                          widget.onChanged(
+                            context.read<ConfigureDownloadProvider>(),
+                            widget.maxEligibleTilesPreview!,
+                          );
+                          tec!.text = widget.maxEligibleTilesPreview.toString();
+                        }
+                      : null,
+                ),
+                const SizedBox(width: 8),
+              ],
+              if (widget.max != null) ...[
+                Tooltip(
+                  message: currentValue == widget.max
+                      ? 'Limited in the example app'
+                      : '',
+                  child: Icon(
+                    Icons.lock,
+                    color: currentValue == widget.max
+                        ? Colors.amber
+                        : Colors.white.withOpacity(0.2),
+                  ),
+                ),
+                const SizedBox(width: 16),
+              ],
+              IntrinsicWidth(
+                child: TextFormField(
+                  controller: tec,
+                  textAlign: TextAlign.end,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    counterText: '',
+                    suffixText: ' ${widget.suffixText}',
+                  ),
+                  inputFormatters: <TextInputFormatter>[
+                    FilteringTextInputFormatter.digitsOnly,
+                    _NumericalRangeFormatter(
+                      min: widget.min,
+                      max: widget.max ?? 9223372036854775807,
+                    ),
+                  ],
+                  onChanged: (newVal) => widget.onChanged(
+                    context.read<ConfigureDownloadProvider>(),
+                    int.tryParse(newVal) ?? currentValue,
+                  ),
+                ),
               ),
             ],
-            onChanged: (newVal) => onChanged(
-              context.read<ConfigureDownloadProvider>(),
-              int.tryParse(newVal) ?? currentValue,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+          );
+        },
+      );
 }
 
 class _NumericalRangeFormatter extends TextInputFormatter {

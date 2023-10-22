@@ -44,7 +44,7 @@ Also:
 * Created automated tests for tile generation
 * Improved & simplified example application
   * Removed update mechanism
-  * Added user location tracking
+  * Added tile-by-tile download following
 
 ## [8.0.1] - 2023/07/29
 

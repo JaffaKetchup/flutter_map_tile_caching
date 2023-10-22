@@ -66,8 +66,9 @@ class ConfigureDownloadPopup extends StatelessWidget {
                           label: 'Rate Limit',
                           suffixText: 'max. tps',
                           value: (provider) => provider.rateLimit,
-                          min: 5,
+                          min: 1,
                           max: 500,
+                          maxEligibleTilesPreview: 20,
                           onChanged: (provider, value) =>
                               provider.rateLimit = value,
                         ),
