@@ -16,9 +16,8 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 ## [9.0.0] - 2023/XX/XX
 
-* Migrated to Flutter 3.10 and Dart 3
-* Migrated to flutter_map v5
-* Migrated to Isar v4 (bug fixes & stability improvements)
+* Migrated to Flutter 3.13 and Dart 3.1
+* Migrated to flutter_map v6
 * Bulk downloading reimplementation
   * Added `CustomPolygonRegion`, a `BaseRegion` that is formed of any* outline
   * Added pause and resume functionality
@@ -44,7 +43,7 @@ Also:
 * Created automated tests for tile generation
 * Improved & simplified example application
   * Removed update mechanism
-  * Added tile-by-tile download following
+  * Added tile-by-tile/live download following
 
 ## [8.0.1] - 2023/07/29
 
