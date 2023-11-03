@@ -5,6 +5,8 @@ part of flutter_map_tile_caching;
 
 /// Global FMTC settings
 class FMTCSettings {
+  final FMTCBackend backend;
+
   /// Default settings used when creating an [FMTCTileProvider]
   ///
   /// Can be overridden on a case-to-case basis when actually creating the tile
@@ -42,9 +44,11 @@ class FMTCSettings {
 
   /// Create custom global FMTC settings
   FMTCSettings({
+    FMTCBackend? backend,
     FMTCTileProviderSettings? defaultTileProviderSettings,
     this.databaseMaxSize = 2048,
     this.databaseCompactCondition = const CompactCondition(minRatio: 2),
-  }) : defaultTileProviderSettings =
+  })  : backend = backend ?? ObjectBoxBackend(),
+        defaultTileProviderSettings =
             defaultTileProviderSettings ?? FMTCTileProviderSettings();
 }
