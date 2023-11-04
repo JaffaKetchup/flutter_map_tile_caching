@@ -34,7 +34,7 @@ final _entities = <ModelEntity>[
             id: const IdUid(2, 5839091915824466165),
             name: 'name',
             type: 9,
-            flags: 2048,
+            flags: 2080,
             indexId: const IdUid(4, 4070553972642232057))
       ],
       relations: <ModelRelation>[],

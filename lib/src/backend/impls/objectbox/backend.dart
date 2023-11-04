@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
-import 'package:meta/meta.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../misc/exts.dart';
@@ -12,35 +12,31 @@ import 'models/generated/objectbox.g.dart';
 import 'models/models.dart';
 
 /// Implementation of [FMTCBackend] that uses ObjectBox as the storage database
-///
-/// Only the factory constructor ([ObjectBoxBackend.new]), and
-/// [friendlyIdentifier], should be used in end-applications. Other methods are
-/// for internal use only.
-class ObjectBoxBackend implements FMTCBackend {
+abstract interface class ObjectBoxBackend implements FMTCBackend {
+  /// Implementation of [FMTCBackend] that uses ObjectBox as the storage
+  /// database
   factory ObjectBoxBackend() => _instance;
-  static final ObjectBoxBackend _instance = ObjectBoxBackend._();
-  ObjectBoxBackend._();
+  static final _instance = _ObjectBoxBackendImpl._();
+}
 
-  Store? _root; // Must not be closed if not `null`
-  Store get _expectRoot => _root ?? (throw RootUnavailable());
+class _ObjectBoxBackendImpl implements ObjectBoxBackend {
+  _ObjectBoxBackendImpl._();
 
-  Future<ObjectBoxStore> _getStore(String name) async =>
-      (await _expectRoot
+  Store? root; // Must not be closed if not `null`
+  Store get expectRoot => root ?? (throw RootUnavailable());
+
+  Future<ObjectBoxStore> getStore(String name) async =>
+      (await expectRoot
           .box<ObjectBoxStore>()
           .query(ObjectBoxStore_.name.equals(name))
           .build()
-          .findFirstAsync()) ??
+          .findUniqueAsync()) ??
       (throw StoreUnavailable(storeName: name));
 
   @override
   String get friendlyIdentifier => 'ObjectBox';
 
   @override
-  @internal
-  bool get supportsSharing => false;
-
-  @override
-  @internal
   Future<void> initialise({
     String? rootDirectory,
   }) async {
@@ -49,50 +45,49 @@ class ObjectBoxBackend implements FMTCBackend {
                 : Directory(rootDirectory)) >>
             'fmtc')
         .create(recursive: true);
-    _root = await openStore(directory: dir.absolute.path);
+    root = await openStore(directory: dir.absolute.path);
   }
 
   @override
-  @internal
   Future<void> destroy({
     bool deleteRoot = false,
   }) async {
-    _expectRoot;
+    expectRoot;
 
-    await Directory((_root!..close()).directoryPath).delete(recursive: true);
-    _root = null;
+    await Directory((root!..close()).directoryPath).delete(recursive: true);
+    root = null;
   }
 
   @override
-  @internal
   Future<void> createStore({
     required String storeName,
   }) async {
-    await _expectRoot
+    await expectRoot
         .box<ObjectBoxStore>()
         .putAsync(ObjectBoxStore(name: storeName), mode: PutMode.insert);
   }
 
   @override
-  @internal
   Future<void> resetStore({
     required String storeName,
   }) async {
-    _expectRoot;
+    expectRoot;
 
-    await _root!.runInTransactionAsync(
+    await root!.runInTransactionAsync(
       TxMode.write,
       (store, storeName) {
-        final tiles = _root!.box<ObjectBoxTile>();
+        final tiles = root!.box<ObjectBoxTile>();
 
         final removeIds = <int>[];
 
-        final tilesBelongingToStore = (tiles.query()
-              ..linkMany(ObjectBoxTile_.stores,
-                  ObjectBoxStore_.name.equals(storeName)))
+        final query = (tiles.query()
+              ..linkMany(
+                ObjectBoxTile_.stores,
+                ObjectBoxStore_.name.equals(storeName),
+              ))
             .build();
         tiles.putMany(
-          tilesBelongingToStore
+          query
               .find()
               .map((tile) {
                 tile.stores.removeWhere((store) => store.name == storeName);
@@ -104,7 +99,7 @@ class ObjectBoxBackend implements FMTCBackend {
               .toList(),
           mode: PutMode.update,
         );
-        tilesBelongingToStore.close();
+        query.close();
 
         tiles.query(ObjectBoxTile_.id.oneOf(removeIds)).build()
           ..remove()
@@ -115,54 +110,99 @@ class ObjectBoxBackend implements FMTCBackend {
   }
 
   @override
-  @internal
   Future<void> renameStore({
     required String currentStoreName,
     required String newStoreName,
   }) async =>
-      _expectRoot
+      expectRoot
           .box<ObjectBoxStore>()
-          .putAsync((await _getStore(currentStoreName))..name = newStoreName);
+          .putAsync((await getStore(currentStoreName))..name = newStoreName);
 
   @override
-  @internal
   Future<void> deleteStore({
     required String storeName,
   }) async {
-    //await resetStore(storeName: storeName);
-    await _expectRoot
+    // await resetStore(storeName: storeName);
+    // might need to reset relations?
+
+    final query = expectRoot
         .box<ObjectBoxStore>()
         .query(ObjectBoxStore_.name.equals(storeName))
-        .build()
-        .removeAsync();
+        .build();
+    await query.removeAsync();
+    query.close();
   }
 
   @override
-  @internal
-  Future<List<ObjectBoxTile>> readTile({required String url}) async {
-    final query = _expectRoot
+  Future<ObjectBoxTile?> readTile({
+    required String url,
+  }) async {
+    final query = expectRoot
         .box<ObjectBoxTile>()
         .query(ObjectBoxTile_.url.equals(url))
         .build();
-    final tiles = await query.findAsync();
+    final tile = await query.findUniqueAsync();
     query.close();
-    return tiles;
+    return tile;
   }
 
   @override
-  @internal
-  FutureOr<void> createTile() {}
-  @override
-  @internal
-  FutureOr<void> updateTile() {}
-  @override
-  @internal
-  FutureOr<void> deleteTile() {}
+  Future<void> createTile({
+    required String url,
+    required Uint8List bytes,
+    required String storeName,
+  }) async {
+    expectRoot;
+
+    await root!.runInTransactionAsync(
+      TxMode.write,
+      (store, args) {
+        final tiles = root!.box<ObjectBoxTile>();
+
+        final query = tiles.query(ObjectBoxTile_.url.equals(args.url)).build();
+
+        tiles.put(
+          (query.findUnique() ??
+              ObjectBoxTile(
+                url: args.url,
+                lastModified: DateTime.now(),
+                bytes: args.bytes,
+              ))
+            ..stores.add(ObjectBoxStore(name: args.storeName)),
+        );
+
+        query.close();
+      },
+      (url: url, bytes: bytes, storeName: storeName),
+    );
+  }
 
   @override
-  @internal
-  FutureOr<void> readLatestTile() {}
-  @override
-  @internal
-  FutureOr<void> pruneTilesOlderThan({required DateTime expiry}) {}
+  Future<bool?> deleteTile({
+    required String url,
+    required String storeName,
+  }) async {
+    final tiles = expectRoot.box<ObjectBoxTile>();
+
+    final query = (tiles.query(ObjectBoxTile_.url.equals(url))
+          ..linkMany(
+            ObjectBoxTile_.stores,
+            ObjectBoxStore_.name.equals(storeName),
+          ))
+        .build();
+    final tile = query.findUnique();
+    if (tile == null) return null;
+
+    tile.stores.removeWhere((store) => store.name == storeName);
+
+    if (tile.stores.isEmpty) {
+      await query.removeAsync();
+      query.close();
+      return true;
+    }
+
+    await tiles.putAsync(tile, mode: PutMode.update);
+    query.close();
+    return false;
+  }
 }

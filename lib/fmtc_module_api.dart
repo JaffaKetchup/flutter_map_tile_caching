@@ -27,6 +27,7 @@
 /// **Do not use in normal applications. I may be unable to offer support.**
 library fmtc_module_api;
 
+export 'src/backend/export_plus.dart';
 export 'src/db/defs/metadata.dart';
 export 'src/db/defs/store_descriptor.dart';
 export 'src/db/defs/tile.dart';

@@ -5,12 +5,13 @@ import 'package:objectbox/objectbox.dart';
 import '../../../interfaces/models.dart';
 
 @Entity()
-class ObjectBoxStore implements BackendStore {
+base class ObjectBoxStore extends BackendStore {
   @Id()
   int id = 0;
 
   @override
   @Index()
+  @Unique()
   String name;
 
   @Index()
@@ -21,7 +22,7 @@ class ObjectBoxStore implements BackendStore {
 }
 
 @Entity()
-class ObjectBoxTile implements BackendTile {
+base class ObjectBoxTile extends BackendTile {
   @Id()
   int id = 0;
 

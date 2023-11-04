@@ -33,6 +33,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
+import 'src/backend/export_std.dart';
 import 'src/bulk_download/instance.dart';
 import 'src/bulk_download/rate_limited_stream.dart';
 import 'src/bulk_download/tile_loops/shared.dart';
@@ -51,6 +52,7 @@ import 'src/misc/obscure_query_params.dart';
 import 'src/misc/typedefs.dart';
 import 'src/providers/image_provider.dart';
 
+export 'src/backend/export_std.dart';
 export 'src/errors/browsing.dart';
 export 'src/errors/damaged_store.dart';
 export 'src/errors/initialisation.dart';
