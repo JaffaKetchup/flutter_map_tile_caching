@@ -1,6 +1,6 @@
 # Custom
 local/
-.fvm/
+*.g.dart
 
 # Miscellaneous
 *.class
