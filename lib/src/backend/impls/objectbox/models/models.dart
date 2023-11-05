@@ -14,11 +14,19 @@ base class ObjectBoxStore extends BackendStore {
   @Unique()
   String name;
 
+  int numberOfTiles;
+
+  double numberOfBytes;
+
   @Index()
   @Backlink()
   final tiles = ToMany<ObjectBoxTile>();
 
-  ObjectBoxStore({required this.name});
+  ObjectBoxStore({
+    required this.name,
+    required this.numberOfTiles,
+    required this.numberOfBytes,
+  });
 }
 
 @Entity()
