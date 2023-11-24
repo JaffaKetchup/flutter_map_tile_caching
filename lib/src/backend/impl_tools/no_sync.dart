@@ -1,15 +1,16 @@
 import 'dart:typed_data';
 
 import '../interfaces/backend.dart';
+import '../interfaces/models.dart';
 import 'errors.dart';
 
 /// A shortcut to declare that an [FMTCBackend] does not support any synchronous
 /// versions of methods
-mixin FMTCBackendNoSync implements FMTCBackend {
+mixin FMTCBackendNoSync implements FMTCBackendInternal {
   /// This synchronous method is unsupported by this implementation - use
   /// [initialise] instead
   @override
-  Never initialiseSync({
+  void initialiseSync({
     String? rootDirectory,
     int? maxDatabaseSize,
     Map<String, Object> implSpecificArgs = const {},
@@ -22,7 +23,7 @@ mixin FMTCBackendNoSync implements FMTCBackend {
   /// This synchronous method is unsupported by this implementation - use
   /// [destroy] instead
   @override
-  Never destroySync({
+  void destroySync({
     bool deleteRoot = false,
   }) =>
       throw SyncOperationUnsupported();
@@ -33,7 +34,7 @@ mixin FMTCBackendNoSync implements FMTCBackend {
   /// This synchronous method is unsupported by this implementation - use
   /// [createStore] instead
   @override
-  Never createStoreSync({
+  void createStoreSync({
     required String storeName,
   }) =>
       throw SyncOperationUnsupported();
@@ -44,7 +45,7 @@ mixin FMTCBackendNoSync implements FMTCBackend {
   /// This synchronous method is unsupported by this implementation - use
   /// [resetStore] instead
   @override
-  Never resetStoreSync({
+  void resetStoreSync({
     required String storeName,
   }) =>
       throw SyncOperationUnsupported();
@@ -55,7 +56,7 @@ mixin FMTCBackendNoSync implements FMTCBackend {
   /// This synchronous method is unsupported by this implementation - use
   /// [renameStore] instead
   @override
-  Never renameStoreSync({
+  void renameStoreSync({
     required String currentStoreName,
     required String newStoreName,
   }) =>
@@ -67,7 +68,7 @@ mixin FMTCBackendNoSync implements FMTCBackend {
   /// This synchronous method is unsupported by this implementation - use
   /// [deleteStore] instead
   @override
-  Never deleteStoreSync({
+  void deleteStoreSync({
     required String storeName,
   }) =>
       throw SyncOperationUnsupported();
@@ -78,7 +79,7 @@ mixin FMTCBackendNoSync implements FMTCBackend {
   /// This synchronous method is unsupported by this implementation - use
   /// [getStoreSize] instead
   @override
-  Never getStoreSizeSync({
+  double getStoreSizeSync({
     required String storeName,
   }) =>
       throw SyncOperationUnsupported();
@@ -89,7 +90,7 @@ mixin FMTCBackendNoSync implements FMTCBackend {
   /// This synchronous method is unsupported by this implementation - use
   /// [getStoreLength] instead
   @override
-  Never getStoreLengthSync({
+  int getStoreLengthSync({
     required String storeName,
   }) =>
       throw SyncOperationUnsupported();
@@ -100,7 +101,7 @@ mixin FMTCBackendNoSync implements FMTCBackend {
   /// This synchronous method is unsupported by this implementation - use
   /// [readTile] instead
   @override
-  Never readTileSync({
+  BackendTile? readTileSync({
     required String url,
   }) =>
       throw SyncOperationUnsupported();
@@ -111,7 +112,7 @@ mixin FMTCBackendNoSync implements FMTCBackend {
   /// This synchronous method is unsupported by this implementation - use
   /// [writeTile] instead
   @override
-  Never writeTileSync({
+  void writeTileSync({
     required String storeName,
     required String url,
     required Uint8List? bytes,
@@ -124,7 +125,7 @@ mixin FMTCBackendNoSync implements FMTCBackend {
   /// This synchronous method is unsupported by this implementation - use
   /// [deleteTile] instead
   @override
-  Never deleteTileSync({
+  bool? deleteTileSync({
     required String storeName,
     required String url,
   }) =>
@@ -132,4 +133,15 @@ mixin FMTCBackendNoSync implements FMTCBackend {
 
   @override
   final supportsSyncDeleteTile = false;
+
+  /// This synchronous method is unsupported by this implementation - use
+  /// [removeOldestTile] instead
+  @override
+  void removeOldestTileSync({
+    required String storeName,
+  }) =>
+      throw SyncOperationUnsupported();
+
+  @override
+  final supportsSyncRemoveOldestTile = false;
 }

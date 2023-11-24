@@ -294,25 +294,51 @@ Future<void> _worker(
         break;
       case _WorkerKey.removeOldestTile:
         final storeName = cmd.args['storeName']! as String;
+        final numTilesToRemove = cmd.args['number']! as int;
 
         final tiles = root.box<ObjectBoxTile>();
 
-        final query = (tiles.query().order(ObjectBoxTile_.lastModified)
+        final tilesQuery = (tiles.query().order(ObjectBoxTile_.lastModified)
               ..linkMany(
                 ObjectBoxTile_.stores,
                 ObjectBoxStore_.name.equals(storeName),
               ))
             .build();
+        final deleteTiles = await tilesQuery
+            .stream()
+            .where((tile) => tile.stores.length == 1)
+            .take(numTilesToRemove)
+            .toList();
+        tilesQuery.close();
 
-        int? deleteId;
-        await for (final tile in query.stream()) {
-          if (tile.stores.length == 1) {
-            deleteId = tile.id;
-            break;
-          }
+        if (deleteTiles.isEmpty) {
+          sendRes((key: cmd.key, data: null));
+          break;
         }
-        query.close();
 
+        final storeQuery = root
+            .box<ObjectBoxStore>()
+            .query(ObjectBoxStore_.name.equals(storeName))
+            .build();
+        final store = storeQuery.findUnique() ??
+            (throw StoreUnavailable(storeName: storeName));
+        storeQuery.close();
+
+        root.runInTransaction(
+          TxMode.write,
+          () {
+            root.box<ObjectBoxStore>().put(
+                  store
+                    ..numberOfTiles -= numTilesToRemove
+                    ..numberOfBytes -=
+                        deleteTiles.map((e) => e.bytes.lengthInBytes).sum,
+                  mode: PutMode.update,
+                );
+            tiles.removeMany(deleteTiles.map((e) => e.id).toList());
+          },
+        );
+
+        sendRes((key: cmd.key, data: null));
         break;
     }
   }

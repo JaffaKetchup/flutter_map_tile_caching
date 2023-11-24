@@ -3,38 +3,56 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
+import 'package:async/async.dart';
 import 'package:collection/collection.dart';
+import 'package:meta/meta.dart' as meta;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../misc/exts.dart';
 import '../../impl_tools/errors.dart';
 import '../../impl_tools/no_sync.dart';
 import '../../interfaces/backend.dart';
-import '../../interfaces/models.dart';
 import 'models/generated/objectbox.g.dart';
 import 'models/models.dart';
 
 part 'worker.dart';
 
+final class ObjectBoxBackend implements FMTCBackend {
+  @override
+  @meta.internal
+  FMTCBackendInternal get internal => ObjectBoxBackendInternal._instance;
+}
+
 /// Implementation of [FMTCBackend] that uses ObjectBox as the storage database
-abstract interface class ObjectBoxBackend implements FMTCBackend {
-  /// Implementation of [FMTCBackend] that uses ObjectBox as the storage
-  /// database
-  factory ObjectBoxBackend() => _instance;
+///
+/// Only to be accessed by FMTC via [ObjectBoxBackend.internal]
+abstract interface class ObjectBoxBackendInternal
+    implements FMTCBackendInternal {
   static final _instance = _ObjectBoxBackendImpl._();
 }
 
-class _ObjectBoxBackendImpl with FMTCBackendNoSync implements ObjectBoxBackend {
+class _ObjectBoxBackendImpl
+    with FMTCBackendNoSync
+    implements ObjectBoxBackendInternal {
   _ObjectBoxBackendImpl._();
 
   void get expectInitialised => _sendPort ?? (throw RootUnavailable());
+
+  // Worker Comms
   SendPort? _sendPort;
   Completer<void>? _workerCompleter;
   Completer<_WorkerRes>? _workerCmdRes;
-
   //final _cmdQueue = <_WorkerKey, Completer<_WorkerRes>?>{
   //  for (final v in _WorkerKey.values) v: null,
   //};
+
+  // TODO: Make cmds that need to be idempotent for performance, like
+  // delete oldest tile
+
+  // `deleteOldestTile`
+  int _numberOfOldestTilesToDelete = 0;
+  Timer? _deleteOldestTileTimer;
+  String? _storeNameOfCurrentDeleteOldestTimer;
 
   Future<_WorkerRes> sendCmd(_WorkerCmd cmd) async {
     expectInitialised;
@@ -202,12 +220,54 @@ class _ObjectBoxBackendImpl with FMTCBackendNoSync implements ObjectBoxBackend {
       ))
           .data!['wasOrphaned'] as bool?;
 
+  void _sendRemoveOldestTileCmd(String storeName) {
+    sendCmd(
+      (
+        key: _WorkerKey.removeOldestTile,
+        args: {
+          'storeName': storeName,
+          'number': _numberOfOldestTilesToDelete,
+        }
+      ),
+    );
+    _numberOfOldestTilesToDelete = 0;
+  }
+
   @override
-  Future<bool> removeOldestTile({
+  void removeOldestTileSync({
+    required String storeName,
+  }) {
+    // Attempts to avoid flooding worker with requests to delete oldest tile,
+    // and 'batches' them instead
+
+    if (_storeNameOfCurrentDeleteOldestTimer != storeName) {
+      // If the store has changed, failing to reset the batch/queue will mean
+      // tiles are removed from the wrong store
+      _storeNameOfCurrentDeleteOldestTimer = storeName;
+      if (_deleteOldestTileTimer != null && _deleteOldestTileTimer!.isActive) {
+        _deleteOldestTileTimer!.cancel();
+        _sendRemoveOldestTileCmd(storeName);
+      }
+    }
+
+    if (_deleteOldestTileTimer != null && _deleteOldestTileTimer!.isActive) {
+      _deleteOldestTileTimer!.cancel();
+      _deleteOldestTileTimer = Timer(
+        const Duration(milliseconds: 500),
+        () => _sendRemoveOldestTileCmd(storeName),
+      );
+      return;
+    }
+
+    _deleteOldestTileTimer = Timer(
+      const Duration(seconds: 1),
+      () => _sendRemoveOldestTileCmd(storeName),
+    );
+  }
+
+  @override
+  Future<void> removeOldestTile({
     required String storeName,
   }) async =>
-      (await sendCmd(
-        (key: _WorkerKey.removeOldestTile, args: {'storeName': storeName}),
-      ))
-          .data!['tileDeleted']! as bool;
+      removeOldestTileSync(storeName: storeName);
 }

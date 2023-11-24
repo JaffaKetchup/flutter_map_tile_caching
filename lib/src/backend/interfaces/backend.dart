@@ -11,17 +11,34 @@ import 'models.dart';
 /// An abstract interface that FMTC will use to communicate with a storage
 /// 'backend' (usually one root)
 ///
+/// See also [FMTCBackendInternal], which has the actual methods. This is
+/// provided as a means to warn users to avoid using the backend directly.
+///
 /// To implementers:
-///  * Use a public 'cover-up' and separate private implementation
-///  * Use singletons (with a factory) to ensure consistent state management
+///  * Provide a seperate [FMTCBackend] & [FMTCBackendInternal] implementation
+///    (both public scope), and a private scope `FMTCBackendImpl`
+///  * Annotate your [FMTCBackend.internal] method with '@internal'
+///  * Always make [FMTCBackendInternal] a singleton 'cover-up' for
+///    `FMTCBackendImpl`, without a constructor, as the `FMTCBackendImpl` will
+///    be accessed via [FMTCBackend.internal]
 ///  * Prefer throwing included implementation-generic errors/exceptions
 ///
 /// To end-users:
 ///  * Use [FMTCSettings.backend] to set a custom backend
 ///  * Not all sync versions of methods are guaranteed to have implementations
+///  * Never access the [internal] method of a backend
 abstract interface class FMTCBackend {
   const FMTCBackend();
 
+  @protected
+  FMTCBackendInternal get internal;
+}
+
+/// An abstract interface that FMTC will use to communicate with a storage
+/// 'backend' (usually one root)
+///
+/// See [FMTCBackend] for more information.
+abstract interface class FMTCBackendInternal {
   abstract final String friendlyIdentifier;
 
   /// {@template fmtc_backend_initialise}
@@ -260,7 +277,16 @@ abstract interface class FMTCBackend {
   /// If `false`, calling will throw an [SyncOperationUnsupported] error.
   abstract final bool supportsSyncDeleteTile;
 
-  Future<bool> removeOldestTile({
+  Future<void> removeOldestTile({
     required String storeName,
   });
+
+  void removeOldestTileSync({
+    required String storeName,
+  });
+
+  /// Whether [removeOldestTileSync] is implemented
+  ///
+  /// If `false`, calling will throw an [SyncOperationUnsupported] error.
+  abstract final bool supportsSyncRemoveOldestTile;
 }

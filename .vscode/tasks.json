@@ -2,10 +2,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "type": "flutter",
-            "command": "flutter",
+            "type": "dart",
+            "command": "dart",
             "args": [
-                "pub",
                 "run",
                 "build_runner",
                 "build"
@@ -15,7 +14,7 @@
             ],
             "group": "build",
             "label": "Run Code Generator",
-            "detail": "flutter pub run build_runner build"
+            "detail": "dart run build_runner build"
         }
     ]
 }
