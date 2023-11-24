@@ -11,9 +11,9 @@ class TilesGenerator {
     final northWest = region.originalRegion.bounds.northWest;
     final southEast = region.originalRegion.bounds.southEast;
 
-    final recievePort = ReceivePort();
-    input.sendPort.send(recievePort.sendPort);
-    final requestQueue = StreamQueue(recievePort);
+    final receivePort = ReceivePort();
+    input.sendPort.send(receivePort.sendPort);
+    final requestQueue = StreamQueue(receivePort);
 
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
@@ -50,9 +50,9 @@ class TilesGenerator {
     final region = input.region as DownloadableRegion<CircleRegion>;
     final circleOutline = region.originalRegion.toOutline();
 
-    final recievePort = ReceivePort();
-    input.sendPort.send(recievePort.sendPort);
-    final requestQueue = StreamQueue(recievePort);
+    final receivePort = ReceivePort();
+    input.sendPort.send(receivePort.sendPort);
+    final requestQueue = StreamQueue(receivePort);
 
     // Format: Map<z, Map<x, List<y>>>
     final Map<int, Map<int, List<int>>> outlineTileNums = {};
@@ -137,9 +137,9 @@ class TilesGenerator {
     final region = input.region as DownloadableRegion<LineRegion>;
     final lineOutline = region.originalRegion.toOutlines(1);
 
-    final recievePort = ReceivePort();
-    input.sendPort.send(recievePort.sendPort);
-    final requestQueue = StreamQueue(recievePort);
+    final receivePort = ReceivePort();
+    input.sendPort.send(receivePort.sendPort);
+    final requestQueue = StreamQueue(receivePort);
 
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
@@ -244,9 +244,9 @@ class TilesGenerator {
     final region = input.region as DownloadableRegion<CustomPolygonRegion>;
     final customPolygonOutline = region.originalRegion.outline;
 
-    final recievePort = ReceivePort();
-    input.sendPort.send(recievePort.sendPort);
-    final requestQueue = StreamQueue(recievePort);
+    final receivePort = ReceivePort();
+    input.sendPort.send(receivePort.sendPort);
+    final requestQueue = StreamQueue(receivePort);
 
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;

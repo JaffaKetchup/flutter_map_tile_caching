@@ -17,12 +17,12 @@ Future<void> _singleDownloadThread(
   }) input,
 ) async {
   // Setup two-way communications
-  final recievePort = ReceivePort();
+  final receivePort = ReceivePort();
   void send(Object m) => input.sendPort.send(m);
-  send(recievePort.sendPort);
+  send(receivePort.sendPort);
 
   // Setup tile queue
-  final tileQueue = StreamQueue(recievePort);
+  final tileQueue = StreamQueue(receivePort);
 
   // Open a reference to the Isar DB for the current store
   final db = Isar.openSync(
@@ -45,7 +45,7 @@ Future<void> _singleDownloadThread(
 
     // Cleanup resources and shutdown if no more coords available
     if (rawCoords == null) {
-      recievePort.close();
+      receivePort.close();
       await tileQueue.cancel(immediate: true);
 
       httpClient.close();

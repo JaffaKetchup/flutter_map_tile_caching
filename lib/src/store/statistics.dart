@@ -4,18 +4,18 @@
 part of flutter_map_tile_caching;
 
 /// Provides statistics about a [StoreDirectory]
-class StoreStats extends _StoreDb {
+final class StoreStats extends _WithBackendAccess {
   const StoreStats._(super._store);
 
   /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
   ///
   /// Prefer [storeSizeAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  double get storeSize => _db.getSizeSync(includeIndexes: true) / 1024;
+  double get storeSize => _backend.getStoreSizeSync(storeName: _storeName);
 
   /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
   Future<double> get storeSizeAsync async =>
-      await _db.getSize(includeIndexes: true) / 1024;
+      _backend.getStoreSize(storeName: _storeName);
 
   /// Retrieve the number of stored tiles synchronously
   ///

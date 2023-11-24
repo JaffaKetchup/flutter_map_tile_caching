@@ -32,23 +32,21 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// The coordinates of the tile to be fetched
   final TileCoordinates coords;
 
+  FMTCBackend get _backend => FMTC.instance.settings.backend;
+
   /// Configured root directory
-  final String directory;
+  // final String directory;
 
-  /// The database to write tiles to
-  final Isar db;
-
-  static final _removeOldestQueue = Queue(timeout: const Duration(seconds: 1));
-  static final _cacheHitsQueue = Queue();
-  static final _cacheMissesQueue = Queue();
+  //static final _removeOldestQueue = Queue(timeout: const Duration(seconds: 1));
+  //static final _cacheHitsQueue = Queue();
+  //static final _cacheMissesQueue = Queue();
 
   /// Create a specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
   FMTCImageProvider({
     required this.provider,
     required this.options,
     required this.coords,
-    required this.directory,
-  }) : db = FMTCRegistry.instance(provider.storeDirectory.storeName);
+  });
 
   @override
   ImageStreamCompleter loadImage(
@@ -62,9 +60,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       scale: 1,
       debugLabel: coords.toString(),
       informationCollector: () => [
-        DiagnosticsProperty('Tile coordinates', coords),
-        DiagnosticsProperty('Root directory', directory),
         DiagnosticsProperty('Store name', provider.storeDirectory.storeName),
+        DiagnosticsProperty('Tile coordinates', coords),
         DiagnosticsProperty('Current provider', key),
       ],
     );
@@ -102,7 +99,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       obscuredQueryParams: provider.settings.obscuredQueryParams,
     );
 
-    final existingTile = await db.tiles.get(DatabaseTools.hash(matcherUrl));
+    final existingTile = await _backend.readTile(url: matcherUrl);
 
     final needsCreating = existingTile == null;
     final needsUpdating = !needsCreating &&
@@ -224,8 +221,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     // Cache the tile retrieved from the network response
     unawaited(
-      db.writeTxn(
-        () => db.tiles.put(DbTile(url: matcherUrl, bytes: responseBytes)),
+      _backend.writeTile(
+        storeName: provider.storeDirectory.storeName,
+        url: matcherUrl,
+        bytes: responseBytes,
       ),
     );
 

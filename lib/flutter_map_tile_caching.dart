@@ -64,7 +64,7 @@ part 'src/bulk_download/manager.dart';
 part 'src/bulk_download/thread.dart';
 part 'src/bulk_download/tile_event.dart';
 part 'src/fmtc.dart';
-part 'src/misc/store_db_impl.dart';
+part 'src/misc/with_backend_access.dart';
 part 'src/providers/tile_provider.dart';
 part 'src/regions/base_region.dart';
 part 'src/regions/circle.dart';

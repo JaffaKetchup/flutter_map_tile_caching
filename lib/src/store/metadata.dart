@@ -8,7 +8,7 @@ part of flutter_map_tile_caching;
 /// Uses a key-value format where both key and value must be [String]. More
 /// advanced requirements should use another package, as this is a basic
 /// implementation.
-class StoreMetadata extends _StoreDb {
+class StoreMetadata extends _WithBackendAccess {
   const StoreMetadata._(super._store);
 
   /// Add a new key-value pair to the store asynchronously

@@ -14,7 +14,7 @@ import 'package:test/test.dart';
 
 void main() {
   Future<int> countByGenerator(DownloadableRegion<BaseRegion> region) async {
-    final tileRecievePort = ReceivePort();
+    final tilereceivePort = ReceivePort();
     final tileIsolate = await Isolate.spawn(
       region.when(
         rectangle: (_) => TilesGenerator.rectangleTiles,
@@ -22,15 +22,15 @@ void main() {
         line: (_) => TilesGenerator.lineTiles,
         customPolygon: (_) => TilesGenerator.customPolygonTiles,
       ),
-      (sendPort: tileRecievePort.sendPort, region: region),
-      onExit: tileRecievePort.sendPort,
+      (sendPort: tilereceivePort.sendPort, region: region),
+      onExit: tilereceivePort.sendPort,
       debugName: '[FMTC] Tile Coords Generator Thread',
     );
     late final SendPort requestTilePort;
 
     int evts = -1;
 
-    await for (final evt in tileRecievePort) {
+    await for (final evt in tilereceivePort) {
       if (evt == null) break;
       if (evt is SendPort) requestTilePort = evt;
       requestTilePort.send(null);
@@ -38,7 +38,7 @@ void main() {
     }
 
     tileIsolate.kill(priority: Isolate.immediate);
-    tileRecievePort.close();
+    tilereceivePort.close();
 
     return evts;
   }
@@ -261,7 +261,7 @@ void main() {
  Future<Set<(int, int, int)>> listGenerator(
         DownloadableRegion<BaseRegion> region,
       ) async {
-        final tileRecievePort = ReceivePort();
+        final tilereceivePort = ReceivePort();
         final tileIsolate = await Isolate.spawn(
           region.when(
             rectangle: (_) => TilesGenerator.rectangleTiles,
@@ -269,15 +269,15 @@ void main() {
             line: (_) => TilesGenerator.lineTiles,
             customPolygon: (_) => TilesGenerator.customPolygonTiles,
           ),
-          (sendPort: tileRecievePort.sendPort, region: region),
-          onExit: tileRecievePort.sendPort,
+          (sendPort: tilereceivePort.sendPort, region: region),
+          onExit: tilereceivePort.sendPort,
           debugName: '[FMTC] Tile Coords Generator Thread',
         );
         late final SendPort requestTilePort;
 
         final Set<(int, int, int)> evts = {};
 
-        await for (final evt in tileRecievePort) {
+        await for (final evt in tilereceivePort) {
           if (evt == null) break;
           if (evt is SendPort) {
             requestTilePort = evt..send(null);
@@ -288,7 +288,7 @@ void main() {
         }
 
         tileIsolate.kill(priority: Isolate.immediate);
-        tileRecievePort.close();
+        tilereceivePort.close();
 
         return evts;
       }

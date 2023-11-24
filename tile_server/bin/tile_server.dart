@@ -53,7 +53,7 @@ Future<void> main(List<String> _) async {
   );
 
   // Handle keyboard events
-  final keyboardHandlerRecievePort = ReceivePort();
+  final keyboardHandlerreceivePort = ReceivePort();
   await Isolate.spawn(
     (sendPort) {
       while (true) {
@@ -65,10 +65,10 @@ Future<void> main(List<String> _) async {
         if (key.controlChar == ControlCharacter.arrowDown) sendPort.send(-1);
       }
     },
-    keyboardHandlerRecievePort.sendPort,
-    onExit: keyboardHandlerRecievePort.sendPort,
+    keyboardHandlerreceivePort.sendPort,
+    onExit: keyboardHandlerreceivePort.sendPort,
   );
-  keyboardHandlerRecievePort.listen(
+  keyboardHandlerreceivePort.listen(
     (message) =>
         // Control artificial delay
         currentArtificialDelay += artificialDelayChangeAmount * message,

@@ -67,7 +67,7 @@ Future<void> _downloadManager(
   }
 
   // Setup tile generator isolate
-  final tileRecievePort = ReceivePort();
+  final tilereceivePort = ReceivePort();
   final tileIsolate = await Isolate.spawn(
     input.region.when(
       rectangle: (_) => TilesGenerator.rectangleTiles,
@@ -75,11 +75,11 @@ Future<void> _downloadManager(
       line: (_) => TilesGenerator.lineTiles,
       customPolygon: (_) => TilesGenerator.customPolygonTiles,
     ),
-    (sendPort: tileRecievePort.sendPort, region: input.region),
-    onExit: tileRecievePort.sendPort,
+    (sendPort: tilereceivePort.sendPort, region: input.region),
+    onExit: tilereceivePort.sendPort,
     debugName: '[FMTC] Tile Coords Generator Thread',
   );
-  final rawTileStream = tileRecievePort.skip(input.region.start).take(
+  final rawTileStream = tilereceivePort.skip(input.region.start).take(
         input.region.end == null
             ? largestInt
             : (input.region.end! - input.region.start),
@@ -119,7 +119,7 @@ Future<void> _downloadManager(
   }
 
   // Setup two-way communications with root
-  final rootRecievePort = ReceivePort();
+  final rootreceivePort = ReceivePort();
   void send(Object? m) => input.sendPort.send(m);
 
   // Setup cancel, pause, and resume handling
@@ -131,7 +131,7 @@ Future<void> _downloadManager(
   final threadPausedStates = generateThreadPausedStates();
   final cancelSignal = Completer<void>();
   var pauseResumeSignal = Completer<void>()..complete();
-  rootRecievePort.listen(
+  rootreceivePort.listen(
     (e) async {
       if (e == null) {
         try {
@@ -172,7 +172,7 @@ Future<void> _downloadManager(
         );
 
   // Now it's safe, start accepting communications from the root
-  send(rootRecievePort.sendPort);
+  send(rootreceivePort.sendPort);
 
   // Start download threads & wait for download to complete/cancelled
   downloadDuration.start();
@@ -183,11 +183,11 @@ Future<void> _downloadManager(
         if (cancelSignal.isCompleted) return;
 
         // Start thread worker isolate & setup two-way communications
-        final downloadThreadRecievePort = ReceivePort();
+        final downloadThreadreceivePort = ReceivePort();
         await Isolate.spawn(
           _singleDownloadThread,
           (
-            sendPort: downloadThreadRecievePort.sendPort,
+            sendPort: downloadThreadreceivePort.sendPort,
             storeId: storeId,
             rootDirectory: input.rootDirectory,
             options: input.region.options,
@@ -197,7 +197,7 @@ Future<void> _downloadManager(
             obscuredQueryParams: input.obscuredQueryParams,
             headers: headers,
           ),
-          onExit: downloadThreadRecievePort.sendPort,
+          onExit: downloadThreadreceivePort.sendPort,
           debugName: '[FMTC] Bulk Download Thread #$threadNo',
         );
         late final SendPort sendPort;
@@ -214,7 +214,7 @@ Future<void> _downloadManager(
               .then((sp) => sp.send(null)),
         );
 
-        downloadThreadRecievePort.listen(
+        downloadThreadreceivePort.listen(
           (evt) async {
             // Thread is sending tile data
             if (evt is TileEvent) {
@@ -288,7 +288,7 @@ Future<void> _downloadManager(
             }
 
             // Thread ended, goto `onDone`
-            if (evt == null) return downloadThreadRecievePort.close();
+            if (evt == null) return downloadThreadreceivePort.close();
           },
           onDone: () {
             try {
@@ -323,7 +323,7 @@ Future<void> _downloadManager(
   );
 
   // Cleanup resources and shutdown
-  rootRecievePort.close();
+  rootreceivePort.close();
   tileIsolate.kill(priority: Isolate.immediate);
   await tileQueue.cancel(immediate: true);
   Isolate.exit();

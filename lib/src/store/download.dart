@@ -165,11 +165,11 @@ class DownloadManagement {
     }
 
     // Start download thread
-    final recievePort = ReceivePort();
+    final receivePort = ReceivePort();
     await Isolate.spawn(
       _downloadManager,
       (
-        sendPort: recievePort.sendPort,
+        sendPort: receivePort.sendPort,
         rootDirectory: FMTC.instance.rootDirectory.directory.absolute.path,
         region: region,
         storeName: _storeDirectory.storeName,
@@ -184,7 +184,7 @@ class DownloadManagement {
                 FMTC.instance.settings.defaultTileProviderSettings
                     .obscuredQueryParams,
       ),
-      onExit: recievePort.sendPort,
+      onExit: receivePort.sendPort,
       debugName: '[FMTC] Master Bulk Download Thread',
     );
 
@@ -192,7 +192,7 @@ class DownloadManagement {
     final cancelCompleter = Completer<void>();
     Completer<void>? pauseCompleter;
 
-    await for (final evt in recievePort) {
+    await for (final evt in receivePort) {
       // Handle new progress message
       if (evt is DownloadProgress) {
         yield evt;
@@ -229,7 +229,7 @@ class DownloadManagement {
     }
 
     // Handle shutdown (both normal and cancellation)
-    recievePort.close();
+    receivePort.close();
     await FMTC.instance.rootDirectory.recovery.cancel(recoveryId);
     DownloadInstance.unregister(instanceId);
     cancelCompleter.complete();
