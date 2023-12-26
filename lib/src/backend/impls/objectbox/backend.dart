@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:async/async.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart' as meta;
 import 'package:path_provider/path_provider.dart';
@@ -46,13 +45,10 @@ class _ObjectBoxBackendImpl
   //  for (final v in _WorkerKey.values) v: null,
   //};
 
-  // TODO: Make cmds that need to be idempotent for performance, like
-  // delete oldest tile
-
-  // `deleteOldestTile`
-  int _numberOfOldestTilesToDelete = 0;
-  Timer? _deleteOldestTileTimer;
-  String? _storeNameOfCurrentDeleteOldestTimer;
+  // `deleteOldestTile` tracking & debouncing
+  int _dotLength = 0;
+  Timer? _dotDebouncer;
+  String? _dotStore;
 
   Future<_WorkerRes> sendCmd(_WorkerCmd cmd) async {
     expectInitialised;
@@ -188,6 +184,24 @@ class _ObjectBoxBackendImpl
           .data!['length']! as int;
 
   @override
+  Future<int> getStoreHits({
+    required String storeName,
+  }) async =>
+      (await sendCmd(
+        (key: _WorkerKey.getStoreHits, args: {'storeName': storeName}),
+      ))
+          .data!['hits']! as int;
+
+  @override
+  Future<int> getStoreMisses({
+    required String storeName,
+  }) async =>
+      (await sendCmd(
+        (key: _WorkerKey.getStoreMisses, args: {'storeName': storeName}),
+      ))
+          .data!['misses']! as int;
+
+  @override
   Future<ObjectBoxTile?> readTile({
     required String url,
   }) async =>
@@ -226,11 +240,11 @@ class _ObjectBoxBackendImpl
         key: _WorkerKey.removeOldestTile,
         args: {
           'storeName': storeName,
-          'number': _numberOfOldestTilesToDelete,
+          'number': _dotLength,
         }
       ),
     );
-    _numberOfOldestTilesToDelete = 0;
+    _dotLength = 0;
   }
 
   @override
@@ -240,26 +254,26 @@ class _ObjectBoxBackendImpl
     // Attempts to avoid flooding worker with requests to delete oldest tile,
     // and 'batches' them instead
 
-    if (_storeNameOfCurrentDeleteOldestTimer != storeName) {
+    if (_dotStore != storeName) {
       // If the store has changed, failing to reset the batch/queue will mean
       // tiles are removed from the wrong store
-      _storeNameOfCurrentDeleteOldestTimer = storeName;
-      if (_deleteOldestTileTimer != null && _deleteOldestTileTimer!.isActive) {
-        _deleteOldestTileTimer!.cancel();
+      _dotStore = storeName;
+      if (_dotDebouncer != null && _dotDebouncer!.isActive) {
+        _dotDebouncer!.cancel();
         _sendRemoveOldestTileCmd(storeName);
       }
     }
 
-    if (_deleteOldestTileTimer != null && _deleteOldestTileTimer!.isActive) {
-      _deleteOldestTileTimer!.cancel();
-      _deleteOldestTileTimer = Timer(
+    if (_dotDebouncer != null && _dotDebouncer!.isActive) {
+      _dotDebouncer!.cancel();
+      _dotDebouncer = Timer(
         const Duration(milliseconds: 500),
         () => _sendRemoveOldestTileCmd(storeName),
       );
       return;
     }
 
-    _deleteOldestTileTimer = Timer(
+    _dotDebouncer = Timer(
       const Duration(seconds: 1),
       () => _sendRemoveOldestTileCmd(storeName),
     );

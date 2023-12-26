@@ -12,6 +12,8 @@ enum _WorkerKey {
   deleteStore,
   getStoreSize,
   getStoreLength,
+  getStoreHits,
+  getStoreMisses,
   readTile,
   writeTile,
   deleteTile,
@@ -68,6 +70,8 @@ Future<void> _worker(
                 name: cmd.args['storeName']! as String,
                 numberOfTiles: 0,
                 numberOfBytes: 0,
+                hits: 0,
+                misses: 0,
               ),
               mode: PutMode.insert,
             );
@@ -78,6 +82,7 @@ Future<void> _worker(
         final removeIds = <int>[];
 
         final tiles = root.box<ObjectBoxTile>();
+        final stores = root.box<ObjectBoxStore>();
 
         final tilesQuery = (tiles.query()
               ..linkMany(
@@ -85,6 +90,9 @@ Future<void> _worker(
                 ObjectBoxStore_.name.equals(storeName),
               ))
             .build();
+
+        final storeQuery =
+            stores.query(ObjectBoxStore_.name.equals(storeName)).build();
 
         root.runInTransaction(
           TxMode.write,
@@ -107,6 +115,21 @@ Future<void> _worker(
             tiles.query(ObjectBoxTile_.id.oneOf(removeIds)).build()
               ..remove()
               ..close();
+
+            final store = storeQuery.findUnique() ??
+                (throw StoreUnavailable(storeName: storeName));
+            storeQuery.close();
+
+            assert(store.tiles.isEmpty);
+
+            stores.put(
+              store
+                ..tiles.clear()
+                ..numberOfTiles = 0
+                ..numberOfBytes = 0
+                ..hits = 0
+                ..misses = 0,
+            );
           },
         );
         sendRes((key: cmd.key, data: null));
@@ -168,6 +191,34 @@ Future<void> _worker(
 
         sendRes((key: cmd.key, data: {'length': length}));
         break;
+      case _WorkerKey.getStoreHits:
+        final storeName = cmd.args['storeName']! as String;
+
+        final query = root
+            .box<ObjectBoxStore>()
+            .query(ObjectBoxStore_.name.equals(storeName))
+            .build();
+        final hits = (query.findUnique() ??
+                (throw StoreUnavailable(storeName: storeName)))
+            .hits;
+        query.close();
+
+        sendRes((key: cmd.key, data: {'hits': hits}));
+        break;
+      case _WorkerKey.getStoreMisses:
+        final storeName = cmd.args['storeName']! as String;
+
+        final query = root
+            .box<ObjectBoxStore>()
+            .query(ObjectBoxStore_.name.equals(storeName))
+            .build();
+        final misses = (query.findUnique() ??
+                (throw StoreUnavailable(storeName: storeName)))
+            .misses;
+        query.close();
+
+        sendRes((key: cmd.key, data: {'misses': misses}));
+        break;
       case _WorkerKey.readTile:
         final query = root
             .box<ObjectBoxTile>()
@@ -175,6 +226,8 @@ Future<void> _worker(
             .build();
         final tile = query.findUnique();
         query.close();
+
+        // TODO: Hits & misses
 
         sendRes((key: cmd.key, data: {'tile': tile}));
         break;

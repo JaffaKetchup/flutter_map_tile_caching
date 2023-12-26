@@ -26,12 +26,12 @@ import 'models.dart';
 /// To end-users:
 ///  * Use [FMTCSettings.backend] to set a custom backend
 ///  * Not all sync versions of methods are guaranteed to have implementations
-///  * Never access the [internal] method of a backend
-abstract interface class FMTCBackend {
+///  * Avoid calling the [internal] method of a backend
+abstract interface class FMTCBackend<Internal extends FMTCBackendInternal> {
   const FMTCBackend();
 
   @protected
-  FMTCBackendInternal get internal;
+  Internal get internal;
 }
 
 /// An abstract interface that FMTC will use to communicate with a storage
@@ -201,6 +201,40 @@ abstract interface class FMTCBackendInternal {
   ///
   /// If `false`, calling will throw an [SyncOperationUnsupported] error.
   abstract final bool supportsSyncGetStoreLength;
+
+  /// Retrieve the number of times that a tile was successfully retrieved from
+  /// the specified store when browsing
+  Future<int> getStoreHits({
+    required String storeName,
+  });
+
+  /// Retrieve the number of times that a tile was successfully retrieved from
+  /// the specified store when browsing
+  int getStoreHitsSync({
+    required String storeName,
+  });
+
+  /// Whether [getStoreHitsSync] is implemented
+  ///
+  /// If `false`, calling will throw an [SyncOperationUnsupported] error.
+  abstract final bool supportsSyncGetStoreHits;
+
+  /// Retrieve the number of times that a tile was attempted to be retrieved from
+  /// the specified store when browsing, but was not present
+  Future<int> getStoreMisses({
+    required String storeName,
+  });
+
+  /// Retrieve the number of times that a tile was attempted to be retrieved from
+  /// the specified store when browsing, but was not present
+  int getStoreMissesSync({
+    required String storeName,
+  });
+
+  /// Whether [getStoreMissesSync] is implemented
+  ///
+  /// If `false`, calling will throw an [SyncOperationUnsupported] error.
+  abstract final bool supportsSyncGetStoreMisses;
 
   /// Get a raw tile by URL
   Future<BackendTile?> readTile({

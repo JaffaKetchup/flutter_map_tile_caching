@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:7419244569066266196",
-      "lastPropertyId": "4:3677248801338209880",
+      "lastPropertyId": "6:3446172587861422549",
       "name": "ObjectBoxStore",
       "properties": [
         {
@@ -30,6 +30,16 @@
           "id": "4:3677248801338209880",
           "name": "numberOfBytes",
           "type": 8
+        },
+        {
+          "id": "5:1702586868505261124",
+          "name": "hits",
+          "type": 6
+        },
+        {
+          "id": "6:3446172587861422549",
+          "name": "misses",
+          "type": 6
         }
       ],
       "relations": []

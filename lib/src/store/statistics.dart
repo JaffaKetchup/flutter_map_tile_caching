@@ -14,39 +14,42 @@ final class StoreStats extends _WithBackendAccess {
   double get storeSize => _backend.getStoreSizeSync(storeName: _storeName);
 
   /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
-  Future<double> get storeSizeAsync async =>
+  Future<double> get storeSizeAsync =>
       _backend.getStoreSize(storeName: _storeName);
 
   /// Retrieve the number of stored tiles synchronously
   ///
   /// Prefer [storeLengthAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  int get storeLength => _db.tiles.countSync();
+  int get storeLength => _backend.getStoreLengthSync(storeName: _storeName);
 
   /// Retrieve the number of stored tiles asynchronously
-  Future<int> get storeLengthAsync => _db.tiles.count();
+  Future<int> get storeLengthAsync =>
+      _backend.getStoreLength(storeName: _storeName);
 
   /// Retrieve the number of tiles that were successfully retrieved from the
   /// store during browsing synchronously
   ///
   /// Prefer [cacheHitsAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  int get cacheHits => _db.descriptorSync.hits;
+  int get cacheHits => _backend.getStoreHitsSync(storeName: _storeName);
 
   /// Retrieve the number of tiles that were successfully retrieved from the
   /// store during browsing asynchronously
-  Future<int> get cacheHitsAsync async => (await _db.descriptor).hits;
+  Future<int> get cacheHitsAsync async =>
+      _backend.getStoreHits(storeName: _storeName);
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the
   /// store during browsing synchronously
   ///
   /// Prefer [cacheMissesAsync] to avoid blocking the UI thread. Otherwise, this
   /// has slightly better performance.
-  int get cacheMisses => _db.descriptorSync.misses;
+  int get cacheMisses => _backend.getStoreMissesSync(storeName: _storeName);
 
   /// Retrieve the number of tiles that were unsuccessfully retrieved from the
   /// store during browsing asynchronously
-  Future<int> get cacheMissesAsync async => (await _db.descriptor).misses;
+  Future<int> get cacheMissesAsync async =>
+      _backend.getStoreMisses(storeName: _storeName);
 
   /// Watch for changes in the current store
   ///
@@ -74,15 +77,7 @@ final class StoreStats extends _WithBackendAccess {
       StoreParts.stats,
     ],
   }) =>
-      StreamGroup.merge([
-        if (storeParts.contains(StoreParts.metadata))
-          _db.metadata.watchLazy(fireImmediately: fireImmediately),
-        if (storeParts.contains(StoreParts.tiles))
-          _db.tiles.watchLazy(fireImmediately: fireImmediately),
-        if (storeParts.contains(StoreParts.stats))
-          _db.storeDescriptor
-              .watchObjectLazy(0, fireImmediately: fireImmediately),
-      ]).debounce(debounce ?? Duration.zero);
+      throw UnimplementedError();
 }
 
 /// Parts of a store which can be watched

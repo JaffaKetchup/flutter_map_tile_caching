@@ -11,28 +11,28 @@ environment:
 
 dependencies:
   auto_size_text: ^3.0.0
-  badges: ^3.0.2
+  badges: ^3.1.2
   better_open_file: ^3.6.4
-  collection: ^1.17.1
+  collection: ^1.18.0
   dart_earcut: ^1.0.1
   file_picker: ^5.2.10
   flutter:
     sdk: flutter
-  flutter_foreground_task: ^6.0.0+1
-  flutter_map: ^6.0.0
+  flutter_foreground_task: ^6.1.2
+  flutter_map: ^6.1.0
   flutter_map_animations: ^0.5.3
-  flutter_map_tile_caching:
+  flutter_map_tile_caching: ^9.0.0-dev.5
   flutter_speed_dial: ^7.0.0
   fmtc_plus_sharing: ^8.0.0
-  google_fonts: ^5.1.0
+  google_fonts: ^6.1.0
   gpx: ^2.2.1
-  http: ^1.0.0
-  intl: ^0.18.0
+  http: ^1.1.2
+  intl: ^0.19.0
   latlong2: ^0.9.0
   osm_nominatim: ^3.0.0
-  path: ^1.8.3
-  provider: ^6.0.3
-  stream_transform: ^2.0.0
+  path: ^1.9.0
+  provider: ^6.1.1
+  stream_transform: ^2.1.0
   validators: ^3.0.0
   version: ^3.0.2
 

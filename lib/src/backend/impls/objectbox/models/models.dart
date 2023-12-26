@@ -14,9 +14,17 @@ base class ObjectBoxStore extends BackendStore {
   @Unique()
   String name;
 
+  @override
   int numberOfTiles;
 
+  @override
   double numberOfBytes;
+
+  @override
+  int hits;
+
+  @override
+  int misses;
 
   @Index()
   @Backlink()
@@ -26,6 +34,8 @@ base class ObjectBoxStore extends BackendStore {
     required this.name,
     required this.numberOfTiles,
     required this.numberOfBytes,
+    required this.hits,
+    required this.misses,
   });
 }
 

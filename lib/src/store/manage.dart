@@ -5,16 +5,10 @@ part of flutter_map_tile_caching;
 
 /// Manages a [StoreDirectory]'s representation on the filesystem, such as
 /// creation and deletion
-class StoreManagement {
-  StoreManagement._(StoreDirectory storeDirectory)
-      : _name = storeDirectory.storeName,
-        _id = DatabaseTools.hash(storeDirectory.storeName),
-        _registry = FMTCRegistry.instance,
-        _rootDirectory = FMTC.instance.rootDirectory.directory;
+final class StoreManagement extends _WithBackendAccess {
+  StoreManagement._(super.store)
+      : _rootDirectory = FMTC.instance.rootDirectory.directory;
 
-  final String _name;
-  final int _id;
-  final FMTCRegistry _registry;
   final Directory _rootDirectory;
 
   /// Check whether this store is ready for use

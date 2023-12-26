@@ -99,6 +99,28 @@ mixin FMTCBackendNoSync implements FMTCBackendInternal {
   final supportsSyncGetStoreLength = false;
 
   /// This synchronous method is unsupported by this implementation - use
+  /// [getStoreHits] instead
+  @override
+  int getStoreHitsSync({
+    required String storeName,
+  }) =>
+      throw SyncOperationUnsupported();
+
+  @override
+  final supportsSyncGetStoreHits = false;
+
+  /// This synchronous method is unsupported by this implementation - use
+  /// [getStoreMisses] instead
+  @override
+  int getStoreMissesSync({
+    required String storeName,
+  }) =>
+      throw SyncOperationUnsupported();
+
+  @override
+  final supportsSyncGetStoreMisses = false;
+
+  /// This synchronous method is unsupported by this implementation - use
   /// [readTile] instead
   @override
   BackendTile? readTileSync({
