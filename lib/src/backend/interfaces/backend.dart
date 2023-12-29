@@ -95,14 +95,36 @@ abstract interface class FMTCBackendInternal {
   ///
   /// If [deleteRoot] is `true`, then the storage medium will be permanently
   /// deleted.
+  ///
+  /// If [immediate] is `true`, any operations currently underway will be lost.
+  /// If `false`, all operations currently underway will be allowed to complete,
+  /// but any operations started after this method call will be lost. A lost
+  /// operation may throw [RootUnavailable]. This parameter may not have a
+  /// noticable/any effect in some implementations.
   void destroySync({
     bool deleteRoot = false,
+    bool immediate = false,
   });
 
   /// Whether [destroySync] is implemented
   ///
   /// If `false`, calling will throw an [SyncOperationUnsupported] error.
   abstract final bool supportsSyncDestroy;
+
+  /// Whether the store currently exists
+  Future<bool> storeExists({
+    required String storeName,
+  });
+
+  /// Whether the store currently exists
+  bool storeExistsSync({
+    required String storeName,
+  });
+
+  /// Whether [storeExistsSync] is implemented
+  ///
+  /// If `false`, calling will throw an [SyncOperationUnsupported] error.
+  abstract final bool supportsSyncStoreExists;
 
   /// Create a new store with the specified name
   Future<void> createStore({

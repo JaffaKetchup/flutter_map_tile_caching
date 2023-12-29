@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart' as meta;
 import 'package:path_provider/path_provider.dart';
 
@@ -37,41 +37,36 @@ class _ObjectBoxBackendImpl
 
   void get expectInitialised => _sendPort ?? (throw RootUnavailable());
 
-  // Worker Comms
+  // Worker communication
   SendPort? _sendPort;
-  Completer<void>? _workerCompleter;
-  Completer<_WorkerRes>? _workerCmdRes;
-  //final _cmdQueue = <_WorkerKey, Completer<_WorkerRes>?>{
-  //  for (final v in _WorkerKey.values) v: null,
-  //};
+  final Map<int, Completer<Map<String, dynamic>?>> _workerRes = {};
+  late int _workerId;
+  late Completer<void> _workerComplete;
 
   // `deleteOldestTile` tracking & debouncing
   int _dotLength = 0;
   Timer? _dotDebouncer;
   String? _dotStore;
 
-  Future<_WorkerRes> sendCmd(_WorkerCmd cmd) async {
+  Future<Map<String, dynamic>?> _sendCmd({
+    required _WorkerCmdType type,
+    required Map<String, dynamic> args,
+  }) async {
     expectInitialised;
 
-    // If a command is already pending response, wait for it to complete
-    await _workerCmdRes?.future;
+    final id = ++_workerId;
+    _workerRes[id] = Completer();
+    _sendPort!.send((id: id, type: type, args: args));
+    final res = await _workerRes[id]!.future;
+    _workerRes.remove(id);
 
-    _workerCmdRes = Completer();
-    _sendPort!.send(cmd);
-    final res = await _workerCmdRes!.future;
-    _workerCmdRes = null;
-    return res;
-  }
+    final err = res?['error'];
+    if (err == null) return res;
 
-  Future<void> workerListener(ReceivePort receivePort) async {
-    await for (final _WorkerRes evt in receivePort) {
-      if (evt.key == _WorkerKey.initialise_) {
-        _sendPort = evt.data!['sendPort']! as SendPort;
-      } else {
-        _workerCmdRes!.complete(evt);
-      }
-    }
-    _workerCompleter!.complete();
+    if (err is FMTCBackendError) throw err;
+    debugPrint('An unexpected error in the FMTC backend occurred:');
+    // ignore: only_throw_errors
+    throw err;
   }
 
   @override
@@ -99,6 +94,23 @@ class _ObjectBoxBackendImpl
 
     // Setup worker isolate
     final receivePort = ReceivePort();
+    _workerId = 0;
+    _workerRes.clear();
+    _workerRes[0] = Completer();
+    unawaited(
+      _workerRes[0]!.future.then((res) {
+        _sendPort = res!['sendPort'];
+        _workerRes.remove(0);
+      }),
+    );
+    _workerComplete = Completer();
+    receivePort.listen(
+      (evt) {
+        evt as ({int id, Map<String, dynamic>? data});
+        _workerRes[evt.id]!.complete(evt.data);
+      },
+      onDone: () => _workerComplete.complete(),
+    );
     await Isolate.spawn(
       _worker,
       (
@@ -112,101 +124,127 @@ class _ObjectBoxBackendImpl
       onExit: receivePort.sendPort,
       debugName: '[FMTC] ObjectBox Backend Worker',
     );
-
-    _workerCompleter = Completer();
-    return;
   }
 
   @override
   Future<void> destroy({
     bool deleteRoot = false,
+    bool immediate = false,
   }) async {
     expectInitialised;
 
+    if (!immediate) {
+      await Future.wait(_workerRes.values.map((e) => e.future));
+    }
+
     unawaited(
-      sendCmd(
-        (key: _WorkerKey.destroy_, args: {'deleteRoot': deleteRoot}),
+      _sendCmd(
+        type: _WorkerCmdType.destroy_,
+        args: {'deleteRoot': deleteRoot},
       ),
     );
-    await _workerCompleter!.future;
+    await _workerComplete.future;
+
     _sendPort = null;
+
+    for (final completer in _workerRes.values) {
+      completer.complete({'error': RootUnavailable()});
+    }
   }
+
+  @override
+  Future<bool> storeExists({
+    required String storeName,
+  }) async =>
+      (await _sendCmd(
+        type: _WorkerCmdType.storeExists,
+        args: {'storeName': storeName},
+      ))!['exists'];
 
   @override
   Future<void> createStore({
     required String storeName,
   }) =>
-      sendCmd((key: _WorkerKey.createStore, args: {'storeName': storeName}));
+      _sendCmd(
+        type: _WorkerCmdType.createStore,
+        args: {'storeName': storeName},
+      );
 
   @override
   Future<void> resetStore({
     required String storeName,
   }) =>
-      sendCmd((key: _WorkerKey.resetStore, args: {'storeName': storeName}));
+      _sendCmd(
+        type: _WorkerCmdType.resetStore,
+        args: {'storeName': storeName},
+      );
 
   @override
   Future<void> renameStore({
     required String currentStoreName,
     required String newStoreName,
   }) =>
-      sendCmd(
-        (
-          key: _WorkerKey.renameStore,
-          args: {
-            'currentStoreName': currentStoreName,
-            'newStoreName': newStoreName,
-          }
-        ),
+      _sendCmd(
+        type: _WorkerCmdType.renameStore,
+        args: {
+          'currentStoreName': currentStoreName,
+          'newStoreName': newStoreName,
+        },
       );
 
   @override
   Future<void> deleteStore({
     required String storeName,
   }) =>
-      sendCmd((key: _WorkerKey.deleteStore, args: {'storeName': storeName}));
+      _sendCmd(
+        type: _WorkerCmdType.deleteStore,
+        args: {'storeName': storeName},
+      );
 
   @override
   Future<double> getStoreSize({
     required String storeName,
   }) async =>
-      (await sendCmd(
-        (key: _WorkerKey.getStoreSize, args: {'storeName': storeName}),
-      ))
-          .data!['size']! as double;
+      (await _sendCmd(
+        type: _WorkerCmdType.getStoreSize,
+        args: {'storeName': storeName},
+      ))!['size'];
 
   @override
   Future<int> getStoreLength({
     required String storeName,
   }) async =>
-      (await sendCmd(
-        (key: _WorkerKey.getStoreLength, args: {'storeName': storeName}),
-      ))
-          .data!['length']! as int;
+      (await _sendCmd(
+        type: _WorkerCmdType.getStoreLength,
+        args: {'storeName': storeName},
+      ))!['length'];
 
   @override
   Future<int> getStoreHits({
     required String storeName,
   }) async =>
-      (await sendCmd(
-        (key: _WorkerKey.getStoreHits, args: {'storeName': storeName}),
-      ))
-          .data!['hits']! as int;
+      (await _sendCmd(
+        type: _WorkerCmdType.getStoreHits,
+        args: {'storeName': storeName},
+      ))!['hits'];
 
   @override
   Future<int> getStoreMisses({
     required String storeName,
   }) async =>
-      (await sendCmd(
-        (key: _WorkerKey.getStoreMisses, args: {'storeName': storeName}),
-      ))
-          .data!['misses']! as int;
+      (await _sendCmd(
+        type: _WorkerCmdType.getStoreMisses,
+        args: {'storeName': storeName},
+      ))!['misses']! as int;
 
   @override
   Future<ObjectBoxTile?> readTile({
     required String url,
   }) async =>
-      (await sendCmd((key: _WorkerKey.readTile, args: {'url': url})))
-          .data!['tile'] as ObjectBoxTile?;
+      (await _sendCmd(
+        type: _WorkerCmdType.readTile,
+        args: {'url': url},
+      ))!['tile'];
 
   @override
   Future<void> writeTile({
@@ -214,11 +252,9 @@ class _ObjectBoxBackendImpl
     required String url,
     required Uint8List? bytes,
   }) =>
-      sendCmd(
-        (
-          key: _WorkerKey.writeTile,
-          args: {'storeName': storeName, 'url': url, 'bytes': bytes}
-        ),
+      _sendCmd(
+        type: _WorkerCmdType.writeTile,
+        args: {'storeName': storeName, 'url': url, 'bytes': bytes},
       );
 
   @override
@@ -226,23 +262,18 @@ class _ObjectBoxBackendImpl
     required String url,
     required String storeName,
   }) async =>
-      (await sendCmd(
-        (
-          key: _WorkerKey.deleteStore,
-          args: {'storeName': storeName, 'url': url}
-        ),
-      ))
-          .data!['wasOrphaned'] as bool?;
+      (await _sendCmd(
+        type: _WorkerCmdType.deleteStore,
+        args: {'storeName': storeName, 'url': url},
+      ))!['wasOrphaned'];
 
   void _sendRemoveOldestTileCmd(String storeName) {
-    sendCmd(
-      (
-        key: _WorkerKey.removeOldestTile,
-        args: {
-          'storeName': storeName,
-          'number': _dotLength,
-        }
-      ),
+    _sendCmd(
+      type: _WorkerCmdType.removeOldestTile,
+      args: {
+        'storeName': storeName,
+        'number': _dotLength,
+      },
     );
     _dotLength = 0;
   }

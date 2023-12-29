@@ -25,11 +25,23 @@ mixin FMTCBackendNoSync implements FMTCBackendInternal {
   @override
   void destroySync({
     bool deleteRoot = false,
+    bool immediate = false,
   }) =>
       throw SyncOperationUnsupported();
 
   @override
   final supportsSyncDestroy = false;
+
+  /// This synchronous method is unsupported by this implementation - use
+  /// [storeExists] instead
+  @override
+  bool storeExistsSync({
+    required String storeName,
+  }) =>
+      throw SyncOperationUnsupported();
+
+  @override
+  final supportsSyncStoreExists = false;
 
   /// This synchronous method is unsupported by this implementation - use
   /// [createStore] instead

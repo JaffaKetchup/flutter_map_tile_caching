@@ -11,23 +11,8 @@ final class StoreManagement extends _WithBackendAccess {
 
   final Directory _rootDirectory;
 
-  /// Check whether this store is ready for use
-  ///
-  /// It must be registered, and its underlying database must be open, for this
-  /// method to return `true`.
-  ///
-  /// This is a safe method, and will not throw the [FMTCStoreNotReady] error,
-  /// except in exceptional circumstances.
-  bool get ready {
-    try {
-      _registry(_name);
-      return true;
-      // ignore: avoid_catching_errors
-    } on FMTCStoreNotReady catch (e) {
-      if (e.registered) rethrow;
-      return false;
-    }
-  }
+  /// Whether this store exists
+  Future<bool> get ready => _backend.storeExists(storeName: _storeName);
 
   /// Create this store asynchronously
   ///
