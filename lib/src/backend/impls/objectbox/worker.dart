@@ -154,6 +154,7 @@ Future<void> _worker(
               storeQuery.close();
 
               assert(store.tiles.isEmpty);
+              // TODO: Hits & misses
 
               stores.put(
                 store

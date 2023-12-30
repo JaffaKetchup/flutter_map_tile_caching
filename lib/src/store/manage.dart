@@ -5,111 +5,51 @@ part of flutter_map_tile_caching;
 
 /// Manages a [StoreDirectory]'s representation on the filesystem, such as
 /// creation and deletion
+///
+/// If the store is not in the expected state (of existence) when invoking an
+/// operation, then an error will be thrown (likely [StoreNotExists] or
+/// [StoreAlreadyExists]). It is recommended to check [ready] or [readySync] when
+/// necessary.
 final class StoreManagement extends _WithBackendAccess {
-  StoreManagement._(super.store)
-      : _rootDirectory = FMTC.instance.rootDirectory.directory;
-
-  final Directory _rootDirectory;
+  StoreManagement._(super.store);
 
   /// Whether this store exists
   Future<bool> get ready => _backend.storeExists(storeName: _storeName);
 
-  /// Create this store asynchronously
-  ///
-  /// Does nothing if the store already exists.
-  Future<void> createAsync() async {
-    if (ready) return;
+  /// Whether this store exists
+  bool get readySync => _backend.storeExistsSync(storeName: _storeName);
 
-    final db = await Isar.open(
-      [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
-      name: _id.toString(),
-      directory: _rootDirectory.path,
-      maxSizeMiB: FMTC.instance.settings.databaseMaxSize,
-      compactOnLaunch: FMTC.instance.settings.databaseCompactCondition,
-      inspector: false,
-    );
-    await db.writeTxn(
-      () => db.storeDescriptor.put(DbStoreDescriptor(name: _name)),
-    );
-    _registry.register(_id, db);
-  }
+  /// Create this store
+  Future<void> create() => _backend.createStore(storeName: _storeName);
 
-  /// Create this store synchronously
-  ///
-  /// Prefer [createAsync] to avoid blocking the UI thread. Otherwise, this has
-  /// slightly better performance.
-  ///
-  /// Does nothing if the store already exists.
-  void create() {
-    if (ready) return;
-
-    final db = Isar.openSync(
-      [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
-      name: _id.toString(),
-      directory: _rootDirectory.path,
-      maxSizeMiB: FMTC.instance.settings.databaseMaxSize,
-      compactOnLaunch: FMTC.instance.settings.databaseCompactCondition,
-      inspector: false,
-    );
-    db.writeTxnSync(
-      () => db.storeDescriptor.putSync(DbStoreDescriptor(name: _name)),
-    );
-    _registry.register(_id, db);
-  }
+  /// Create this store
+  void createSync() => _backend.createStoreSync(storeName: _storeName);
 
   /// Delete this store
   ///
-  /// This will remove all traces of this store from the user's device. Use with
-  /// caution!
-  ///
-  /// Does nothing if the store does not already exist.
-  Future<void> delete() async {
-    if (!ready) return;
+  /// This operation cannot be undone! Ensure you confirm with the user that
+  /// this action is expected.
+  Future<void> delete() => _backend.deleteStore(storeName: _storeName);
 
-    final store = _registry.unregister(_id);
-    if (store?.isOpen ?? false) await store!.close(deleteFromDisk: true);
-  }
+  /// Delete this store
+  ///
+  /// This operation cannot be undone! Ensure you confirm with the user that
+  /// this action is expected.
+  void deleteSync() => _backend.deleteStoreSync(storeName: _storeName);
 
-  /// Removes all tiles from this store synchronously
+  /// Removes all tiles from this store
   ///
-  /// Also resets the cache hits & misses statistic.
-  ///
-  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
-  /// error will be raised.
-  Future<void> resetAsync() async {
-    final db = _registry(_name);
-    await db.writeTxn(() async {
-      await db.tiles.clear();
-      await db.storeDescriptor.put(
-        (await db.descriptor)
-          ..hits = 0
-          ..misses = 0,
-      );
-    });
-  }
+  /// This operation cannot be undone! Ensure you confirm with the user that
+  /// this action is expected.
+  Future<void> reset() => _backend.resetStore(storeName: _storeName);
 
-  /// Removes all tiles from this store asynchronously
+  /// Removes all tiles from this store
   ///
-  /// Also resets the cache hits & misses statistic.
-  ///
-  /// Prefer [resetAsync] to avoid blocking the UI thread. Otherwise, this has
-  /// slightly better performance.
-  ///
-  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
-  /// error will be raised.
-  void reset() {
-    final db = _registry(_name);
-    db.writeTxnSync(() {
-      db.tiles.clearSync();
-      db.storeDescriptor.putSync(
-        db.descriptorSync
-          ..hits = 0
-          ..misses = 0,
-      );
-    });
-  }
+  /// This operation cannot be undone! Ensure you confirm with the user that
+  /// this action is expected.
+  void resetSync() => _backend.resetStoreSync(storeName: _storeName);
 
-  /// Rename the store directory asynchronously
+  /// Rename the store directory
   ///
   /// The old [StoreDirectory] will still retain it's link to the old store, so
   /// always use the new returned value instead: returns a new [StoreDirectory]
@@ -118,33 +58,14 @@ final class StoreManagement extends _WithBackendAccess {
   /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
   /// error will be raised.
   Future<StoreDirectory> rename(String newStoreName) async {
-    // Unregister and close old database without deleting it
-    final store = _registry.unregister(_id);
-    if (store == null) {
-      _registry(_name);
-      throw StateError(
-        'This error represents a serious internal error in FMTC. Please raise a bug report if seen in any application',
-      );
-    }
-    await store.close();
-
-    // Manually change the database's filename
-    await (_rootDirectory >>> '$_id.isar').rename(
-      (_rootDirectory >>> '${DatabaseTools.hash(newStoreName)}.isar').path,
+    await _backend.renameStore(
+      currentStoreName: _storeName,
+      newStoreName: newStoreName,
     );
 
-    // Register the new database (it will be re-opened)
-    final newStore = StoreDirectory._(newStoreName, autoCreate: false);
-    await newStore.manage.createAsync();
-
-    // Update the name stored inside the database
-    await _registry(newStoreName).writeTxn(
-      () => _registry(newStoreName)
-          .storeDescriptor
-          .put(DbStoreDescriptor(name: newStoreName)),
-    );
-
-    return newStore;
+    // TODO: `autoCreate` and entire shortcut will now be broken by default
+    // consider whether this bi-synchronousable approach is sustainable
+    return StoreDirectory._(newStoreName, autoCreate: false);
   }
 
   /// Delete all tiles older that were last modified before [expiry]

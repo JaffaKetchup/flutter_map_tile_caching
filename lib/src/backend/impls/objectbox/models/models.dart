@@ -14,10 +14,8 @@ base class ObjectBoxStore extends BackendStore {
   @Unique()
   String name;
 
-  @override
   int numberOfTiles;
 
-  @override
   double numberOfBytes;
 
   @override

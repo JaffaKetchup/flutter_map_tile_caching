@@ -8,9 +8,9 @@ import 'package:meta/meta.dart' as meta;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../misc/exts.dart';
-import '../../impl_tools/errors.dart';
-import '../../impl_tools/no_sync.dart';
 import '../../interfaces/backend.dart';
+import '../../interfaces/no_sync.dart';
+import '../../utils/errors.dart';
 import 'models/generated/objectbox.g.dart';
 import 'models/models.dart';
 
@@ -42,11 +42,12 @@ class _ObjectBoxBackendImpl
   final Map<int, Completer<Map<String, dynamic>?>> _workerRes = {};
   late int _workerId;
   late Completer<void> _workerComplete;
+  late StreamSubscription<dynamic> _workerHandler;
 
   // `deleteOldestTile` tracking & debouncing
-  int _dotLength = 0;
-  Timer? _dotDebouncer;
-  String? _dotStore;
+  late int _dotLength;
+  late Timer _dotDebouncer;
+  late String? _dotStore;
 
   Future<Map<String, dynamic>?> _sendCmd({
     required _WorkerCmdType type,
@@ -92,10 +93,13 @@ class _ObjectBoxBackendImpl
   }) async {
     if (_sendPort != null) throw RootAlreadyInitialised();
 
-    // Setup worker isolate
-    final receivePort = ReceivePort();
+    // Reset non-comms-related non-resource-intensive state
     _workerId = 0;
     _workerRes.clear();
+    _dotStore = null;
+    _dotLength = 0;
+
+    // Prepare to recieve `SendPort` from worker
     _workerRes[0] = Completer();
     unawaited(
       _workerRes[0]!.future.then((res) {
@@ -103,14 +107,19 @@ class _ObjectBoxBackendImpl
         _workerRes.remove(0);
       }),
     );
+
+    // Setup worker comms/response handler
+    final receivePort = ReceivePort();
     _workerComplete = Completer();
-    receivePort.listen(
+    _workerHandler = receivePort.listen(
       (evt) {
         evt as ({int id, Map<String, dynamic>? data});
         _workerRes[evt.id]!.complete(evt.data);
       },
       onDone: () => _workerComplete.complete(),
     );
+
+    // Spawn worker isolate
     await Isolate.spawn(
       _worker,
       (
@@ -133,20 +142,30 @@ class _ObjectBoxBackendImpl
   }) async {
     expectInitialised;
 
-    if (!immediate) {
-      await Future.wait(_workerRes.values.map((e) => e.future));
-    }
+    // Wait for all currently underway operations to complete before destroying
+    // the isolate (if not `immediate`)
+    if (!immediate) await Future.wait(_workerRes.values.map((e) => e.future));
 
+    // Send self-destruct cmd to worker, and don't wait for any response
     unawaited(
       _sendCmd(
         type: _WorkerCmdType.destroy_,
         args: {'deleteRoot': deleteRoot},
       ),
     );
+
+    // Wait for worker to exit (worker handler will exit and signal)
     await _workerComplete.future;
 
-    _sendPort = null;
+    // Resource-intensive state cleanup only (other cleanup done during init)
+    _sendPort = null; // Indicate ready for re-init
+    await _workerHandler.cancel();
+    _dotDebouncer.cancel();
 
+    print('passed _workerHandler cancel');
+
+    // Kill any remaining operations with an error (they'll never recieve a
+    // response from the worker)
     for (final completer in _workerRes.values) {
       completer.complete({'error': RootUnavailable()});
     }
@@ -289,14 +308,14 @@ class _ObjectBoxBackendImpl
       // If the store has changed, failing to reset the batch/queue will mean
       // tiles are removed from the wrong store
       _dotStore = storeName;
-      if (_dotDebouncer != null && _dotDebouncer!.isActive) {
-        _dotDebouncer!.cancel();
+      if (_dotDebouncer.isActive) {
+        _dotDebouncer.cancel();
         _sendRemoveOldestTileCmd(storeName);
       }
     }
 
-    if (_dotDebouncer != null && _dotDebouncer!.isActive) {
-      _dotDebouncer!.cancel();
+    if (_dotDebouncer.isActive) {
+      _dotDebouncer.cancel();
       _dotDebouncer = Timer(
         const Duration(milliseconds: 500),
         () => _sendRemoveOldestTileCmd(storeName),

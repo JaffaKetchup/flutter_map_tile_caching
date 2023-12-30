@@ -33,7 +33,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
-import 'src/backend/export_std.dart';
+import 'src/backend/exports.dart';
 import 'src/bulk_download/instance.dart';
 import 'src/bulk_download/rate_limited_stream.dart';
 import 'src/bulk_download/tile_loops/shared.dart';
@@ -45,18 +45,16 @@ import 'src/db/registry.dart';
 import 'src/db/tools.dart';
 import 'src/errors/browsing.dart';
 import 'src/errors/initialisation.dart';
-import 'src/errors/store_not_ready.dart';
 import 'src/misc/exts.dart';
 import 'src/misc/int_extremes.dart';
 import 'src/misc/obscure_query_params.dart';
 import 'src/misc/typedefs.dart';
 import 'src/providers/image_provider.dart';
 
-export 'src/backend/export_std.dart';
+export 'src/backend/exports.dart';
 export 'src/errors/browsing.dart';
 export 'src/errors/damaged_store.dart';
 export 'src/errors/initialisation.dart';
-export 'src/errors/store_not_ready.dart';
 export 'src/misc/typedefs.dart';
 
 part 'src/bulk_download/download_progress.dart';

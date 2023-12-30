@@ -4,8 +4,6 @@ import 'package:meta/meta.dart';
 
 abstract base class BackendStore {
   abstract String name;
-  abstract int numberOfTiles;
-  abstract double numberOfBytes;
   abstract int hits;
   abstract int misses;
 

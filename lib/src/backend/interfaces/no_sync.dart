@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import '../interfaces/backend.dart';
-import '../interfaces/models.dart';
-import 'errors.dart';
+import '../utils/errors.dart';
+import 'backend.dart';
+import 'models.dart';
 
 /// A shortcut to declare that an [FMTCBackend] does not support any synchronous
 /// versions of methods

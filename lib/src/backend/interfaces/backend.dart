@@ -5,8 +5,6 @@ import 'package:meta/meta.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../flutter_map_tile_caching.dart';
-import '../impl_tools/errors.dart';
-import 'models.dart';
 
 /// An abstract interface that FMTC will use to communicate with a storage
 /// 'backend' (usually one root)
