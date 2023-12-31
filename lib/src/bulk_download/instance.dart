@@ -9,9 +9,7 @@ class DownloadInstance {
   static final _instances = <Object, DownloadInstance>{};
 
   static DownloadInstance? registerIfAvailable(Object id) =>
-      _instances.containsKey(id)
-          ? null
-          : _instances[id] ??= DownloadInstance._(id);
+      _instances[id] != null ? null : _instances[id] = DownloadInstance._(id);
   static bool unregister(Object id) => _instances.remove(id) != null;
   static DownloadInstance? get(Object id) => _instances[id];
 

@@ -3,22 +3,10 @@
 
 part of flutter_map_tile_caching;
 
-/// Represents a store of tiles
-///
-/// The tile store itself is a database containing a descriptor, tiles and
-/// metadata.
-///
-/// The name originates from previous versions of this library, where it
-/// represented a real directory instead of a database.
-///
-/// Reach through [FlutterMapTileCaching.call].
+/// Container for a [storeName] which includes methods and getters to access
+/// functionality based on the specified store
 class StoreDirectory {
-  StoreDirectory._(
-    this.storeName, {
-    required bool autoCreate,
-  }) {
-    if (autoCreate) manage.create();
-  }
+  const StoreDirectory._(this.storeName);
 
   /// The user-friendly name of the store directory
   final String storeName;

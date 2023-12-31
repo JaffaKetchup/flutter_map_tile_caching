@@ -119,7 +119,7 @@ Future<void> _downloadManager(
   }
 
   // Setup two-way communications with root
-  final rootreceivePort = ReceivePort();
+  final rootReceivePort = ReceivePort();
   void send(Object? m) => input.sendPort.send(m);
 
   // Setup cancel, pause, and resume handling
@@ -131,7 +131,7 @@ Future<void> _downloadManager(
   final threadPausedStates = generateThreadPausedStates();
   final cancelSignal = Completer<void>();
   var pauseResumeSignal = Completer<void>()..complete();
-  rootreceivePort.listen(
+  rootReceivePort.listen(
     (e) async {
       if (e == null) {
         try {
@@ -172,7 +172,7 @@ Future<void> _downloadManager(
         );
 
   // Now it's safe, start accepting communications from the root
-  send(rootreceivePort.sendPort);
+  send(rootReceivePort.sendPort);
 
   // Start download threads & wait for download to complete/cancelled
   downloadDuration.start();
@@ -183,11 +183,11 @@ Future<void> _downloadManager(
         if (cancelSignal.isCompleted) return;
 
         // Start thread worker isolate & setup two-way communications
-        final downloadThreadreceivePort = ReceivePort();
+        final downloadThreadReceivePort = ReceivePort();
         await Isolate.spawn(
           _singleDownloadThread,
           (
-            sendPort: downloadThreadreceivePort.sendPort,
+            sendPort: downloadThreadReceivePort.sendPort,
             storeId: storeId,
             rootDirectory: input.rootDirectory,
             options: input.region.options,
@@ -197,7 +197,7 @@ Future<void> _downloadManager(
             obscuredQueryParams: input.obscuredQueryParams,
             headers: headers,
           ),
-          onExit: downloadThreadreceivePort.sendPort,
+          onExit: downloadThreadReceivePort.sendPort,
           debugName: '[FMTC] Bulk Download Thread #$threadNo',
         );
         late final SendPort sendPort;
@@ -214,7 +214,7 @@ Future<void> _downloadManager(
               .then((sp) => sp.send(null)),
         );
 
-        downloadThreadreceivePort.listen(
+        downloadThreadReceivePort.listen(
           (evt) async {
             // Thread is sending tile data
             if (evt is TileEvent) {
@@ -288,7 +288,7 @@ Future<void> _downloadManager(
             }
 
             // Thread ended, goto `onDone`
-            if (evt == null) return downloadThreadreceivePort.close();
+            if (evt == null) return downloadThreadReceivePort.close();
           },
           onDone: () {
             try {
@@ -323,7 +323,7 @@ Future<void> _downloadManager(
   );
 
   // Cleanup resources and shutdown
-  rootreceivePort.close();
+  rootReceivePort.close();
   tileIsolate.kill(priority: Isolate.immediate);
   await tileQueue.cancel(immediate: true);
   Isolate.exit();

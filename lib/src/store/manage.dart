@@ -11,70 +11,39 @@ part of flutter_map_tile_caching;
 /// [StoreAlreadyExists]). It is recommended to check [ready] or [readySync] when
 /// necessary.
 final class StoreManagement extends _WithBackendAccess {
-  StoreManagement._(super.store);
+  const StoreManagement._(super.store);
 
-  /// Whether this store exists
+  /// {@macro fmtc.backend.storeExists}
   Future<bool> get ready => _backend.storeExists(storeName: _storeName);
 
-  /// Whether this store exists
-  bool get readySync => _backend.storeExistsSync(storeName: _storeName);
-
-  /// Create this store
+  /// {@macro fmtc.backend.createStore}
   Future<void> create() => _backend.createStore(storeName: _storeName);
 
-  /// Create this store
-  void createSync() => _backend.createStoreSync(storeName: _storeName);
-
-  /// Delete this store
-  ///
-  /// This operation cannot be undone! Ensure you confirm with the user that
-  /// this action is expected.
+  /// {@macro fmtc.backend.deleteStore}
   Future<void> delete() => _backend.deleteStore(storeName: _storeName);
 
-  /// Delete this store
-  ///
-  /// This operation cannot be undone! Ensure you confirm with the user that
-  /// this action is expected.
-  void deleteSync() => _backend.deleteStoreSync(storeName: _storeName);
-
-  /// Removes all tiles from this store
-  ///
-  /// This operation cannot be undone! Ensure you confirm with the user that
-  /// this action is expected.
+  /// {@macro fmtc.backend.resetStore}
   Future<void> reset() => _backend.resetStore(storeName: _storeName);
 
-  /// Removes all tiles from this store
-  ///
-  /// This operation cannot be undone! Ensure you confirm with the user that
-  /// this action is expected.
-  void resetSync() => _backend.resetStoreSync(storeName: _storeName);
-
-  /// Rename the store directory
+  /// Rename the store to [newStoreName]
   ///
   /// The old [StoreDirectory] will still retain it's link to the old store, so
   /// always use the new returned value instead: returns a new [StoreDirectory]
   /// after a successful renaming operation.
-  ///
-  /// This method requires the store to be [ready], else an [FMTCStoreNotReady]
-  /// error will be raised.
   Future<StoreDirectory> rename(String newStoreName) async {
     await _backend.renameStore(
       currentStoreName: _storeName,
       newStoreName: newStoreName,
     );
 
-    // TODO: `autoCreate` and entire shortcut will now be broken by default
-    // consider whether this bi-synchronousable approach is sustainable
-    return StoreDirectory._(newStoreName, autoCreate: false);
+    return StoreDirectory._(newStoreName);
   }
 
   /// Delete all tiles older that were last modified before [expiry]
   ///
   /// Ignores [FMTCTileProviderSettings.cachedValidDuration].
-  Future<void> pruneTilesOlderThan({required DateTime expiry}) => compute(
-        _pruneTilesOlderThanWorker,
-        [_name, _rootDirectory.absolute.path, expiry],
-      );
+  Future<void> pruneTilesOlderThan({required DateTime expiry}) =>
+      _backend.pruneTilesOlderThan(expiry: expiry);
 
   /// Retrieves the most recently modified tile from the store, extracts it's
   /// bytes, and renders them to an [Image]

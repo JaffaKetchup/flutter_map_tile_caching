@@ -328,7 +328,9 @@ Future<void> _worker(
                   );
                   break;
                 case (true, true): // FMTC internal error
-                  throw TileCannotUpdate(url: url);
+                  throw StateError(
+                    'FMTC ObjectBox backend internal state error: $url',
+                  );
               }
             },
           );

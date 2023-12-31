@@ -9,7 +9,6 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../misc/exts.dart';
 import '../../interfaces/backend.dart';
-import '../../interfaces/no_sync.dart';
 import '../../utils/errors.dart';
 import 'models/generated/objectbox.g.dart';
 import 'models/models.dart';
@@ -30,9 +29,7 @@ abstract interface class ObjectBoxBackendInternal
   static final _instance = _ObjectBoxBackendImpl._();
 }
 
-class _ObjectBoxBackendImpl
-    with FMTCBackendNoSync
-    implements ObjectBoxBackendInternal {
+class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
   _ObjectBoxBackendImpl._();
 
   void get expectInitialised => _sendPort ?? (throw RootUnavailable());
@@ -73,7 +70,7 @@ class _ObjectBoxBackendImpl
   @override
   String get friendlyIdentifier => 'ObjectBox';
 
-  /// {@macro fmtc_backend_initialise}
+  /// {@macro fmtc.backend.initialise}
   ///
   /// This implementation additionally accepts the following [implSpecificArgs]:
   ///
@@ -286,21 +283,11 @@ class _ObjectBoxBackendImpl
         args: {'storeName': storeName, 'url': url},
       ))!['wasOrphaned'];
 
-  void _sendRemoveOldestTileCmd(String storeName) {
-    _sendCmd(
-      type: _WorkerCmdType.removeOldestTile,
-      args: {
-        'storeName': storeName,
-        'number': _dotLength,
-      },
-    );
-    _dotLength = 0;
-  }
-
   @override
-  void removeOldestTileSync({
+  Future<void> removeOldestTile({
     required String storeName,
-  }) {
+    required int numToRemove,
+  }) async {
     // Attempts to avoid flooding worker with requests to delete oldest tile,
     // and 'batches' them instead
 
@@ -310,7 +297,8 @@ class _ObjectBoxBackendImpl
       _dotStore = storeName;
       if (_dotDebouncer.isActive) {
         _dotDebouncer.cancel();
-        _sendRemoveOldestTileCmd(storeName);
+        _sendROTCmd(storeName);
+        _dotLength += numToRemove;
       }
     }
 
@@ -318,20 +306,22 @@ class _ObjectBoxBackendImpl
       _dotDebouncer.cancel();
       _dotDebouncer = Timer(
         const Duration(milliseconds: 500),
-        () => _sendRemoveOldestTileCmd(storeName),
+        () => _sendROTCmd(storeName),
       );
+      _dotLength += numToRemove;
       return;
     }
 
-    _dotDebouncer = Timer(
-      const Duration(seconds: 1),
-      () => _sendRemoveOldestTileCmd(storeName),
-    );
+    _dotDebouncer =
+        Timer(const Duration(seconds: 1), () => _sendROTCmd(storeName));
+    _dotLength += numToRemove;
   }
 
-  @override
-  Future<void> removeOldestTile({
-    required String storeName,
-  }) async =>
-      removeOldestTileSync(storeName: storeName);
+  void _sendROTCmd(String storeName) {
+    _sendCmd(
+      type: _WorkerCmdType.removeOldestTile,
+      args: {'storeName': storeName, 'number': _dotLength},
+    );
+    _dotLength = 0;
+  }
 }

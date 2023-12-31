@@ -39,6 +39,8 @@ class FlutterMapTileCaching {
     required bool debugMode,
   }) : _debugMode = debugMode;
 
+  /// {@macro fmtc.backend.initialise}
+  ///
   /// Initialise and prepare FMTC, by creating all necessary directories/files
   /// and configuring the [FlutterMapTileCaching] singleton
   ///

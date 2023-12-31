@@ -7,49 +7,18 @@ part of flutter_map_tile_caching;
 final class StoreStats extends _WithBackendAccess {
   const StoreStats._(super._store);
 
-  /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
-  ///
-  /// Prefer [storeSizeAsync] to avoid blocking the UI thread. Otherwise, this
-  /// has slightly better performance.
-  double get storeSize => _backend.getStoreSizeSync(storeName: _storeName);
+  /// {@macro fmtc.backend.getStoreSize}
+  Future<double> get size => _backend.getStoreSize(storeName: _storeName);
 
-  /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
-  Future<double> get storeSizeAsync =>
-      _backend.getStoreSize(storeName: _storeName);
+  /// {@macro fmtc.backend.getStoreLength}
+  Future<int> get length => _backend.getStoreLength(storeName: _storeName);
 
-  /// Retrieve the number of stored tiles synchronously
-  ///
-  /// Prefer [storeLengthAsync] to avoid blocking the UI thread. Otherwise, this
-  /// has slightly better performance.
-  int get storeLength => _backend.getStoreLengthSync(storeName: _storeName);
-
-  /// Retrieve the number of stored tiles asynchronously
-  Future<int> get storeLengthAsync =>
-      _backend.getStoreLength(storeName: _storeName);
-
-  /// Retrieve the number of tiles that were successfully retrieved from the
-  /// store during browsing synchronously
-  ///
-  /// Prefer [cacheHitsAsync] to avoid blocking the UI thread. Otherwise, this
-  /// has slightly better performance.
-  int get cacheHits => _backend.getStoreHitsSync(storeName: _storeName);
-
-  /// Retrieve the number of tiles that were successfully retrieved from the
-  /// store during browsing asynchronously
-  Future<int> get cacheHitsAsync async =>
+  /// {@macro fmtc.backend.getStoreHits}
+  Future<int> get cacheHits async =>
       _backend.getStoreHits(storeName: _storeName);
 
-  /// Retrieve the number of tiles that were unsuccessfully retrieved from the
-  /// store during browsing synchronously
-  ///
-  /// Prefer [cacheMissesAsync] to avoid blocking the UI thread. Otherwise, this
-  /// has slightly better performance.
-  int get cacheMisses => _backend.getStoreMissesSync(storeName: _storeName);
-
-  /// Retrieve the number of tiles that were unsuccessfully retrieved from the
-  /// store during browsing asynchronously
-  Future<int> get cacheMissesAsync async =>
-      _backend.getStoreMisses(storeName: _storeName);
+  /// {@macro fmtc.backend.getStoreMisses}
+  Future<int> get cacheMisses => _backend.getStoreMisses(storeName: _storeName);
 
   /// Watch for changes in the current store
   ///
