@@ -105,7 +105,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     final needsUpdating = !needsCreating &&
         (provider.settings.behavior == CacheBehavior.onlineFirst ||
             (provider.settings.cachedValidDuration != Duration.zero &&
-                DateTime.now().millisecondsSinceEpoch -
+                DateTime.timestamp().millisecondsSinceEpoch -
                         existingTile.lastModified.millisecondsSinceEpoch >
                     provider.settings.cachedValidDuration.inMilliseconds));
 

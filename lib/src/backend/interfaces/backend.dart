@@ -34,8 +34,12 @@ abstract interface class FMTCBackend<Internal extends FMTCBackendInternal> {
 /// An abstract interface that FMTC will use to communicate with a storage
 /// 'backend' (usually one root)
 ///
+/// Methods with a doc template in the doc string are for 'direct' public
+/// invocation.
+///
 /// See [FMTCBackend] for more information.
 abstract interface class FMTCBackendInternal {
+  /// Generic description/name of this backend
   abstract final String friendlyIdentifier;
 
   /// {@template fmtc.backend.initialise}
@@ -112,7 +116,9 @@ abstract interface class FMTCBackendInternal {
     required String storeName,
   });
 
-  /// Change the name of the store named [currentStoreName] to [newStoreName]
+  /// {@template fmtc.backend.renameStore}
+  /// Change the name of the specified store to the specified new store name
+  /// {@endtemplate}
   Future<void> renameStore({
     required String currentStoreName,
     required String newStoreName,
@@ -156,7 +162,8 @@ abstract interface class FMTCBackendInternal {
     required String url,
   });
 
-  /// Create or update a tile
+  /// Create or update a tile (given a [url] and its [bytes]) in the specified
+  /// store
   ///
   /// If the tile already existed, it will be added to the specified store.
   /// Otherwise, [bytes] must be specified, and the tile will be created and
@@ -170,23 +177,45 @@ abstract interface class FMTCBackendInternal {
     required Uint8List? bytes,
   });
 
-  /// Remove the tile from the store, deleting it if orphaned
+  /// Remove the tile from the specified store, deleting it if was orphaned
+  ///
+  /// As tiles can belong to multiple stores, a tile cannot be safely 'truly'
+  /// deleted unless it does not belong to any other stores (it was an orphan).
+  /// A tile that is not an orphan will just be 'removed' from the specified
+  /// store.
   ///
   /// Returns:
   ///  * `null` : if there was no existing tile
   ///  * `true` : if the tile itself could be deleted (it was orphaned)
-  ///  * `false`: if the tile still belonged to at least store
+  ///  * `false`: if the tile still belonged to at least one other store
   Future<bool?> deleteTile({
     required String storeName,
     required String url,
   });
 
-  /// {@template fmtc.backend.removeOldestTile}
-  /// Remove the specified number of tiles from the specified store, in the order
-  /// of oldest first, and where each tile does not belong to any other store
-  /// {@endtemplate}
-  Future<void> removeOldestTile({
+  // TODO: Verify below and add to belower doc string
+  //
+  // It is recommended to invoke this operation as few times as possible, for
+  // example by debouncing, as this operation may be expensive.
+
+  /// Remove tiles in excess of the specified limit from the specified store,
+  /// oldest first
+  ///
+  /// Returns the number of tiles that were actually deleted (they were
+  /// orphaned). See [deleteTile] for more information about orphan tiles.
+  Future<int> removeOldestTilesAboveLimit({
     required String storeName,
-    required int numToRemove,
+    required int tilesLimit,
+  });
+
+  /// {@template fmtc.backend.removeTilesOlderThan}
+  /// Remove tiles that were last modified after expiry from the specified store
+  ///
+  /// Returns the number of tiles that were actually deleted (they were
+  /// orphaned). See [deleteTile] for more information about orphan tiles.
+  /// {@endtemplate}
+  Future<int> removeTilesOlderThan({
+    required String storeName,
+    required DateTime expiry,
   });
 }

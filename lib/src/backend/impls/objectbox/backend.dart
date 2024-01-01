@@ -41,10 +41,11 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
   late Completer<void> _workerComplete;
   late StreamSubscription<dynamic> _workerHandler;
 
-  // `deleteOldestTile` tracking & debouncing
-  late int _dotLength;
-  late Timer _dotDebouncer;
-  late String? _dotStore;
+  // TODO: Verify if necessary and remove if not
+  //`removeOldestTilesAboveLimit` tracking & debouncing
+  //late int _rotalLength;
+  //late Timer _rotalDebouncer;
+  //late String? _rotalStore;
 
   Future<Map<String, dynamic>?> _sendCmd({
     required _WorkerCmdType type,
@@ -93,8 +94,8 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
     // Reset non-comms-related non-resource-intensive state
     _workerId = 0;
     _workerRes.clear();
-    _dotStore = null;
-    _dotLength = 0;
+    //_rotalStore = null;
+    //_rotalLength = 0;
 
     // Prepare to recieve `SendPort` from worker
     _workerRes[0] = Completer();
@@ -157,7 +158,7 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
     // Resource-intensive state cleanup only (other cleanup done during init)
     _sendPort = null; // Indicate ready for re-init
     await _workerHandler.cancel();
-    _dotDebouncer.cancel();
+    //_rotalDebouncer.cancel();
 
     print('passed _workerHandler cancel');
 
@@ -281,13 +282,19 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
       (await _sendCmd(
         type: _WorkerCmdType.deleteStore,
         args: {'storeName': storeName, 'url': url},
-      ))!['wasOrphaned'];
+      ))!['wasOrphan'];
 
   @override
-  Future<void> removeOldestTile({
+  Future<int> removeOldestTilesAboveLimit({
     required String storeName,
-    required int numToRemove,
-  }) async {
+    required int tilesLimit,
+  }) async =>
+      (await _sendCmd(
+        type: _WorkerCmdType.removeOldestTilesAboveLimit,
+        args: {'storeName': storeName, 'tilesLimit': tilesLimit},
+      ))!['numOrphans'];
+
+  /* FOR ABOVE METHOD
     // Attempts to avoid flooding worker with requests to delete oldest tile,
     // and 'batches' them instead
 
@@ -315,13 +322,24 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
     _dotDebouncer =
         Timer(const Duration(seconds: 1), () => _sendROTCmd(storeName));
     _dotLength += numToRemove;
-  }
 
-  void _sendROTCmd(String storeName) {
-    _sendCmd(
-      type: _WorkerCmdType.removeOldestTile,
-      args: {'storeName': storeName, 'number': _dotLength},
-    );
-    _dotLength = 0;
-  }
+    // may need to be moved out
+     void _sendROTCmd(String storeName) {
+      _sendCmd(
+        type: _WorkerCmdType.removeOldestTile,
+        args: {'storeName': storeName, 'number': _dotLength},
+      );
+      _dotLength = 0;
+    }
+    */
+
+  @override
+  Future<int> removeTilesOlderThan({
+    required String storeName,
+    required DateTime expiry,
+  }) async =>
+      (await _sendCmd(
+        type: _WorkerCmdType.removeTilesOlderThan,
+        args: {'storeName': storeName, 'expiry': expiry},
+      ))!['numOrphans'];
 }

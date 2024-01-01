@@ -25,7 +25,7 @@ final class StoreManagement extends _WithBackendAccess {
   /// {@macro fmtc.backend.resetStore}
   Future<void> reset() => _backend.resetStore(storeName: _storeName);
 
-  /// Rename the store to [newStoreName]
+  /// {@macro fmtc.backend.renameStore}
   ///
   /// The old [StoreDirectory] will still retain it's link to the old store, so
   /// always use the new returned value instead: returns a new [StoreDirectory]
@@ -39,11 +39,9 @@ final class StoreManagement extends _WithBackendAccess {
     return StoreDirectory._(newStoreName);
   }
 
-  /// Delete all tiles older that were last modified before [expiry]
-  ///
-  /// Ignores [FMTCTileProviderSettings.cachedValidDuration].
-  Future<void> pruneTilesOlderThan({required DateTime expiry}) =>
-      _backend.pruneTilesOlderThan(expiry: expiry);
+  /// {@macro fmtc.backend.removeTilesOlderThan}
+  Future<void> removeTilesOlderThan({required DateTime expiry}) =>
+      _backend.removeTilesOlderThan(storeName: _storeName, expiry: expiry);
 
   /// Retrieves the most recently modified tile from the store, extracts it's
   /// bytes, and renders them to an [Image]
@@ -176,26 +174,4 @@ final class StoreManagement extends _WithBackendAccess {
       cacheHeight: cacheHeight,
     );
   }
-}
-
-Future<void> _pruneTilesOlderThanWorker(List<dynamic> args) async {
-  final db = Isar.openSync(
-    [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
-    name: DatabaseTools.hash(args[0]).toString(),
-    directory: args[1],
-    inspector: false,
-  );
-
-  db.writeTxnSync(
-    () => db.tiles.deleteAllSync(
-      db.tiles
-          .where()
-          .lastModifiedLessThan(args[2])
-          .findAllSync()
-          .map((t) => t.id)
-          .toList(),
-    ),
-  );
-
-  await db.close();
 }
