@@ -38,7 +38,6 @@ import 'src/bulk_download/instance.dart';
 import 'src/bulk_download/rate_limited_stream.dart';
 import 'src/bulk_download/tile_loops/shared.dart';
 import 'src/errors/browsing.dart';
-import 'src/errors/initialisation.dart';
 import 'src/misc/exts.dart';
 import 'src/misc/int_extremes.dart';
 import 'src/misc/obscure_query_params.dart';
@@ -48,7 +47,6 @@ import 'src/providers/image_provider.dart';
 export 'src/backend/exports.dart';
 export 'src/errors/browsing.dart';
 export 'src/errors/damaged_store.dart';
-export 'src/errors/initialisation.dart';
 export 'src/misc/typedefs.dart';
 
 part 'src/bulk_download/download_progress.dart';
