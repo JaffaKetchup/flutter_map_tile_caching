@@ -2,31 +2,30 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart' as meta;
-import 'package:path_provider/path_provider.dart';
 
-import '../../../misc/exts.dart';
-import '../../interfaces/backend.dart';
-import '../../utils/errors.dart';
+import '../../../../flutter_map_tile_caching.dart';
 import 'models/generated/objectbox.g.dart';
 import 'models/models.dart';
 
 part 'worker.dart';
 
+/// Implementation of [FMTCBackend] that uses ObjectBox as the storage database
 final class ObjectBoxBackend implements FMTCBackend {
+  /// It is not recommended to access this method externally
   @override
   @meta.internal
   FMTCBackendInternal get internal => ObjectBoxBackendInternal._instance;
 }
 
-/// Implementation of [FMTCBackend] that uses ObjectBox as the storage database
-///
-/// Only to be accessed by FMTC via [ObjectBoxBackend.internal]
+/// Internal implementation of [FMTCBackend] that uses ObjectBox as the storage
+/// database
 abstract interface class ObjectBoxBackendInternal
     implements FMTCBackendInternal {
   static final _instance = _ObjectBoxBackendImpl._();
@@ -74,7 +73,10 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
   @override
   String get friendlyIdentifier => 'ObjectBox';
 
-  /// {@macro fmtc.backend.initialise}
+  /// See [FMTCBackendInternal.initialise] & [FlutterMapTileCaching.initialise]
+  /// for more info.
+  ///
+  /// ---
   ///
   /// This implementation additionally accepts the following [implSpecificArgs]:
   ///
@@ -82,15 +84,15 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
   /// use to specify the application group (of less than 20 chars). See
   /// [the ObjectBox docs](https://docs.objectbox.io/getting-started) for
   /// details.
-  ///  * 'maxReaders' (`int`): for debugging purposes only
+  ///  * 'maxDatabaseSize' (`int`): the maximum size the database file can grow
+  /// to. Exceeding it throws [DbFullException]. Defaults to 10 GB.
   ///
   /// These arguments are optional. However, failure to provide them in the
   /// specified type will result in an uncaught type casting error.
   @override
   Future<void> initialise({
-    String? rootDirectory,
-    int? maxDatabaseSize,
-    Map<String, Object> implSpecificArgs = const {},
+    required Directory rootDirectory,
+    required Map<String, Object> implSpecificArgs,
   }) async {
     if (_sendPort != null) throw RootAlreadyInitialised();
 
@@ -126,10 +128,9 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
       (
         sendPort: receivePort.sendPort,
         rootDirectory: rootDirectory,
-        maxDatabaseSize: maxDatabaseSize,
+        maxDatabaseSize: implSpecificArgs['maxDatabaseSize'] as int?,
         macosApplicationGroup:
-            implSpecificArgs['macosApplicationGroup']! as String,
-        maxReaders: implSpecificArgs['maxReaders']! as int,
+            implSpecificArgs['macosApplicationGroup'] as String?,
       ),
       onExit: receivePort.sendPort,
       debugName: '[FMTC] ObjectBox Backend Worker',
@@ -222,40 +223,13 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
       );
 
   @override
-  Future<double> getStoreSize({
+  Future<({double size, int length, int hits, int misses})> getStoreStats({
     required String storeName,
   }) async =>
       (await _sendCmd(
-        type: _WorkerCmdType.getStoreSize,
+        type: _WorkerCmdType.getStoreStats,
         args: {'storeName': storeName},
-      ))!['size'];
-
-  @override
-  Future<int> getStoreLength({
-    required String storeName,
-  }) async =>
-      (await _sendCmd(
-        type: _WorkerCmdType.getStoreLength,
-        args: {'storeName': storeName},
-      ))!['length'];
-
-  @override
-  Future<int> getStoreHits({
-    required String storeName,
-  }) async =>
-      (await _sendCmd(
-        type: _WorkerCmdType.getStoreHits,
-        args: {'storeName': storeName},
-      ))!['hits'];
-
-  @override
-  Future<int> getStoreMisses({
-    required String storeName,
-  }) async =>
-      (await _sendCmd(
-        type: _WorkerCmdType.getStoreMisses,
-        args: {'storeName': storeName},
-      ))!['misses']! as int;
+      ))!['store'];
 
   @override
   Future<bool> tileExistsInStore({
@@ -364,4 +338,53 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
         type: _WorkerCmdType.removeTilesOlderThan,
         args: {'storeName': storeName, 'expiry': expiry},
       ))!['numOrphans'];
+
+  @override
+  Future<Map<String, String>> readMetadata({
+    required String storeName,
+  }) async =>
+      (await _sendCmd(
+        type: _WorkerCmdType.readMetadata,
+        args: {'storeName': storeName},
+      ))!['metadata'];
+
+  @override
+  Future<void> setMetadata({
+    required String storeName,
+    required String key,
+    required String value,
+  }) =>
+      _sendCmd(
+        type: _WorkerCmdType.setMetadata,
+        args: {'storeName': storeName, 'key': key, 'value': value},
+      );
+
+  @override
+  Future<void> setBulkMetadata({
+    required String storeName,
+    required Map<String, String> kvs,
+  }) =>
+      _sendCmd(
+        type: _WorkerCmdType.setBulkMetadata,
+        args: {'storeName': storeName, 'kvs': kvs},
+      );
+
+  @override
+  Future<String?> removeMetadata({
+    required String storeName,
+    required String key,
+  }) async =>
+      (await _sendCmd(
+        type: _WorkerCmdType.removeMetadata,
+        args: {'storeName': storeName, 'key': key},
+      ))!['removedValue'];
+
+  @override
+  Future<void> resetMetadata({
+    required String storeName,
+  }) =>
+      _sendCmd(
+        type: _WorkerCmdType.resetMetadata,
+        args: {'storeName': storeName},
+      );
 }

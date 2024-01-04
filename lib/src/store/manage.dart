@@ -3,7 +3,7 @@
 
 part of flutter_map_tile_caching;
 
-/// Manages a [FMTCStore]'s representation on the filesystem, such as
+/// Manages an [FMTCStore]'s representation on the filesystem, such as
 /// creation and deletion
 ///
 /// If the store is not in the expected state (of existence) when invoking an
@@ -42,9 +42,11 @@ final class StoreManagement extends _WithBackendAccess {
   Future<void> removeTilesOlderThan({required DateTime expiry}) =>
       _backend.removeTilesOlderThan(storeName: _storeName, expiry: expiry);
 
+  // TODO: Define deprecation for `tileImageAsync`
+
   /// {@macro fmtc.backend.readLatestTile}
   /// , then render the bytes to an [Image]
-  Future<Image?> tileImageAsync({
+  Future<Image?> tileImage({
     double? size,
     Key? key,
     double scale = 1.0,

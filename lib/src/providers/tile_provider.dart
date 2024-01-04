@@ -8,12 +8,9 @@ part of flutter_map_tile_caching;
 /// Create from the store directory chain, eg. [FMTCStore.getTileProvider].
 class FMTCTileProvider extends TileProvider {
   /// The store directory attached to this provider
-  final FMTCStore storeDirectory;
+  final FMTCStore _store;
 
   /// The tile provider settings to use
-  ///
-  /// Defaults to the one provided by [FMTCSettings] when initialising
-  /// [FlutterMapTileCaching].
   final FMTCTileProviderSettings settings;
 
   /// [http.Client] (such as a [IOClient]) used to make all network requests
@@ -21,13 +18,12 @@ class FMTCTileProvider extends TileProvider {
   /// Defaults to a standard [IOClient]/[HttpClient] for HTTP/1.1 servers.
   final http.Client httpClient;
 
-  FMTCTileProvider._({
-    required this.storeDirectory,
+  FMTCTileProvider._(
+    this._store, {
     required FMTCTileProviderSettings? settings,
-    Map<String, String> headers = const {},
-    http.Client? httpClient,
-  })  : settings =
-            settings ?? FMTC.instance.settings.defaultTileProviderSettings,
+    required Map<String, String> headers,
+    required http.Client? httpClient,
+  })  : settings = settings ?? FMTC.instance.defaultTileProviderSettings,
         httpClient = httpClient ?? IOClient(HttpClient()..userAgent = null),
         super(
           headers: {
@@ -39,7 +35,7 @@ class FMTCTileProvider extends TileProvider {
         );
 
   // ignore: invalid_use_of_protected_member
-  FMTCBackendInternal get _backend => FMTC.instance.settings.backend.internal;
+  FMTCBackendInternal get _backend => FMTC.instance.backend.internal;
 
   /// Closes the open [httpClient] - this will make the provider unable to
   /// perform network requests
@@ -54,10 +50,13 @@ class FMTCTileProvider extends TileProvider {
   @override
   ImageProvider getImage(TileCoordinates coords, TileLayer options) =>
       FMTCImageProvider(
+        storeName: _store.storeName,
         provider: this,
         options: options,
         coords: coords,
       );
+
+  // TODO: Define deprecation for `Async`
 
   /// Check whether a specified tile is cached in the current store
   Future<bool> checkTileCached({
@@ -65,7 +64,7 @@ class FMTCTileProvider extends TileProvider {
     required TileLayer options,
   }) =>
       _backend.tileExistsInStore(
-        storeName: storeDirectory.storeName,
+        storeName: _store.storeName,
         url: obscureQueryParams(
           url: getTileUrl(coords, options),
           obscuredQueryParams: settings.obscuredQueryParams,
@@ -76,13 +75,11 @@ class FMTCTileProvider extends TileProvider {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is FMTCTileProvider &&
-          other.runtimeType == runtimeType &&
-          other.httpClient == httpClient &&
+          other._store == _store &&
+          other.headers == headers &&
           other.settings == settings &&
-          other.storeDirectory == storeDirectory &&
-          other.headers == headers);
+          other.httpClient == httpClient);
 
   @override
-  int get hashCode =>
-      Object.hash(httpClient, settings, storeDirectory, headers);
+  int get hashCode => Object.hash(_store, settings, headers, httpClient);
 }

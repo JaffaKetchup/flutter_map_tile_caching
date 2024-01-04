@@ -83,7 +83,7 @@ class DownloadManagement {
   ///
   /// For information about [obscuredQueryParams], see the
   /// [online documentation](https://fmtc.jaffaketchup.dev/usage/integration#obscuring-query-parameters).
-  /// Will default to the current value in [FMTCSettings].
+  /// Will default to the value in the default [FMTCTileProviderSettings].
   ///
   /// To set additional headers, set it via [TileProvider.headers] when
   /// constructing the [DownloadableRegion].
@@ -181,8 +181,7 @@ class DownloadManagement {
         rateLimit: rateLimit,
         obscuredQueryParams:
             obscuredQueryParams?.map((e) => RegExp('$e=[^&]*')) ??
-                FMTC.instance.settings.defaultTileProviderSettings
-                    .obscuredQueryParams,
+                FMTC.instance.defaultTileProviderSettings.obscuredQueryParams,
       ),
       onExit: receivePort.sendPort,
       debugName: '[FMTC] Master Bulk Download Thread',

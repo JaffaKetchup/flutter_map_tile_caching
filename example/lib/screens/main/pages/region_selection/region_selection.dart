@@ -225,7 +225,7 @@ class _RegionSelectionPageState extends State<RegionSelectionPage> {
                   FutureBuilder<Map<String, String>?>(
                 future: currentStore == null
                     ? Future.value()
-                    : FMTC.instance(currentStore).metadata.readAsync,
+                    : FMTC.instance(currentStore).metadata.read,
                 builder: (context, metadata) {
                   if (currentStore != null && metadata.data == null) {
                     return const LoadingIndicator('Preparing Map');
@@ -262,7 +262,7 @@ class _RegionSelectionPageState extends State<RegionSelectionPage> {
                                 : FMTC
                                     .instance(currentStore)
                                     .getTileProvider()
-                                    .checkTileCachedAsync(
+                                    .checkTileCached(
                                       coords: tile.coordinates,
                                       options:
                                           TileLayer(urlTemplate: urlTemplate),

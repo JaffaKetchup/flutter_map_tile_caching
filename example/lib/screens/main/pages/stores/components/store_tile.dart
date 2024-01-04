@@ -23,10 +23,10 @@ class StoreTile extends StatefulWidget {
 }
 
 class _StoreTileState extends State<StoreTile> {
-  Future<String>? _tiles;
+  Future<String>? _length;
   Future<String>? _size;
-  Future<String>? _cacheHits;
-  Future<String>? _cacheMisses;
+  Future<String>? _hits;
+  Future<String>? _misses;
   Future<Image?>? _image;
 
   bool _deletingProgress = false;
@@ -36,18 +36,21 @@ class _StoreTileState extends State<StoreTile> {
   late final _store = FMTC.instance(widget.storeName);
 
   void _loadStatistics() {
-    _tiles = _store.stats.storeLengthAsync.then((l) => l.toString());
-    _size = _store.stats.storeSizeAsync.then((s) => (s * 1024).asReadableSize);
-    _cacheHits = _store.stats.cacheHitsAsync.then((h) => h.toString());
-    _cacheMisses = _store.stats.cacheMissesAsync.then((m) => m.toString());
-    _image = _store.manage.tileImageAsync(size: 125);
+    final stats = _store.stats.all;
+
+    _length = stats.then((s) => s.length.toString());
+    _size = stats.then((s) => (s.size * 1024).asReadableSize);
+    _hits = stats.then((s) => s.hits.toString());
+    _misses = stats.then((s) => s.misses.toString());
+
+    _image = _store.manage.tileImage(size: 125);
 
     setState(() {});
   }
 
   List<FutureBuilder<String>> get stats => [
         FutureBuilder<String>(
-          future: _tiles,
+          future: _length,
           builder: (context, snapshot) => StatDisplay(
             statistic: snapshot.connectionState != ConnectionState.done
                 ? null
@@ -65,7 +68,7 @@ class _StoreTileState extends State<StoreTile> {
           ),
         ),
         FutureBuilder<String>(
-          future: _cacheHits,
+          future: _hits,
           builder: (context, snapshot) => StatDisplay(
             statistic: snapshot.connectionState != ConnectionState.done
                 ? null
@@ -74,7 +77,7 @@ class _StoreTileState extends State<StoreTile> {
           ),
         ),
         FutureBuilder<String>(
-          future: _cacheMisses,
+          future: _misses,
           builder: (context, snapshot) => StatDisplay(
             statistic: snapshot.connectionState != ConnectionState.done
                 ? null
@@ -177,7 +180,7 @@ class _StoreTileState extends State<StoreTile> {
                                           setState(
                                             () => _emptyingProgress = true,
                                           );
-                                          await _store.manage.resetAsync();
+                                          await _store.manage.reset();
                                           setState(
                                             () => _emptyingProgress = false,
                                           );

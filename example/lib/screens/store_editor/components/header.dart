@@ -56,23 +56,23 @@ AppBar buildHeader({
                 downloadProvider.setSelectedStore(newStore);
               }*/
 
-              await newStore.manage.createAsync();
+              await newStore.manage.create();
 
-              await newStore.metadata.addAsync(
+              await newStore.metadata.set(
                 key: 'sourceURL',
                 value: newValues['sourceURL']!,
               );
-              await newStore.metadata.addAsync(
+              await newStore.metadata.set(
                 key: 'validDuration',
                 value: newValues['validDuration']!,
               );
-              await newStore.metadata.addAsync(
+              await newStore.metadata.set(
                 key: 'maxLength',
                 value: newValues['maxLength']!,
               );
 
               if (widget.existingStoreName == null || useNewCacheModeValue) {
-                await newStore.metadata.addAsync(
+                await newStore.metadata.set(
                   key: 'behaviour',
                   value: cacheModeValue ?? 'cacheFirst',
                 );

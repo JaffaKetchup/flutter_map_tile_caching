@@ -11,10 +11,7 @@ enum _WorkerCmdType {
   resetStore,
   renameStore,
   deleteStore,
-  getStoreSize,
-  getStoreLength,
-  getStoreHits,
-  getStoreMisses,
+  getStoreStats,
   tileExistsInStore,
   readTile,
   readLatestTile,
@@ -22,15 +19,19 @@ enum _WorkerCmdType {
   deleteTile,
   removeOldestTilesAboveLimit,
   removeTilesOlderThan,
+  readMetadata,
+  setMetadata,
+  setBulkMetadata,
+  removeMetadata,
+  resetMetadata,
 }
 
 Future<void> _worker(
   ({
     SendPort sendPort,
-    String? rootDirectory,
+    Directory rootDirectory,
     int? maxDatabaseSize,
     String? macosApplicationGroup,
-    int? maxReaders,
   }) input,
 ) async {
   //! SETUP !//
@@ -44,15 +45,10 @@ Future<void> _worker(
       input.sendPort.send((id: id, data: data));
 
   // Initialise database
-  final rootDirectory = await (input.rootDirectory == null
-          ? await getApplicationDocumentsDirectory()
-          : Directory(input.rootDirectory!) >> 'fmtc')
-      .create(recursive: true);
   final root = await openStore(
-    directory: rootDirectory.absolute.path,
-    maxDBSizeInKB: input.maxDatabaseSize,
+    directory: input.rootDirectory.absolute.path,
+    maxDBSizeInKB: input.maxDatabaseSize ?? 10000000, // Defaults to 10 GB
     macosApplicationGroup: input.macosApplicationGroup,
-    maxReaders: input.maxReaders,
   );
 
   // Respond with comms channel for future cmds
@@ -97,8 +93,8 @@ Future<void> _worker(
         if (store.name != storeName) continue;
         stores.put(
           store
-            ..numberOfTiles -= 1
-            ..numberOfBytes -= tile.bytes.lengthInBytes,
+            ..length -= 1
+            ..size -= tile.bytes.lengthInBytes,
           mode: PutMode.update,
         );
         break;
@@ -111,7 +107,8 @@ Future<void> _worker(
       if (tile.stores.isEmpty) return tiles.remove(tile.id);
 
       // Otherwise just update the tile
-      tiles.put(tile, mode: PutMode.update);
+      // TODO: Check this works
+      tile.stores.applyToDb(mode: PutMode.update);
       return false;
     });
   }
@@ -130,16 +127,38 @@ Future<void> _worker(
         case _WorkerCmdType.destroy_:
           root.close();
           if (cmd.args['deleteRoot'] == true) {
-            rootDirectory.deleteSync(recursive: true);
+            input.rootDirectory.deleteSync(recursive: true);
           }
 
           // TODO: Consider final message
           Isolate.exit();
         case _WorkerCmdType.storeExists:
+          final query = root
+              .box<ObjectBoxStore>()
+              .query(
+                ObjectBoxStore_.name.equals(cmd.args['storeName']! as String),
+              )
+              .build();
+
+          sendRes(id: cmd.id, data: {'exists': query.count() == 1});
+
+          query.close();
+
+          break;
+        case _WorkerCmdType.getStoreStats:
+          final storeName = cmd.args['storeName']! as String;
+          final store = getStore(storeName) ??
+              (throw StoreNotExists(storeName: storeName));
+
           sendRes(
             id: cmd.id,
             data: {
-              'exists': getStore(cmd.args['storeName']! as String) != null,
+              'stats': (
+                size: store.size / 1024, // Convert to KiB
+                length: store.length,
+                hits: store.hits,
+                misses: store.misses,
+              ),
             },
           );
 
@@ -151,14 +170,15 @@ Future<void> _worker(
             root.box<ObjectBoxStore>().put(
                   ObjectBoxStore(
                     name: storeName,
-                    numberOfTiles: 0,
-                    numberOfBytes: 0,
+                    length: 0,
+                    size: 0,
                     hits: 0,
                     misses: 0,
                   ),
                   mode: PutMode.insert,
                 );
           } catch (e) {
+            debugPrint(e.runtimeType.toString());
             throw StoreAlreadyExists(storeName: storeName);
           }
 
@@ -166,6 +186,7 @@ Future<void> _worker(
 
           break;
         case _WorkerCmdType.resetStore:
+          // TODO: Consider just deleting then creating
           final storeName = cmd.args['storeName']! as String;
           final removeIds = <int>[];
 
@@ -201,9 +222,7 @@ Future<void> _worker(
               );
               tilesQuery.close();
 
-              tiles.query(ObjectBoxTile_.id.oneOf(removeIds)).build()
-                ..remove()
-                ..close();
+              tiles.removeMany(removeIds);
 
               final store = storeQuery.findUnique() ??
                   (throw StoreNotExists(storeName: storeName));
@@ -215,8 +234,8 @@ Future<void> _worker(
               stores.put(
                 store
                   ..tiles.clear()
-                  ..numberOfTiles = 0
-                  ..numberOfBytes = 0
+                  ..length = 0
+                  ..size = 0
                   ..hits = 0
                   ..misses = 0,
               );
@@ -230,11 +249,22 @@ Future<void> _worker(
           final currentStoreName = cmd.args['currentStoreName']! as String;
           final newStoreName = cmd.args['newStoreName']! as String;
 
-          root.box<ObjectBoxStore>().put(
-                getStore(currentStoreName) ??
-                    (throw StoreNotExists(storeName: currentStoreName))
-                  ..name = newStoreName,
-              );
+          final stores = root.box<ObjectBoxStore>();
+
+          final query = stores
+              .query(ObjectBoxStore_.name.equals(currentStoreName))
+              .build();
+
+          root.runInTransaction(
+            TxMode.write,
+            () {
+              final store = query.findUnique() ??
+                  (throw StoreNotExists(storeName: currentStoreName));
+              query.close();
+
+              stores.put(store..name = newStoreName, mode: PutMode.update);
+            },
+          );
 
           sendRes(id: cmd.id);
 
@@ -249,60 +279,10 @@ Future<void> _worker(
             ..remove()
             ..close();
 
+          // TODO: Check tiles relations
+          // TODO: Integrate metadata
+
           sendRes(id: cmd.id);
-
-          break;
-        case _WorkerCmdType.getStoreSize:
-          final storeName = cmd.args['storeName']! as String;
-
-          sendRes(
-            id: cmd.id,
-            data: {
-              'size': (getStore(storeName) ??
-                          (throw StoreNotExists(storeName: storeName)))
-                      .numberOfBytes /
-                  1024,
-            },
-          );
-
-          break;
-        case _WorkerCmdType.getStoreLength:
-          final storeName = cmd.args['storeName']! as String;
-
-          sendRes(
-            id: cmd.id,
-            data: {
-              'length': (getStore(storeName) ??
-                      (throw StoreNotExists(storeName: storeName)))
-                  .numberOfTiles,
-            },
-          );
-
-          break;
-        case _WorkerCmdType.getStoreHits:
-          final storeName = cmd.args['storeName']! as String;
-
-          sendRes(
-            id: cmd.id,
-            data: {
-              'hits': (getStore(storeName) ??
-                      (throw StoreNotExists(storeName: storeName)))
-                  .hits,
-            },
-          );
-
-          break;
-        case _WorkerCmdType.getStoreMisses:
-          final storeName = cmd.args['storeName']! as String;
-
-          sendRes(
-            id: cmd.id,
-            data: {
-              'misses': (getStore(storeName) ??
-                      (throw StoreNotExists(storeName: storeName)))
-                  .misses,
-            },
-          );
 
           break;
         case _WorkerCmdType.tileExistsInStore:
@@ -388,8 +368,8 @@ Future<void> _worker(
                   );
                   stores.put(
                     store
-                      ..numberOfTiles += 1
-                      ..numberOfBytes += bytes.lengthInBytes,
+                      ..length += 1
+                      ..size += bytes.lengthInBytes,
                   );
                   break;
                 case (false, true): // Existing tile, no update
@@ -398,8 +378,8 @@ Future<void> _worker(
                     tiles.put(existingTile..stores.add(store));
                     stores.put(
                       store
-                        ..numberOfTiles += 1
-                        ..numberOfBytes += existingTile.bytes.lengthInBytes,
+                        ..length += 1
+                        ..size += existingTile.bytes.lengthInBytes,
                     );
                   }
                   break;
@@ -413,7 +393,7 @@ Future<void> _worker(
                     existingTile.stores
                         .map(
                           (store) => store
-                            ..numberOfBytes += (bytes.lengthInBytes -
+                            ..size += (bytes.lengthInBytes -
                                 existingTile.bytes.lengthInBytes),
                         )
                         .toList(),
@@ -483,7 +463,7 @@ Future<void> _worker(
                       final store = storeQuery.findUnique() ??
                           (throw StoreNotExists(storeName: storeName));
 
-                      final numToRemove = store.numberOfTiles - tilesLimit;
+                      final numToRemove = store.length - tilesLimit;
 
                       return numToRemove <= 0
                           ? const Iterable.empty()
@@ -532,6 +512,138 @@ Future<void> _worker(
           );
 
           tilesQuery.close();
+
+          break;
+        case _WorkerCmdType.readMetadata:
+          final storeName = cmd.args['storeName']! as String;
+          final store = getStore(storeName) ??
+              (throw StoreNotExists(storeName: storeName));
+
+          sendRes(
+            id: cmd.id,
+            data: {'metadata': jsonDecode(store.metadataJson)},
+          );
+
+          break;
+        case _WorkerCmdType.setMetadata:
+          final storeName = cmd.args['storeName']! as String;
+          final key = cmd.args['key']! as String;
+          final value = cmd.args['value']! as String;
+
+          final stores = root.box<ObjectBoxStore>();
+
+          final query =
+              stores.query(ObjectBoxStore_.name.equals(storeName)).build();
+
+          root.runInTransaction(
+            TxMode.write,
+            () {
+              final store = query.findUnique() ??
+                  (throw StoreNotExists(storeName: storeName));
+              query.close();
+
+              stores.put(
+                store
+                  ..metadataJson = jsonEncode(
+                    (jsonDecode(store.metadataJson)
+                        as Map<String, String>)[key] = value,
+                  ),
+                mode: PutMode.update,
+              );
+            },
+          );
+
+          sendRes(id: cmd.id);
+
+          break;
+        case _WorkerCmdType.setBulkMetadata:
+          final storeName = cmd.args['storeName']! as String;
+          final kvs = cmd.args['kvs']! as Map<String, String>;
+
+          final stores = root.box<ObjectBoxStore>();
+
+          final query =
+              stores.query(ObjectBoxStore_.name.equals(storeName)).build();
+
+          root.runInTransaction(
+            TxMode.write,
+            () {
+              final store = query.findUnique() ??
+                  (throw StoreNotExists(storeName: storeName));
+              query.close();
+
+              stores.put(
+                store
+                  ..metadataJson = jsonEncode(
+                    (jsonDecode(store.metadataJson) as Map<String, String>)
+                      ..addAll(kvs),
+                  ),
+                mode: PutMode.update,
+              );
+            },
+          );
+
+          sendRes(id: cmd.id);
+
+          break;
+        case _WorkerCmdType.removeMetadata:
+          final storeName = cmd.args['storeName']! as String;
+          final key = cmd.args['key']! as String;
+
+          final stores = root.box<ObjectBoxStore>();
+
+          final query =
+              stores.query(ObjectBoxStore_.name.equals(storeName)).build();
+
+          sendRes(
+            id: cmd.id,
+            data: {
+              'removedValue': root.runInTransaction(
+                TxMode.write,
+                () {
+                  final store = query.findUnique() ??
+                      (throw StoreNotExists(storeName: storeName));
+                  query.close();
+
+                  final metadata =
+                      jsonDecode(store.metadataJson) as Map<String, String>;
+                  final removedVal = metadata.remove(key);
+
+                  stores.put(
+                    store..metadataJson = jsonEncode(metadata),
+                    mode: PutMode.update,
+                  );
+
+                  return removedVal;
+                },
+              ),
+            },
+          );
+
+          break;
+        case _WorkerCmdType.resetMetadata:
+          final storeName = cmd.args['storeName']! as String;
+
+          final stores = root.box<ObjectBoxStore>();
+
+          final query =
+              stores.query(ObjectBoxStore_.name.equals(storeName)).build();
+
+          root.runInTransaction(
+            TxMode.write,
+            () {
+              final store = query.findUnique() ??
+                  (throw StoreNotExists(storeName: storeName));
+              query.close();
+
+              stores.put(
+                store..metadataJson = jsonEncode(<String, String>{}),
+                mode: PutMode.update,
+              );
+            },
+          );
+
+          sendRes(id: cmd.id);
 
           break;
       }

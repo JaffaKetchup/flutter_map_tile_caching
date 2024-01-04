@@ -3,22 +3,45 @@
 
 part of flutter_map_tile_caching;
 
-/// Provides statistics about a [FMTCStore]
+/// Provides statistics about an [FMTCStore]
+///
+/// If the store is not in the expected state (of existence) when invoking an
+/// operation, then an error will be thrown (likely [StoreNotExists] or
+/// [StoreAlreadyExists]). It is recommended to check [StoreManagement.ready]
+/// when necessary.
 final class StoreStats extends _WithBackendAccess {
   const StoreStats._(super._store);
 
-  /// {@macro fmtc.backend.getStoreSize}
-  Future<double> get size => _backend.getStoreSize(storeName: _storeName);
+  /// {@macro fmtc.backend.getStoreStats}
+  ///
+  /// {@template fmtc.frontend.storestats.efficiency}
+  /// Prefer using [all] when multiple statistics are required instead of getting
+  /// them individually. Only one backend operation is required to get all the
+  /// stats, and so is more efficient.
+  /// {@endtemplate}
+  Future<({double size, int length, int hits, int misses})> get all =>
+      _backend.getStoreStats(storeName: _storeName);
 
-  /// {@macro fmtc.backend.getStoreLength}
-  Future<int> get length => _backend.getStoreLength(storeName: _storeName);
+  /// Retrieve the total number of KiBs of all tiles' bytes (not 'real total'
+  /// size)
+  ///
+  /// {@macro fmtc.frontend.storestats.efficiency}
+  Future<double> get size => all.then((a) => a.size);
 
-  /// {@macro fmtc.backend.getStoreHits}
-  Future<int> get cacheHits async =>
-      _backend.getStoreHits(storeName: _storeName);
+  /// Retrieve the number of tiles belonging to this store
+  ///
+  /// {@macro fmtc.frontend.storestats.efficiency}
+  Future<int> get length => all.then((a) => a.length);
 
-  /// {@macro fmtc.backend.getStoreMisses}
-  Future<int> get cacheMisses => _backend.getStoreMisses(storeName: _storeName);
+  /// Retrieve the number of successful tile retrievals when browsing
+  ///
+  /// {@macro fmtc.frontend.storestats.efficiency}
+  Future<int> get hits => all.then((a) => a.hits);
+
+  /// Retrieve number of unsuccessful tile retrievals when browsing
+  ///
+  /// {@macro fmtc.frontend.storestats.efficiency}
+  Future<int> get misses => all.then((a) => a.misses);
 
   /// Watch for changes in the current store
   ///

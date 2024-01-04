@@ -5,11 +5,18 @@ import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 
-abstract base class BackendStore<T extends Iterable<BackendTile<dynamic>>> {
-  abstract String name;
-  abstract int hits;
-  abstract int misses;
-  T get tiles;
+import '../../../flutter_map_tile_caching.dart';
+import '../../misc/obscure_query_params.dart';
+
+/// Represents a store (which is never directly exposed to the user)
+///
+/// Note that the relationship between stores and tiles is many-to-many, and
+/// backend implementations should fully support this.
+abstract base class BackendStore {
+  /// The human-readable name for this store
+  ///
+  /// Note that this may contain any character, and may also be empty.
+  String get name;
 
   /// Uses [name] for equality comparisons only (unless the two objects are
   /// [identical])
@@ -26,11 +33,25 @@ abstract base class BackendStore<T extends Iterable<BackendTile<dynamic>>> {
   int get hashCode => name.hashCode;
 }
 
-abstract base class BackendTile<S extends Iterable<BackendStore<dynamic>>> {
-  abstract String url;
-  abstract DateTime lastModified;
-  abstract Uint8List bytes;
-  S get stores;
+/// Represents a tile (which is never directly exposed to the user)
+///
+/// Note that the relationship between stores and tiles is many-to-many, and
+/// backend implementations should fully support this.
+abstract base class BackendTile {
+  /// The representative URL of the tile
+  ///
+  /// This is passed through [obscureQueryParams] before storage here, and so
+  /// may not be the same as the network URL.
+  String get url;
+
+  /// The time at which the [bytes] of this tile were last changed
+  ///
+  /// This must be kept up to date, otherwise unexpected behaviour may occur
+  /// when the [FMTCTileProviderSettings.maxStoreLength] is exceeded.
+  DateTime get lastModified;
+
+  /// The raw bytes of the image of this tile
+  Uint8List get bytes;
 
   /// Uses [url] for equality comparisons only (unless the two objects are
   /// [identical])

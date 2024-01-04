@@ -21,115 +21,98 @@ class FlutterMapTileCaching {
   /// The directory which contains all databases required to use FMTC
   final RootDirectory rootDirectory;
 
-  /// Custom global 'flutter_map_tile_caching' settings
+  /// The database or other storage mechanism that FMTC will use as a cache
+  /// 'backend'
   ///
-  /// See [FMTCSettings]' properties for more information
-  final FMTCSettings settings;
+  /// Defaults to [ObjectBoxBackend], which uses the ObjectBox library and
+  /// database.
+  ///
+  /// See [FMTCBackend] for more information.
+  final FMTCBackend backend;
 
-  /// Whether FMTC should perform extra reporting and console logging
+  /// Default settings used when creating an [FMTCTileProvider]
   ///
-  /// Depends on [_debugMode] (set via [initialise]) and [kDebugMode].
-  bool get debugMode => _debugMode && kDebugMode;
-  final bool _debugMode;
+  /// Can be overridden on a case-to-case basis when actually creating the tile
+  /// provider.
+  final FMTCTileProviderSettings defaultTileProviderSettings;
 
   /// Internal constructor, to be used by [initialise]
   const FlutterMapTileCaching._({
     required this.rootDirectory,
-    required this.settings,
-    required bool debugMode,
-  }) : _debugMode = debugMode;
+    required this.backend,
+    required this.defaultTileProviderSettings,
+  });
 
   /// {@macro fmtc.backend.initialise}
   ///
+  ///
+  /// {@macro fmtc.backend.objectbox.initialise}
+  ///
   /// Initialise and prepare FMTC, by creating all necessary directories/files
   /// and configuring the [FlutterMapTileCaching] singleton
+  ///
+  /// You must construct using this before using [FlutterMapTileCaching.instance],
+  /// otherwise a [StateError] will be thrown.
+  ///
+  /// Returns a configured [FlutterMapTileCaching] instance, and assigns it to
+  /// [instance].
+  ///
+  /// Note that [FMTC] is an alias for [FlutterMapTileCaching].
+  ///
+  /// ---
   ///
   /// Prefer to leave [rootDirectory] as `null`, which will use
   /// `getApplicationDocumentsDirectory()`. Alternatively, pass a custom
   /// directory - it is recommended to not use a cache directory, as the OS can
   /// clear these without notice at any time.
   ///
-  /// You must construct using this before using [FlutterMapTileCaching.instance],
-  /// otherwise a [StateError] will be thrown.
+  /// Optionally set a custom storage [backend] instead of [ObjectBoxBackend].
+  /// Some implementations may accept/require additional arguments that may be
+  /// set through [backendImplArgs]. See their documentation for more
+  /// information. If provided, they must be of the specified type.
   ///
-  /// The initialisation safety system ensures that a corrupted database cannot
-  /// prevent the app from launching. However, one fatal crash is necessary for
-  /// each corrupted database, as this allows each one to be individually located
-  /// and deleted, due to limitations in dependencies. Note that any triggering
-  /// of the safety system will also reset the recovery database, meaning
-  /// recovery information will be lost.
-  ///
-  /// [errorHandler] must not (re)throw an error, as this interferes with the
-  /// initialisation safety system, and may result in unnecessary data loss.
-  ///
-  /// Setting [disableInitialisationSafety] `true` will disable the
-  /// initialisation safety system, and is not recommended, as this may leave the
-  /// application unable to launch if any database becomes corrupted.
-  ///
-  /// Setting [debugMode] `true` can be useful to diagnose issues, either within
-  /// your application or FMTC itself. It enables the Isar inspector and causes
-  /// extra console logging in important areas. Prefer to leave disabled to
-  /// prevent console pollution and to maximise performance. Whether FMTC chooses
-  /// to listen to this value is also dependent on [kDebugMode] - see
-  /// [FlutterMapTileCaching.debugMode] for more information.
-  /// _Extra logging is currently limited._
-  ///
-  /// This returns a configured [FlutterMapTileCaching], the same object as
-  /// [FlutterMapTileCaching.instance]. Note that [FMTC] is an alias for this
-  /// object.
+  /// > The default [ObjectBoxBackend] accepts the following optional
+  /// > [backendImplArgs] (note that other implementations may support different
+  /// > args). For ease of use, they have been provided in this method as typed
+  /// > arguments - these may be useless in other implementations (although they
+  /// > will be forwarded to any).
+  /// >
+  /// > * [macosApplicationGroup] : when creating a sandboxed macOS app,
+  /// > use to specify the application group (of less than 20 chars). See
+  /// > [the ObjectBox docs](https://docs.objectbox.io/getting-started) for
+  /// > details.
+  /// > * [maxDatabaseSize] : the maximum size the database file can grow
+  /// > to. Exceeding it throws `DbFullException`. Defaults to 10 GB.
   static Future<FlutterMapTileCaching> initialise({
     String? rootDirectory,
-    FMTCSettings? settings,
-    void Function(FMTCInitialisationException error)? errorHandler,
-    bool disableInitialisationSafety = false,
-    bool debugMode = false,
+    FMTCBackend? backend,
+    Map<String, Object> backendImplArgs = const {},
+    String? macosApplicationGroup,
+    int? maxDatabaseSize,
+    FMTCTileProviderSettings? defaultTileProviderSettings,
   }) async {
-    final directory = await ((rootDirectory == null
-                ? await getApplicationDocumentsDirectory()
-                : Directory(rootDirectory)) >>
-            'fmtc')
+    final dir = await (rootDirectory == null
+            ? await getApplicationDocumentsDirectory()
+            : Directory(rootDirectory) >> 'fmtc')
         .create(recursive: true);
 
-    settings ??= FMTCSettings();
+    backend ??= ObjectBoxBackend();
+    defaultTileProviderSettings ??= FMTCTileProviderSettings();
 
-    if (!disableInitialisationSafety) {
-      final initialisationSafetyFile =
-          directory >>> '.initialisationSafety.tmp';
-      final needsRescue = await initialisationSafetyFile.exists();
-
-      await initialisationSafetyFile.create();
-      final writeSink =
-          initialisationSafetyFile.openWrite(mode: FileMode.writeOnlyAppend);
-
-      await FMTCRegistry.initialise(
-        directory: directory,
-        databaseMaxSize: settings.databaseMaxSize,
-        databaseCompactCondition: settings.databaseCompactCondition,
-        errorHandler: errorHandler,
-        initialisationSafetyWriteSink: writeSink,
-        safeModeSuccessfulIDs:
-            needsRescue ? await initialisationSafetyFile.readAsLines() : null,
-        debugMode: debugMode && kDebugMode,
-      );
-
-      await writeSink.close();
-      await initialisationSafetyFile.delete();
-    } else {
-      await FMTCRegistry.initialise(
-        directory: directory,
-        databaseMaxSize: settings.databaseMaxSize,
-        databaseCompactCondition: settings.databaseCompactCondition,
-        errorHandler: errorHandler,
-        initialisationSafetyWriteSink: null,
-        safeModeSuccessfulIDs: null,
-        debugMode: debugMode && kDebugMode,
-      );
-    }
+    // ignore: invalid_use_of_protected_member
+    await backend.internal.initialise(
+      rootDirectory: dir,
+      implSpecificArgs: {
+        if (macosApplicationGroup != null)
+          'macosApplicationGroup': macosApplicationGroup,
+        if (maxDatabaseSize != null) 'maxDatabaseSize': maxDatabaseSize,
+      }..addAll(backendImplArgs),
+    );
 
     return _instance = FMTC._(
-      rootDirectory: RootDirectory._(directory),
-      settings: settings,
-      debugMode: debugMode,
+      rootDirectory: RootDirectory._(dir),
+      backend: backend,
+      defaultTileProviderSettings: defaultTileProviderSettings,
     );
   }
 

@@ -45,12 +45,11 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
 
   @override
   Widget build(BuildContext context) => Consumer<RegionSelectionProvider>(
-        builder: (context, downloadProvider, _) => WillPopScope(
-          onWillPop: () async {
+        builder: (context, downloadProvider, _) => PopScope(
+          onPopInvoked: (_) {
             scaffoldMessenger.showSnackBar(
               const SnackBar(content: Text('Changes not saved')),
             );
-            return true;
           },
           child: Scaffold(
             appBar: buildHeader(
@@ -68,10 +67,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                 child: FutureBuilder<Map<String, String>?>(
                   future: widget.existingStoreName == null
                       ? Future.sync(() => {})
-                      : FMTC
-                          .instance(widget.existingStoreName!)
-                          .metadata
-                          .readAsync,
+                      : FMTC.instance(widget.existingStoreName!).metadata.read,
                   builder: (context, metadata) {
                     if (!metadata.hasData || metadata.data == null) {
                       return const LoadingIndicator('Retrieving Settings');

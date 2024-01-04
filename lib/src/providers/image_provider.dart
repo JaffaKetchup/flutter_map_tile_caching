@@ -16,6 +16,9 @@ import '../misc/obscure_query_params.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
 class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
+  /// The name of the store associated with this provider
+  final String storeName;
+
   /// An instance of the [FMTCTileProvider] in use
   final FMTCTileProvider provider;
 
@@ -27,13 +30,14 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
   /// Create a specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
   FMTCImageProvider({
+    required this.storeName,
     required this.provider,
     required this.options,
     required this.coords,
   });
 
   // ignore: invalid_use_of_protected_member
-  FMTCBackendInternal get _backend => FMTC.instance.settings.backend.internal;
+  FMTCBackendInternal get _backend => FMTC.instance.backend.internal;
 
   @override
   ImageStreamCompleter loadImage(
@@ -47,7 +51,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       scale: 1,
       debugLabel: coords.toString(),
       informationCollector: () => [
-        DiagnosticsProperty('Store name', provider.storeDirectory.storeName),
+        DiagnosticsProperty('Store name', storeName),
         DiagnosticsProperty('Tile coordinates', coords),
         DiagnosticsProperty('Current provider', key),
       ],
@@ -205,7 +209,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     // Cache the tile retrieved from the network response
     unawaited(
       _backend.writeTile(
-        storeName: provider.storeDirectory.storeName,
+        storeName: storeName,
         url: matcherUrl,
         bytes: responseBytes,
       ),
@@ -216,7 +220,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       // TODO: Check if performance is acceptable without checking limit excess first
       unawaited(
         _backend.removeOldestTilesAboveLimit(
-          storeName: provider.storeDirectory.storeName,
+          storeName: storeName,
           tilesLimit: provider.settings.maxStoreLength,
         ),
       );

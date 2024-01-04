@@ -8,6 +8,6 @@ abstract base class _WithBackendAccess {
 
   final FMTCStore _store;
   // ignore: invalid_use_of_protected_member
-  FMTCBackendInternal get _backend => FMTC.instance.settings.backend.internal;
+  FMTCBackendInternal get _backend => FMTC.instance.backend.internal;
   String get _storeName => _store.storeName;
 }

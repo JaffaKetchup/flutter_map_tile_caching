@@ -68,17 +68,13 @@ class FMTCStore {
 
   /// Get the [TileProvider] suitable to connect the [TileLayer] to FMTC's
   /// internals
-  ///
-  /// Uses [FMTCSettings.defaultTileProviderSettings] by default (and it's
-  /// default if unspecified). Alternatively, override [settings] for this get
-  /// only.
   FMTCTileProvider getTileProvider({
     FMTCTileProviderSettings? settings,
     Map<String, String>? headers,
     http.Client? httpClient,
   }) =>
       FMTCTileProvider._(
-        storeDirectory: this,
+        this,
         settings: settings,
         headers: headers ?? {},
         httpClient: httpClient,

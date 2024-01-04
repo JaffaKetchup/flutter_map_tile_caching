@@ -24,7 +24,7 @@ class MapView extends StatelessWidget {
             FutureBuilder<Map<String, String>?>(
           future: currentStore == null
               ? Future.sync(() => {})
-              : FMTC.instance(currentStore).metadata.readAsync,
+              : FMTC.instance(currentStore).metadata.read,
           builder: (context, metadata) {
             if (!metadata.hasData ||
                 metadata.data == null ||

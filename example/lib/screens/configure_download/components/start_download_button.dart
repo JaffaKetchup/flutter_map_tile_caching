@@ -90,7 +90,7 @@ class StartDownloadButton extends StatelessWidget {
                   final navigator = Navigator.of(context);
 
                   final metadata = await regionSelectionProvider
-                      .selectedStore!.metadata.readAsync;
+                      .selectedStore!.metadata.read;
 
                   downloadingProvider.setDownloadProgress(
                     regionSelectionProvider.selectedStore!.download

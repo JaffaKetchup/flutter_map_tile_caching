@@ -2,12 +2,13 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../../flutter_map_tile_caching.dart';
+import 'models.dart';
 
 /// An abstract interface that FMTC will use to communicate with a storage
 /// 'backend' (usually one root)
@@ -24,10 +25,6 @@ import '../../../flutter_map_tile_caching.dart';
 ///    be accessed via [FMTCBackend.internal]
 ///  * Prefer throwing included implementation-generic errors/exceptions
 ///  * See the default [ObjectBoxBackend] implementation for an example
-///
-/// To end-users:
-///  * Use [FMTCSettings.backend] to set a custom backend
-///  * Avoid calling the [internal] method of a backend
 abstract interface class FMTCBackend<Internal extends FMTCBackendInternal> {
   const FMTCBackend();
 
@@ -46,27 +43,17 @@ abstract interface class FMTCBackendInternal {
   /// Generic description/name of this backend
   abstract final String friendlyIdentifier;
 
-  /// {@template fmtc.backend.initialise}
   /// Initialise this backend & create the root
   ///
-  /// [rootDirectory] defaults to '[getApplicationDocumentsDirectory]/fmtc'.
-  ///
-  /// [maxDatabaseSize] defaults to 1 GB shared across all stores. Specify the
-  /// amount in KB.
+  /// See [FlutterMapTileCaching.initialise] for more information.
   ///
   /// Some implementations may accept/require additional arguments that may
   /// be set through [implSpecificArgs]. See their documentation for more
-  /// information.
-  /// {@endtemplate}
-  ///
-  /// ---
-  ///
-  /// Note to implementers: if you accept implementation specific arguments,
-  /// ensure you properly document these.
+  /// information. Note to implementers: if you accept implementation specific
+  /// arguments, ensure you properly document these.
   Future<void> initialise({
-    String? rootDirectory,
-    int? maxDatabaseSize,
-    Map<String, Object> implSpecificArgs = const {},
+    required Directory rootDirectory,
+    required Map<String, Object> implSpecificArgs,
   });
 
   /// {@template fmtc.backend.destroy}
@@ -128,36 +115,14 @@ abstract interface class FMTCBackendInternal {
     required String newStoreName,
   });
 
-  /// {@template fmtc.backend.getStoreSize}
-  /// Retrieve the total size (in kibibytes KiB) of the image bytes of all the
-  /// tiles that belong to the specified store
-  ///
-  /// This does not return any other data that adds to the 'real' store size.
+  /// {@template fmtc.backend.getStoreStats}
+  /// Retrieve the following statistics about the specified store (all available):
+  ///  * `size`: total number of KiBs of all tiles' bytes (not 'real total' size)
+  ///  * `length`: number of tiles belonging
+  ///  * `hits`: number of successful tile retrievals when browsing
+  ///  * `misses`: number of unsuccessful tile retrievals when browsing
   /// {@endtemplate}
-  Future<double> getStoreSize({
-    required String storeName,
-  });
-
-  /// {@template fmtc.backend.getStoreLength}
-  /// Retrieve the number of tiles that belong to the specified store
-  /// {@endtemplate}
-  Future<int> getStoreLength({
-    required String storeName,
-  });
-
-  /// {@template fmtc.backend.getStoreHits}
-  /// Retrieve the number of times that a tile was successfully retrieved from
-  /// the specified store when browsing
-  /// {@endtemplate}
-  Future<int> getStoreHits({
-    required String storeName,
-  });
-
-  /// {@template fmtc.backend.getStoreMisses}
-  /// Retrieve the number of times that a tile was attempted to be retrieved from
-  /// the specified store when browsing, but was not present
-  /// {@endtemplate}
-  Future<int> getStoreMisses({
+  Future<({double size, int length, int hits, int misses})> getStoreStats({
     required String storeName,
   });
 
@@ -167,7 +132,7 @@ abstract interface class FMTCBackendInternal {
     required String url,
   });
 
-  /// Get a raw tile by URL
+  /// Retrieve a raw tile by the specified URL
   Future<BackendTile?> readTile({
     required String url,
   });
@@ -235,5 +200,59 @@ abstract interface class FMTCBackendInternal {
   Future<int> removeTilesOlderThan({
     required String storeName,
     required DateTime expiry,
+  });
+
+  /// {@template fmtc.backend.readMetadata}
+  /// Retrieve the stored metadata for the specified store
+  /// {@endtemplate}
+  Future<Map<String, String>> readMetadata({
+    required String storeName,
+  });
+
+  /// {@template fmtc.backend.setMetadata}
+  /// Set a key-value pair in the metadata for the specified store
+  ///
+  /// Note that this operation will override the stored value if there is already
+  /// a matching key present.
+  ///
+  /// Prefer using [setBulkMetadata] when setting multiple keys. Only one backend
+  /// operation is required to set them all at once, and so is more efficient.
+  /// {@endtemplate}
+  Future<void> setMetadata({
+    required String storeName,
+    required String key,
+    required String value,
+  });
+
+  /// {@template fmtc.backend.setBulkMetadata}
+  /// Set multiple key-value pairs in the metadata for the specified store
+  ///
+  /// Note that this operation will override the stored value if there is already
+  /// a matching key present.
+  /// {@endtemplate}
+  Future<void> setBulkMetadata({
+    required String storeName,
+    required Map<String, String> kvs,
+  });
+
+  /// {@template fmtc.backend.removeMetadata}
+  /// Remove the specified key from the metadata for the specified store
+  ///
+  /// Returns the value associated with key before it was removed, or `null` if
+  /// it was not present.
+  /// {@endtemplate}
+  Future<String?> removeMetadata({
+    required String storeName,
+    required String key,
+  });
+
+  /// {@template fmtc.backend.resetMetadata}
+  /// Clear the metadata for the specified store
+  ///
+  /// This operation cannot be undone! Ensure you confirm with the user that
+  /// this action is expected.
+  /// {@endtemplate}
+  Future<void> resetMetadata({
+    required String storeName,
   });
 }
