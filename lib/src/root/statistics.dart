@@ -9,19 +9,19 @@ class RootStats {
 
   FMTCRegistry get _registry => FMTCRegistry.instance;
 
-  /// List all the available [StoreDirectory]s synchronously
+  /// List all the available [FMTCStore]s synchronously
   ///
   /// Prefer [storesAvailableAsync] to avoid blocking the UI thread. Otherwise,
   /// this has slightly better performance.
-  List<StoreDirectory> get storesAvailable => _registry.storeDatabases.values
-      .map((e) => StoreDirectory._(e.descriptorSync.name, autoCreate: false))
+  List<FMTCStore> get storesAvailable => _registry.storeDatabases.values
+      .map((e) => FMTCStore._(e.descriptorSync.name, autoCreate: false))
       .toList();
 
-  /// List all the available [StoreDirectory]s asynchronously
-  Future<List<StoreDirectory>> get storesAvailableAsync => Future.wait(
+  /// List all the available [FMTCStore]s asynchronously
+  Future<List<FMTCStore>> get storesAvailableAsync => Future.wait(
         _registry.storeDatabases.values.map(
           (e) async =>
-              StoreDirectory._((await e.descriptor).name, autoCreate: false),
+              FMTCStore._((await e.descriptor).name, autoCreate: false),
         ),
       );
 
@@ -69,7 +69,7 @@ class RootStats {
   /// changed.
   ///
   /// Recursively watch specific stores (using [StoreStats.watchChanges]) by
-  /// providing them as a list of [StoreDirectory]s to [recursive]. To watch all
+  /// providing them as a list of [FMTCStore]s to [recursive]. To watch all
   /// stores, use the [storesAvailable]/[storesAvailableAsync] getter as the
   /// argument. By default, no sub-stores are watched (empty list), meaning only
   /// events that affect the actual store database (eg. store creations) will be
@@ -87,7 +87,7 @@ class RootStats {
   Stream<void> watchChanges({
     Duration? debounce = const Duration(milliseconds: 200),
     bool fireImmediately = false,
-    List<StoreDirectory> recursive = const [],
+    List<FMTCStore> recursive = const [],
     bool watchRecovery = false,
     List<StoreParts> storeParts = const [
       StoreParts.metadata,

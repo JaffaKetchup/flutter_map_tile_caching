@@ -9,8 +9,8 @@ import '../../../flutter_map_tile_caching.dart';
 /// An abstract interface that FMTC will use to communicate with a storage
 /// 'backend' (usually one root)
 ///
-/// See also [FMTCBackendInternal], which has the actual methods. This is
-/// provided as a means to warn users to avoid using the backend directly.
+/// See also [FMTCBackendInternal], which has the actual method signatures. This
+/// is provided as a means to warn users to avoid using the backend directly.
 ///
 /// To implementers:
 ///  * Provide a seperate [FMTCBackend] & [FMTCBackendInternal] implementation
@@ -20,6 +20,7 @@ import '../../../flutter_map_tile_caching.dart';
 ///    `FMTCBackendImpl`, without a constructor, as the `FMTCBackendImpl` will
 ///    be accessed via [FMTCBackend.internal]
 ///  * Prefer throwing included implementation-generic errors/exceptions
+///  * See the default [ObjectBoxBackend] implementation for an example
 ///
 /// To end-users:
 ///  * Use [FMTCSettings.backend] to set a custom backend

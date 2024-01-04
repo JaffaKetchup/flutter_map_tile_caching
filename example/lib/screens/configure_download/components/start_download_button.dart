@@ -24,7 +24,7 @@ class StartDownloadButton extends StatelessWidget {
       Selector<ConfigureDownloadProvider, bool>(
         selector: (context, provider) => provider.isReady,
         builder: (context, isReady, _) =>
-            Selector<RegionSelectionProvider, StoreDirectory?>(
+            Selector<RegionSelectionProvider, FMTCStore?>(
           selector: (context, provider) => provider.selectedStore,
           builder: (context, selectedStore, child) => IgnorePointer(
             ignoring: selectedStore == null,

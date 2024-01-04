@@ -3,7 +3,7 @@
 
 part of flutter_map_tile_caching;
 
-/// Provides tools to manage bulk downloading to a specific [StoreDirectory]
+/// Provides tools to manage bulk downloading to a specific [FMTCStore]
 ///
 /// The 'fmtc_plus_background_downloading' module must be installed to add the
 /// background downloading functionality.
@@ -28,7 +28,7 @@ part of flutter_map_tile_caching;
 /// [DownloadInstance].
 class DownloadManagement {
   const DownloadManagement._(this._storeDirectory);
-  final StoreDirectory _storeDirectory;
+  final FMTCStore _storeDirectory;
 
   /// Download a specified [DownloadableRegion] in the foreground, with a
   /// recovery session by default

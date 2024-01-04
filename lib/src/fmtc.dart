@@ -133,39 +133,23 @@ class FlutterMapTileCaching {
     );
   }
 
-  /// The singleton instance of [FlutterMapTileCaching] at call time
-  ///
-  /// Must not be read or written directly, except in
-  /// [FlutterMapTileCaching.instance] and [FlutterMapTileCaching.initialise]
-  /// respectively.
-  static FlutterMapTileCaching? _instance;
-
   /// Get the configured instance of [FlutterMapTileCaching], after
   /// [FlutterMapTileCaching.initialise] has been called, for further actions
-  static FlutterMapTileCaching get instance {
-    if (_instance == null) {
-      throw StateError(
-        'Use `FlutterMapTileCaching.initialise()` before getting `FlutterMapTileCaching.instance`.',
-      );
-    }
-    return _instance!;
-  }
+  static FlutterMapTileCaching get instance =>
+      _instance ??
+      (throw StateError(
+        '''
+Use `FlutterMapTileCaching.initialise()` before getting
+`FlutterMapTileCaching.instance` (or a method which requires an instance).
+        ''',
+      ));
+  static FlutterMapTileCaching? _instance;
 
-  /// Get a [StoreDirectory] by name, without creating it automatically
+  /// Construct a [FMTCStore] by name
   ///
-  /// Use `.manage.create()` to create it asynchronously. Alternatively, use
-  /// `[]` to get a store by name and automatically create it synchronously.
-  StoreDirectory call(String storeName) => StoreDirectory._(
-        storeName,
-        autoCreate: false,
-      );
-
-  /// Get a [StoreDirectory] by name, and create it synchronously automatically
+  /// {@macro fmtc.fmtcstore.sub.noautocreate}
   ///
-  /// Prefer [call]/`()` wherever possible, as this method blocks the thread.
-  /// Note that that method does not automatically create the store.
-  StoreDirectory operator [](String storeName) => StoreDirectory._(
-        storeName,
-        autoCreate: true,
-      );
+  /// Equivalent to constructing the [FMTCStore] directly. This method is
+  /// provided for backwards-compatibility.
+  FMTCStore call(String storeName) => FMTCStore(storeName);
 }

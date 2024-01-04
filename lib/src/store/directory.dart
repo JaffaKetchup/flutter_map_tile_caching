@@ -3,10 +3,40 @@
 
 part of flutter_map_tile_caching;
 
+/// Equivalent to [FMTCStore], provided to ease migration only
+///
+/// The name refers to earlier versions of this library where the filesystem
+/// was used for storage, instead of a database.
+///
+/// This deprecation typedef will be removed in a future release: migrate to
+/// [FMTCStore].
+@Deprecated(
+  '''
+Migrate to `FMTCStore`. This deprecation typedef is provided to ease migration 
+only. It will be removed in a future version.
+''',
+)
+typedef StoreDirectory = FMTCStore;
+
 /// Container for a [storeName] which includes methods and getters to access
-/// functionality based on the specified store
-class StoreDirectory {
-  const StoreDirectory._(this.storeName);
+/// functionality based on the specified store using resources from the ambient
+/// initialised [FlutterMapTileCaching]
+///
+/// {@template fmtc.fmtcstore.sub.noautocreate}
+/// Note that constructing an instance of this class will not automatically
+/// create it, as this is an asynchronous operation. To create this store, use
+/// [manage] > [StoreManagement.create].
+/// {@endtemplate}
+///
+/// May be constructed via [FlutterMapTileCaching.call], or directly.
+class FMTCStore {
+  /// Container for a [storeName] which includes methods and getters to access
+  /// functionality based on the specified store
+  ///
+  /// {@macro fmtc.fmtcstore.sub.noautocreate}
+  ///
+  /// May be constructed via [FlutterMapTileCaching.call], or directly.
+  const FMTCStore(this.storeName);
 
   /// The user-friendly name of the store directory
   final String storeName;
@@ -57,7 +87,7 @@ class StoreDirectory {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is StoreDirectory && other.storeName == storeName);
+      (other is FMTCStore && other.storeName == storeName);
 
   @override
   int get hashCode => storeName.hashCode;

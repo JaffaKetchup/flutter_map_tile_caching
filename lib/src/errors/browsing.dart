@@ -113,7 +113,7 @@ enum FMTCBrowsingErrorType {
   /// server
   ///
   /// Try specifying a normal HTTP/1.1 [IOClient] when using
-  /// [StoreDirectory.getTileProvider]. Check that the [TileLayer.urlTemplate] is
+  /// [FMTCStore.getTileProvider]. Check that the [TileLayer.urlTemplate] is
   /// correct, that any necessary authorization data is correctly included, and
   /// that the server serves the viewed region.
   unknownFetchException(

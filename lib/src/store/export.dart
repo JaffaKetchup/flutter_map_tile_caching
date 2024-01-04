@@ -15,5 +15,5 @@ class StoreExport {
   /// Do not use in normal applications.
   @internal
   @protected
-  final StoreDirectory storeDirectory;
+  final FMTCStore storeDirectory;
 }

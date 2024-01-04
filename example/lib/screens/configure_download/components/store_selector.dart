@@ -21,12 +21,12 @@ class _StoreSelectorState extends State<StoreSelector> {
           IntrinsicWidth(
             child: Consumer2<RegionSelectionProvider, GeneralProvider>(
               builder: (context, downloadProvider, generalProvider, _) =>
-                  FutureBuilder<List<StoreDirectory>>(
+                  FutureBuilder<List<FMTCStore>>(
                 future: FMTC.instance.rootDirectory.stats.storesAvailableAsync,
-                builder: (context, snapshot) => DropdownButton<StoreDirectory>(
+                builder: (context, snapshot) => DropdownButton<FMTCStore>(
                   items: snapshot.data
                       ?.map(
-                        (e) => DropdownMenuItem<StoreDirectory>(
+                        (e) => DropdownMenuItem<FMTCStore>(
                           value: e,
                           child: Text(e.storeName),
                         ),

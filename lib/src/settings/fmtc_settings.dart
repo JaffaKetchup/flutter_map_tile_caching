@@ -5,6 +5,13 @@ part of flutter_map_tile_caching;
 
 /// Global FMTC settings
 class FMTCSettings {
+  /// The database or other storage mechanism that FMTC will use as a cache
+  /// 'backend'
+  ///
+  /// Defaults to [ObjectBoxBackend], which uses the ObjectBox library and
+  /// database.
+  ///
+  /// See [FMTCBackend] for more information.
   final FMTCBackend backend;
 
   /// Default settings used when creating an [FMTCTileProvider]

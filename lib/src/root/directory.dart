@@ -5,7 +5,7 @@ part of flutter_map_tile_caching;
 
 /// Represents the root directory and root databases
 ///
-/// Note that this does not provide direct access to any [StoreDirectory]s.
+/// Note that this does not provide direct access to any [FMTCStore]s.
 ///
 /// The name originates from previous versions of this library, where it
 /// represented a real directory instead of a database.

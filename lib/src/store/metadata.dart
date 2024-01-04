@@ -3,7 +3,7 @@
 
 part of flutter_map_tile_caching;
 
-/// Manage custom miscellaneous information tied to a [StoreDirectory]
+/// Manage custom miscellaneous information tied to a [FMTCStore]
 ///
 /// Uses a key-value format where both key and value must be [String]. More
 /// advanced requirements should use another package, as this is a basic

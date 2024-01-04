@@ -3,7 +3,7 @@
 
 part of flutter_map_tile_caching;
 
-/// Manages a [StoreDirectory]'s representation on the filesystem, such as
+/// Manages a [FMTCStore]'s representation on the filesystem, such as
 /// creation and deletion
 ///
 /// If the store is not in the expected state (of existence) when invoking an
@@ -26,16 +26,16 @@ final class StoreManagement extends _WithBackendAccess {
 
   /// {@macro fmtc.backend.renameStore}
   ///
-  /// The old [StoreDirectory] will still retain it's link to the old store, so
-  /// always use the new returned value instead: returns a new [StoreDirectory]
+  /// The old [FMTCStore] will still retain it's link to the old store, so
+  /// always use the new returned value instead: returns a new [FMTCStore]
   /// after a successful renaming operation.
-  Future<StoreDirectory> rename(String newStoreName) async {
+  Future<FMTCStore> rename(String newStoreName) async {
     await _backend.renameStore(
       currentStoreName: _storeName,
       newStoreName: newStoreName,
     );
 
-    return StoreDirectory._(newStoreName);
+    return FMTCStore(newStoreName);
   }
 
   /// {@macro fmtc.backend.removeTilesOlderThan}

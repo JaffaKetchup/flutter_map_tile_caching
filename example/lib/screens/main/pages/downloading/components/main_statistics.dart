@@ -19,7 +19,7 @@ class MainStatistics extends StatefulWidget {
   });
 
   final DownloadProgress download;
-  final StoreDirectory storeDirectory;
+  final FMTCStore storeDirectory;
   final void Function() moveToMapPage;
 
   @override

@@ -17,7 +17,7 @@ class DownloadLayout extends StatelessWidget {
     required this.moveToMapPage,
   });
 
-  final StoreDirectory storeDirectory;
+  final FMTCStore storeDirectory;
   final DownloadProgress download;
   final void Function() moveToMapPage;
 

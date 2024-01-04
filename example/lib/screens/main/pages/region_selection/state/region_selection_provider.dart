@@ -107,9 +107,9 @@ class RegionSelectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  StoreDirectory? _selectedStore;
-  StoreDirectory? get selectedStore => _selectedStore;
-  void setSelectedStore(StoreDirectory? newStore, {bool notify = true}) {
+  FMTCStore? _selectedStore;
+  FMTCStore? get selectedStore => _selectedStore;
+  void setSelectedStore(FMTCStore? newStore, {bool notify = true}) {
     _selectedStore = newStore;
     if (notify) notifyListeners();
   }

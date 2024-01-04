@@ -59,7 +59,7 @@ class _DownloadingPageState extends State<DownloadingPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Selector<RegionSelectionProvider, StoreDirectory?>(
+              Selector<RegionSelectionProvider, FMTCStore?>(
                 selector: (context, provider) => provider.selectedStore,
                 builder: (context, selectedStore, _) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,8 +109,8 @@ class _DownloadingPageState extends State<DownloadingPage>
                       }
 
                       return DownloadLayout(
-                        storeDirectory: context
-                            .select<RegionSelectionProvider, StoreDirectory?>(
+                        storeDirectory:
+                            context.select<RegionSelectionProvider, FMTCStore?>(
                           (provider) => provider.selectedStore,
                         )!,
                         download: snapshot.data!,

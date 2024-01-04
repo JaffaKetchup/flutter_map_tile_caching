@@ -3,7 +3,7 @@
 
 part of flutter_map_tile_caching;
 
-/// Provides statistics about a [StoreDirectory]
+/// Provides statistics about a [FMTCStore]
 final class StoreStats extends _WithBackendAccess {
   const StoreStats._(super._store);
 

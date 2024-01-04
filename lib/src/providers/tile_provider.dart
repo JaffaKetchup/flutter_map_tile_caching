@@ -5,10 +5,10 @@ part of flutter_map_tile_caching;
 
 /// FMTC's custom [TileProvider] for use in a [TileLayer]
 ///
-/// Create from the store directory chain, eg. [StoreDirectory.getTileProvider].
+/// Create from the store directory chain, eg. [FMTCStore.getTileProvider].
 class FMTCTileProvider extends TileProvider {
   /// The store directory attached to this provider
-  final StoreDirectory storeDirectory;
+  final FMTCStore storeDirectory;
 
   /// The tile provider settings to use
   ///

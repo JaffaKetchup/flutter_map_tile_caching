@@ -17,7 +17,7 @@ class StoresPage extends StatefulWidget {
 }
 
 class _StoresPageState extends State<StoresPage> {
-  late Future<List<StoreDirectory>> _stores;
+  late Future<List<FMTCStore>> _stores;
 
   @override
   void initState() {
@@ -46,7 +46,7 @@ class _StoresPageState extends State<StoresPage> {
                 const Header(),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: FutureBuilder<List<StoreDirectory>>(
+                  child: FutureBuilder<List<FMTCStore>>(
                     future: _stores,
                     builder: (context, snapshot) => snapshot.hasError
                         ? throw snapshot.error! as FMTCDamagedStoreException
