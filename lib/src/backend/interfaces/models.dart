@@ -2,10 +2,11 @@ import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 
-abstract base class BackendStore {
+abstract base class BackendStore<T extends Iterable<BackendTile<dynamic>>> {
   abstract String name;
   abstract int hits;
   abstract int misses;
+  T get tiles;
 
   /// Uses [name] for equality comparisons only (unless the two objects are
   /// [identical])
@@ -22,10 +23,11 @@ abstract base class BackendStore {
   int get hashCode => name.hashCode;
 }
 
-abstract base class BackendTile {
+abstract base class BackendTile<S extends Iterable<BackendStore<dynamic>>> {
   abstract String url;
   abstract DateTime lastModified;
   abstract Uint8List bytes;
+  S get stores;
 
   /// Uses [url] for equality comparisons only (unless the two objects are
   /// [identical])

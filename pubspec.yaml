@@ -42,7 +42,6 @@ dependencies:
   objectbox_flutter_libs: any
   path: ^1.9.0
   path_provider: ^2.1.1
-  queue: ^3.1.0+2
   stream_transform: ^2.1.0
   watcher: ^1.1.0
 

@@ -12,6 +12,7 @@ enum _WorkerCmdType {
   getStoreLength,
   getStoreHits,
   getStoreMisses,
+  tileExistsInStore,
   readTile,
   writeTile,
   deleteTile,
@@ -59,6 +60,9 @@ Future<void> _worker(
   //! UTIL FUNCTIONS !//
 
   /// Convert store name to database store object
+  ///
+  /// Returns `null` if store not found. Throw the [StoreNotExists] error if it
+  /// was required.
   ObjectBoxStore? getStore(String storeName) {
     final query = root
         .box<ObjectBoxStore>()
@@ -297,13 +301,30 @@ Future<void> _worker(
           );
 
           break;
+        case _WorkerCmdType.tileExistsInStore:
+          final storeName = cmd.args['storeName']! as String;
+          final url = cmd.args['url']! as String;
+
+          final query =
+              (root.box<ObjectBoxTile>().query(ObjectBoxTile_.url.equals(url))
+                    ..linkMany(
+                      ObjectBoxTile_.stores,
+                      ObjectBoxStore_.name.equals(storeName),
+                    ))
+                  .build();
+
+          sendRes(id: cmd.id, data: {'exists': query.count() == 1});
+
+          query.close();
+
+          break;
         case _WorkerCmdType.readTile:
+          final url = cmd.args['url']! as String;
+
           final query = root
               .box<ObjectBoxTile>()
-              .query(ObjectBoxTile_.url.equals(cmd.args['url']! as String))
+              .query(ObjectBoxTile_.url.equals(url))
               .build();
-
-          // TODO: Hits & misses
 
           sendRes(id: cmd.id, data: {'tile': query.findUnique()});
 

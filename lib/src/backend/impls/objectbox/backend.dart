@@ -255,6 +255,16 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
       ))!['misses']! as int;
 
   @override
+  Future<bool> tileExistsInStore({
+    required String storeName,
+    required String url,
+  }) async =>
+      (await _sendCmd(
+        type: _WorkerCmdType.tileExistsInStore,
+        args: {'storeName': storeName, 'url': url},
+      ))!['exists'];
+
+  @override
   Future<ObjectBoxTile?> readTile({
     required String url,
   }) async =>

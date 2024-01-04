@@ -157,6 +157,12 @@ abstract interface class FMTCBackendInternal {
     required String storeName,
   });
 
+  /// Check whether the specified tile exists in the specified store
+  Future<bool> tileExistsInStore({
+    required String storeName,
+    required String url,
+  });
+
   /// Get a raw tile by URL
   Future<BackendTile?> readTile({
     required String url,

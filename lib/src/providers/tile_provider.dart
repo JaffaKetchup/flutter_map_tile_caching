@@ -38,6 +38,9 @@ class FMTCTileProvider extends TileProvider {
           },
         );
 
+  // ignore: invalid_use_of_protected_member
+  FMTCBackendInternal get _backend => FMTC.instance.settings.backend.internal;
+
   /// Closes the open [httpClient] - this will make the provider unable to
   /// perform network requests
   @override
@@ -54,39 +57,20 @@ class FMTCTileProvider extends TileProvider {
         provider: this,
         options: options,
         coords: coords,
-        directory: FMTC.instance.rootDirectory.directory.absolute.path,
       );
 
-  /// Check whether a specified tile is cached in the current store synchronously
-  bool checkTileCached({
+  /// Check whether a specified tile is cached in the current store
+  Future<bool> checkTileCached({
     required TileCoordinates coords,
     required TileLayer options,
   }) =>
-      FMTCRegistry.instance(storeDirectory.storeName).tiles.getSync(
-            DatabaseTools.hash(
-              obscureQueryParams(
-                url: getTileUrl(coords, options),
-                obscuredQueryParams: settings.obscuredQueryParams,
-              ),
-            ),
-          ) !=
-      null;
-
-  /// Check whether a specified tile is cached in the current store
-  /// asynchronously
-  Future<bool> checkTileCachedAsync({
-    required TileCoordinates coords,
-    required TileLayer options,
-  }) async =>
-      await FMTCRegistry.instance(storeDirectory.storeName).tiles.get(
-            DatabaseTools.hash(
-              obscureQueryParams(
-                url: getTileUrl(coords, options),
-                obscuredQueryParams: settings.obscuredQueryParams,
-              ),
-            ),
-          ) !=
-      null;
+      _backend.tileExistsInStore(
+        storeName: storeDirectory.storeName,
+        url: obscureQueryParams(
+          url: getTileUrl(coords, options),
+          obscuredQueryParams: settings.obscuredQueryParams,
+        ),
+      );
 
   @override
   bool operator ==(Object other) =>

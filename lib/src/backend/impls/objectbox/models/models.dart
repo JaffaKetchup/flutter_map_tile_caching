@@ -5,7 +5,7 @@ import 'package:objectbox/objectbox.dart';
 import '../../../interfaces/models.dart';
 
 @Entity()
-base class ObjectBoxStore extends BackendStore {
+base class ObjectBoxStore extends BackendStore<ToMany<ObjectBoxTile>> {
   @Id()
   int id = 0;
 
@@ -24,6 +24,7 @@ base class ObjectBoxStore extends BackendStore {
   @override
   int misses;
 
+  @override
   @Index()
   @Backlink()
   final tiles = ToMany<ObjectBoxTile>();
@@ -38,7 +39,7 @@ base class ObjectBoxStore extends BackendStore {
 }
 
 @Entity()
-base class ObjectBoxTile extends BackendTile {
+base class ObjectBoxTile extends BackendTile<ToMany<ObjectBoxStore>> {
   @Id()
   int id = 0;
 
@@ -55,6 +56,7 @@ base class ObjectBoxTile extends BackendTile {
   @override
   Uint8List bytes;
 
+  @override
   @Index()
   final stores = ToMany<ObjectBoxStore>();
 

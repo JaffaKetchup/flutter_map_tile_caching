@@ -10,15 +10,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart';
-import 'package:isar/isar.dart';
-import 'package:queue/queue.dart';
 
 import '../../flutter_map_tile_caching.dart';
-import '../db/defs/metadata.dart';
-import '../db/defs/store_descriptor.dart';
-import '../db/defs/tile.dart';
-import '../db/registry.dart';
-import '../db/tools.dart';
 import '../misc/obscure_query_params.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
@@ -32,21 +25,15 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
   /// The coordinates of the tile to be fetched
   final TileCoordinates coords;
 
-  FMTCBackend get _backend => FMTC.instance.settings.backend;
-
-  /// Configured root directory
-  // final String directory;
-
-  //static final _removeOldestQueue = Queue(timeout: const Duration(seconds: 1));
-  //static final _cacheHitsQueue = Queue();
-  //static final _cacheMissesQueue = Queue();
-
   /// Create a specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
   FMTCImageProvider({
     required this.provider,
     required this.options,
     required this.coords,
   });
+
+  // ignore: invalid_use_of_protected_member
+  FMTCBackendInternal get _backend => FMTC.instance.settings.backend.internal;
 
   @override
   ImageStreamCompleter loadImage(
@@ -112,7 +99,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     // Prepare a list of image bytes and prefill if there's already a cached
     // tile available
     Uint8List? bytes;
-    if (!needsCreating) bytes = Uint8List.fromList(existingTile.bytes);
+    if (!needsCreating) bytes = existingTile.bytes;
 
     // If there is a cached tile that's in date available, use it
     if (!needsCreating && !needsUpdating) {
@@ -131,10 +118,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
         ),
       );
     }
-
-    // From this point, a tile must exist (but it may be outdated). However, an
-    // outdated tile is better than no tile at all, so in the event of an error,
-    // always return the existing tile's bytes
 
     // Setup a network request for the tile & handle network exceptions
     final request = Request('GET', Uri.parse(networkUrl))
@@ -230,16 +213,11 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     // Clear out old tiles if the maximum store length has been exceeded
     if (needsCreating && provider.settings.maxStoreLength != 0) {
+      // TODO: Check if performance is acceptable without checking limit excess first
       unawaited(
-        _removeOldestQueue.add(
-          () => compute(
-            _removeOldestTile,
-            [
-              provider.storeDirectory.storeName,
-              directory,
-              provider.settings.maxStoreLength,
-            ],
-          ),
+        _backend.removeOldestTilesAboveLimit(
+          storeName: provider.storeDirectory.storeName,
+          tilesLimit: provider.settings.maxStoreLength,
         ),
       );
     }
@@ -278,29 +256,4 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
   @override
   int get hashCode => Object.hash(coords, provider, options);
-}
-
-Future<void> _removeOldestTile(List<dynamic> args) async {
-  final db = Isar.openSync(
-    [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
-    name: DatabaseTools.hash(args[0]).toString(),
-    directory: args[1],
-    inspector: false,
-  );
-
-  db.writeTxnSync(
-    () => db.tiles.deleteAllSync(
-      db.tiles
-          .where()
-          .anyLastModified()
-          .limit(
-            (db.tiles.countSync() - args[2]).clamp(0, double.maxFinite).toInt(),
-          )
-          .findAllSync()
-          .map((t) => t.id)
-          .toList(),
-    ),
-  );
-
-  await db.close();
 }
