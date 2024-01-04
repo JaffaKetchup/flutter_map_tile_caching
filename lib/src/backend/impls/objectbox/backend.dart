@@ -274,6 +274,15 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
       ))!['tile'];
 
   @override
+  Future<ObjectBoxTile?> readLatestTile({
+    required String storeName,
+  }) async =>
+      (await _sendCmd(
+        type: _WorkerCmdType.readLatestTile,
+        args: {'storeName': storeName},
+      ))!['tile'];
+
+  @override
   Future<void> writeTile({
     required String storeName,
     required String url,

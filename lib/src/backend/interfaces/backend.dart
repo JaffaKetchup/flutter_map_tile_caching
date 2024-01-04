@@ -168,6 +168,14 @@ abstract interface class FMTCBackendInternal {
     required String url,
   });
 
+  /// {@template fmtc.backend.readLatestTile}
+  /// Retrieve the tile most recently modified in the specified store, if any
+  /// tiles exist
+  /// {@endtemplate}
+  Future<BackendTile?> readLatestTile({
+    required String storeName,
+  });
+
   /// Create or update a tile (given a [url] and its [bytes]) in the specified
   /// store
   ///

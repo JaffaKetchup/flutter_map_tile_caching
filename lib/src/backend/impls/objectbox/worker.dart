@@ -14,6 +14,7 @@ enum _WorkerCmdType {
   getStoreMisses,
   tileExistsInStore,
   readTile,
+  readLatestTile,
   writeTile,
   deleteTile,
   removeOldestTilesAboveLimit,
@@ -327,6 +328,24 @@ Future<void> _worker(
               .build();
 
           sendRes(id: cmd.id, data: {'tile': query.findUnique()});
+
+          query.close();
+
+          break;
+        case _WorkerCmdType.readLatestTile:
+          final storeName = cmd.args['storeName']! as String;
+
+          final query = (root
+                  .box<ObjectBoxTile>()
+                  .query()
+                  .order(ObjectBoxTile_.lastModified, flags: Order.descending)
+                ..linkMany(
+                  ObjectBoxTile_.stores,
+                  ObjectBoxStore_.name.equals(storeName),
+                ))
+              .build();
+
+          sendRes(id: cmd.id, data: {'tile': query.findFirst()});
 
           query.close();
 
