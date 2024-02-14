@@ -104,6 +104,8 @@ class DownloadManagement {
     List<String>? obscuredQueryParams,
     Object instanceId = 0,
   }) async* {
+    FMTCBackendAccess.internal; // Verify intialisation
+
     // Check input arguments for suitability
     if (!(region.options.wmsOptions != null ||
         region.options.urlTemplate != null)) {
@@ -157,7 +159,7 @@ class DownloadManagement {
     final recoveryId =
         Object.hash(instanceId, DateTime.now().millisecondsSinceEpoch);
     if (!disableRecovery) {
-      await FMTC.instance.rootDirectory.recovery._start(
+      await FMTCRoot.recovery._start(
         id: recoveryId,
         storeName: _storeDirectory.storeName,
         region: region,
@@ -170,7 +172,7 @@ class DownloadManagement {
       _downloadManager,
       (
         sendPort: receivePort.sendPort,
-        rootDirectory: FMTC.instance.rootDirectory.directory.absolute.path,
+        rootDirectory: FMTCBackendAccess.internal.rootDirectory!.absolute.path,
         region: region,
         storeName: _storeDirectory.storeName,
         parallelThreads: parallelThreads,
@@ -181,7 +183,7 @@ class DownloadManagement {
         rateLimit: rateLimit,
         obscuredQueryParams:
             obscuredQueryParams?.map((e) => RegExp('$e=[^&]*')) ??
-                FMTC.instance.defaultTileProviderSettings.obscuredQueryParams,
+                FMTC.defaultTileProviderSettings.obscuredQueryParams,
       ),
       onExit: receivePort.sendPort,
       debugName: '[FMTC] Master Bulk Download Thread',
@@ -229,7 +231,7 @@ class DownloadManagement {
 
     // Handle shutdown (both normal and cancellation)
     receivePort.close();
-    await FMTC.instance.rootDirectory.recovery.cancel(recoveryId);
+    await FMTCRoot.recovery.cancel(recoveryId);
     DownloadInstance.unregister(instanceId);
     cancelCompleter.complete();
   }

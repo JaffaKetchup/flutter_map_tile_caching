@@ -8,33 +8,71 @@ import 'dart:isolate';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:meta/meta.dart' as meta;
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 
-import '../../../../flutter_map_tile_caching.dart';
+import '../../export_internal.dart';
 import 'models/generated/objectbox.g.dart';
 import 'models/models.dart';
 
 part 'worker.dart';
 
 /// Implementation of [FMTCBackend] that uses ObjectBox as the storage database
-final class ObjectBoxBackend implements FMTCBackend {
-  /// It is not recommended to access this method externally
+final class FMTCObjectBoxBackend implements FMTCBackend {
+  /// {@macro fmtc.backend.inititialise}
+  ///
+  /// [maxDatabaseSize] is the maximum size the database file can grow
+  /// to, in KB. Exceeding it throws [DbFullException]. Defaults to 10 GB.
+  ///
+  /// [macosApplicationGroup] should be set when creating a sandboxed macOS app,
+  /// specify the application group (of less than 20 chars). See
+  /// [the ObjectBox docs](https://docs.objectbox.io/getting-started) for
+  /// details.
   @override
-  @meta.internal
-  FMTCBackendInternal get internal => ObjectBoxBackendInternal._instance;
+  Future<void> initialise({
+    String? rootDirectory,
+    int maxDatabaseSize = 10000000,
+    String? macosApplicationGroup,
+  }) =>
+      FMTCObjectBoxBackendInternal._instance.initialise(
+        rootDirectory: rootDirectory,
+        maxDatabaseSize: maxDatabaseSize,
+        macosApplicationGroup: macosApplicationGroup,
+      );
+
+  /// {@macro fmtc.backend.uninitialise}
+  ///
+  /// If [immediate] is `true`, any operations currently underway will be lost.
+  /// If `false`, all operations currently underway will be allowed to complete,
+  /// but any operations started after this method call will be lost. A lost
+  /// operation may throw [RootUnavailable]. This parameter may not have a
+  /// noticable/any effect in some implementations.
+  @override
+  Future<void> uninitialise({
+    bool deleteRoot = false,
+    bool immediate = false,
+  }) =>
+      FMTCObjectBoxBackendInternal._instance
+          .uninitialise(deleteRoot: deleteRoot, immediate: immediate);
 }
 
 /// Internal implementation of [FMTCBackend] that uses ObjectBox as the storage
 /// database
-abstract interface class ObjectBoxBackendInternal
+abstract interface class FMTCObjectBoxBackendInternal
     implements FMTCBackendInternal {
   static final _instance = _ObjectBoxBackendImpl._();
 }
 
-class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
+class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   _ObjectBoxBackendImpl._();
 
+  @override
+  String get friendlyIdentifier => 'ObjectBox';
+
   void get expectInitialised => _sendPort ?? (throw RootUnavailable());
+
+  @override
+  Directory? rootDirectory;
 
   // Worker communication
   SendPort? _sendPort;
@@ -70,29 +108,10 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
     throw err;
   }
 
-  @override
-  String get friendlyIdentifier => 'ObjectBox';
-
-  /// See [FMTCBackendInternal.initialise] & [FlutterMapTileCaching.initialise]
-  /// for more info.
-  ///
-  /// ---
-  ///
-  /// This implementation additionally accepts the following [implSpecificArgs]:
-  ///
-  ///  * 'macosApplicationGroup' (`String`): when creating a sandboxed macOS app,
-  /// use to specify the application group (of less than 20 chars). See
-  /// [the ObjectBox docs](https://docs.objectbox.io/getting-started) for
-  /// details.
-  ///  * 'maxDatabaseSize' (`int`): the maximum size the database file can grow
-  /// to. Exceeding it throws [DbFullException]. Defaults to 10 GB.
-  ///
-  /// These arguments are optional. However, failure to provide them in the
-  /// specified type will result in an uncaught type casting error.
-  @override
   Future<void> initialise({
-    required Directory rootDirectory,
-    required Map<String, Object> implSpecificArgs,
+    required String? rootDirectory,
+    required int maxDatabaseSize,
+    required String? macosApplicationGroup,
   }) async {
     if (_sendPort != null) throw RootAlreadyInitialised();
 
@@ -101,6 +120,11 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
     _workerRes.clear();
     //_rotalStore = null;
     //_rotalLength = 0;
+
+    this.rootDirectory = await (rootDirectory == null
+            ? await getApplicationDocumentsDirectory()
+            : Directory(path.join(rootDirectory, 'fmtc')))
+        .create(recursive: true);
 
     // Prepare to recieve `SendPort` from worker
     _workerRes[0] = Completer();
@@ -127,20 +151,20 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
       _worker,
       (
         sendPort: receivePort.sendPort,
-        rootDirectory: rootDirectory,
-        maxDatabaseSize: implSpecificArgs['maxDatabaseSize'] as int?,
-        macosApplicationGroup:
-            implSpecificArgs['macosApplicationGroup'] as String?,
+        rootDirectory: this.rootDirectory!,
+        maxDatabaseSize: maxDatabaseSize,
+        macosApplicationGroup: macosApplicationGroup,
       ),
       onExit: receivePort.sendPort,
       debugName: '[FMTC] ObjectBox Backend Worker',
     );
+
+    FMTCBackendAccess.internal = this;
   }
 
-  @override
-  Future<void> destroy({
-    bool deleteRoot = false,
-    bool immediate = false,
+  Future<void> uninitialise({
+    required bool deleteRoot,
+    required bool immediate,
   }) async {
     expectInitialised;
 
@@ -171,6 +195,8 @@ class _ObjectBoxBackendImpl implements ObjectBoxBackendInternal {
     for (final completer in _workerRes.values) {
       completer.complete({'error': RootUnavailable()});
     }
+
+    FMTCBackendAccess.internal = null;
   }
 
   @override

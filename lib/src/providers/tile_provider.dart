@@ -34,9 +34,6 @@ class FMTCTileProvider extends TileProvider {
           },
         );
 
-  // ignore: invalid_use_of_protected_member
-  FMTCBackendInternal get _backend => FMTC.instance.backend.internal;
-
   /// Closes the open [httpClient] - this will make the provider unable to
   /// perform network requests
   @override
@@ -63,7 +60,7 @@ class FMTCTileProvider extends TileProvider {
     required TileCoordinates coords,
     required TileLayer options,
   }) =>
-      _backend.tileExistsInStore(
+      FMTCBackendAccess.internal.tileExistsInStore(
         storeName: _store.storeName,
         url: obscureQueryParams(
           url: getTileUrl(coords, options),

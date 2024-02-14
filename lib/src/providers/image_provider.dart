@@ -36,7 +36,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required this.coords,
   });
 
-  // ignore: invalid_use_of_protected_member
   FMTCBackendInternal get _backend => FMTC.instance.backend.internal;
 
   @override

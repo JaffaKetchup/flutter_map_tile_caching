@@ -3,7 +3,7 @@
 
 part of flutter_map_tile_caching;
 
-/// Manages a [RootDirectory]'s representation on the filesystem, such as
+/// Manages a [FMTCRoot]'s representation on the filesystem, such as
 /// creation and deletion
 class RootManagement {
   const RootManagement._();

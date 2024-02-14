@@ -3,7 +3,7 @@
 
 part of flutter_map_tile_caching;
 
-/// Provides statistics about a [RootDirectory]
+/// Provides statistics about a [FMTCRoot]
 class RootStats {
   const RootStats._();
 

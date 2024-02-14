@@ -3,7 +3,7 @@
 
 part of flutter_map_tile_caching;
 
-/// Manages the download recovery of all sub-stores of this [RootDirectory]
+/// Manages the download recovery of all sub-stores of this [FMTCRoot]
 ///
 /// Is a singleton to ensure functioning as expected.
 class RootRecovery {
@@ -13,7 +13,7 @@ class RootRecovery {
 
   Isar get _recovery => FMTCRegistry.instance.recoveryDatabase;
 
-  /// Manages the download recovery of all sub-stores of this [RootDirectory]
+  /// Manages the download recovery of all sub-stores of this [FMTCRoot]
   ///
   /// Is a singleton to ensure functioning as expected.
   static RootRecovery? instance;

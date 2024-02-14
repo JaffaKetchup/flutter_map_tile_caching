@@ -18,24 +18,21 @@ only. It will be removed in a future version.
 )
 typedef StoreDirectory = FMTCStore;
 
-/// Container for a [storeName] which includes methods and getters to access
-/// functionality based on the specified store using resources from the ambient
-/// initialised [FlutterMapTileCaching]
+/// Provides access to management, statistics, metadata, bulk download,
+/// the tile provider (and the export functionality) on the store named
+/// [storeName]
 ///
 /// {@template fmtc.fmtcstore.sub.noautocreate}
 /// Note that constructing an instance of this class will not automatically
 /// create it, as this is an asynchronous operation. To create this store, use
 /// [manage] > [StoreManagement.create].
 /// {@endtemplate}
-///
-/// May be constructed via [FlutterMapTileCaching.call], or directly.
 class FMTCStore {
-  /// Container for a [storeName] which includes methods and getters to access
-  /// functionality based on the specified store
+  /// Provides access to management, statistics, metadata, bulk download,
+  /// the tile provider (and the export functionality) on the store named
+  /// [storeName]
   ///
   /// {@macro fmtc.fmtcstore.sub.noautocreate}
-  ///
-  /// May be constructed via [FlutterMapTileCaching.call], or directly.
   const FMTCStore(this.storeName);
 
   /// The user-friendly name of the store directory

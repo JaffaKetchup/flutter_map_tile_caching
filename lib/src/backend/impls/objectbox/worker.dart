@@ -30,7 +30,7 @@ Future<void> _worker(
   ({
     SendPort sendPort,
     Directory rootDirectory,
-    int? maxDatabaseSize,
+    int maxDatabaseSize,
     String? macosApplicationGroup,
   }) input,
 ) async {
@@ -47,7 +47,7 @@ Future<void> _worker(
   // Initialise database
   final root = await openStore(
     directory: input.rootDirectory.absolute.path,
-    maxDBSizeInKB: input.maxDatabaseSize ?? 10000000, // Defaults to 10 GB
+    maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
     macosApplicationGroup: input.macosApplicationGroup,
   );
 

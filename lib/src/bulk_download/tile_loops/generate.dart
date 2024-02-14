@@ -47,6 +47,8 @@ class TilesGenerator {
     // 4. Loop over these XY values and add them to the list
     // Theoretically, this could have been done using the same method as `lineTiles`, but `lineTiles` was built after this algorithm and this makes more sense for a circle
 
+    // TODO: https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
+
     final region = input.region as DownloadableRegion<CircleRegion>;
     final circleOutline = region.originalRegion.toOutline();
 

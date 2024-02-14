@@ -5,11 +5,9 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:meta/meta.dart';
+import '../export_internal.dart';
 
-import '../../../flutter_map_tile_caching.dart';
-import 'models.dart';
-
+/// {@template fmtc.backend.backend}
 /// An abstract interface that FMTC will use to communicate with a storage
 /// 'backend' (usually one root)
 ///
@@ -19,17 +17,38 @@ import 'models.dart';
 /// To implementers:
 ///  * Provide a seperate [FMTCBackend] & [FMTCBackendInternal] implementation
 ///    (both public scope), and a private scope `FMTCBackendImpl`
-///  * Annotate your [FMTCBackend.internal] method with '@internal'
 ///  * Always make [FMTCBackendInternal] a singleton 'cover-up' for
-///    `FMTCBackendImpl`, without a constructor, as the `FMTCBackendImpl` will
-///    be accessed via [FMTCBackend.internal]
+///    `FMTCBackendImpl`, without a constructor
 ///  * Prefer throwing included implementation-generic errors/exceptions
-///  * See the default [ObjectBoxBackend] implementation for an example
+///  * Ensure the [FMTCBackendInternal]/impl can be sent through isolates
+///  * Always set the [FMTCBackendAccess.internal] property as necessary
+///
+/// See the default [FMTCObjectBoxBackend] implementation for an example.
+/// {@endtemplate}
 abstract interface class FMTCBackend<Internal extends FMTCBackendInternal> {
+  /// {@macro fmtc.backend.backend}
   const FMTCBackend();
 
-  @protected
-  Internal get internal;
+  /// {@template fmtc.backend.inititialise}
+  /// Initialise this backend, and create the root
+  ///
+  /// Prefer to leave [rootDirectory] as null, which will use
+  /// `getApplicationDocumentsDirectory()`. Alternatively, pass a custom
+  /// directory - it is recommended to not use a typical cache directory, as the
+  /// OS can clear these without notice at any time.
+  /// {@endtemplate}
+  Future<void> initialise({
+    String? rootDirectory,
+  });
+
+  /// {@template fmtc.backend.uninitialise}
+  /// Uninitialise this backend, and release whatever resources it is consuming
+  ///
+  /// If [deleteRoot] is `true`, then the root will be permanently deleted.
+  /// {@endtemplate}
+  Future<void> uninitialise({
+    bool deleteRoot = false,
+  });
 }
 
 /// An abstract interface that FMTC will use to communicate with a storage
@@ -39,39 +58,17 @@ abstract interface class FMTCBackend<Internal extends FMTCBackendInternal> {
 /// invocation.
 ///
 /// See [FMTCBackend] for more information.
-abstract interface class FMTCBackendInternal {
+abstract interface class FMTCBackendInternal with FMTCBackendAccess {
+  const FMTCBackendInternal._();
+
   /// Generic description/name of this backend
   abstract final String friendlyIdentifier;
 
-  /// Initialise this backend & create the root
+  /// The filesystem directory in use
   ///
-  /// See [FlutterMapTileCaching.initialise] for more information.
-  ///
-  /// Some implementations may accept/require additional arguments that may
-  /// be set through [implSpecificArgs]. See their documentation for more
-  /// information. Note to implementers: if you accept implementation specific
-  /// arguments, ensure you properly document these.
-  Future<void> initialise({
-    required Directory rootDirectory,
-    required Map<String, Object> implSpecificArgs,
-  });
-
-  /// {@template fmtc.backend.destroy}
-  /// Uninitialise this backend, and release whatever resources it is consuming
-  ///
-  /// If [deleteRoot] is `true`, then the storage medium will be permanently
-  /// deleted.
-  ///
-  /// If [immediate] is `true`, any operations currently underway will be lost.
-  /// If `false`, all operations currently underway will be allowed to complete,
-  /// but any operations started after this method call will be lost. A lost
-  /// operation may throw [RootUnavailable]. This parameter may not have a
-  /// noticable/any effect in some implementations.
-  /// {@endtemplate}
-  Future<void> destroy({
-    required bool deleteRoot,
-    required bool immediate,
-  });
+  /// May also be used as an indicator as to whether the root has been
+  /// initialised.
+  Directory? get rootDirectory;
 
   /// {@template fmtc.backend.storeExists}
   /// Check whether the specified store currently exists

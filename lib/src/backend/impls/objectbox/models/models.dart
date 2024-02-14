@@ -18,7 +18,7 @@ base class ObjectBoxStore extends BackendStore {
   String name;
 
   @Index()
-  @Backlink()
+  @Backlink('stores')
   final tiles = ToMany<ObjectBoxTile>();
 
   int length;

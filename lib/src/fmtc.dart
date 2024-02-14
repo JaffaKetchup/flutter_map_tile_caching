@@ -3,7 +3,7 @@
 
 part of flutter_map_tile_caching;
 
-/// Direct alias of [FlutterMapTileCaching] for easier development
+/*/// Direct alias of [FlutterMapTileCaching] for easier development
 ///
 /// Prefer use of full 'FlutterMapTileCaching' when initialising to ensure
 /// readability and understanding in other code.
@@ -19,7 +19,7 @@ typedef FMTC = FlutterMapTileCaching;
 /// [FMTC] is an alias for this object.
 class FlutterMapTileCaching {
   /// The directory which contains all databases required to use FMTC
-  final RootDirectory rootDirectory;
+  final FMTCRoot rootDirectory;
 
   /// The database or other storage mechanism that FMTC will use as a cache
   /// 'backend'
@@ -43,11 +43,6 @@ class FlutterMapTileCaching {
     required this.defaultTileProviderSettings,
   });
 
-  /// {@macro fmtc.backend.initialise}
-  ///
-  ///
-  /// {@macro fmtc.backend.objectbox.initialise}
-  ///
   /// Initialise and prepare FMTC, by creating all necessary directories/files
   /// and configuring the [FlutterMapTileCaching] singleton
   ///
@@ -97,9 +92,7 @@ class FlutterMapTileCaching {
         .create(recursive: true);
 
     backend ??= ObjectBoxBackend();
-    defaultTileProviderSettings ??= FMTCTileProviderSettings();
 
-    // ignore: invalid_use_of_protected_member
     await backend.internal.initialise(
       rootDirectory: dir,
       implSpecificArgs: {
@@ -110,9 +103,10 @@ class FlutterMapTileCaching {
     );
 
     return _instance = FMTC._(
-      rootDirectory: RootDirectory._(dir),
+      rootDirectory: FMTCRoot._(dir),
       backend: backend,
-      defaultTileProviderSettings: defaultTileProviderSettings,
+      defaultTileProviderSettings:
+          defaultTileProviderSettings ?? FMTCTileProviderSettings(),
     );
   }
 
@@ -136,3 +130,4 @@ Use `FlutterMapTileCaching.initialise()` before getting
   /// provided for backwards-compatibility.
   FMTCStore call(String storeName) => FMTCStore(storeName);
 }
+*/

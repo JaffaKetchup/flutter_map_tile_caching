@@ -25,7 +25,7 @@ abstract base class BackendStore {
   /// therefore not recommended.
   @override
   @nonVirtual
-  bool operator ==(Object? other) =>
+  bool operator ==(Object other) =>
       identical(this, other) || (other is BackendStore && name == other.name);
 
   @override
@@ -60,7 +60,7 @@ abstract base class BackendTile {
   /// therefore not recommended.
   @override
   @nonVirtual
-  bool operator ==(Object? other) =>
+  bool operator ==(Object other) =>
       identical(this, other) || (other is BackendTile && url == other.url);
 
   @override
