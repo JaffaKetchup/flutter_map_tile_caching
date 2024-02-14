@@ -89,7 +89,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
   Future<Map<String, dynamic>?> _sendCmd({
     required _WorkerCmdType type,
-    required Map<String, dynamic> args,
+    Map<String, dynamic> args = const {},
   }) async {
     expectInitialised;
 
@@ -198,6 +198,18 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
     FMTCBackendAccess.internal = null;
   }
+
+  @override
+  Future<List<String>> listStores() async =>
+      (await _sendCmd(type: _WorkerCmdType.storeExists))!['stores'];
+
+  @override
+  Future<double> rootSize() async =>
+      (await _sendCmd(type: _WorkerCmdType.rootSize))!['size'];
+
+  @override
+  Future<int> rootLength() async =>
+      (await _sendCmd(type: _WorkerCmdType.rootLength))!['length'];
 
   @override
   Future<bool> storeExists({

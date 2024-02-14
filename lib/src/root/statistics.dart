@@ -7,60 +7,15 @@ part of flutter_map_tile_caching;
 class RootStats {
   const RootStats._();
 
-  FMTCRegistry get _registry => FMTCRegistry.instance;
+  /// {@macro fmtc.backend.listStores}
+  Future<Iterable<FMTCStore>> get storesAvailable async =>
+      FMTCBackendAccess.internal.listStores().then((s) => s.map(FMTCStore.new));
 
-  /// List all the available [FMTCStore]s synchronously
-  ///
-  /// Prefer [storesAvailableAsync] to avoid blocking the UI thread. Otherwise,
-  /// this has slightly better performance.
-  List<FMTCStore> get storesAvailable => _registry.storeDatabases.values
-      .map((e) => FMTCStore._(e.descriptorSync.name, autoCreate: false))
-      .toList();
+  /// {@macro fmtc.backend.rootSize}
+  Future<double> get rootSize async => FMTCBackendAccess.internal.rootSize();
 
-  /// List all the available [FMTCStore]s asynchronously
-  Future<List<FMTCStore>> get storesAvailableAsync => Future.wait(
-        _registry.storeDatabases.values.map(
-          (e) async =>
-              FMTCStore._((await e.descriptor).name, autoCreate: false),
-        ),
-      );
-
-  /// Retrieve the total size of all stored tiles in kibibytes (KiB)
-  /// synchronously
-  ///
-  /// Prefer [rootSizeAsync] to avoid blocking the UI thread. Otherwise, this
-  /// has slightly better performance.
-  ///
-  /// Internally sums up the size of all stores (using [StoreStats.storeSize]).
-  double get rootSize =>
-      storesAvailable.map((e) => e.stats.storeSize).sum / 1024;
-
-  /// Retrieve the total size of all stored tiles in kibibytes (KiB)
-  /// asynchronously
-  ///
-  /// Internally sums up the size of all stores (using
-  /// [StoreStats.storeSizeAsync]).
-  Future<double> get rootSizeAsync async =>
-      (await Future.wait(storesAvailable.map((e) => e.stats.storeSizeAsync)))
-          .sum /
-      1024;
-
-  /// Retrieve the number of all stored tiles synchronously
-  ///
-  /// Prefer [rootLengthAsync] to avoid blocking the UI thread. Otherwise, this
-  /// has slightly better performance.
-  ///
-  /// Internally sums up the length of all stores (using
-  /// [StoreStats.storeLength]).
-  int get rootLength => storesAvailable.map((e) => e.stats.storeLength).sum;
-
-  /// Retrieve the number of all stored tiles asynchronously
-  ///
-  /// Internally sums up the length of all stores (using
-  /// [StoreStats.storeLengthAsync]).
-  Future<int> get rootLengthAsync async =>
-      (await Future.wait(storesAvailable.map((e) => e.stats.storeLengthAsync)))
-          .sum;
+  /// {@macro fmtc.backend.rootLength}
+  Future<int> get rootLength async => FMTCBackendAccess.internal.rootLength();
 
   /// Watch for changes in the current root
   ///

@@ -6,6 +6,9 @@ part of 'backend.dart';
 enum _WorkerCmdType {
   initialise_, // Only valid as a response
   destroy_, // Only valid as a request
+  listStores,
+  rootSize,
+  rootLength,
   storeExists,
   createStore,
   resetStore,
@@ -132,6 +135,41 @@ Future<void> _worker(
 
           // TODO: Consider final message
           Isolate.exit();
+        case _WorkerCmdType.listStores:
+          final query = root
+              .box<ObjectBoxStore>()
+              .query()
+              .build()
+              .property(ObjectBoxStore_.name);
+
+          sendRes(id: cmd.id, data: {'stores': query.find()});
+
+          query.close();
+
+          break;
+        case _WorkerCmdType.rootSize:
+          final query = root
+              .box<ObjectBoxStore>()
+              .query()
+              .build()
+              .property(ObjectBoxStore_.size);
+
+          sendRes(
+            id: cmd.id,
+            data: {'size': query.find().sum / 1024}, // Convert to KiB
+          );
+
+          query.close();
+
+          break;
+        case _WorkerCmdType.rootLength:
+          final query = root.box<ObjectBoxTile>().query().build();
+
+          sendRes(id: cmd.id, data: {'length': query.count()});
+
+          query.close();
+
+          break;
         case _WorkerCmdType.storeExists:
           final query = root
               .box<ObjectBoxStore>()

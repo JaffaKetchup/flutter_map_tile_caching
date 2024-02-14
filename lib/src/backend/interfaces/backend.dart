@@ -70,6 +70,22 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
   /// initialised.
   Directory? get rootDirectory;
 
+  /// {@template fmtc.backend.listStores}
+  /// List all the available stores
+  /// {@endtemplate}
+  Future<List<String>> listStores();
+
+  /// {@template fmtc.backend.rootSize}
+  /// Retrieve the total number of KiBs of all tiles' bytes (not 'real total'
+  /// size) from all stores
+  /// {@endtemplate}
+  Future<double> rootSize();
+
+  /// {@template fmtc.backend.rootLength}
+  /// Retrieve the total number of tiles in all stores
+  /// {@endtemplate}
+  Future<int> rootLength();
+
   /// {@template fmtc.backend.storeExists}
   /// Check whether the specified store currently exists
   /// {@endtemplate}

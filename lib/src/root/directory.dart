@@ -18,18 +18,15 @@ only. It will be removed in a future version.
 )
 typedef RootDirectory = FMTCRoot;
 
-/// Provides access to management, statistics, recovery, migration (and the
-/// import functionality) on the intitialised root.
+/// Provides access to statistics, recovery, migration (and the import
+/// functionality) on the intitialised root.
+///
+/// Management services are not provided here, instead use methods on the backend
+/// directly.
 ///
 /// Note that this does not provide direct access to any [FMTCStore]s.
 abstract class FMTCRoot {
   const FMTCRoot._();
-
-  /// Manage the root's representation on the filesystem
-  ///
-  /// To create, initialise FMTC. Assume that FMTC is ready after initialisation
-  /// and before [RootManagement.delete] is called.
-  static RootManagement get manage => const RootManagement._();
 
   /// Get statistics about this root (and all sub-stores)
   static RootStats get stats => const RootStats._();
