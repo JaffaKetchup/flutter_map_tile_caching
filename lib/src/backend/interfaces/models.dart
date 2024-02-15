@@ -8,31 +8,6 @@ import 'package:meta/meta.dart';
 import '../../../flutter_map_tile_caching.dart';
 import '../../misc/obscure_query_params.dart';
 
-/// Represents a store (which is never directly exposed to the user)
-///
-/// Note that the relationship between stores and tiles is many-to-many, and
-/// backend implementations should fully support this.
-abstract base class BackendStore {
-  /// The human-readable name for this store
-  ///
-  /// Note that this may contain any character, and may also be empty.
-  String get name;
-
-  /// Uses [name] for equality comparisons only (unless the two objects are
-  /// [identical])
-  ///
-  /// Overriding this in an implementation may cause FMTC logic to break, and is
-  /// therefore not recommended.
-  @override
-  @nonVirtual
-  bool operator ==(Object other) =>
-      identical(this, other) || (other is BackendStore && name == other.name);
-
-  @override
-  @nonVirtual
-  int get hashCode => name.hashCode;
-}
-
 /// Represents a tile (which is never directly exposed to the user)
 ///
 /// Note that the relationship between stores and tiles is many-to-many, and

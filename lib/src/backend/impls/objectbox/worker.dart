@@ -27,6 +27,8 @@ enum _WorkerCmdType {
   setBulkMetadata,
   removeMetadata,
   resetMetadata,
+  startRecovery,
+  endRecovery,
 }
 
 Future<void> _worker(
@@ -680,6 +682,33 @@ Future<void> _worker(
               );
             },
           );
+
+          sendRes(id: cmd.id);
+
+          break;
+        case _WorkerCmdType.startRecovery:
+          final id = cmd.args['id']! as int;
+          final storeName = cmd.args['storeName']! as String;
+          final region = cmd.args['region']! as DownloadableRegion;
+
+          root.box<ObjectBoxRecovery>().put(
+                ObjectBoxRecovery.startFromRegion(
+                  refId: id,
+                  storeName: storeName,
+                  region: region,
+                ),
+              );
+
+          sendRes(id: cmd.id);
+
+          break;
+        case _WorkerCmdType.endRecovery:
+          root
+              .box<ObjectBoxRecovery>()
+              .query(ObjectBoxRecovery_.refId.equals(cmd.args['id']! as int))
+              .build()
+            ..remove()
+            ..close();
 
           sendRes(id: cmd.id);
 

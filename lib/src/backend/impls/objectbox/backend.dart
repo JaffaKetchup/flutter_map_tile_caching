@@ -11,9 +11,12 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
+import '../../../../flutter_map_tile_caching.dart';
 import '../../export_internal.dart';
 import 'models/generated/objectbox.g.dart';
-import 'models/models.dart';
+import 'models/src/recovery.dart';
+import 'models/src/store.dart';
+import 'models/src/tile.dart';
 
 part 'worker.dart';
 
@@ -425,4 +428,21 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         type: _WorkerCmdType.resetMetadata,
         args: {'storeName': storeName},
       );
+
+  @override
+  Future<void> startRecovery({
+    required int id,
+    required String storeName,
+    required DownloadableRegion region,
+  }) =>
+      _sendCmd(
+        type: _WorkerCmdType.startRecovery,
+        args: {'id': id, 'storeName': storeName, 'region': region},
+      );
+
+  @override
+  Future<void> endRecovery({
+    required int id,
+  }) =>
+      _sendCmd(type: _WorkerCmdType.endRecovery, args: {'id': id});
 }

@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import '../../../flutter_map_tile_caching.dart';
 import '../export_internal.dart';
 
 /// {@template fmtc.backend.backend}
@@ -130,6 +131,7 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
 
   /// {@template fmtc.backend.getStoreStats}
   /// Retrieve the following statistics about the specified store (all available):
+  ///
   ///  * `size`: total number of KiBs of all tiles' bytes (not 'real total' size)
   ///  * `length`: number of tiles belonging
   ///  * `hits`: number of successful tile retrievals when browsing
@@ -267,5 +269,15 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
   /// {@endtemplate}
   Future<void> resetMetadata({
     required String storeName,
+  });
+
+  Future<void> startRecovery({
+    required int id,
+    required String storeName,
+    required DownloadableRegion region,
+  });
+
+  Future<void> endRecovery({
+    required int id,
   });
 }

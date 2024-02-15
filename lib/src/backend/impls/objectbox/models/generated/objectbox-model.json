@@ -4,103 +4,216 @@
   "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
   "entities": [
     {
-      "id": "1:4818990512469112793",
-      "lastPropertyId": "9:7001905095427330194",
-      "name": "ObjectBoxStore",
+      "id": "1:5852113147755082214",
+      "lastPropertyId": "21:4175806851713282292",
+      "name": "ObjectBoxRecovery",
       "properties": [
         {
-          "id": "1:3336028670326288161",
+          "id": "1:4049260877710714778",
           "name": "id",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:4687139407104104001",
-          "name": "name",
-          "type": 9,
-          "flags": 2080,
-          "indexId": "1:7472642561499264209"
+          "id": "2:514228763227462265",
+          "name": "refId",
+          "type": 6,
+          "flags": 40,
+          "indexId": "1:1915947614835147959"
         },
         {
-          "id": "5:6058775585602184944",
-          "name": "hits",
-          "type": 6
-        },
-        {
-          "id": "6:6933472703948745593",
-          "name": "misses",
-          "type": 6
-        },
-        {
-          "id": "7:3575235946528079942",
-          "name": "metadataJson",
+          "id": "3:8338900024311175845",
+          "name": "storeName",
           "type": 9
         },
         {
-          "id": "8:9173249510215692378",
-          "name": "length",
+          "id": "4:6716912532653788634",
+          "name": "creationTime",
+          "type": 10
+        },
+        {
+          "id": "5:1519845599652561210",
+          "name": "minZoom",
           "type": 6
         },
         {
-          "id": "9:7001905095427330194",
-          "name": "size",
+          "id": "6:5013395781301985972",
+          "name": "maxZoom",
+          "type": 6
+        },
+        {
+          "id": "7:5813475472850223709",
+          "name": "startTile",
+          "type": 6
+        },
+        {
+          "id": "8:62434241352879189",
+          "name": "endTile",
+          "type": 6
+        },
+        {
+          "id": "9:1377762685943168852",
+          "name": "typeId",
+          "type": 6
+        },
+        {
+          "id": "10:7827529863528185814",
+          "name": "rectNwLat",
           "type": 8
+        },
+        {
+          "id": "11:4768940403554990885",
+          "name": "rectNwLng",
+          "type": 8
+        },
+        {
+          "id": "12:7059818053329608732",
+          "name": "rectSeLat",
+          "type": 8
+        },
+        {
+          "id": "13:7887700468628261283",
+          "name": "rectSeLng",
+          "type": 8
+        },
+        {
+          "id": "14:8392236879597342193",
+          "name": "circleCenterLat",
+          "type": 8
+        },
+        {
+          "id": "15:5063472498722773794",
+          "name": "circleCenterLng",
+          "type": 8
+        },
+        {
+          "id": "16:5319186299784201385",
+          "name": "circleRadius",
+          "type": 8
+        },
+        {
+          "id": "17:4479579774250144926",
+          "name": "lineLats",
+          "type": 29
+        },
+        {
+          "id": "18:3149550933222350400",
+          "name": "lineLngs",
+          "type": 29
+        },
+        {
+          "id": "19:6474585775498338051",
+          "name": "lineRadius",
+          "type": 8
+        },
+        {
+          "id": "20:7965435653690834819",
+          "name": "customPolygonLats",
+          "type": 29
+        },
+        {
+          "id": "21:4175806851713282292",
+          "name": "customPolygonLngs",
+          "type": 29
         }
       ],
       "relations": []
     },
     {
-      "id": "2:5729851195378529265",
-      "lastPropertyId": "4:4688190119175680445",
-      "name": "ObjectBoxTile",
+      "id": "2:8434848168440140631",
+      "lastPropertyId": "7:441658295997331328",
+      "name": "ObjectBoxStore",
       "properties": [
         {
-          "id": "1:145404380988255117",
+          "id": "1:123601567385773864",
           "name": "id",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:5879597573334804833",
+          "id": "2:9007911375527621682",
+          "name": "name",
+          "type": 9,
+          "flags": 2080,
+          "indexId": "2:5983120737825279673"
+        },
+        {
+          "id": "3:8187748336899942109",
+          "name": "length",
+          "type": 6
+        },
+        {
+          "id": "4:2385332217074178388",
+          "name": "size",
+          "type": 8
+        },
+        {
+          "id": "5:464625589558308463",
+          "name": "hits",
+          "type": 6
+        },
+        {
+          "id": "6:4049198995248939830",
+          "name": "misses",
+          "type": 6
+        },
+        {
+          "id": "7:441658295997331328",
+          "name": "metadataJson",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "3:8831490920600301075",
+      "lastPropertyId": "4:1909369032294267427",
+      "name": "ObjectBoxTile",
+      "properties": [
+        {
+          "id": "1:7557087112400213643",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5772177928281361264",
           "name": "url",
           "type": 9,
           "flags": 34848,
-          "indexId": "2:916751376918221285"
+          "indexId": "3:554942103700819034"
         },
         {
-          "id": "3:7079942909661621360",
+          "id": "3:925223426368624455",
           "name": "lastModified",
           "type": 10,
           "flags": 8,
-          "indexId": "3:1775764954149910715"
+          "indexId": "4:7943022627739396393"
         },
         {
-          "id": "4:4688190119175680445",
+          "id": "4:1909369032294267427",
           "name": "bytes",
           "type": 23
         }
       ],
       "relations": [
         {
-          "id": "1:8266116100918510486",
+          "id": "1:6378815042102010365",
           "name": "stores",
-          "targetId": "1:4818990512469112793"
+          "targetId": "2:8434848168440140631"
         }
       ]
     }
   ],
-  "lastEntityId": "2:5729851195378529265",
-  "lastIndexId": "3:1775764954149910715",
-  "lastRelationId": "1:8266116100918510486",
+  "lastEntityId": "3:8831490920600301075",
+  "lastIndexId": "4:7943022627739396393",
+  "lastRelationId": "1:6378815042102010365",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
   "modelVersionParserMinimum": 5,
   "retiredEntityUids": [],
   "retiredIndexUids": [],
-  "retiredPropertyUids": [
-    4684432242170874534,
-    2520378516311313562
-  ],
+  "retiredPropertyUids": [],
   "retiredRelationUids": [],
   "version": 1
 }
