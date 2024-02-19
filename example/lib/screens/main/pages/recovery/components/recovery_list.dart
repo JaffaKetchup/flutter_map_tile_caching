@@ -27,8 +27,7 @@ class _RecoveryListState extends State<RecoveryList> {
 
           return ListTile(
             leading: FutureBuilder<RecoveredRegion?>(
-              future: FMTC.instance.rootDirectory.recovery
-                  .getFailedRegion(region.id),
+              future: FMTCRoot.recovery.getFailedRegion(region.id),
               builder: (context, isFailed) => Icon(
                 isFailed.data != null
                     ? Icons.warning
@@ -71,15 +70,13 @@ class _RecoveryListState extends State<RecoveryList> {
                 IconButton(
                   icon: const Icon(Icons.delete_forever, color: Colors.red),
                   onPressed: () async {
-                    await FMTC.instance.rootDirectory.recovery
-                        .cancel(region.id);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Deleted Recovery Information'),
-                        ),
-                      );
-                    }
+                    await FMTCRoot.recovery.cancel(region.id);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Deleted Recovery Information'),
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(width: 10),

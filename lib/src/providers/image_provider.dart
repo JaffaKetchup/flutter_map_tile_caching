@@ -12,6 +12,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart';
 
 import '../../flutter_map_tile_caching.dart';
+import '../backend/export_internal.dart';
 import '../misc/obscure_query_params.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
@@ -35,8 +36,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     required this.options,
     required this.coords,
   });
-
-  FMTCBackendInternal get _backend => FMTC.instance.backend.internal;
 
   @override
   ImageStreamCompleter loadImage(
@@ -89,7 +88,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       obscuredQueryParams: provider.settings.obscuredQueryParams,
     );
 
-    final existingTile = await _backend.readTile(url: matcherUrl);
+    final existingTile =
+        await FMTCBackendAccess.internal.readTile(url: matcherUrl);
 
     final needsCreating = existingTile == null;
     final needsUpdating = !needsCreating &&
@@ -207,7 +207,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     // Cache the tile retrieved from the network response
     unawaited(
-      _backend.writeTile(
+      FMTCBackendAccess.internal.writeTile(
         storeName: storeName,
         url: matcherUrl,
         bytes: responseBytes,
@@ -218,7 +218,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     if (needsCreating && provider.settings.maxStoreLength != 0) {
       // TODO: Check if performance is acceptable without checking limit excess first
       unawaited(
-        _backend.removeOldestTilesAboveLimit(
+        FMTCBackendAccess.internal.removeOldestTilesAboveLimit(
           storeName: storeName,
           tilesLimit: provider.settings.maxStoreLength,
         ),

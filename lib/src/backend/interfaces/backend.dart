@@ -28,6 +28,9 @@ import '../export_internal.dart';
 /// {@endtemplate}
 abstract interface class FMTCBackend<Internal extends FMTCBackendInternal> {
   /// {@macro fmtc.backend.backend}
+  ///
+  /// This constructor does not initialise this backend, also invoke
+  /// [initialise].
   const FMTCBackend();
 
   /// {@template fmtc.backend.inititialise}

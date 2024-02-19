@@ -1,10 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 import 'screens/configure_download/state/configure_download_provider.dart';
@@ -23,30 +20,13 @@ void main() async {
     ),
   );
 
-  String? damagedDatabaseDeleted;
-  await FlutterMapTileCaching.initialise();
+  await FMTCObjectBoxBackend().initialise();
 
-  await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: []);
-
-  final newAppVersionFile = File(
-    p.join(
-      // ignore: invalid_use_of_internal_member, invalid_use_of_protected_member
-      FMTC.instance.rootDirectory.directory.absolute.path,
-      'newAppVersion.${Platform.isWindows ? 'exe' : 'apk'}',
-    ),
-  );
-  if (await newAppVersionFile.exists()) await newAppVersionFile.delete();
-
-  runApp(AppContainer(damagedDatabaseDeleted: damagedDatabaseDeleted));
+  runApp(const _AppContainer());
 }
 
-class AppContainer extends StatelessWidget {
-  const AppContainer({
-    super.key,
-    required this.damagedDatabaseDeleted,
-  });
-
-  final String? damagedDatabaseDeleted;
+class _AppContainer extends StatelessWidget {
+  const _AppContainer();
 
   @override
   Widget build(BuildContext context) => MultiProvider(
@@ -87,7 +67,7 @@ class AppContainer extends StatelessWidget {
             ),
           ),
           debugShowCheckedModeBanner: false,
-          home: MainScreen(damagedDatabaseDeleted: damagedDatabaseDeleted),
+          home: const MainScreen(),
         ),
       );
 }

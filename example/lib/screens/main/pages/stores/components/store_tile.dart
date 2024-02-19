@@ -33,7 +33,7 @@ class _StoreTileState extends State<StoreTile> {
   bool _emptyingProgress = false;
   bool _exportingProgress = false;
 
-  late final _store = FMTC.instance(widget.storeName);
+  late final _store = FMTCStore(widget.storeName);
 
   void _loadStatistics() {
     final stats = _store.stats.all;

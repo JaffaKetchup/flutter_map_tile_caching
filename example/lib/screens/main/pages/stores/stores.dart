@@ -17,17 +17,16 @@ class StoresPage extends StatefulWidget {
 }
 
 class _StoresPageState extends State<StoresPage> {
-  late Future<List<FMTCStore>> _stores;
+  late Future<Iterable<FMTCStore>> _stores;
 
   @override
   void initState() {
     super.initState();
 
-    void listStores() =>
-        _stores = FMTC.instance.rootDirectory.stats.storesAvailableAsync;
+    void listStores() => _stores = FMTCRoot.stats.storesAvailable;
 
     listStores();
-    FMTC.instance.rootDirectory.stats.watchChanges().listen((_) {
+    FMTCRoot.stats.watchChanges().listen((_) {
       if (mounted) {
         listStores();
         setState(() {});
@@ -46,7 +45,7 @@ class _StoresPageState extends State<StoresPage> {
                 const Header(),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: FutureBuilder<List<FMTCStore>>(
+                  child: FutureBuilder<Iterable<FMTCStore>>(
                     future: _stores,
                     builder: (context, snapshot) => snapshot.hasError
                         ? throw snapshot.error! as FMTCDamagedStoreException
@@ -57,10 +56,13 @@ class _StoresPageState extends State<StoresPage> {
                                     itemCount: snapshot.data!.length,
                                     itemBuilder: (context, index) => StoreTile(
                                       context: context,
-                                      storeName:
-                                          snapshot.data![index].storeName,
+                                      storeName: snapshot.data!
+                                          .elementAt(index)
+                                          .storeName,
                                       key: ValueKey(
-                                        snapshot.data![index].storeName,
+                                        snapshot.data!
+                                            .elementAt(index)
+                                            .storeName,
                                       ),
                                     ),
                                   )

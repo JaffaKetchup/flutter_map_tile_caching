@@ -67,7 +67,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                 child: FutureBuilder<Map<String, String>?>(
                   future: widget.existingStoreName == null
                       ? Future.sync(() => {})
-                      : FMTC.instance(widget.existingStoreName!).metadata.read,
+                      : FMTCStore(widget.existingStoreName!).metadata.read,
                   builder: (context, metadata) {
                     if (!metadata.hasData || metadata.data == null) {
                       return const LoadingIndicator('Retrieving Settings');
@@ -84,12 +84,9 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                                 isDense: true,
                               ),
                               onChanged: (input) async {
-                                _storeNameIsDuplicate = (await FMTC
-                                        .instance
-                                        .rootDirectory
-                                        .stats
-                                        .storesAvailableAsync)
-                                    .contains(FMTC.instance(input));
+                                _storeNameIsDuplicate =
+                                    (await FMTCRoot.stats.storesAvailable)
+                                        .contains(FMTCStore(input));
                                 setState(() {});
                               },
                               validator: (input) =>

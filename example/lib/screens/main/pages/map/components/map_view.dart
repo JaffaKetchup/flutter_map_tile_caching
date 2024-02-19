@@ -24,7 +24,7 @@ class MapView extends StatelessWidget {
             FutureBuilder<Map<String, String>?>(
           future: currentStore == null
               ? Future.sync(() => {})
-              : FMTC.instance(currentStore).metadata.read,
+              : FMTCStore(currentStore).metadata.read,
           builder: (context, metadata) {
             if (!metadata.hasData ||
                 metadata.data == null ||
@@ -60,25 +60,25 @@ class MapView extends StatelessWidget {
                     maxNativeZoom: 20,
                     panBuffer: 5,
                     tileProvider: currentStore != null
-                        ? FMTC.instance(currentStore).getTileProvider(
-                              settings: FMTCTileProviderSettings(
-                                behavior: CacheBehavior.values
-                                    .byName(metadata.data!['behaviour']!),
-                                cachedValidDuration: int.parse(
-                                          metadata.data!['validDuration']!,
-                                        ) ==
-                                        0
-                                    ? Duration.zero
-                                    : Duration(
-                                        days: int.parse(
-                                          metadata.data!['validDuration']!,
-                                        ),
+                        ? FMTCStore(currentStore).getTileProvider(
+                            settings: FMTCTileProviderSettings(
+                              behavior: CacheBehavior.values
+                                  .byName(metadata.data!['behaviour']!),
+                              cachedValidDuration: int.parse(
+                                        metadata.data!['validDuration']!,
+                                      ) ==
+                                      0
+                                  ? Duration.zero
+                                  : Duration(
+                                      days: int.parse(
+                                        metadata.data!['validDuration']!,
                                       ),
-                                maxStoreLength: int.parse(
-                                  metadata.data!['maxLength']!,
-                                ),
+                                    ),
+                              maxStoreLength: int.parse(
+                                metadata.data!['maxLength']!,
                               ),
-                            )
+                            ),
+                          )
                         : NetworkTileProvider(),
                   )
                 else ...[

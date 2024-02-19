@@ -18,10 +18,9 @@ class RecoveryStartButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FutureBuilder<RecoveredRegion?>(
-        future: FMTC.instance.rootDirectory.recovery.getFailedRegion(region.id),
+        future: FMTCRoot.recovery.getFailedRegion(region.id),
         builder: (context, isFailed) => FutureBuilder<int>(
-          future: FMTC
-              .instance('')
+          future: const FMTCStore('')
               .download
               .check(region.toDownloadable(TileLayer())),
           builder: (context, tiles) => tiles.hasData

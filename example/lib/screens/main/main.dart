@@ -11,19 +11,14 @@ import 'pages/region_selection/region_selection.dart';
 import 'pages/stores/stores.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({
-    super.key,
-    required this.damagedDatabaseDeleted,
-  });
-
-  final String? damagedDatabaseDeleted;
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  late final PageController _pageController;
+  late final _pageController = PageController(initialPage: _currentPageIndex);
   int _currentPageIndex = 0;
   bool extended = false;
 
@@ -46,11 +41,9 @@ class _MainScreenState extends State<MainScreen> {
         NavigationDestination(
           label: 'Recover',
           icon: StreamBuilder(
-            stream: FMTC.instance.rootDirectory.stats
-                .watchChanges()
-                .asBroadcastStream(),
+            stream: FMTCRoot.stats.watchChanges().asBroadcastStream(),
             builder: (context, _) => FutureBuilder<List<RecoveredRegion>>(
-              future: FMTC.instance.rootDirectory.recovery.failedRegions,
+              future: FMTCRoot.recovery.failedRegions,
               builder: (context, snapshot) => Badge(
                 position: BadgePosition.topEnd(top: -5, end: -6),
                 badgeAnimation: const BadgeAnimation.size(
@@ -98,23 +91,6 @@ class _MainScreenState extends State<MainScreen> {
         }
       },
     );
-  }
-
-  @override
-  void initState() {
-    _pageController = PageController(initialPage: _currentPageIndex);
-    if (widget.damagedDatabaseDeleted != null) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'At least one corrupted database has been deleted.\n${widget.damagedDatabaseDeleted}',
-            ),
-          ),
-        ),
-      );
-    }
-    super.initState();
   }
 
   @override

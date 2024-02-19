@@ -32,7 +32,7 @@ class _RegionInformationState extends State<RegionInformation> {
   @override
   void initState() {
     super.initState();
-    numOfTiles = FMTC.instance('').download.check(
+    numOfTiles = const FMTCStore('').download.check(
           widget.region.toDownloadable(
             minZoom: widget.minZoom,
             maxZoom: widget.maxZoom,

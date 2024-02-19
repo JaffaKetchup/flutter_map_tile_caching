@@ -31,7 +31,7 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
                   subtitle: const Text('Select any valid store files (.fmtc)'),
                   onTap: () async {
                     importStores.addAll(
-                      (await FMTC.instance.rootDirectory.import.withGUI(
+                      (await FMTCRoot.import.withGUI(
                                 collisionHandler: (fn, sn) {
                                   setState(
                                     () => importStores[fn]!.collisionInfo = [

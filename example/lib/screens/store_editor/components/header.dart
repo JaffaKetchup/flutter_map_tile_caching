@@ -41,11 +41,11 @@ AppBar buildHeader({
             if (formKey.currentState!.validate()) {
               formKey.currentState!.save();
 
-              final FMTCStore? existingStore = widget.existingStoreName == null
+              final existingStore = widget.existingStoreName == null
                   ? null
-                  : FMTC.instance(widget.existingStoreName!);
-              final FMTCStore newStore = existingStore == null
-                  ? FMTC.instance(newValues['storeName']!)
+                  : FMTCStore(widget.existingStoreName!);
+              final newStore = existingStore == null
+                  ? FMTCStore(newValues['storeName']!)
                   : await existingStore.manage.rename(newValues['storeName']!);
               if (!mounted) return;
 
@@ -78,7 +78,7 @@ AppBar buildHeader({
                 );
               }
 
-              if (!mounted) return;
+              if (!context.mounted) return;
               if (widget.isStoreInUse && widget.existingStoreName != null) {
                 Provider.of<GeneralProvider>(context, listen: false)
                     .currentStore = newValues['storeName'];
@@ -90,6 +90,7 @@ AppBar buildHeader({
                 const SnackBar(content: Text('Saved successfully')),
               );
             } else {
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
