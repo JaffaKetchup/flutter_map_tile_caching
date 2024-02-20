@@ -9,20 +9,26 @@ part of flutter_map_tile_caching;
 /// If the store is not in the expected state (of existence) when invoking an
 /// operation, then an error will be thrown (likely [StoreNotExists] or
 /// [StoreAlreadyExists]). It is recommended to check [ready] when necessary.
-final class StoreManagement extends _WithBackendAccess {
-  const StoreManagement._(super.store);
+class StoreManagement {
+  StoreManagement._(FMTCStore store) : _storeName = store.storeName;
+
+  final String _storeName;
 
   /// {@macro fmtc.backend.storeExists}
-  Future<bool> get ready => _backend.storeExists(storeName: _storeName);
+  Future<bool> get ready =>
+      FMTCBackendAccess.internal.storeExists(storeName: _storeName);
 
   /// {@macro fmtc.backend.createStore}
-  Future<void> create() => _backend.createStore(storeName: _storeName);
+  Future<void> create() =>
+      FMTCBackendAccess.internal.createStore(storeName: _storeName);
 
   /// {@macro fmtc.backend.deleteStore}
-  Future<void> delete() => _backend.deleteStore(storeName: _storeName);
+  Future<void> delete() =>
+      FMTCBackendAccess.internal.deleteStore(storeName: _storeName);
 
   /// {@macro fmtc.backend.resetStore}
-  Future<void> reset() => _backend.resetStore(storeName: _storeName);
+  Future<void> reset() =>
+      FMTCBackendAccess.internal.resetStore(storeName: _storeName);
 
   /// {@macro fmtc.backend.renameStore}
   ///
@@ -30,7 +36,7 @@ final class StoreManagement extends _WithBackendAccess {
   /// always use the new returned value instead: returns a new [FMTCStore]
   /// after a successful renaming operation.
   Future<FMTCStore> rename(String newStoreName) async {
-    await _backend.renameStore(
+    await FMTCBackendAccess.internal.renameStore(
       currentStoreName: _storeName,
       newStoreName: newStoreName,
     );
@@ -40,7 +46,8 @@ final class StoreManagement extends _WithBackendAccess {
 
   /// {@macro fmtc.backend.removeTilesOlderThan}
   Future<void> removeTilesOlderThan({required DateTime expiry}) =>
-      _backend.removeTilesOlderThan(storeName: _storeName, expiry: expiry);
+      FMTCBackendAccess.internal
+          .removeTilesOlderThan(storeName: _storeName, expiry: expiry);
 
   // TODO: Define deprecation for `tileImageAsync`
 
@@ -68,7 +75,8 @@ final class StoreManagement extends _WithBackendAccess {
     int? cacheWidth,
     int? cacheHeight,
   }) async {
-    final latestTile = await _backend.readLatestTile(storeName: _storeName);
+    final latestTile =
+        await FMTCBackendAccess.internal.readLatestTile(storeName: _storeName);
     if (latestTile == null) return null;
 
     return Image.memory(

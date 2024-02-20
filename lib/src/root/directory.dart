@@ -32,10 +32,8 @@ abstract class FMTCRoot {
   static RootStats get stats => const RootStats._();
 
   /// Manage the download recovery of all sub-stores
-  static RootRecovery get recovery => RootRecovery.instance ?? RootRecovery._();
-
-  /// Manage migration for file structure across FMTC versions
-  static RootMigrator get migrator => const RootMigrator._();
+  static RootRecovery get recovery =>
+      RootRecovery._instance ?? RootRecovery._();
 
   /// Provides store import functionality for this root
   ///

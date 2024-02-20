@@ -8,6 +8,8 @@ import 'dart:isolate';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -203,16 +205,16 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   }
 
   @override
-  Future<List<String>> listStores() async =>
-      (await _sendCmd(type: _WorkerCmdType.storeExists))!['stores'];
-
-  @override
   Future<double> rootSize() async =>
       (await _sendCmd(type: _WorkerCmdType.rootSize))!['size'];
 
   @override
   Future<int> rootLength() async =>
       (await _sendCmd(type: _WorkerCmdType.rootLength))!['length'];
+
+  @override
+  Future<List<String>> listStores() async =>
+      (await _sendCmd(type: _WorkerCmdType.storeExists))!['stores'];
 
   @override
   Future<bool> storeExists({
@@ -430,6 +432,20 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       );
 
   @override
+  Future<List<RecoveredRegion>> listRecoverableRegions() async =>
+      (await _sendCmd(
+        type: _WorkerCmdType.listRecoverableRegions,
+      ))!['recoverableRegions'];
+
+  @override
+  Future<RecoveredRegion> getRecoverableRegion({
+    required int id,
+  }) async =>
+      (await _sendCmd(
+        type: _WorkerCmdType.getRecoverableRegion,
+      ))!['recoverableRegion'];
+
+  @override
   Future<void> startRecovery({
     required int id,
     required String storeName,
@@ -441,8 +457,8 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       );
 
   @override
-  Future<void> endRecovery({
+  Future<void> cancelRecovery({
     required int id,
   }) =>
-      _sendCmd(type: _WorkerCmdType.endRecovery, args: {'id': id});
+      _sendCmd(type: _WorkerCmdType.cancelRecovery, args: {'id': id});
 }

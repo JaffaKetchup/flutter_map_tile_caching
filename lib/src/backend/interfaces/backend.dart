@@ -74,11 +74,6 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
   /// initialised.
   Directory? get rootDirectory;
 
-  /// {@template fmtc.backend.listStores}
-  /// List all the available stores
-  /// {@endtemplate}
-  Future<List<String>> listStores();
-
   /// {@template fmtc.backend.rootSize}
   /// Retrieve the total number of KiBs of all tiles' bytes (not 'real total'
   /// size) from all stores
@@ -89,6 +84,11 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
   /// Retrieve the total number of tiles in all stores
   /// {@endtemplate}
   Future<int> rootLength();
+
+  /// {@template fmtc.backend.listStores}
+  /// List all the available stores
+  /// {@endtemplate}
+  Future<List<String>> listStores();
 
   /// {@template fmtc.backend.storeExists}
   /// Check whether the specified store currently exists
@@ -274,13 +274,32 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
     required String storeName,
   });
 
+  /// List all registered recovery regions
+  ///
+  /// Not all regions are failed, requires the [RootRecovery] object to
+  /// determine this.
+  Future<List<RecoveredRegion>> listRecoverableRegions();
+
+  /// Retrieve the specified registered recovery region
+  ///
+  /// Not all regions are failed, requires the [RootRecovery] object to
+  /// determine this.
+  Future<RecoveredRegion> getRecoverableRegion({
+    required int id,
+  });
+
+  /// Create a recovery store with a recoverable region from the specified
+  /// components
   Future<void> startRecovery({
     required int id,
     required String storeName,
     required DownloadableRegion region,
   });
 
-  Future<void> endRecovery({
+  /// {@template fmtc.backend.cancelRecovery}
+  /// Safely cancel the specified recoverable region
+  /// {@endtemplate}
+  Future<void> cancelRecovery({
     required int id,
   });
 }

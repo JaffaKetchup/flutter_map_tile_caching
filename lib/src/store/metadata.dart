@@ -8,32 +8,38 @@ part of flutter_map_tile_caching;
 /// Uses a key-value format where both key and value must be [String]. More
 /// advanced requirements should use another package, as this is a basic
 /// implementation.
-final class StoreMetadata extends _WithBackendAccess {
-  const StoreMetadata._(super._store);
+class StoreMetadata {
+  StoreMetadata._(FMTCStore store) : _storeName = store.storeName;
+
+  final String _storeName;
 
   /// {@macro fmtc.backend.readMetadata}
   Future<Map<String, String>> get read =>
-      _backend.readMetadata(storeName: _storeName);
+      FMTCBackendAccess.internal.readMetadata(storeName: _storeName);
 
   /// {@macro fmtc.backend.setMetadata}
   Future<void> set({
     required String key,
     required String value,
   }) =>
-      _backend.setMetadata(storeName: _storeName, key: key, value: value);
+      FMTCBackendAccess.internal
+          .setMetadata(storeName: _storeName, key: key, value: value);
 
   /// {@macro fmtc.backend.setBulkMetadata}
   Future<void> setBulk({
     required Map<String, String> kvs,
   }) =>
-      _backend.setBulkMetadata(storeName: _storeName, kvs: kvs);
+      FMTCBackendAccess.internal
+          .setBulkMetadata(storeName: _storeName, kvs: kvs);
 
   /// {@macro fmtc.backend.removeMetadata}
   Future<void> remove({
     required String key,
   }) =>
-      _backend.removeMetadata(storeName: _storeName, key: key);
+      FMTCBackendAccess.internal
+          .removeMetadata(storeName: _storeName, key: key);
 
   /// {@macro fmtc.backend.resetMetadata}
-  Future<void> reset() => _backend.resetMetadata(storeName: _storeName);
+  Future<void> reset() =>
+      FMTCBackendAccess.internal.resetMetadata(storeName: _storeName);
 }

@@ -6,9 +6,9 @@ part of 'backend.dart';
 enum _WorkerCmdType {
   initialise_, // Only valid as a response
   destroy_, // Only valid as a request
-  listStores,
   rootSize,
   rootLength,
+  listStores,
   storeExists,
   createStore,
   resetStore,
@@ -27,8 +27,10 @@ enum _WorkerCmdType {
   setBulkMetadata,
   removeMetadata,
   resetMetadata,
+  listRecoverableRegions,
+  getRecoverableRegion,
   startRecovery,
-  endRecovery,
+  cancelRecovery,
 }
 
 Future<void> _worker(
@@ -137,18 +139,6 @@ Future<void> _worker(
 
           // TODO: Consider final message
           Isolate.exit();
-        case _WorkerCmdType.listStores:
-          final query = root
-              .box<ObjectBoxStore>()
-              .query()
-              .build()
-              .property(ObjectBoxStore_.name);
-
-          sendRes(id: cmd.id, data: {'stores': query.find()});
-
-          query.close();
-
-          break;
         case _WorkerCmdType.rootSize:
           final query = root
               .box<ObjectBoxStore>()
@@ -170,6 +160,15 @@ Future<void> _worker(
           sendRes(id: cmd.id, data: {'length': query.count()});
 
           query.close();
+
+          break;
+        case _WorkerCmdType.listStores:
+          sendRes(
+            id: cmd.id,
+            data: {
+              'stores': root.box<ObjectBoxStore>().getAll().map((e) => e.name),
+            },
+          );
 
           break;
         case _WorkerCmdType.storeExists:
@@ -686,6 +685,58 @@ Future<void> _worker(
           sendRes(id: cmd.id);
 
           break;
+        case _WorkerCmdType.listRecoverableRegions:
+          sendRes(
+            id: cmd.id,
+            data: {
+              'recoverableRegions': root.box<ObjectBoxRecovery>().getAll().map(
+                    (r) => RecoveredRegion(
+                      id: r.id,
+                      storeName: r.storeName,
+                      time: r.creationTime,
+                      bounds: r.typeId == 0
+                          ? LatLngBounds(
+                              LatLng(r.rectNwLat!, r.rectNwLng!),
+                              LatLng(r.rectSeLat!, r.rectSeLng!),
+                            )
+                          : null,
+                      center: r.typeId == 1
+                          ? LatLng(r.circleCenterLat!, r.circleCenterLng!)
+                          : null,
+                      line: r.typeId == 2 || r.typeId == 3
+                          ? List.generate(
+                              r.lineLats!.length,
+                              (i) => LatLng(r.lineLats![i], r.lineLngs![i]),
+                            )
+                          : null,
+                      radius: r.typeId == 1
+                          ? r.circleRadius!
+                          : r.typeId == 2
+                              ? r.lineRadius!
+                              : null,
+                      minZoom: r.minZoom,
+                      maxZoom: r.maxZoom,
+                      start: r.startTile,
+                      end: r.endTile,
+                    ),
+                  ),
+            },
+          );
+
+          break;
+        case _WorkerCmdType.getRecoverableRegion:
+          final id = cmd.args['id']! as int;
+
+          final query = root
+              .box<ObjectBoxRecovery>()
+              .query(ObjectBoxRecovery_.refId.equals(id))
+              .build();
+
+          sendRes(id: cmd.id, data: {'recoverableRegion': query.findUnique()});
+
+          query.close();
+
+          break;
         case _WorkerCmdType.startRecovery:
           final id = cmd.args['id']! as int;
           final storeName = cmd.args['storeName']! as String;
@@ -702,7 +753,7 @@ Future<void> _worker(
           sendRes(id: cmd.id);
 
           break;
-        case _WorkerCmdType.endRecovery:
+        case _WorkerCmdType.cancelRecovery:
           root
               .box<ObjectBoxRecovery>()
               .query(ObjectBoxRecovery_.refId.equals(cmd.args['id']! as int))

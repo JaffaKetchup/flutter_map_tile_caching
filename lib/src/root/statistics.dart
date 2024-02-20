@@ -50,18 +50,6 @@ class RootStats {
       StoreParts.stats,
     ],
   }) =>
-      StreamGroup.merge([
-        DirectoryWatcher(FMTC.instance.rootDirectory.directory.absolute.path)
-            .events
-            .where((e) => !path.dirname(e.path).endsWith('import')),
-        if (watchRecovery)
-          _registry.recoveryDatabase.recovery
-              .watchLazy(fireImmediately: fireImmediately),
-        ...recursive.map(
-          (s) => s.stats.watchChanges(
-            fireImmediately: fireImmediately,
-            storeParts: storeParts,
-          ),
-        ),
-      ]).debounce(debounce ?? Duration.zero);
+      // TODO: Implement
+      throw UnimplementedError();
 }

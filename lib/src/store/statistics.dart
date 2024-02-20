@@ -9,8 +9,10 @@ part of flutter_map_tile_caching;
 /// operation, then an error will be thrown (likely [StoreNotExists] or
 /// [StoreAlreadyExists]). It is recommended to check [StoreManagement.ready]
 /// when necessary.
-final class StoreStats extends _WithBackendAccess {
-  const StoreStats._(super._store);
+class StoreStats {
+  StoreStats._(FMTCStore store) : _storeName = store.storeName;
+
+  final String _storeName;
 
   /// {@macro fmtc.backend.getStoreStats}
   ///
@@ -20,7 +22,7 @@ final class StoreStats extends _WithBackendAccess {
   /// stats, and so is more efficient.
   /// {@endtemplate}
   Future<({double size, int length, int hits, int misses})> get all =>
-      _backend.getStoreStats(storeName: _storeName);
+      FMTCBackendAccess.internal.getStoreStats(storeName: _storeName);
 
   /// Retrieve the total number of KiBs of all tiles' bytes (not 'real total'
   /// size)
@@ -69,6 +71,7 @@ final class StoreStats extends _WithBackendAccess {
       StoreParts.stats,
     ],
   }) =>
+      // TODO: Implement
       throw UnimplementedError();
 }
 
