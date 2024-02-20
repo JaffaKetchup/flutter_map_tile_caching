@@ -6,7 +6,7 @@ part of flutter_map_tile_caching;
 Future<void> _singleDownloadThread(
   ({
     SendPort sendPort,
-    String storeId,
+    String storeName,
     String rootDirectory,
     TileLayer options,
     int maxBufferLength,

@@ -19,7 +19,6 @@ Future<void> _downloadManager(
   }) input,
 ) async {
   // Precalculate shared inputs for all threads
-  final storeId = DatabaseTools.hash(input.storeName).toString();
   final threadBufferLength =
       (input.maxBufferLength / input.parallelThreads).floor();
   final headers = {
@@ -188,7 +187,7 @@ Future<void> _downloadManager(
           _singleDownloadThread,
           (
             sendPort: downloadThreadReceivePort.sendPort,
-            storeId: storeId,
+            storeName: input.storeName,
             rootDirectory: input.rootDirectory,
             options: input.region.options,
             maxBufferLength: threadBufferLength,

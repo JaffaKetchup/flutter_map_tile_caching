@@ -3,6 +3,9 @@
 
 part of flutter_map_tile_caching;
 
+/// Callback type that takes an [FMTCBrowsingError] exception
+typedef FMTCBrowsingErrorHandler = void Function(FMTCBrowsingError exception);
+
 /// Behaviours dictating how and when browse caching should be carried out
 enum CacheBehavior {
   /// Only get tiles from the local cache
@@ -24,6 +27,11 @@ enum CacheBehavior {
 
 /// Settings for an [FMTCTileProvider]
 class FMTCTileProviderSettings {
+  /// Get an existing instance, if one has been constructed, or get the default
+  /// intial configuration
+  static FMTCTileProviderSettings get instance => _instance;
+  static var _instance = FMTCTileProviderSettings();
+
   /// The behavior method to get and cache a tile
   ///
   /// Defaults to [CacheBehavior.cacheFirst] - get tiles from the local cache,
@@ -44,8 +52,7 @@ class FMTCTileProviderSettings {
   /// Only applies to 'browse caching', ie. downloading regions will bypass this
   /// limit.
   ///
-  /// Note that the actual store has a size limit of
-  /// [FMTCSettings.databaseMaxSize], irrespective of this value.
+  /// Note that the database maximum size may be set by the backend.
   ///
   /// Defaults to 0 disabled.
   final int maxStoreLength;
@@ -54,7 +61,8 @@ class FMTCTileProviderSettings {
   /// a URL's query parameter list
   ///
   /// If using this property, it is recommended to set it globally on
-  /// initialisation with [FMTCSettings], to ensure it gets applied throughout.
+  /// initialisation with [FMTCTileProviderSettings], to ensure it gets applied
+  /// throughout.
   ///
   /// Used by [obscureQueryParams] to apply to a URL.
   ///
@@ -67,14 +75,31 @@ class FMTCTileProviderSettings {
   /// Even if this is defined, the error will still be (re)thrown.
   void Function(FMTCBrowsingError exception)? errorHandler;
 
-  /// Create settings for an [FMTCTileProvider]
-  FMTCTileProviderSettings({
-    this.behavior = CacheBehavior.cacheFirst,
-    this.cachedValidDuration = const Duration(days: 16),
-    this.maxStoreLength = 0,
+  /// Create new settings for an [FMTCTileProvider], and set the [instance]
+  ///
+  /// To access the existing settings, if any, get [instance].
+  factory FMTCTileProviderSettings({
+    CacheBehavior behavior = CacheBehavior.cacheFirst,
+    Duration cachedValidDuration = const Duration(days: 16),
+    int maxStoreLength = 0,
     List<String> obscuredQueryParams = const [],
-    this.errorHandler,
-  }) : obscuredQueryParams = obscuredQueryParams.map((e) => RegExp('$e=[^&]*'));
+    FMTCBrowsingErrorHandler? errorHandler,
+  }) =>
+      _instance = FMTCTileProviderSettings._(
+        behavior: behavior,
+        cachedValidDuration: cachedValidDuration,
+        maxStoreLength: maxStoreLength,
+        obscuredQueryParams: obscuredQueryParams.map((e) => RegExp('$e=[^&]*')),
+        errorHandler: errorHandler,
+      );
+
+  FMTCTileProviderSettings._({
+    required this.behavior,
+    required this.cachedValidDuration,
+    required this.maxStoreLength,
+    required this.obscuredQueryParams,
+    required this.errorHandler,
+  });
 
   @override
   bool operator ==(Object other) =>

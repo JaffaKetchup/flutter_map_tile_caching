@@ -23,7 +23,7 @@ class FMTCTileProvider extends TileProvider {
     required FMTCTileProviderSettings? settings,
     required Map<String, String> headers,
     required http.Client? httpClient,
-  })  : settings = settings ?? FMTC.instance.defaultTileProviderSettings,
+  })  : settings = settings ?? FMTCTileProviderSettings.instance,
         httpClient = httpClient ?? IOClient(HttpClient()..userAgent = null),
         super(
           headers: {

@@ -183,7 +183,7 @@ class DownloadManagement {
         rateLimit: rateLimit,
         obscuredQueryParams:
             obscuredQueryParams?.map((e) => RegExp('$e=[^&]*')) ??
-                FMTC.defaultTileProviderSettings.obscuredQueryParams,
+                FMTCTileProviderSettings.instance.obscuredQueryParams,
       ),
       onExit: receivePort.sendPort,
       debugName: '[FMTC] Master Bulk Download Thread',
