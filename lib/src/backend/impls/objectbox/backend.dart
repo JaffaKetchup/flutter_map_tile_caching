@@ -309,7 +309,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       (await _sendCmd(
         type: _WorkerCmdType.getStoreStats,
         args: {'storeName': storeName},
-      ))!['store'];
+      ))!['stats'];
 
   @override
   Future<bool> tileExistsInStore({
