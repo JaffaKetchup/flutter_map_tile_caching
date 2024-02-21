@@ -1,6 +1,8 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 import 'package:objectbox/objectbox.dart';
 
@@ -66,7 +68,7 @@ base class ObjectBoxRecovery {
     required this.customPolygonLngs,
   });
 
-  ObjectBoxRecovery.startFromRegion({
+  ObjectBoxRecovery.fromRegion({
     required this.refId,
     required this.storeName,
     required DownloadableRegion region,
@@ -141,4 +143,32 @@ base class ObjectBoxRecovery {
                 .map((c) => c.longitude)
                 .toList()
             : null;
+
+  RecoveredRegion toRegion() => RecoveredRegion(
+        id: id,
+        storeName: storeName,
+        time: creationTime,
+        bounds: typeId == 0
+            ? LatLngBounds(
+                LatLng(rectNwLat!, rectNwLng!),
+                LatLng(rectSeLat!, rectSeLng!),
+              )
+            : null,
+        center: typeId == 1 ? LatLng(circleCenterLat!, circleCenterLng!) : null,
+        line: typeId == 2 || typeId == 3
+            ? List.generate(
+                lineLats!.length,
+                (i) => LatLng(lineLats![i], lineLngs![i]),
+              )
+            : null,
+        radius: typeId == 1
+            ? circleRadius!
+            : typeId == 2
+                ? lineRadius!
+                : null,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        start: startTile,
+        end: endTile,
+      );
 }

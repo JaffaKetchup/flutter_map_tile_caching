@@ -17,39 +17,25 @@ class RootStats {
   /// {@macro fmtc.backend.rootLength}
   Future<int> get rootLength async => FMTCBackendAccess.internal.rootLength();
 
-  /// Watch for changes in the current root
-  ///
-  /// Useful to update UI only when required, for example, in a `StreamBuilder`.
-  /// Whenever this has an event, it is likely the other statistics will have
-  /// changed.
-  ///
-  /// Recursively watch specific stores (using [StoreStats.watchChanges]) by
-  /// providing them as a list of [FMTCStore]s to [recursive]. To watch all
-  /// stores, use the [storesAvailable]/[storesAvailableAsync] getter as the
-  /// argument. By default, no sub-stores are watched (empty list), meaning only
-  /// events that affect the actual store database (eg. store creations) will be
-  /// caught. Control where changes are caught from using [storeParts]. See
-  /// documentation on those parts for their scope.
-  ///
-  /// Enable debouncing to prevent unnecessary events for small changes in detail
-  /// using [debounce]. Defaults to 200ms, or set to null to disable debouncing.
-  ///
-  /// Debouncing example (dash roughly represents [debounce]):
-  /// ```dart
-  /// input:  1-2-3---4---5-6-|
-  /// output: ------3---4-----6|
-  /// ```
-  Stream<void> watchChanges({
-    Duration? debounce = const Duration(milliseconds: 200),
-    bool fireImmediately = false,
-    List<FMTCStore> recursive = const [],
-    bool watchRecovery = false,
-    List<StoreParts> storeParts = const [
-      StoreParts.metadata,
-      StoreParts.tiles,
-      StoreParts.stats,
-    ],
-  }) =>
-      // TODO: Implement
-      throw UnimplementedError();
+  /// {@macro fmtc.backend.watchRecovery}
+  Stream<void> watchRecovery({
+    bool triggerImmediately = false,
+  }) async* {
+    final stream = await FMTCBackendAccess.internal.watchRecovery(
+      triggerImmediately: triggerImmediately,
+    );
+    yield* stream;
+  }
+
+  /// {@macro fmtc.backend.watchStores}
+  Stream<void> watchStores({
+    List<String> storeNames = const [],
+    bool triggerImmediately = false,
+  }) async* {
+    final stream = await FMTCBackendAccess.internal.watchStores(
+      storeNames: storeNames,
+      triggerImmediately: triggerImmediately,
+    );
+    yield* stream;
+  }
 }

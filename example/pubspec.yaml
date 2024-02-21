@@ -23,7 +23,7 @@ dependencies:
   flutter_map_animations: ^0.5.3
   flutter_map_tile_caching: ^9.0.0-dev.5
   flutter_speed_dial: ^7.0.0
-  fmtc_plus_sharing: ^8.0.0
+  #fmtc_plus_sharing: ^8.0.0
   google_fonts: ^6.1.0
   gpx: ^2.2.1
   http: ^1.1.2

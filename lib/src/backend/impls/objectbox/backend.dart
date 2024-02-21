@@ -8,8 +8,6 @@ import 'dart:isolate';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -103,14 +101,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     _sendPort!.send((id: id, type: type, args: args));
     final res = await _workerRes[id]!.future;
     _workerRes.remove(id);
-
-    final err = res?['error'];
-    if (err == null) return res;
-
-    if (err is FMTCBackendError) throw err;
-    debugPrint('An unexpected error in the FMTC backend occurred:');
-    // ignore: only_throw_errors
-    throw err;
+    return res;
   }
 
   Future<void> initialise({
@@ -146,6 +137,22 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     _workerHandler = receivePort.listen(
       (evt) {
         evt as ({int id, Map<String, dynamic>? data});
+
+        final err = evt.data?['error'];
+        if (err != null) {
+          if (err is FMTCBackendError) throw err;
+
+          debugPrint('An unexpected error in the FMTC backend occurred:');
+          if (err is Error) {
+            debugPrint(err.stackTrace.toString());
+            throw err;
+          } else {
+            debugPrint(
+              'But it was not of type `Error`, it was type ${err.runtimeType}',
+            );
+          }
+        }
+
         _workerRes[evt.id]!.complete(evt.data);
       },
       onDone: () => _workerComplete.complete(),
@@ -482,4 +489,26 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required int id,
   }) =>
       _sendCmd(type: _WorkerCmdType.cancelRecovery, args: {'id': id});
+
+  @override
+  Future<Stream<void>> watchRecovery({
+    required bool triggerImmediately,
+  }) async =>
+      (await _sendCmd(
+        type: _WorkerCmdType.watchRecovery,
+        args: {'triggerImmediately': triggerImmediately},
+      ))!['stream'];
+
+  @override
+  Future<Stream<void>> watchStores({
+    required List<String> storeNames,
+    required bool triggerImmediately,
+  }) async =>
+      (await _sendCmd(
+        type: _WorkerCmdType.watchStores,
+        args: {
+          'storeNames': storeNames,
+          'triggerImmediately': triggerImmediately,
+        },
+      ))!['stream'];
 }

@@ -321,4 +321,31 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
   Future<void> cancelRecovery({
     required int id,
   });
+
+  /// {@template fmtc.backend.watchRecovery}
+  /// Watch for changes to the recovery system
+  ///
+  /// Useful to update UI only when required, for example, in a `StreamBuilder`.
+  /// Whenever this has an event, it is likely the other statistics will have
+  /// changed.
+  /// {@endtemplate}
+  Future<Stream<void>> watchRecovery({
+    required bool triggerImmediately,
+  });
+
+  /// {@template fmtc.backend.watchStores}
+  /// Watch for changes in the specified stores, or all stores if no stores
+  /// are provided
+  ///
+  /// Useful to update UI only when required, for example, in a `StreamBuilder`.
+  /// Whenever this has an event, it is likely the other statistics will have
+  /// changed.
+  ///
+  /// Emits an event every time a change is made to a store (every time a
+  /// statistic changes, which should include every time a tile is changed).
+  /// {@endtemplate}
+  Future<Stream<void>> watchStores({
+    required List<String> storeNames,
+    required bool triggerImmediately,
+  });
 }

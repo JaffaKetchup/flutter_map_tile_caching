@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:fmtc_plus_sharing/fmtc_plus_sharing.dart';
+//import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+//import 'package:fmtc_plus_sharing/fmtc_plus_sharing.dart';
 
 class ImportStorePopup extends StatefulWidget {
   const ImportStorePopup({super.key});
@@ -14,14 +14,15 @@ class ImportStorePopup extends StatefulWidget {
 class _ImportStorePopupState extends State<ImportStorePopup> {
   final Map<String, _ImportStore> importStores = {};
 
+// TODO: Implement
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Import Stores'),
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(12),
-          child: ListView.separated(
+        body: const Padding(
+          padding: EdgeInsets.all(12),
+          /*child: ListView.separated(
             itemCount: importStores.length + 1,
             itemBuilder: (context, i) {
               if (i == importStores.length) {
@@ -30,7 +31,7 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
                   title: const Text('Choose New Store(s)'),
                   subtitle: const Text('Select any valid store files (.fmtc)'),
                   onTap: () async {
-                    importStores.addAll(
+                    /*importStores.addAll(
                       (await FMTCRoot.import.withGUI(
                                 collisionHandler: (fn, sn) {
                                   setState(
@@ -51,7 +52,8 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
                           _ImportStore(status, collisionInfo: null),
                         ),
                       ),
-                    );
+                    );*/
+                    
                     if (mounted) setState(() {});
                   },
                 );
@@ -131,13 +133,13 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
             separatorBuilder: (context, i) => i == importStores.length - 1
                 ? const Divider()
                 : const SizedBox.shrink(),
-          ),
+          ),*/
         ),
       );
 }
 
 class _ImportStore {
-  final Future<ImportResult> result;
+  final Future result;
   List<String>? collisionInfo;
   Completer<bool> collisionResolution;
 

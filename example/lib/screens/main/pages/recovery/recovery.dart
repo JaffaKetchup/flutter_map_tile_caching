@@ -30,7 +30,7 @@ class _RecoveryPageState extends State<RecoveryPage> {
         _recoverableRegions = FMTCRoot.recovery.recoverableRegions;
 
     listRecoverableRegions();
-    FMTCRoot.stats.watchChanges(watchRecovery: true).listen((_) {
+    FMTCRoot.stats.watchRecovery().listen((_) {
       if (mounted) {
         listRecoverableRegions();
         setState(() {});

@@ -33,6 +33,8 @@ enum _WorkerCmdType {
   getRecoverableRegion,
   startRecovery,
   cancelRecovery,
+  watchRecovery,
+  watchStores,
 }
 
 Future<void> _worker(
@@ -811,37 +813,10 @@ Future<void> _worker(
           sendRes(
             id: cmd.id,
             data: {
-              'recoverableRegions': root.box<ObjectBoxRecovery>().getAll().map(
-                    (r) => RecoveredRegion(
-                      id: r.id,
-                      storeName: r.storeName,
-                      time: r.creationTime,
-                      bounds: r.typeId == 0
-                          ? LatLngBounds(
-                              LatLng(r.rectNwLat!, r.rectNwLng!),
-                              LatLng(r.rectSeLat!, r.rectSeLng!),
-                            )
-                          : null,
-                      center: r.typeId == 1
-                          ? LatLng(r.circleCenterLat!, r.circleCenterLng!)
-                          : null,
-                      line: r.typeId == 2 || r.typeId == 3
-                          ? List.generate(
-                              r.lineLats!.length,
-                              (i) => LatLng(r.lineLats![i], r.lineLngs![i]),
-                            )
-                          : null,
-                      radius: r.typeId == 1
-                          ? r.circleRadius!
-                          : r.typeId == 2
-                              ? r.lineRadius!
-                              : null,
-                      minZoom: r.minZoom,
-                      maxZoom: r.maxZoom,
-                      start: r.startTile,
-                      end: r.endTile,
-                    ),
-                  ),
+              'recoverableRegions': root
+                  .box<ObjectBoxRecovery>()
+                  .getAll()
+                  .map((r) => r.toRegion()),
             },
           );
 
@@ -849,14 +824,18 @@ Future<void> _worker(
         case _WorkerCmdType.getRecoverableRegion:
           final id = cmd.args['id']! as int;
 
-          final query = root
-              .box<ObjectBoxRecovery>()
-              .query(ObjectBoxRecovery_.refId.equals(id))
-              .build();
-
-          sendRes(id: cmd.id, data: {'recoverableRegion': query.findUnique()});
-
-          query.close();
+          sendRes(
+            id: cmd.id,
+            data: {
+              'recoverableRegion': (root
+                      .box<ObjectBoxRecovery>()
+                      .query(ObjectBoxRecovery_.refId.equals(id))
+                      .build()
+                    ..close())
+                  .findUnique()
+                  ?.toRegion(),
+            },
+          );
 
           break;
         case _WorkerCmdType.startRecovery:
@@ -865,7 +844,7 @@ Future<void> _worker(
           final region = cmd.args['region']! as DownloadableRegion;
 
           root.box<ObjectBoxRecovery>().put(
-                ObjectBoxRecovery.startFromRegion(
+                ObjectBoxRecovery.fromRegion(
                   refId: id,
                   storeName: storeName,
                   region: region,
@@ -884,6 +863,39 @@ Future<void> _worker(
             ..close();
 
           sendRes(id: cmd.id);
+
+          break;
+        case _WorkerCmdType.watchRecovery:
+          final triggerImmediately = cmd.args['triggerImmediately']! as bool;
+
+          sendRes(
+            id: cmd.id,
+            data: {
+              'stream': root
+                  .box<ObjectBoxRecovery>()
+                  .query()
+                  .watch(triggerImmediately: triggerImmediately),
+            },
+          );
+
+          break;
+        case _WorkerCmdType.watchStores:
+          final storeNames = cmd.args['storeNames']! as List<String>;
+          final triggerImmediately = cmd.args['triggerImmediately']! as bool;
+
+          sendRes(
+            id: cmd.id,
+            data: {
+              'stream': root
+                  .box<ObjectBoxStore>()
+                  .query(
+                    storeNames.isEmpty
+                        ? null
+                        : ObjectBoxStore_.name.oneOf(storeNames),
+                  )
+                  .watch(triggerImmediately: triggerImmediately),
+            },
+          );
 
           break;
       }

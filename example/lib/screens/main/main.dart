@@ -41,7 +41,7 @@ class _MainScreenState extends State<MainScreen> {
         NavigationDestination(
           label: 'Recover',
           icon: StreamBuilder(
-            stream: FMTCRoot.stats.watchChanges().asBroadcastStream(),
+            stream: FMTCRoot.stats.watchRecovery(),
             builder: (context, _) => FutureBuilder(
               future: FMTCRoot.recovery.recoverableRegions,
               builder: (context, snapshot) => Badge(

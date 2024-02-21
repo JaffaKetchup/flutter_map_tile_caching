@@ -26,7 +26,7 @@ class _StoresPageState extends State<StoresPage> {
     void listStores() => _stores = FMTCRoot.stats.storesAvailable;
 
     listStores();
-    FMTCRoot.stats.watchChanges().listen((_) {
+    FMTCRoot.stats.watchStores().listen((_) {
       if (mounted) {
         listStores();
         setState(() {});
@@ -48,7 +48,8 @@ class _StoresPageState extends State<StoresPage> {
                   child: FutureBuilder<Iterable<FMTCStore>>(
                     future: _stores,
                     builder: (context, snapshot) => snapshot.hasError
-                        ? throw snapshot.error! as FMTCDamagedStoreException
+                        // ignore: only_throw_errors
+                        ? throw snapshot.error!
                         : snapshot.hasData
                             ? snapshot.data!.isEmpty
                                 ? const EmptyIndicator()

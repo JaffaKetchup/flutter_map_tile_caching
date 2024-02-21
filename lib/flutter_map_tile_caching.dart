@@ -45,7 +45,6 @@ part 'src/bulk_download/download_progress.dart';
 part 'src/bulk_download/manager.dart';
 part 'src/bulk_download/thread.dart';
 part 'src/bulk_download/tile_event.dart';
-part 'src/fmtc.dart';
 part 'src/misc/deprecations.dart';
 part 'src/providers/tile_provider.dart';
 part 'src/regions/base_region.dart';

@@ -45,46 +45,14 @@ class StoreStats {
   /// {@macro fmtc.frontend.storestats.efficiency}
   Future<int> get misses => all.then((a) => a.misses);
 
-  /// Watch for changes in the current store
-  ///
-  /// Useful to update UI only when required, for example, in a `StreamBuilder`.
-  /// Whenever this has an event, it is likely the other statistics will have
-  /// changed.
-  ///
-  /// Control where changes are caught from using [storeParts]. See documentation
-  /// on those parts for their scope.
-  ///
-  /// Enable debouncing to prevent unnecessary events for small changes in detail
-  /// using [debounce]. Defaults to 200ms, or set to null to disable debouncing.
-  ///
-  /// Debouncing example (dash roughly represents [debounce]):
-  /// ```dart
-  /// input:  1-2-3---4---5-6-|
-  /// output: ------3---4-----6|
-  /// ```
+  /// {@macro fmtc.backend.watchStores}
   Stream<void> watchChanges({
-    Duration? debounce = const Duration(milliseconds: 200),
-    bool fireImmediately = false,
-    List<StoreParts> storeParts = const [
-      StoreParts.metadata,
-      StoreParts.tiles,
-      StoreParts.stats,
-    ],
-  }) =>
-      // TODO: Implement
-      throw UnimplementedError();
-}
-
-/// Parts of a store which can be watched
-enum StoreParts {
-  /// Include changes to the store's metadata objects
-  metadata,
-
-  /// Includes changes to the store's tile objects, including those which will
-  /// make some statistics change (eg. store size)
-  tiles,
-
-  /// Includes changes to the store's descriptor object, which will change with
-  /// the cache hit and miss statistics
-  stats,
+    bool triggerImmediately = false,
+  }) async* {
+    final stream = await FMTCBackendAccess.internal.watchStores(
+      storeNames: [_storeName],
+      triggerImmediately: triggerImmediately,
+    );
+    yield* stream;
+  }
 }
