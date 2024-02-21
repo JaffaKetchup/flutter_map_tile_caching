@@ -58,25 +58,20 @@ AppBar buildHeader({
 
               await newStore.manage.create();
 
+              // Designed to test both methods, even though only bulk would be
+              // more efficient
               await newStore.metadata.set(
                 key: 'sourceURL',
                 value: newValues['sourceURL']!,
               );
-              await newStore.metadata.set(
-                key: 'validDuration',
-                value: newValues['validDuration']!,
+              await newStore.metadata.setBulk(
+                kvs: {
+                  'validDuration': newValues['validDuration']!,
+                  'maxLength': newValues['maxLength']!,
+                  if (widget.existingStoreName == null || useNewCacheModeValue)
+                    'behaviour': cacheModeValue ?? 'cacheFirst',
+                },
               );
-              await newStore.metadata.set(
-                key: 'maxLength',
-                value: newValues['maxLength']!,
-              );
-
-              if (widget.existingStoreName == null || useNewCacheModeValue) {
-                await newStore.metadata.set(
-                  key: 'behaviour',
-                  value: cacheModeValue ?? 'cacheFirst',
-                );
-              }
 
               if (!context.mounted) return;
               if (widget.isStoreInUse && widget.existingStoreName != null) {

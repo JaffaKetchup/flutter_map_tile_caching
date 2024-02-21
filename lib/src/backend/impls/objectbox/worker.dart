@@ -131,6 +131,9 @@ Future<void> _worker(
     _WorkerCmdType type,
     Map<String, dynamic> args,
   }) cmd in receivePort) {
+    // TODO: Remove
+    debugPrint('[FMTC] cmd recieved: $cmd');
+
     try {
       switch (cmd.type) {
         case _WorkerCmdType.initialise_:
@@ -141,7 +144,6 @@ Future<void> _worker(
             input.rootDirectory.deleteSync(recursive: true);
           }
 
-          // TODO: Consider final message
           Isolate.exit();
         case _WorkerCmdType.rootSize:
           final query = root
@@ -170,7 +172,11 @@ Future<void> _worker(
           sendRes(
             id: cmd.id,
             data: {
-              'stores': root.box<ObjectBoxStore>().getAll().map((e) => e.name),
+              'stores': root
+                  .box<ObjectBoxStore>()
+                  .getAll()
+                  .map((e) => e.name)
+                  .toList(),
             },
           );
 
@@ -705,12 +711,13 @@ Future<void> _worker(
                   (throw StoreNotExists(storeName: storeName));
               query.close();
 
+              final Map<String, dynamic> json = store.metadataJson == ''
+                  ? {}
+                  : jsonDecode(store.metadataJson);
+              json[key] = value;
+
               stores.put(
-                store
-                  ..metadataJson = jsonEncode(
-                    (jsonDecode(store.metadataJson)
-                        as Map<String, String>)[key] = value,
-                  ),
+                store..metadataJson = jsonEncode(json),
                 mode: PutMode.update,
               );
             },
@@ -735,12 +742,14 @@ Future<void> _worker(
                   (throw StoreNotExists(storeName: storeName));
               query.close();
 
+              final Map<String, dynamic> json = store.metadataJson == ''
+                  ? {}
+                  : jsonDecode(store.metadataJson);
+              // ignore: cascade_invocations
+              json.addAll(kvs);
+
               stores.put(
-                store
-                  ..metadataJson = jsonEncode(
-                    (jsonDecode(store.metadataJson) as Map<String, String>)
-                      ..addAll(kvs),
-                  ),
+                store..metadataJson = jsonEncode(json),
                 mode: PutMode.update,
               );
             },
@@ -871,10 +880,11 @@ Future<void> _worker(
           sendRes(
             id: cmd.id,
             data: {
-              'stream': root
+              'stream': /* root
                   .box<ObjectBoxRecovery>()
                   .query()
-                  .watch(triggerImmediately: triggerImmediately),
+                  .watch(triggerImmediately: triggerImmediately)*/
+                  null,
             },
           );
 
@@ -886,14 +896,15 @@ Future<void> _worker(
           sendRes(
             id: cmd.id,
             data: {
-              'stream': root
+              'stream': /*root
                   .box<ObjectBoxStore>()
                   .query(
                     storeNames.isEmpty
                         ? null
                         : ObjectBoxStore_.name.oneOf(storeNames),
                   )
-                  .watch(triggerImmediately: triggerImmediately),
+                  .watch(triggerImmediately: triggerImmediately)*/
+                  null,
             },
           );
 

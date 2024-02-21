@@ -45,7 +45,7 @@ class _StoresPageState extends State<StoresPage> {
                 const Header(),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: FutureBuilder<Iterable<FMTCStore>>(
+                  child: FutureBuilder(
                     future: _stores,
                     builder: (context, snapshot) => snapshot.hasError
                         // ignore: only_throw_errors

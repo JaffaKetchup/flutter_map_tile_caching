@@ -22,7 +22,9 @@ abstract mixin class FMTCBackendAccess {
   @meta.internal
   @meta.protected
   static set internal(FMTCBackendInternal? newInternal) {
-    if (_internal != null) throw RootAlreadyInitialised();
+    if (newInternal != null && _internal != null) {
+      throw RootAlreadyInitialised();
+    }
     _internal = newInternal;
   }
 }

@@ -8,8 +8,10 @@ class RootStats {
   const RootStats._();
 
   /// {@macro fmtc.backend.listStores}
-  Future<Iterable<FMTCStore>> get storesAvailable async =>
-      FMTCBackendAccess.internal.listStores().then((s) => s.map(FMTCStore.new));
+  Future<List<FMTCStore>> get storesAvailable async =>
+      FMTCBackendAccess.internal
+          .listStores()
+          .then((s) => s.map(FMTCStore.new).toList());
 
   /// {@macro fmtc.backend.rootSize}
   Future<double> get rootSize async => FMTCBackendAccess.internal.rootSize();

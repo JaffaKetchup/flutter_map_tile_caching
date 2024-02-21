@@ -45,11 +45,12 @@ final class FMTCObjectBoxBackend implements FMTCBackend {
 
   /// {@macro fmtc.backend.uninitialise}
   ///
-  /// If [immediate] is `true`, any operations currently underway will be lost.
+  /// If [immediate] is `true`, any operations currently underway will be lost,
+  /// as the worker will be killed as quickly as possible (not necessarily
+  /// instantly).
   /// If `false`, all operations currently underway will be allowed to complete,
   /// but any operations started after this method call will be lost. A lost
-  /// operation may throw [RootUnavailable]. This parameter may not have a
-  /// noticable/any effect in some implementations.
+  /// operation may throw [RootUnavailable].
   @override
   Future<void> uninitialise({
     bool deleteRoot = false,
@@ -101,6 +102,26 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     _sendPort!.send((id: id, type: type, args: args));
     final res = await _workerRes[id]!.future;
     _workerRes.remove(id);
+
+    final err = res?['error'];
+    if (err != null) {
+      if (err is FMTCBackendError) throw err;
+
+      debugPrint('An unexpected error in the FMTC backend occurred:');
+      if (err is Error) {
+        debugPrint(err.toString());
+        debugPrint(err.stackTrace.toString());
+        throw err;
+      } else if (err is Exception) {
+        debugPrint(err.toString());
+      } else {
+        debugPrint(
+          'But it was not of type `Error` or `Exception`, it was type ${err.runtimeType}',
+        );
+      }
+    }
+
+    print('[FMTC] cmd finished: $id');
     return res;
   }
 
@@ -117,10 +138,13 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     //_rotalStore = null;
     //_rotalLength = 0;
 
-    this.rootDirectory = await (rootDirectory == null
-            ? await getApplicationDocumentsDirectory()
-            : Directory(path.join(rootDirectory, 'fmtc')))
-        .create(recursive: true);
+    this.rootDirectory = await Directory(
+      path.join(
+        rootDirectory ??
+            (await getApplicationDocumentsDirectory()).absolute.path,
+        'fmtc',
+      ),
+    ).create(recursive: true);
 
     // Prepare to recieve `SendPort` from worker
     _workerRes[0] = Completer();
@@ -136,7 +160,14 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     _workerComplete = Completer();
     _workerHandler = receivePort.listen(
       (evt) {
-        evt as ({int id, Map<String, dynamic>? data});
+        evt as ({int id, Map<String, dynamic>? data})?;
+
+        // Killed forcefully by environment (eg. hot restart)
+        if (evt == null) {
+          _workerComplete.complete();
+          _workerHandler.cancel();
+          return;
+        }
 
         final err = evt.data?['error'];
         if (err != null) {
@@ -144,6 +175,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
           debugPrint('An unexpected error in the FMTC backend occurred:');
           if (err is Error) {
+            debugPrint(err.toString());
             debugPrint(err.stackTrace.toString());
             throw err;
           } else {
@@ -200,8 +232,6 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     await _workerHandler.cancel();
     //_rotalDebouncer.cancel();
 
-    print('passed _workerHandler cancel');
-
     // Kill any remaining operations with an error (they'll never recieve a
     // response from the worker)
     for (final completer in _workerRes.values) {
@@ -221,7 +251,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
   @override
   Future<List<String>> listStores() async =>
-      (await _sendCmd(type: _WorkerCmdType.storeExists))!['stores'];
+      (await _sendCmd(type: _WorkerCmdType.listStores))!['stores'];
 
   @override
   Future<bool> storeExists({
@@ -347,7 +377,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required bool hit,
   }) =>
       _sendCmd(
-        type: _WorkerCmdType.deleteStore,
+        type: _WorkerCmdType.registerHitOrMiss,
         args: {'storeName': storeName, 'hit': hit},
       );
 
@@ -494,21 +524,23 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   Future<Stream<void>> watchRecovery({
     required bool triggerImmediately,
   }) async =>
-      (await _sendCmd(
+      /*(await _sendCmd(
         type: _WorkerCmdType.watchRecovery,
         args: {'triggerImmediately': triggerImmediately},
-      ))!['stream'];
+      ))!['stream']*/
+      Stream.periodic(const Duration(seconds: 5));
 
   @override
   Future<Stream<void>> watchStores({
     required List<String> storeNames,
     required bool triggerImmediately,
   }) async =>
-      (await _sendCmd(
+      /*(await _sendCmd(
         type: _WorkerCmdType.watchStores,
         args: {
           'storeNames': storeNames,
           'triggerImmediately': triggerImmediately,
         },
-      ))!['stream'];
+      ))!['stream']*/
+      Stream.periodic(const Duration(seconds: 5));
 }
