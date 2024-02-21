@@ -178,6 +178,19 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
     required Uint8List? bytes,
   });
 
+  /// Create multiple tiles (given given their respective [urls] and [bytess]) in
+  /// the specified store
+  ///
+  /// Logic is much simpler than [writeTile] and designed to be faster to allow
+  /// for high bulk downloading throughputs.
+  ///
+  /// Existing tiles will always be overwritten if they exist.
+  Future<void> writeTilesDirect({
+    required String storeName,
+    required List<String> urls,
+    required List<Uint8List> bytess,
+  });
+
   /// Remove the tile from the specified store, deleting it if was orphaned
   ///
   /// As tiles can belong to multiple stores, a tile cannot be safely 'truly'

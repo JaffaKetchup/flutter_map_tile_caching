@@ -157,7 +157,7 @@ class DownloadManagement {
 
     // Start recovery system (unless disabled)
     final recoveryId =
-        Object.hash(instanceId, DateTime.now().millisecondsSinceEpoch);
+        Object.hash(instanceId, DateTime.timestamp().millisecondsSinceEpoch);
     if (!disableRecovery) {
       await FMTCRoot.recovery._start(
         id: recoveryId,
@@ -184,6 +184,7 @@ class DownloadManagement {
         obscuredQueryParams:
             obscuredQueryParams?.map((e) => RegExp('$e=[^&]*')) ??
                 FMTCTileProviderSettings.instance.obscuredQueryParams,
+        backend: FMTCBackendAccess.internal,
       ),
       onExit: receivePort.sendPort,
       debugName: '[FMTC] Master Bulk Download Thread',

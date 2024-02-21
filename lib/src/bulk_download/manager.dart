@@ -16,6 +16,7 @@ Future<void> _downloadManager(
     Duration? maxReportInterval,
     int? rateLimit,
     Iterable<RegExp> obscuredQueryParams,
+    FMTCBackendInternal backend,
   }) input,
 ) async {
   // Precalculate shared inputs for all threads
@@ -104,9 +105,10 @@ Future<void> _downloadManager(
   final tpsSmoothingStorage = <int?>[null];
   int currentTPSSmoothingIndex = 0;
   double getCurrentTPS({required bool registerNewTPS}) {
-    if (registerNewTPS) tileCompletionTimestamps.add(DateTime.now());
+    if (registerNewTPS) tileCompletionTimestamps.add(DateTime.timestamp());
     tileCompletionTimestamps.removeWhere(
-      (e) => e.isBefore(DateTime.now().subtract(const Duration(seconds: 1))),
+      (e) =>
+          e.isBefore(DateTime.timestamp().subtract(const Duration(seconds: 1))),
     );
     currentTPSSmoothingIndex++;
     tpsSmoothingStorage[currentTPSSmoothingIndex % tpsSmoothingStorage.length] =
@@ -195,6 +197,7 @@ Future<void> _downloadManager(
             seaTileBytes: seaTileBytes,
             obscuredQueryParams: input.obscuredQueryParams,
             headers: headers,
+            backend: input.backend,
           ),
           onExit: downloadThreadReceivePort.sendPort,
           debugName: '[FMTC] Bulk Download Thread #$threadNo',

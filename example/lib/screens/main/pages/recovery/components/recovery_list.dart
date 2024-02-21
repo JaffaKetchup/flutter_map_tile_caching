@@ -11,7 +11,7 @@ class RecoveryList extends StatefulWidget {
     required this.moveToDownloadPage,
   });
 
-  final List<RecoveredRegion> all;
+  final Iterable<({bool isFailed, RecoveredRegion<BaseRegion> region})> all;
   final void Function() moveToDownloadPage;
 
   @override
@@ -23,30 +23,22 @@ class _RecoveryListState extends State<RecoveryList> {
   Widget build(BuildContext context) => ListView.builder(
         itemCount: widget.all.length,
         itemBuilder: (context, index) {
-          final region = widget.all[index];
+          final result = widget.all.elementAt(index);
+          final region = result.region;
+          final isFailed = result.isFailed;
 
           return ListTile(
-            leading: FutureBuilder<RecoveredRegion?>(
-              future: FMTCRoot.recovery.getFailedRegion(region.id),
-              builder: (context, isFailed) => Icon(
-                isFailed.data != null
-                    ? Icons.warning
-                    : region.toRegion(
-                        rectangle: (_) => Icons.square_outlined,
-                        circle: (_) => Icons.circle_outlined,
-                        line: (_) => Icons.polyline_outlined,
-                        customPolygon: (_) => Icons.pentagon_outlined,
-                      ),
-                color: isFailed.data != null ? Colors.red : null,
-              ),
+            leading: Icon(
+              isFailed ? Icons.warning : Icons.pending_actions,
+              color: isFailed ? Colors.red : null,
             ),
             title: Text(
-              '${region.storeName} - ${region.toRegion(
-                rectangle: (_) => 'Rectangle',
-                circle: (_) => 'Circle',
-                line: (_) => 'Line',
-                customPolygon: (_) => 'Custom Polygon',
-              )} Type',
+              '${region.storeName} - ${switch (region.toRegion()) {
+                RectangleRegion() => 'Rectangle',
+                CircleRegion() => 'Circle',
+                LineRegion() => 'Line',
+                CustomPolygonRegion() => 'Custom Polygon',
+              }} Type',
             ),
             subtitle: FutureBuilder<Place>(
               future: Nominatim.reverseSearch(
@@ -60,7 +52,7 @@ class _RecoveryListState extends State<RecoveryList> {
                 addressDetails: true,
               ),
               builder: (context, response) => Text(
-                'Started at ${region.time} (~${DateTime.now().difference(region.time).inMinutes} minutes ago)\n${response.hasData ? 'Center near ${response.data!.address!['postcode']}, ${response.data!.address!['country']}' : response.hasError ? 'Unable To Reverse Geocode Location' : 'Please Wait...'}',
+                'Started at ${region.time} (~${DateTime.timestamp().difference(region.time).inMinutes} minutes ago)\n${response.hasData ? 'Center near ${response.data!.address!['postcode']}, ${response.data!.address!['country']}' : response.hasError ? 'Unable To Reverse Geocode Location' : 'Please Wait...'}',
               ),
             ),
             onTap: () {},
@@ -82,7 +74,7 @@ class _RecoveryListState extends State<RecoveryList> {
                 const SizedBox(width: 10),
                 RecoveryStartButton(
                   moveToDownloadPage: widget.moveToDownloadPage,
-                  region: region,
+                  result: result,
                 ),
               ],
             ),

@@ -42,15 +42,15 @@ class _MainScreenState extends State<MainScreen> {
           label: 'Recover',
           icon: StreamBuilder(
             stream: FMTCRoot.stats.watchChanges().asBroadcastStream(),
-            builder: (context, _) => FutureBuilder<List<RecoveredRegion>>(
-              future: FMTCRoot.recovery.failedRegions,
+            builder: (context, _) => FutureBuilder(
+              future: FMTCRoot.recovery.recoverableRegions,
               builder: (context, snapshot) => Badge(
                 position: BadgePosition.topEnd(top: -5, end: -6),
                 badgeAnimation: const BadgeAnimation.size(
                   animationDuration: Duration(milliseconds: 100),
                 ),
                 showBadge: _currentPageIndex != 3 &&
-                    (snapshot.data?.isNotEmpty ?? false),
+                    (snapshot.data?.failedOnly.isNotEmpty ?? false),
                 child: const Icon(Icons.support),
               ),
             ),

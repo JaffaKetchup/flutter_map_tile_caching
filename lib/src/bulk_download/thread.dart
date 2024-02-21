@@ -14,6 +14,7 @@ Future<void> _singleDownloadThread(
     Uint8List? seaTileBytes,
     Iterable<RegExp> obscuredQueryParams,
     Map<String, String> headers,
+    FMTCBackendInternal backend,
   }) input,
 ) async {
   // Setup two-way communications
@@ -24,19 +25,12 @@ Future<void> _singleDownloadThread(
   // Setup tile queue
   final tileQueue = StreamQueue(receivePort);
 
-  // Open a reference to the Isar DB for the current store
-  final db = Isar.openSync(
-    [DbStoreDescriptorSchema, DbTileSchema, DbMetadataSchema],
-    name: input.storeId,
-    directory: input.rootDirectory,
-    inspector: false,
-  );
-
   // Initialise a long lasting HTTP client
   final httpClient = http.Client();
 
-  // Initialise the tile buffer array
-  final tileBuffer = <DbTile>[];
+  // Initialise the tile buffer arrays
+  final tileUrlsBuffer = <String>[];
+  final tileBytesBuffer = <Uint8List>[];
 
   while (true) {
     // Request new tile coords
@@ -50,10 +44,13 @@ Future<void> _singleDownloadThread(
 
       httpClient.close();
 
-      if (tileBuffer.isNotEmpty) {
-        db.writeTxnSync(() => db.tiles.putAllSync(tileBuffer));
+      if (tileUrlsBuffer.isNotEmpty) {
+        await input.backend.writeTilesDirect(
+          storeName: input.storeName,
+          urls: tileUrlsBuffer,
+          bytess: tileBytesBuffer,
+        );
       }
-      await db.close();
 
       Isolate.exit();
     }
@@ -69,7 +66,7 @@ Future<void> _singleDownloadThread(
       url: networkUrl,
       obscuredQueryParams: input.obscuredQueryParams,
     );
-    final existingTile = await db.tiles.get(DatabaseTools.hash(matcherUrl));
+    final existingTile = await input.backend.readTile(url: matcherUrl);
 
     // Skip if tile already exists and user demands existing tile pruning
     if (input.skipExistingTiles && existingTile != null) {
@@ -130,18 +127,28 @@ Future<void> _singleDownloadThread(
     }
 
     // Write tile directly to database or place in buffer queue
-    final tile = DbTile(url: matcherUrl, bytes: response.bodyBytes);
+    //final tile = DbTile(url: matcherUrl, bytes: response.bodyBytes);
     if (input.maxBufferLength == 0) {
-      db.writeTxnSync(() => db.tiles.putSync(tile));
+      await input.backend.writeTile(
+        storeName: input.storeName,
+        url: matcherUrl,
+        bytes: response.bodyBytes,
+      );
     } else {
-      tileBuffer.add(tile);
+      tileUrlsBuffer.add(matcherUrl);
+      tileBytesBuffer.add(response.bodyBytes);
     }
 
     // Write buffer to database if necessary
-    final wasBufferReset = tileBuffer.length >= input.maxBufferLength;
+    final wasBufferReset = tileUrlsBuffer.length >= input.maxBufferLength;
     if (wasBufferReset) {
-      db.writeTxnSync(() => db.tiles.putAllSync(tileBuffer));
-      tileBuffer.clear();
+      await input.backend.writeTilesDirect(
+        storeName: input.storeName,
+        urls: tileUrlsBuffer,
+        bytess: tileBytesBuffer,
+      );
+      tileUrlsBuffer.clear();
+      tileBytesBuffer.clear();
     }
 
     // Return successful response to user

@@ -19,6 +19,7 @@ enum _WorkerCmdType {
   readTile,
   readLatestTile,
   writeTile,
+  writeTilesDirect,
   deleteTile,
   registerHitOrMiss,
   removeOldestTilesAboveLimit,
@@ -428,6 +429,7 @@ Future<void> _worker(
                     existingTile!
                       ..lastModified = DateTime.timestamp()
                       ..bytes = bytes!,
+                    mode: PutMode.update,
                   );
                   stores.putMany(
                     existingTile.stores
@@ -448,6 +450,98 @@ Future<void> _worker(
           );
 
           sendRes(id: cmd.id);
+
+          break;
+        case _WorkerCmdType.writeTilesDirect:
+          final storeName = cmd.args['storeName']! as String;
+          final urls = cmd.args['urls']! as List<String>;
+          final bytess = cmd.args['bytess']! as List<Uint8List>;
+
+          final tiles = root.box<ObjectBoxTile>();
+          final stores = root.box<ObjectBoxStore>();
+
+          final tilesQuery = tiles.query(ObjectBoxTile_.url.equals('')).build();
+          final storeQuery =
+              stores.query(ObjectBoxStore_.name.equals('')).build();
+
+          final storeAdjustments =
+              <String, ({int deltaSize, int deltaLength})>{};
+
+          root.runInTransaction(
+            TxMode.write,
+            () {
+              tiles.putMany(
+                List.generate(
+                  urls.length,
+                  (i) {
+                    final existingTile = (tilesQuery
+                          ..param(ObjectBoxTile_.url).value = urls[i])
+                        .findUnique();
+
+                    if (existingTile == null) {
+                      storeAdjustments[storeName] =
+                          storeAdjustments[storeName] == null
+                              ? (
+                                  deltaLength: 1,
+                                  deltaSize: bytess[i].lengthInBytes
+                                )
+                              : (
+                                  deltaLength:
+                                      storeAdjustments[storeName]!.deltaLength +
+                                          1,
+                                  deltaSize:
+                                      storeAdjustments[storeName]!.deltaSize +
+                                          bytess[i].lengthInBytes,
+                                );
+                    } else {
+                      for (final store in existingTile.stores) {
+                        storeAdjustments[store.name] =
+                            storeAdjustments[store.name] == null
+                                ? (
+                                    deltaLength: 0,
+                                    deltaSize:
+                                        -existingTile.bytes.lengthInBytes +
+                                            bytess[i].lengthInBytes,
+                                  )
+                                : (
+                                    deltaLength: storeAdjustments[store.name]!
+                                        .deltaLength,
+                                    deltaSize: storeAdjustments[store.name]!
+                                            .deltaSize +
+                                        (-existingTile.bytes.lengthInBytes +
+                                            bytess[i].lengthInBytes),
+                                  );
+                      }
+                    }
+
+                    return ObjectBoxTile(
+                      url: urls[i],
+                      lastModified: DateTime.timestamp(),
+                      bytes: bytess[i],
+                    );
+                  },
+                  growable: false,
+                ),
+              );
+
+              stores.putMany(
+                storeAdjustments.entries
+                    .map(
+                      (e) => (storeQuery
+                            ..param(ObjectBoxStore_.name).value = e.key)
+                          .findUnique()!
+                        ..length += e.value.deltaLength
+                        ..size += e.value.deltaSize,
+                    )
+                    .toList(),
+              );
+            },
+          );
+
+          sendRes(id: cmd.id);
+
+          tilesQuery.close();
+          storeQuery.close();
 
           break;
         case _WorkerCmdType.deleteTile:

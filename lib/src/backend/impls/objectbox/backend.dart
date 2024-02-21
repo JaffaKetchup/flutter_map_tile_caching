@@ -314,6 +314,17 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       );
 
   @override
+  Future<void> writeTilesDirect({
+    required String storeName,
+    required List<String> urls,
+    required List<Uint8List> bytess,
+  }) =>
+      _sendCmd(
+        type: _WorkerCmdType.writeTilesDirect,
+        args: {'storeName': storeName, 'urls': urls, 'bytess': bytess},
+      );
+
+  @override
   Future<bool?> deleteTile({
     required String storeName,
     required String url,

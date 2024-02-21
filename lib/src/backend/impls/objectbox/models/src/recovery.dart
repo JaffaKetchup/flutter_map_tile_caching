@@ -70,7 +70,7 @@ base class ObjectBoxRecovery {
     required this.refId,
     required this.storeName,
     required DownloadableRegion region,
-  })  : creationTime = DateTime.now(),
+  })  : creationTime = DateTime.timestamp(),
         typeId = region.when(
           rectangle: (_) => 0,
           circle: (_) => 1,

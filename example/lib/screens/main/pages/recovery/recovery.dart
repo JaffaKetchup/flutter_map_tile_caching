@@ -19,7 +19,8 @@ class RecoveryPage extends StatefulWidget {
 }
 
 class _RecoveryPageState extends State<RecoveryPage> {
-  late Future<List<RecoveredRegion>> _recoverableRegions;
+  late Future<Iterable<({bool isFailed, RecoveredRegion<BaseRegion> region})>>
+      _recoverableRegions;
 
   @override
   void initState() {
@@ -48,7 +49,7 @@ class _RecoveryPageState extends State<RecoveryPage> {
                 const Header(),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: FutureBuilder<List<RecoveredRegion>>(
+                  child: FutureBuilder(
                     future: _recoverableRegions,
                     builder: (context, all) => all.hasData
                         ? all.data!.isEmpty
