@@ -315,13 +315,23 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
   @override
   Future<bool?> deleteTile({
-    required String url,
     required String storeName,
+    required String url,
   }) async =>
       (await _sendCmd(
         type: _WorkerCmdType.deleteStore,
         args: {'storeName': storeName, 'url': url},
       ))!['wasOrphan'];
+
+  @override
+  Future<void> registerHitOrMiss({
+    required String storeName,
+    required bool hit,
+  }) =>
+      _sendCmd(
+        type: _WorkerCmdType.deleteStore,
+        args: {'storeName': storeName, 'hit': hit},
+      );
 
   @override
   Future<int> removeOldestTilesAboveLimit({

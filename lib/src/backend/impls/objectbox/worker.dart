@@ -20,6 +20,7 @@ enum _WorkerCmdType {
   readLatestTile,
   writeTile,
   deleteTile,
+  registerHitOrMiss,
   removeOldestTilesAboveLimit,
   removeTilesOlderThan,
   readMetadata,
@@ -471,6 +472,33 @@ Future<void> _worker(
           );
 
           query.close();
+
+          break;
+        case _WorkerCmdType.registerHitOrMiss:
+          final storeName = cmd.args['storeName']! as String;
+          final hit = cmd.args['hit']! as bool;
+
+          final stores = root.box<ObjectBoxStore>();
+
+          final query =
+              stores.query(ObjectBoxStore_.name.equals(storeName)).build();
+
+          root.runInTransaction(
+            TxMode.write,
+            () {
+              final store = query.findUnique() ??
+                  (throw StoreNotExists(storeName: storeName));
+              query.close();
+
+              stores.put(
+                store
+                  ..hits += hit ? 1 : 0
+                  ..misses += hit ? 0 : 1,
+              );
+            },
+          );
+
+          sendRes(id: cmd.id);
 
           break;
         case _WorkerCmdType.removeOldestTilesAboveLimit:

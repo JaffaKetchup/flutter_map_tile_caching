@@ -78,7 +78,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       unawaited(chunkEvents.close());
       await evict();
 
-      unawaited(_cacheHitMiss(hit: cacheHit));
+      unawaited(
+        FMTCBackendAccess.internal
+            .registerHitOrMiss(storeName: storeName, hit: cacheHit),
+      );
       return decode(await ImmutableBuffer.fromUint8List(bytes));
     }
 
@@ -227,22 +230,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     return finishSuccessfully(bytes: responseBytes, cacheHit: false);
   }
-
-  Future<void> _cacheHitMiss({required bool hit}) =>
-      (hit ? _cacheHitsQueue : _cacheMissesQueue).add(() async {
-        if (db.isOpen) {
-          await db.writeTxn(() async {
-            final store = db.isOpen ? await db.descriptor : null;
-            if (store == null) return;
-            if (hit) {
-              store.hits += 1;
-            } else {
-              store.misses += 1;
-            }
-            await db.storeDescriptor.put(store);
-          });
-        }
-      });
 
   @override
   Future<FMTCImageProvider> obtainKey(ImageConfiguration configuration) =>

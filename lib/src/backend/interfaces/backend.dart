@@ -194,6 +194,12 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
     required String url,
   });
 
+  /// Register a cache hit or miss on the specified store
+  Future<void> registerHitOrMiss({
+    required String storeName,
+    required bool hit,
+  });
+
   // TODO: Verify below and add to belower doc string
   //
   // It is recommended to invoke this operation as few times as possible, for
