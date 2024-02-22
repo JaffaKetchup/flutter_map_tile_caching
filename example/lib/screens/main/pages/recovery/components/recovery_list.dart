@@ -11,7 +11,7 @@ class RecoveryList extends StatefulWidget {
     required this.moveToDownloadPage,
   });
 
-  final Iterable<({bool isFailed, RecoveredRegion<BaseRegion> region})> all;
+  final Iterable<({bool isFailed, RecoveredRegion region})> all;
   final void Function() moveToDownloadPage;
 
   @override

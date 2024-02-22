@@ -145,7 +145,7 @@ base class ObjectBoxRecovery {
             : null;
 
   RecoveredRegion toRegion() => RecoveredRegion(
-        id: id,
+        id: refId,
         storeName: storeName,
         time: creationTime,
         bounds: typeId == 0

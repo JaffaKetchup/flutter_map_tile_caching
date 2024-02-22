@@ -9,9 +9,9 @@ part of flutter_map_tile_caching;
 /// See [RootRecovery] for information about the recovery system.
 ///
 /// The availability of [bounds], [line], [center] & [radius] depend on the
-/// type [R] of the recovered region. Use [toDownloadable] to restore a valid
-/// [DownloadableRegion].
-class RecoveredRegion<R extends BaseRegion> {
+/// represented type of the recovered region. Use [toDownloadable] to restore a
+/// valid [DownloadableRegion].
+class RecoveredRegion {
   /// A unique ID created for every bulk download operation
   ///
   /// Not actually used when converting to [DownloadableRegion].
@@ -68,16 +68,17 @@ class RecoveredRegion<R extends BaseRegion> {
   });
 
   /// Convert this region into a [BaseRegion]
-  R toRegion() => switch (R) {
-        RectangleRegion => RectangleRegion(bounds!),
-        CircleRegion => CircleRegion(center!, radius!),
-        LineRegion => LineRegion(this.line!, radius!),
-        CustomPolygonRegion => CustomPolygonRegion(this.line!),
-        _ => throw UnimplementedError(),
-      } as R;
+  ///
+  /// Determine which type of [BaseRegion] using [BaseRegion.when].
+  BaseRegion toRegion() {
+    if (bounds != null) return RectangleRegion(bounds!);
+    if (center != null) return CircleRegion(center!, radius!);
+    if (line != null && radius != null) return LineRegion(line!, radius!);
+    return CustomPolygonRegion(line!);
+  }
 
   /// Convert this region into a [DownloadableRegion]
-  DownloadableRegion<R> toDownloadable(
+  DownloadableRegion toDownloadable(
     TileLayer options, {
     Crs crs = const Epsg3857(),
   }) =>

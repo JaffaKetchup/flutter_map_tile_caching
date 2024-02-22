@@ -689,7 +689,7 @@ Future<void> _worker(
             data: {
               'metadata':
                   (jsonDecode(store.metadataJson) as Map<String, dynamic>)
-                      .cast<String, String>()
+                      .cast<String, String>(),
             },
           );
 
@@ -825,7 +825,8 @@ Future<void> _worker(
               'recoverableRegions': root
                   .box<ObjectBoxRecovery>()
                   .getAll()
-                  .map((r) => r.toRegion()),
+                  .map((r) => r.toRegion())
+                  .toList(),
             },
           );
 
@@ -864,14 +865,16 @@ Future<void> _worker(
 
           break;
         case _WorkerCmdType.cancelRecovery:
-          root
+          final id = cmd.args['id']! as int;
+
+          final query = root
               .box<ObjectBoxRecovery>()
-              .query(ObjectBoxRecovery_.refId.equals(cmd.args['id']! as int))
-              .build()
-            ..remove()
-            ..close();
+              .query(ObjectBoxRecovery_.refId.equals(id))
+              .build();
 
           sendRes(id: cmd.id);
+
+          query.close();
 
           break;
         case _WorkerCmdType.watchRecovery:

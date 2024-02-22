@@ -99,15 +99,8 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
     final id = ++_workerId;
     _workerRes[id] = Completer();
-
-    final stopwatch = Stopwatch()..start();
-
     _sendPort!.send((id: id, type: type, args: args));
     final res = await _workerRes[id]!.future;
-
-    print(stopwatch.elapsedMilliseconds);
-    stopwatch.stop();
-
     _workerRes.remove(id);
 
     final err = res?['error'];

@@ -201,7 +201,8 @@ class _StoreTileState extends State<StoreTile> {
                                               strokeWidth: 3,
                                             )
                                           : const Icon(
-                                              Icons.upload_file_rounded),
+                                              Icons.upload_file_rounded,
+                                            ),
                                       tooltip: 'Export Store',
                                       onPressed: _exportingProgress
                                           ? null
@@ -296,7 +297,8 @@ class _StoreTileState extends State<StoreTile> {
                                 ),
                                 const SizedBox(height: 5),
                                 deleteStoreButton(
-                                    isCurrentStore: isCurrentStore),
+                                  isCurrentStore: isCurrentStore,
+                                ),
                               ],
                             ),
                     ),

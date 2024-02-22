@@ -19,7 +19,7 @@ class RecoveryPage extends StatefulWidget {
 }
 
 class _RecoveryPageState extends State<RecoveryPage> {
-  late Future<Iterable<({bool isFailed, RecoveredRegion<BaseRegion> region})>>
+  late Future<Iterable<({bool isFailed, RecoveredRegion region})>>
       _recoverableRegions;
 
   @override

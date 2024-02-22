@@ -10,7 +10,7 @@ class RecoveryStartButton extends StatelessWidget {
   });
 
   final void Function() moveToDownloadPage;
-  final ({bool isFailed, RecoveredRegion<BaseRegion> region}) result;
+  final ({bool isFailed, RecoveredRegion region}) result;
 
   @override
   Widget build(BuildContext context) => FutureBuilder<int>(
