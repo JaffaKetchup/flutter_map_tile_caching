@@ -131,9 +131,6 @@ Future<void> _worker(
     _WorkerCmdType type,
     Map<String, dynamic> args,
   }) cmd in receivePort) {
-    // TODO: Remove
-    debugPrint('[FMTC] cmd recieved: $cmd');
-
     try {
       switch (cmd.type) {
         case _WorkerCmdType.initialise_:
@@ -224,10 +221,9 @@ Future<void> _worker(
                     hits: 0,
                     misses: 0,
                   ),
-                  mode: PutMode.insert,
+                  mode: PutMode.update,
                 );
-          } catch (e) {
-            debugPrint(e.runtimeType.toString());
+          } on UniqueViolationException {
             throw StoreAlreadyExists(storeName: storeName);
           }
 
@@ -690,7 +686,11 @@ Future<void> _worker(
 
           sendRes(
             id: cmd.id,
-            data: {'metadata': jsonDecode(store.metadataJson)},
+            data: {
+              'metadata':
+                  (jsonDecode(store.metadataJson) as Map<String, dynamic>)
+                      .cast<String, String>()
+            },
           );
 
           break;
@@ -910,8 +910,8 @@ Future<void> _worker(
 
           break;
       }
-    } catch (e) {
-      sendRes(id: cmd.id, data: {'error': e});
+    } catch (e, s) {
+      sendRes(id: cmd.id, data: {'error': e, 'stackTrace': s});
     }
   }
 }

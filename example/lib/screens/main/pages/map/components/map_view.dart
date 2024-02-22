@@ -58,7 +58,6 @@ class MapView extends StatelessWidget {
                     urlTemplate: urlTemplate,
                     userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
                     maxNativeZoom: 20,
-                    panBuffer: 5,
                     tileProvider: currentStore != null
                         ? FMTCStore(currentStore).getTileProvider(
                             settings: FMTCTileProviderSettings(

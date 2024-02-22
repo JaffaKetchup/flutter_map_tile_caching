@@ -99,8 +99,15 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
     final id = ++_workerId;
     _workerRes[id] = Completer();
+
+    final stopwatch = Stopwatch()..start();
+
     _sendPort!.send((id: id, type: type, args: args));
     final res = await _workerRes[id]!.future;
+
+    print(stopwatch.elapsedMilliseconds);
+    stopwatch.stop();
+
     _workerRes.remove(id);
 
     final err = res?['error'];
@@ -108,20 +115,15 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       if (err is FMTCBackendError) throw err;
 
       debugPrint('An unexpected error in the FMTC backend occurred:');
-      if (err is Error) {
-        debugPrint(err.toString());
-        debugPrint(err.stackTrace.toString());
-        throw err;
-      } else if (err is Exception) {
-        debugPrint(err.toString());
-      } else {
-        debugPrint(
-          'But it was not of type `Error` or `Exception`, it was type ${err.runtimeType}',
-        );
-      }
+      Error.throwWithStackTrace(
+        err,
+        StackTrace.fromString(
+          (res?['stackTrace']! as StackTrace).toString() +
+              StackTrace.current.toString(),
+        ),
+      );
     }
 
-    print('[FMTC] cmd finished: $id');
     return res;
   }
 
@@ -174,15 +176,13 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
           if (err is FMTCBackendError) throw err;
 
           debugPrint('An unexpected error in the FMTC backend occurred:');
-          if (err is Error) {
-            debugPrint(err.toString());
-            debugPrint(err.stackTrace.toString());
-            throw err;
-          } else {
-            debugPrint(
-              'But it was not of type `Error`, it was type ${err.runtimeType}',
-            );
-          }
+          Error.throwWithStackTrace(
+            err,
+            StackTrace.fromString(
+              (evt.data?['stackTrace']! as StackTrace).toString() +
+                  StackTrace.current.toString(),
+            ),
+          );
         }
 
         _workerRes[evt.id]!.complete(evt.data);

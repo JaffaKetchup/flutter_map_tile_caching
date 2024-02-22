@@ -51,12 +51,12 @@ AppBar buildHeader({
 
               /*final downloadProvider =
                   Provider.of<DownloaderProvider>(context, listen: false);
-             if (existingStore != null &&
+              if (existingStore != null &&
                   downloadProvider.selectedStore == existingStore) {
                 downloadProvider.setSelectedStore(newStore);
               }*/
 
-              await newStore.manage.create();
+              if (existingStore == null) await newStore.manage.create();
 
               // Designed to test both methods, even though only bulk would be
               // more efficient
