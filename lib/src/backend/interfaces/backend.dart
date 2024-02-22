@@ -329,7 +329,7 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
   /// Whenever this has an event, it is likely the other statistics will have
   /// changed.
   /// {@endtemplate}
-  Future<Stream<void>> watchRecovery({
+  Stream<void> watchRecovery({
     required bool triggerImmediately,
   });
 
@@ -344,7 +344,7 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
   /// Emits an event every time a change is made to a store (every time a
   /// statistic changes, which should include every time a tile is changed).
   /// {@endtemplate}
-  Future<Stream<void>> watchStores({
+  Stream<void> watchStores({
     required List<String> storeNames,
     required bool triggerImmediately,
   });

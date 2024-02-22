@@ -73,15 +73,14 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   @override
   String get friendlyIdentifier => 'ObjectBox';
 
-  void get expectInitialised => _sendPort ?? (throw RootUnavailable());
-
   @override
   Directory? rootDirectory;
 
-  // Worker communication
   SendPort? _sendPort;
-  final Map<int, Completer<Map<String, dynamic>?>> _workerRes = {};
-  late int _workerId;
+  void get expectInitialised => _sendPort ?? (throw RootUnavailable());
+  final _workerResOneShot = <int, Completer<Map<String, dynamic>?>>{};
+  final _workerResStreamed = <int, StreamSink<Map<String, dynamic>?>>{};
+  int _workerId = 0;
   late Completer<void> _workerComplete;
   late StreamSubscription<dynamic> _workerHandler;
 
@@ -91,18 +90,19 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   //late Timer _rotalDebouncer;
   //late String? _rotalStore;
 
-  Future<Map<String, dynamic>?> _sendCmd({
+  Future<Map<String, dynamic>?> _sendCmdOneShot({
     required _WorkerCmdType type,
     Map<String, dynamic> args = const {},
   }) async {
     expectInitialised;
 
-    final id = ++_workerId;
-    _workerRes[id] = Completer();
-    _sendPort!.send((id: id, type: type, args: args));
-    final res = await _workerRes[id]!.future;
-    _workerRes.remove(id);
+    final id = ++_workerId; // Create new unique ID
+    _workerResOneShot[id] = Completer(); // Will be completed by direct handler
+    _sendPort!.send((id: id, type: type, args: args)); // Send cmd
+    final res = await _workerResOneShot[id]!.future; // Await response
+    _workerResOneShot.remove(id); // Free memory
 
+    // Handle errors (if missed by direct handler)
     final err = res?['error'];
     if (err != null) {
       if (err is FMTCBackendError) throw err;
@@ -120,18 +120,40 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     return res;
   }
 
+  Stream<Map<String, dynamic>?> _sendCmdStreamed({
+    required _WorkerCmdType type,
+    Map<String, dynamic> args = const {},
+  }) async* {
+    expectInitialised;
+
+    final id = ++_workerId; // Create new unique ID
+    final controller = StreamController<Map<String, dynamic>?>(
+      onCancel: () async {
+        _workerResStreamed.remove(id); // Free memory
+        // Cancel the worker stream if the worker is alive
+        if (!_workerComplete.isCompleted) {
+          await _sendCmdOneShot(type: type.streamCancel!, args: {'id': id});
+        }
+      },
+    );
+    _workerResStreamed[id] =
+        controller.sink; // Will be inserted into by direct handler
+    _sendPort!.send((id: id, type: type, args: args)); // Send cmd
+
+    try {
+      yield* controller.stream; // Return responses
+    } finally {
+      // Goto `onCancel` once output listening cancelled
+      await controller.close();
+    }
+  }
+
   Future<void> initialise({
     required String? rootDirectory,
     required int maxDatabaseSize,
     required String? macosApplicationGroup,
   }) async {
     if (_sendPort != null) throw RootAlreadyInitialised();
-
-    // Reset non-comms-related non-resource-intensive state
-    _workerId = 0;
-    _workerRes.clear();
-    //_rotalStore = null;
-    //_rotalLength = 0;
 
     this.rootDirectory = await Directory(
       path.join(
@@ -142,11 +164,11 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     ).create(recursive: true);
 
     // Prepare to recieve `SendPort` from worker
-    _workerRes[0] = Completer();
+    _workerResOneShot[0] = Completer();
     unawaited(
-      _workerRes[0]!.future.then((res) {
+      _workerResOneShot[0]!.future.then((res) {
         _sendPort = res!['sendPort'];
-        _workerRes.remove(0);
+        _workerResOneShot.remove(0);
       }),
     );
 
@@ -164,6 +186,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
           return;
         }
 
+        // Handle errors
         final err = evt.data?['error'];
         if (err != null) {
           if (err is FMTCBackendError) throw err;
@@ -178,7 +201,11 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
           );
         }
 
-        _workerRes[evt.id]!.complete(evt.data);
+        if (evt.data?['expectStream'] == true) {
+          _workerResStreamed[evt.id]!.add(evt.data);
+        } else {
+          _workerResOneShot[evt.id]!.complete(evt.data);
+        }
       },
       onDone: () => _workerComplete.complete(),
     );
@@ -207,50 +234,58 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
     // Wait for all currently underway operations to complete before destroying
     // the isolate (if not `immediate`)
-    if (!immediate) await Future.wait(_workerRes.values.map((e) => e.future));
+    if (!immediate) {
+      await Future.wait(_workerResOneShot.values.map((e) => e.future));
+    }
 
-    // Send self-destruct cmd to worker, and don't wait for any response
-    unawaited(
-      _sendCmd(
-        type: _WorkerCmdType.destroy_,
-        args: {'deleteRoot': deleteRoot},
-      ),
+    // Send self-destruct cmd to worker, and wait for response and exit
+    await _sendCmdOneShot(
+      type: _WorkerCmdType.destroy,
+      args: {'deleteRoot': deleteRoot},
     );
-
-    // Wait for worker to exit (worker handler will exit and signal)
     await _workerComplete.future;
 
-    // Resource-intensive state cleanup only (other cleanup done during init)
+    // Destroy remaining worker refs
     _sendPort = null; // Indicate ready for re-init
-    await _workerHandler.cancel();
-    //_rotalDebouncer.cancel();
+    await _workerHandler.cancel(); // Stop response handler
 
     // Kill any remaining operations with an error (they'll never recieve a
     // response from the worker)
-    for (final completer in _workerRes.values) {
+    for (final completer in _workerResOneShot.values) {
       completer.complete({'error': RootUnavailable()});
     }
+    for (final streamController in List.of(_workerResStreamed.values)) {
+      await streamController.close();
+    }
+
+    // Reset state
+    _workerId = 0;
+    _workerResOneShot.clear();
+    _workerResStreamed.clear();
+    //_rotalStore = null;
+    //_rotalLength = 0;
+    //_rotalDebouncer.cancel();
 
     FMTCBackendAccess.internal = null;
   }
 
   @override
   Future<double> rootSize() async =>
-      (await _sendCmd(type: _WorkerCmdType.rootSize))!['size'];
+      (await _sendCmdOneShot(type: _WorkerCmdType.rootSize))!['size'];
 
   @override
   Future<int> rootLength() async =>
-      (await _sendCmd(type: _WorkerCmdType.rootLength))!['length'];
+      (await _sendCmdOneShot(type: _WorkerCmdType.rootLength))!['length'];
 
   @override
   Future<List<String>> listStores() async =>
-      (await _sendCmd(type: _WorkerCmdType.listStores))!['stores'];
+      (await _sendCmdOneShot(type: _WorkerCmdType.listStores))!['stores'];
 
   @override
   Future<bool> storeExists({
     required String storeName,
   }) async =>
-      (await _sendCmd(
+      (await _sendCmdOneShot(
         type: _WorkerCmdType.storeExists,
         args: {'storeName': storeName},
       ))!['exists'];
@@ -259,7 +294,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   Future<void> createStore({
     required String storeName,
   }) =>
-      _sendCmd(
+      _sendCmdOneShot(
         type: _WorkerCmdType.createStore,
         args: {'storeName': storeName},
       );
@@ -268,7 +303,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   Future<void> resetStore({
     required String storeName,
   }) =>
-      _sendCmd(
+      _sendCmdOneShot(
         type: _WorkerCmdType.resetStore,
         args: {'storeName': storeName},
       );
@@ -278,7 +313,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String currentStoreName,
     required String newStoreName,
   }) =>
-      _sendCmd(
+      _sendCmdOneShot(
         type: _WorkerCmdType.renameStore,
         args: {
           'currentStoreName': currentStoreName,
@@ -290,7 +325,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   Future<void> deleteStore({
     required String storeName,
   }) =>
-      _sendCmd(
+      _sendCmdOneShot(
         type: _WorkerCmdType.deleteStore,
         args: {'storeName': storeName},
       );
@@ -299,7 +334,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   Future<({double size, int length, int hits, int misses})> getStoreStats({
     required String storeName,
   }) async =>
-      (await _sendCmd(
+      (await _sendCmdOneShot(
         type: _WorkerCmdType.getStoreStats,
         args: {'storeName': storeName},
       ))!['stats'];
@@ -309,7 +344,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String storeName,
     required String url,
   }) async =>
-      (await _sendCmd(
+      (await _sendCmdOneShot(
         type: _WorkerCmdType.tileExistsInStore,
         args: {'storeName': storeName, 'url': url},
       ))!['exists'];
@@ -318,7 +353,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   Future<ObjectBoxTile?> readTile({
     required String url,
   }) async =>
-      (await _sendCmd(
+      (await _sendCmdOneShot(
         type: _WorkerCmdType.readTile,
         args: {'url': url},
       ))!['tile'];
@@ -327,7 +362,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   Future<ObjectBoxTile?> readLatestTile({
     required String storeName,
   }) async =>
-      (await _sendCmd(
+      (await _sendCmdOneShot(
         type: _WorkerCmdType.readLatestTile,
         args: {'storeName': storeName},
       ))!['tile'];
@@ -338,7 +373,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String url,
     required Uint8List? bytes,
   }) =>
-      _sendCmd(
+      _sendCmdOneShot(
         type: _WorkerCmdType.writeTile,
         args: {'storeName': storeName, 'url': url, 'bytes': bytes},
       );
@@ -349,7 +384,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required List<String> urls,
     required List<Uint8List> bytess,
   }) =>
-      _sendCmd(
+      _sendCmdOneShot(
         type: _WorkerCmdType.writeTilesDirect,
         args: {'storeName': storeName, 'urls': urls, 'bytess': bytess},
       );
@@ -359,7 +394,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String storeName,
     required String url,
   }) async =>
-      (await _sendCmd(
+      (await _sendCmdOneShot(
         type: _WorkerCmdType.deleteStore,
         args: {'storeName': storeName, 'url': url},
       ))!['wasOrphan'];
@@ -369,7 +404,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String storeName,
     required bool hit,
   }) =>
-      _sendCmd(
+      _sendCmdOneShot(
         type: _WorkerCmdType.registerHitOrMiss,
         args: {'storeName': storeName, 'hit': hit},
       );
@@ -379,7 +414,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String storeName,
     required int tilesLimit,
   }) async =>
-      (await _sendCmd(
+      (await _sendCmdOneShot(
         type: _WorkerCmdType.removeOldestTilesAboveLimit,
         args: {'storeName': storeName, 'tilesLimit': tilesLimit},
       ))!['numOrphans'];
@@ -428,7 +463,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String storeName,
     required DateTime expiry,
   }) async =>
-      (await _sendCmd(
+      (await _sendCmdOneShot(
         type: _WorkerCmdType.removeTilesOlderThan,
         args: {'storeName': storeName, 'expiry': expiry},
       ))!['numOrphans'];
@@ -437,7 +472,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   Future<Map<String, String>> readMetadata({
     required String storeName,
   }) async =>
-      (await _sendCmd(
+      (await _sendCmdOneShot(
         type: _WorkerCmdType.readMetadata,
         args: {'storeName': storeName},
       ))!['metadata'];
@@ -448,7 +483,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String key,
     required String value,
   }) =>
-      _sendCmd(
+      _sendCmdOneShot(
         type: _WorkerCmdType.setMetadata,
         args: {'storeName': storeName, 'key': key, 'value': value},
       );
@@ -458,7 +493,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String storeName,
     required Map<String, String> kvs,
   }) =>
-      _sendCmd(
+      _sendCmdOneShot(
         type: _WorkerCmdType.setBulkMetadata,
         args: {'storeName': storeName, 'kvs': kvs},
       );
@@ -468,7 +503,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String storeName,
     required String key,
   }) async =>
-      (await _sendCmd(
+      (await _sendCmdOneShot(
         type: _WorkerCmdType.removeMetadata,
         args: {'storeName': storeName, 'key': key},
       ))!['removedValue'];
@@ -477,14 +512,14 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   Future<void> resetMetadata({
     required String storeName,
   }) =>
-      _sendCmd(
+      _sendCmdOneShot(
         type: _WorkerCmdType.resetMetadata,
         args: {'storeName': storeName},
       );
 
   @override
   Future<List<RecoveredRegion>> listRecoverableRegions() async =>
-      (await _sendCmd(
+      (await _sendCmdOneShot(
         type: _WorkerCmdType.listRecoverableRegions,
       ))!['recoverableRegions'];
 
@@ -492,7 +527,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   Future<RecoveredRegion> getRecoverableRegion({
     required int id,
   }) async =>
-      (await _sendCmd(
+      (await _sendCmdOneShot(
         type: _WorkerCmdType.getRecoverableRegion,
       ))!['recoverableRegion'];
 
@@ -502,7 +537,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String storeName,
     required DownloadableRegion region,
   }) =>
-      _sendCmd(
+      _sendCmdOneShot(
         type: _WorkerCmdType.startRecovery,
         args: {'id': id, 'storeName': storeName, 'region': region},
       );
@@ -511,29 +546,27 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   Future<void> cancelRecovery({
     required int id,
   }) =>
-      _sendCmd(type: _WorkerCmdType.cancelRecovery, args: {'id': id});
+      _sendCmdOneShot(type: _WorkerCmdType.cancelRecovery, args: {'id': id});
 
   @override
-  Future<Stream<void>> watchRecovery({
+  Stream<void> watchRecovery({
     required bool triggerImmediately,
-  }) async =>
-      /*(await _sendCmd(
+  }) =>
+      _sendCmdStreamed(
         type: _WorkerCmdType.watchRecovery,
         args: {'triggerImmediately': triggerImmediately},
-      ))!['stream']*/
-      Stream.periodic(const Duration(seconds: 5));
+      );
 
   @override
-  Future<Stream<void>> watchStores({
+  Stream<void> watchStores({
     required List<String> storeNames,
     required bool triggerImmediately,
-  }) async =>
-      /*(await _sendCmd(
+  }) =>
+      _sendCmdStreamed(
         type: _WorkerCmdType.watchStores,
         args: {
           'storeNames': storeNames,
           'triggerImmediately': triggerImmediately,
         },
-      ))!['stream']*/
-      Stream.periodic(const Duration(seconds: 5));
+      );
 }

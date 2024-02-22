@@ -4,8 +4,8 @@
 part of 'backend.dart';
 
 enum _WorkerCmdType {
-  initialise_, // Only valid as a response
-  destroy_, // Only valid as a request
+  initialise_, // Only valid as a request
+  destroy,
   rootSize,
   rootLength,
   listStores,
@@ -33,8 +33,14 @@ enum _WorkerCmdType {
   getRecoverableRegion,
   startRecovery,
   cancelRecovery,
-  watchRecovery,
-  watchStores,
+  watchRecovery(streamCancel: cancelWatch),
+  watchStores(streamCancel: cancelWatch),
+  cancelWatch;
+
+  const _WorkerCmdType({this.streamCancel});
+
+  /// Command to execute when cancelling a streamed result
+  final _WorkerCmdType? streamCancel;
 }
 
 Future<void> _worker(
@@ -67,6 +73,9 @@ Future<void> _worker(
     id: 0,
     data: {'sendPort': receivePort.sendPort},
   );
+
+  // Create memory for streamed output subscription storage
+  final streamedOutputSubscriptions = <int, StreamSubscription>{};
 
   //! UTIL FUNCTIONS !//
 
@@ -135,11 +144,14 @@ Future<void> _worker(
       switch (cmd.type) {
         case _WorkerCmdType.initialise_:
           throw UnsupportedError('Invalid operation');
-        case _WorkerCmdType.destroy_:
+        case _WorkerCmdType.destroy:
           root.close();
+
           if (cmd.args['deleteRoot'] == true) {
             input.rootDirectory.deleteSync(recursive: true);
           }
+
+          sendRes(id: cmd.id);
 
           Isolate.exit();
         case _WorkerCmdType.rootSize:
@@ -221,7 +233,7 @@ Future<void> _worker(
                     hits: 0,
                     misses: 0,
                   ),
-                  mode: PutMode.update,
+                  mode: PutMode.insert,
                 );
           } on UniqueViolationException {
             throw StoreAlreadyExists(storeName: storeName);
@@ -325,7 +337,6 @@ Future<void> _worker(
             ..close();
 
           // TODO: Check tiles relations
-          // TODO: Integrate metadata
 
           sendRes(id: cmd.id);
 
@@ -880,36 +891,36 @@ Future<void> _worker(
         case _WorkerCmdType.watchRecovery:
           final triggerImmediately = cmd.args['triggerImmediately']! as bool;
 
-          sendRes(
-            id: cmd.id,
-            data: {
-              'stream': /* root
-                  .box<ObjectBoxRecovery>()
-                  .query()
-                  .watch(triggerImmediately: triggerImmediately)*/
-                  null,
-            },
-          );
+          streamedOutputSubscriptions[cmd.id] = root
+              .box<ObjectBoxRecovery>()
+              .query()
+              .watch(triggerImmediately: triggerImmediately)
+              .listen((_) => sendRes(id: cmd.id, data: {'expectStream': true}));
 
           break;
+
         case _WorkerCmdType.watchStores:
           final storeNames = cmd.args['storeNames']! as List<String>;
           final triggerImmediately = cmd.args['triggerImmediately']! as bool;
 
-          sendRes(
-            id: cmd.id,
-            data: {
-              'stream': /*root
-                  .box<ObjectBoxStore>()
-                  .query(
-                    storeNames.isEmpty
-                        ? null
-                        : ObjectBoxStore_.name.oneOf(storeNames),
-                  )
-                  .watch(triggerImmediately: triggerImmediately)*/
-                  null,
-            },
-          );
+          streamedOutputSubscriptions[cmd.id] = root
+              .box<ObjectBoxStore>()
+              .query(
+                storeNames.isEmpty
+                    ? null
+                    : ObjectBoxStore_.name.oneOf(storeNames),
+              )
+              .watch(triggerImmediately: triggerImmediately)
+              .listen((_) => sendRes(id: cmd.id, data: {'expectStream': true}));
+
+          break;
+        case _WorkerCmdType.cancelWatch:
+          final id = cmd.args['id']! as int;
+
+          await streamedOutputSubscriptions[id]?.cancel();
+          streamedOutputSubscriptions.remove(id);
+
+          sendRes(id: cmd.id);
 
           break;
       }
