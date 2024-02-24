@@ -50,6 +50,7 @@ Future<void> main(List<String> _) async {
         '[$requestTime] ${ctx.method} ${ctx.path}: ${ctx.response.statusCode}\t\t$servedSeaTiles sea tiles this session\t\t\t$lastRate tps  -  ${currentArtificialDelay.inMilliseconds} ms delay\n',
       );
     },
+    port: 7070,
   );
 
   // Handle keyboard events
@@ -141,7 +142,7 @@ Future<void> main(List<String> _) async {
   // Output basic console instructions
   console
     ..setTextStyle(italic: true)
-    ..write('Now serving tiles at 127.0.0.1:8080/{z}/{x}/{y}\n\n')
+    ..write('Now serving tiles at 127.0.0.1:7070/{z}/{x}/{y}\n\n')
     ..write("Press 'q' to kill server\n")
     ..write(
       'Press UP or DOWN to manipulate artificial delay by ${artificialDelayChangeAmount.inMilliseconds} ms\n\n',

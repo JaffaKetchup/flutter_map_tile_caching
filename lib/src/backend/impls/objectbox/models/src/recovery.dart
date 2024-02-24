@@ -155,12 +155,17 @@ base class ObjectBoxRecovery {
               )
             : null,
         center: typeId == 1 ? LatLng(circleCenterLat!, circleCenterLng!) : null,
-        line: typeId == 2 || typeId == 3
+        line: typeId == 2
             ? List.generate(
                 lineLats!.length,
                 (i) => LatLng(lineLats![i], lineLngs![i]),
               )
-            : null,
+            : typeId == 3
+                ? List.generate(
+                    customPolygonLats!.length,
+                    (i) => LatLng(customPolygonLats![i], customPolygonLngs![i]),
+                  )
+                : null,
         radius: typeId == 1
             ? circleRadius!
             : typeId == 2

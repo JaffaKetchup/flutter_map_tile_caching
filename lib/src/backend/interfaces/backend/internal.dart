@@ -5,64 +5,27 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import '../../../flutter_map_tile_caching.dart';
-import '../export_internal.dart';
-
-/// {@template fmtc.backend.backend}
-/// An abstract interface that FMTC will use to communicate with a storage
-/// 'backend' (usually one root)
-///
-/// See also [FMTCBackendInternal], which has the actual method signatures. This
-/// is provided as a means to warn users to avoid using the backend directly.
-///
-/// To implementers:
-///  * Provide a seperate [FMTCBackend] & [FMTCBackendInternal] implementation
-///    (both public scope), and a private scope `FMTCBackendImpl`
-///  * Always make [FMTCBackendInternal] a singleton 'cover-up' for
-///    `FMTCBackendImpl`, without a constructor
-///  * Prefer throwing included implementation-generic errors/exceptions
-///  * Ensure the [FMTCBackendInternal]/impl can be sent through isolates
-///  * Always set the [FMTCBackendAccess.internal] property as necessary
-///
-/// See the default [FMTCObjectBoxBackend] implementation for an example.
-/// {@endtemplate}
-abstract interface class FMTCBackend<Internal extends FMTCBackendInternal> {
-  /// {@macro fmtc.backend.backend}
-  ///
-  /// This constructor does not initialise this backend, also invoke
-  /// [initialise].
-  const FMTCBackend();
-
-  /// {@template fmtc.backend.inititialise}
-  /// Initialise this backend, and create the root
-  ///
-  /// Prefer to leave [rootDirectory] as null, which will use
-  /// `getApplicationDocumentsDirectory()`. Alternatively, pass a custom
-  /// directory - it is recommended to not use a typical cache directory, as the
-  /// OS can clear these without notice at any time.
-  /// {@endtemplate}
-  Future<void> initialise({
-    String? rootDirectory,
-  });
-
-  /// {@template fmtc.backend.uninitialise}
-  /// Uninitialise this backend, and release whatever resources it is consuming
-  ///
-  /// If [deleteRoot] is `true`, then the root will be permanently deleted.
-  /// {@endtemplate}
-  Future<void> uninitialise({
-    bool deleteRoot = false,
-  });
-}
+import '../../../../flutter_map_tile_caching.dart';
+import '../../export_internal.dart';
 
 /// An abstract interface that FMTC will use to communicate with a storage
-/// 'backend' (usually one root)
+/// 'backend' (usually one root), from a 'normal' thread (likely the UI thread)
+///
+/// Should implement methods that operate in another isolate/thread to avoid
+/// blocking the normal thread. In this case, [FMTCBackendInternalThreadSafe]
+/// must also be implemented, which should not operate in another thread, must be
+/// sendable between isolates (because it will already be operated in another
+/// thread), and must be suitable for simultaneous initialisation across multiple
+/// threads.
+///
+/// Should be set in [FMTCBackendAccess] when ready to use, and unset when not.
 ///
 /// Methods with a doc template in the doc string are for 'direct' public
 /// invocation.
 ///
 /// See [FMTCBackend] for more information.
-abstract interface class FMTCBackendInternal with FMTCBackendAccess {
+abstract interface class FMTCBackendInternal
+    with FMTCBackendAccess, FMTCBackendAccessThreadSafe {
   const FMTCBackendInternal._();
 
   /// Generic description/name of this backend
@@ -151,8 +114,12 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
   });
 
   /// Retrieve a raw tile by the specified URL
+  ///
+  /// If [storeName] is specified, the tile will be limited to the specified
+  /// store - if it exists in another store, it will not be returned.
   Future<BackendTile?> readTile({
     required String url,
+    String? storeName,
   });
 
   /// {@template fmtc.backend.readLatestTile}
@@ -176,19 +143,6 @@ abstract interface class FMTCBackendInternal with FMTCBackendAccess {
     required String storeName,
     required String url,
     required Uint8List? bytes,
-  });
-
-  /// Create multiple tiles (given given their respective [urls] and [bytess]) in
-  /// the specified store
-  ///
-  /// Logic is much simpler than [writeTile] and designed to be faster to allow
-  /// for high bulk downloading throughputs.
-  ///
-  /// Existing tiles will always be overwritten if they exist.
-  Future<void> writeTilesDirect({
-    required String storeName,
-    required List<String> urls,
-    required List<Uint8List> bytess,
   });
 
   /// Remove the tile from the specified store, deleting it if was orphaned

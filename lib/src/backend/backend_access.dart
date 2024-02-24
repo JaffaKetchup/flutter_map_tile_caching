@@ -28,3 +28,22 @@ abstract mixin class FMTCBackendAccess {
     _internal = newInternal;
   }
 }
+
+@meta.internal
+abstract mixin class FMTCBackendAccessThreadSafe {
+  static FMTCBackendInternalThreadSafe? _internal;
+
+  @meta.internal
+  @meta.experimental
+  static FMTCBackendInternalThreadSafe get internal =>
+      _internal ?? (throw RootUnavailable());
+
+  @meta.internal
+  @meta.protected
+  static set internal(FMTCBackendInternalThreadSafe? newInternal) {
+    if (newInternal != null && _internal != null) {
+      throw RootAlreadyInitialised();
+    }
+    _internal = newInternal;
+  }
+}

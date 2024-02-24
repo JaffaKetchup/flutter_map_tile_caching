@@ -14,7 +14,7 @@ Future<void> _singleDownloadThread(
     Uint8List? seaTileBytes,
     Iterable<RegExp> obscuredQueryParams,
     Map<String, String> headers,
-    FMTCBackendInternal backend,
+    FMTCBackendInternalThreadSafe backend,
   }) input,
 ) async {
   // Setup two-way communications
@@ -32,6 +32,8 @@ Future<void> _singleDownloadThread(
   final tileUrlsBuffer = <String>[];
   final tileBytesBuffer = <Uint8List>[];
 
+  await input.backend.initialise();
+
   while (true) {
     // Request new tile coords
     send(0);
@@ -45,12 +47,14 @@ Future<void> _singleDownloadThread(
       httpClient.close();
 
       if (tileUrlsBuffer.isNotEmpty) {
-        await input.backend.writeTilesDirect(
+        await input.backend.htWriteTiles(
           storeName: input.storeName,
           urls: tileUrlsBuffer,
           bytess: tileBytesBuffer,
         );
       }
+
+      await input.backend.uninitialise();
 
       Isolate.exit();
     }
@@ -66,7 +70,10 @@ Future<void> _singleDownloadThread(
       url: networkUrl,
       obscuredQueryParams: input.obscuredQueryParams,
     );
-    final existingTile = await input.backend.readTile(url: matcherUrl);
+    final existingTile = await input.backend.readTile(
+      url: matcherUrl,
+      storeName: input.storeName, // TODO: Test
+    );
 
     // Skip if tile already exists and user demands existing tile pruning
     if (input.skipExistingTiles && existingTile != null) {
@@ -129,7 +136,7 @@ Future<void> _singleDownloadThread(
     // Write tile directly to database or place in buffer queue
     //final tile = DbTile(url: matcherUrl, bytes: response.bodyBytes);
     if (input.maxBufferLength == 0) {
-      await input.backend.writeTile(
+      await input.backend.htWriteTile(
         storeName: input.storeName,
         url: matcherUrl,
         bytes: response.bodyBytes,
@@ -142,7 +149,7 @@ Future<void> _singleDownloadThread(
     // Write buffer to database if necessary
     final wasBufferReset = tileUrlsBuffer.length >= input.maxBufferLength;
     if (wasBufferReset) {
-      await input.backend.writeTilesDirect(
+      await input.backend.htWriteTiles(
         storeName: input.storeName,
         urls: tileUrlsBuffer,
         bytess: tileBytesBuffer,

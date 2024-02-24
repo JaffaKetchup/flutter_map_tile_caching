@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../configure_download/configure_download.dart';
+import '../../region_selection/state/region_selection_provider.dart';
 
 class RecoveryStartButton extends StatelessWidget {
   const RecoveryStartButton({
@@ -26,35 +30,32 @@ class RecoveryStartButton extends StatelessWidget {
                 onPressed: !result.isFailed
                     ? null
                     : () async {
-                        //TODO: Implement
-                        /* final DownloaderProvider downloadProvider =
-                        Provider.of<DownloaderProvider>(
-                      context,
-                      listen: false,
-                    )
-                          ..region = region.toRegion(
-                            rectangle: (r) => r,
-                            circle: (c) => c,
-                            line: (l) => l,
-                          )
-                          ..minZoom = region.minZoom
-                          ..maxZoom = region.maxZoom
-                          ..setSelectedStore(
-                            FMTC.instance(region.storeName),
-                          )
-                          ..regionTiles = tiles.data;
-  
-                    await Navigator.of(context).push(
-                      MaterialPageRoute<String>(
-                        builder: (BuildContext context) =>
-                            DownloadRegionPopup(
-                          region: downloadProvider.region!,
-                        ),
-                        fullscreenDialog: true,
-                      ),
-                    );
-  
-                    moveToDownloadPage();*/
+                        final regionSelectionProvider =
+                            Provider.of<RegionSelectionProvider>(
+                          context,
+                          listen: false,
+                        )
+                              ..region = result.region.toRegion()
+                              ..minZoom = result.region.minZoom
+                              ..maxZoom = result.region.maxZoom
+                              ..setSelectedStore(
+                                FMTCStore(result.region.storeName),
+                              );
+                        // TODO: Check
+                        //..regionTiles = tiles.data;
+
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<String>(
+                            builder: (context) => ConfigureDownloadPopup(
+                              region: regionSelectionProvider.region!,
+                              minZoom: result.region.minZoom,
+                              maxZoom: result.region.maxZoom,
+                            ),
+                            fullscreenDialog: true,
+                          ),
+                        );
+
+                        moveToDownloadPage();
                       },
               )
             : const Padding(

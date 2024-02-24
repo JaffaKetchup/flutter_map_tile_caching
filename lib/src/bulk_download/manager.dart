@@ -16,7 +16,7 @@ Future<void> _downloadManager(
     Duration? maxReportInterval,
     int? rateLimit,
     Iterable<RegExp> obscuredQueryParams,
-    FMTCBackendInternal backend,
+    FMTCBackendInternalThreadSafe backend,
   }) input,
 ) async {
   // Precalculate shared inputs for all threads

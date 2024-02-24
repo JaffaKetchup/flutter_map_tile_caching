@@ -19,7 +19,6 @@ enum _WorkerCmdType {
   readTile,
   readLatestTile,
   writeTile,
-  writeTilesDirect,
   deleteTile,
   registerHitOrMiss,
   removeOldestTilesAboveLimit,
@@ -71,7 +70,7 @@ Future<void> _worker(
   // Respond with comms channel for future cmds
   sendRes(
     id: 0,
-    data: {'sendPort': receivePort.sendPort},
+    data: {'sendPort': receivePort.sendPort, 'storeReference': root.reference},
   );
 
   // Create memory for streamed output subscription storage
@@ -100,37 +99,38 @@ Future<void> _worker(
   ///
   /// Returns whether each tile was actually deleted (whether it was an orphan),
   /// in iteration order of [tilesQuery.find].
-  Iterable<bool> deleteTiles({
+  List<bool> deleteTiles({
     required String storeName,
     required Query<ObjectBoxTile> tilesQuery,
   }) {
     final stores = root.box<ObjectBoxStore>();
     final tiles = root.box<ObjectBoxTile>();
 
-    return tilesQuery.find().map((tile) {
-      // For the correct store, adjust the statistics
-      for (final store in tile.stores) {
-        if (store.name != storeName) continue;
-        stores.put(
-          store
-            ..length -= 1
-            ..size -= tile.bytes.lengthInBytes,
-          mode: PutMode.update,
-        );
-        break;
-      }
+    return tilesQuery.find().map(
+      (tile) {
+        // For the correct store, adjust the statistics
+        for (final store in tile.stores) {
+          if (store.name != storeName) continue;
+          stores.put(
+            store
+              ..length -= 1
+              ..size -= tile.bytes.lengthInBytes,
+            mode: PutMode.update,
+          );
+          break;
+        }
 
-      // Remove the store relation from the tile
-      tile.stores.removeWhere((store) => store.name == storeName);
+        // Remove the store relation from the tile
+        tile.stores.removeWhere((store) => store.name == storeName);
 
-      // Delete the tile if it belongs to no stores
-      if (tile.stores.isEmpty) return tiles.remove(tile.id);
+        // Delete the tile if it belongs to no stores
+        if (tile.stores.isEmpty) return tiles.remove(tile.id);
 
-      // Otherwise just update the tile
-      // TODO: Check this works
-      tile.stores.applyToDb(mode: PutMode.update);
-      return false;
-    });
+        // Otherwise just update the tile
+        tile.stores.applyToDb(mode: PutMode.update);
+        return false;
+      },
+    ).toList();
   }
 
   //! MAIN LOOP !//
@@ -311,18 +311,26 @@ Future<void> _worker(
 
           sendRes(id: cmd.id);
         case _WorkerCmdType.deleteStore:
-          root
-              .box<ObjectBoxStore>()
-              .query(
-                ObjectBoxStore_.name.equals(cmd.args['storeName']! as String),
-              )
-              .build()
+          final storeName = cmd.args['storeName']! as String;
+
+          final stores = root.box<ObjectBoxStore>();
+
+          final tilesQuery = (root.box<ObjectBoxTile>().query()
+                ..linkMany(
+                  ObjectBoxTile_.stores,
+                  ObjectBoxStore_.name.equals(storeName),
+                ))
+              .build();
+
+          deleteTiles(storeName: storeName, tilesQuery: tilesQuery);
+
+          stores.query(ObjectBoxStore_.name.equals(storeName)).build()
             ..remove()
             ..close();
 
-          // TODO: Check tiles relations
-
           sendRes(id: cmd.id);
+
+          tilesQuery.close();
         case _WorkerCmdType.tileExistsInStore:
           final storeName = cmd.args['storeName']! as String;
           final url = cmd.args['url']! as String;
@@ -340,11 +348,18 @@ Future<void> _worker(
           query.close();
         case _WorkerCmdType.readTile:
           final url = cmd.args['url']! as String;
+          final storeName = cmd.args['storeName'] as String?;
 
-          final query = root
-              .box<ObjectBoxTile>()
-              .query(ObjectBoxTile_.url.equals(url))
-              .build();
+          final stores = root.box<ObjectBoxTile>();
+
+          final query = storeName == null
+              ? stores.query(ObjectBoxTile_.url.equals(url)).build()
+              : (stores.query(ObjectBoxTile_.url.equals(url))
+                    ..linkMany(
+                      ObjectBoxTile_.stores,
+                      ObjectBoxStore_.name.equals(storeName),
+                    ))
+                  .build();
 
           sendRes(id: cmd.id, data: {'tile': query.findUnique()});
 
@@ -366,6 +381,7 @@ Future<void> _worker(
 
           query.close();
         case _WorkerCmdType.writeTile:
+          // TODO: Test all
           final storeName = cmd.args['storeName']! as String;
           final url = cmd.args['url']! as String;
           final bytes = cmd.args['bytes'] as Uint8List?;
@@ -438,96 +454,6 @@ Future<void> _worker(
           );
 
           sendRes(id: cmd.id);
-        case _WorkerCmdType.writeTilesDirect:
-          final storeName = cmd.args['storeName']! as String;
-          final urls = cmd.args['urls']! as List<String>;
-          final bytess = cmd.args['bytess']! as List<Uint8List>;
-
-          final tiles = root.box<ObjectBoxTile>();
-          final stores = root.box<ObjectBoxStore>();
-
-          final tilesQuery = tiles.query(ObjectBoxTile_.url.equals('')).build();
-          final storeQuery =
-              stores.query(ObjectBoxStore_.name.equals('')).build();
-
-          final storeAdjustments =
-              <String, ({int deltaSize, int deltaLength})>{};
-
-          root.runInTransaction(
-            TxMode.write,
-            () {
-              tiles.putMany(
-                List.generate(
-                  urls.length,
-                  (i) {
-                    final existingTile = (tilesQuery
-                          ..param(ObjectBoxTile_.url).value = urls[i])
-                        .findUnique();
-
-                    if (existingTile == null) {
-                      storeAdjustments[storeName] =
-                          storeAdjustments[storeName] == null
-                              ? (
-                                  deltaLength: 1,
-                                  deltaSize: bytess[i].lengthInBytes
-                                )
-                              : (
-                                  deltaLength:
-                                      storeAdjustments[storeName]!.deltaLength +
-                                          1,
-                                  deltaSize:
-                                      storeAdjustments[storeName]!.deltaSize +
-                                          bytess[i].lengthInBytes,
-                                );
-                    } else {
-                      for (final store in existingTile.stores) {
-                        storeAdjustments[store.name] =
-                            storeAdjustments[store.name] == null
-                                ? (
-                                    deltaLength: 0,
-                                    deltaSize:
-                                        -existingTile.bytes.lengthInBytes +
-                                            bytess[i].lengthInBytes,
-                                  )
-                                : (
-                                    deltaLength: storeAdjustments[store.name]!
-                                        .deltaLength,
-                                    deltaSize: storeAdjustments[store.name]!
-                                            .deltaSize +
-                                        (-existingTile.bytes.lengthInBytes +
-                                            bytess[i].lengthInBytes),
-                                  );
-                      }
-                    }
-
-                    return ObjectBoxTile(
-                      url: urls[i],
-                      lastModified: DateTime.timestamp(),
-                      bytes: bytess[i],
-                    );
-                  },
-                  growable: false,
-                ),
-              );
-
-              stores.putMany(
-                storeAdjustments.entries
-                    .map(
-                      (e) => (storeQuery
-                            ..param(ObjectBoxStore_.name).value = e.key)
-                          .findUnique()!
-                        ..length += e.value.deltaLength
-                        ..size += e.value.deltaSize,
-                    )
-                    .toList(),
-              );
-            },
-          );
-
-          sendRes(id: cmd.id);
-
-          tilesQuery.close();
-          storeQuery.close();
         case _WorkerCmdType.deleteTile:
           final storeName = cmd.args['storeName']! as String;
           final url = cmd.args['url']! as String;
@@ -823,14 +749,14 @@ Future<void> _worker(
         case _WorkerCmdType.cancelRecovery:
           final id = cmd.args['id']! as int;
 
-          final query = root
+          root
               .box<ObjectBoxRecovery>()
               .query(ObjectBoxRecovery_.refId.equals(id))
-              .build();
+              .build()
+            ..remove()
+            ..close();
 
           sendRes(id: cmd.id);
-
-          query.close();
         case _WorkerCmdType.watchRecovery:
           final triggerImmediately = cmd.args['triggerImmediately']! as bool;
 

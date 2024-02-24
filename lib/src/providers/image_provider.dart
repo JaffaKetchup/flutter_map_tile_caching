@@ -91,8 +91,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       obscuredQueryParams: provider.settings.obscuredQueryParams,
     );
 
-    final existingTile =
-        await FMTCBackendAccess.internal.readTile(url: matcherUrl);
+    final existingTile = await FMTCBackendAccess.internal.readTile(
+      url: matcherUrl,
+      storeName: storeName,
+    );
 
     final needsCreating = existingTile == null;
     final needsUpdating = !needsCreating &&

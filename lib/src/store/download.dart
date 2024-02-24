@@ -184,7 +184,7 @@ class DownloadManagement {
         obscuredQueryParams:
             obscuredQueryParams?.map((e) => RegExp('$e=[^&]*')) ??
                 FMTCTileProviderSettings.instance.obscuredQueryParams,
-        backend: FMTCBackendAccess.internal,
+        backend: FMTCBackendAccessThreadSafe.internal,
       ),
       onExit: receivePort.sendPort,
       debugName: '[FMTC] Master Bulk Download Thread',
