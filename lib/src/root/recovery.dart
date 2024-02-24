@@ -21,10 +21,10 @@ part of flutter_map_tile_caching;
 /// is also no longer in memory, and therefore stopped unexpectedly.
 /// {@endtemplate}
 class RootRecovery {
-  static RootRecovery? _instance;
   RootRecovery._() {
     _instance = this;
   }
+  static RootRecovery? _instance;
 
   /// Determines which downloads are known to be on-going, and therefore
   /// can be ignored when fetching [recoverableRegions]

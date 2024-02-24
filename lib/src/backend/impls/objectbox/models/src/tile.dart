@@ -10,6 +10,12 @@ import 'store.dart';
 
 @Entity()
 base class ObjectBoxTile extends BackendTile {
+  ObjectBoxTile({
+    required this.url,
+    required this.lastModified,
+    required this.bytes,
+  });
+
   @Id()
   int id = 0;
 
@@ -28,10 +34,4 @@ base class ObjectBoxTile extends BackendTile {
 
   @Index()
   final stores = ToMany<ObjectBoxStore>();
-
-  ObjectBoxTile({
-    required this.url,
-    required this.lastModified,
-    required this.bytes,
-  });
 }

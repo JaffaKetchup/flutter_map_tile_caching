@@ -139,12 +139,12 @@ class _ImportStorePopupState extends State<ImportStorePopup> {
 }
 
 class _ImportStore {
-  final Future result;
-  List<String>? collisionInfo;
-  Completer<bool> collisionResolution;
-
   _ImportStore(
     this.result, {
     required this.collisionInfo,
   }) : collisionResolution = Completer();
+
+  final Future result;
+  List<String>? collisionInfo;
+  Completer<bool> collisionResolution;
 }

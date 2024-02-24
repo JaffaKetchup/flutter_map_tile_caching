@@ -144,21 +144,22 @@ class _PrimaryPane extends StatelessWidget {
                     direction: layoutDirection,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      provider.openAdjustZoomLevelsSlider
-                          ? IconButton.outlined(
-                              icon: Icon(
-                                layoutDirection == Axis.vertical
-                                    ? Icons.arrow_left
-                                    : Icons.arrow_drop_down,
-                              ),
-                              onPressed: () =>
-                                  provider.openAdjustZoomLevelsSlider = false,
-                            )
-                          : IconButton(
-                              icon: const Icon(Icons.zoom_in),
-                              onPressed: () =>
-                                  provider.openAdjustZoomLevelsSlider = true,
-                            ),
+                      if (provider.openAdjustZoomLevelsSlider)
+                        IconButton.outlined(
+                          icon: Icon(
+                            layoutDirection == Axis.vertical
+                                ? Icons.arrow_left
+                                : Icons.arrow_drop_down,
+                          ),
+                          onPressed: () =>
+                              provider.openAdjustZoomLevelsSlider = false,
+                        )
+                      else
+                        IconButton(
+                          icon: const Icon(Icons.zoom_in),
+                          onPressed: () =>
+                              provider.openAdjustZoomLevelsSlider = true,
+                        ),
                       const SizedBox.square(dimension: 12),
                       IconButton.filled(
                         icon: const Icon(Icons.done),

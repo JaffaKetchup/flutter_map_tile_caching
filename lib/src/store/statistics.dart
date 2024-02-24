@@ -51,7 +51,7 @@ class StoreStats {
   Stream<void> watchChanges({
     bool triggerImmediately = false,
   }) async* {
-    final stream = await FMTCBackendAccess.internal.watchStores(
+    final stream = FMTCBackendAccess.internal.watchStores(
       storeNames: [_storeName],
       triggerImmediately: triggerImmediately,
     );

@@ -66,8 +66,6 @@ class _RegionSelectionPageState extends State<RegionSelectionPage> {
           provider
             ..clearCoordinates()
             ..addCoordinate(provider.currentNewPointPos);
-
-          break;
         case RegionType.circle:
           if (coords.length == 2) {
             provider.region = CircleRegion(
@@ -81,15 +79,11 @@ class _RegionSelectionPageState extends State<RegionSelectionPage> {
           provider
             ..clearCoordinates()
             ..addCoordinate(provider.currentNewPointPos);
-
-          break;
         case RegionType.line:
           provider.region = LineRegion(coords, provider.lineRadius);
-          break;
         case RegionType.customPolygon:
           if (!provider.isCustomPolygonComplete) break;
           provider.region = CustomPolygonRegion(coords);
-          break;
       }
     },
     onSecondaryTap: (_, __) =>

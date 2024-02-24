@@ -12,6 +12,21 @@ part of flutter_map_tile_caching;
 /// represented type of the recovered region. Use [toDownloadable] to restore a
 /// valid [DownloadableRegion].
 class RecoveredRegion {
+  @internal
+  RecoveredRegion({
+    required this.id,
+    required this.storeName,
+    required this.time,
+    required this.minZoom,
+    required this.maxZoom,
+    required this.start,
+    required this.end,
+    required this.bounds,
+    required this.center,
+    required this.line,
+    required this.radius,
+  });
+
   /// A unique ID created for every bulk download operation
   ///
   /// Not actually used when converting to [DownloadableRegion].
@@ -51,21 +66,6 @@ class RecoveredRegion {
 
   /// The radius of a circular region
   final double? radius;
-
-  @internal
-  RecoveredRegion({
-    required this.id,
-    required this.storeName,
-    required this.time,
-    required this.minZoom,
-    required this.maxZoom,
-    required this.start,
-    required this.end,
-    required this.bounds,
-    required this.center,
-    required this.line,
-    required this.radius,
-  });
 
   /// Convert this region into a [BaseRegion]
   ///

@@ -17,6 +17,14 @@ import '../misc/obscure_query_params.dart';
 
 /// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
 class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
+  /// Create a specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
+  FMTCImageProvider({
+    required this.storeName,
+    required this.provider,
+    required this.options,
+    required this.coords,
+  });
+
   /// The name of the store associated with this provider
   final String storeName;
 
@@ -28,14 +36,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
   /// The coordinates of the tile to be fetched
   final TileCoordinates coords;
-
-  /// Create a specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
-  FMTCImageProvider({
-    required this.storeName,
-    required this.provider,
-    required this.options,
-    required this.coords,
-  });
 
   @override
   ImageStreamCompleter loadImage(

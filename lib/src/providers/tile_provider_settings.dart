@@ -27,6 +27,32 @@ enum CacheBehavior {
 
 /// Settings for an [FMTCTileProvider]
 class FMTCTileProviderSettings {
+  /// Create new settings for an [FMTCTileProvider], and set the [instance]
+  ///
+  /// To access the existing settings, if any, get [instance].
+  factory FMTCTileProviderSettings({
+    CacheBehavior behavior = CacheBehavior.cacheFirst,
+    Duration cachedValidDuration = const Duration(days: 16),
+    int maxStoreLength = 0,
+    List<String> obscuredQueryParams = const [],
+    FMTCBrowsingErrorHandler? errorHandler,
+  }) =>
+      _instance = FMTCTileProviderSettings._(
+        behavior: behavior,
+        cachedValidDuration: cachedValidDuration,
+        maxStoreLength: maxStoreLength,
+        obscuredQueryParams: obscuredQueryParams.map((e) => RegExp('$e=[^&]*')),
+        errorHandler: errorHandler,
+      );
+
+  FMTCTileProviderSettings._({
+    required this.behavior,
+    required this.cachedValidDuration,
+    required this.maxStoreLength,
+    required this.obscuredQueryParams,
+    required this.errorHandler,
+  });
+
   /// Get an existing instance, if one has been constructed, or get the default
   /// intial configuration
   static FMTCTileProviderSettings get instance => _instance;
@@ -74,32 +100,6 @@ class FMTCTileProviderSettings {
   ///
   /// Even if this is defined, the error will still be (re)thrown.
   void Function(FMTCBrowsingError exception)? errorHandler;
-
-  /// Create new settings for an [FMTCTileProvider], and set the [instance]
-  ///
-  /// To access the existing settings, if any, get [instance].
-  factory FMTCTileProviderSettings({
-    CacheBehavior behavior = CacheBehavior.cacheFirst,
-    Duration cachedValidDuration = const Duration(days: 16),
-    int maxStoreLength = 0,
-    List<String> obscuredQueryParams = const [],
-    FMTCBrowsingErrorHandler? errorHandler,
-  }) =>
-      _instance = FMTCTileProviderSettings._(
-        behavior: behavior,
-        cachedValidDuration: cachedValidDuration,
-        maxStoreLength: maxStoreLength,
-        obscuredQueryParams: obscuredQueryParams.map((e) => RegExp('$e=[^&]*')),
-        errorHandler: errorHandler,
-      );
-
-  FMTCTileProviderSettings._({
-    required this.behavior,
-    required this.cachedValidDuration,
-    required this.maxStoreLength,
-    required this.obscuredQueryParams,
-    required this.errorHandler,
-  });
 
   @override
   bool operator ==(Object other) =>

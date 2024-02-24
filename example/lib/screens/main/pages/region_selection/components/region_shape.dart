@@ -51,7 +51,6 @@ class RegionShape extends StatelessWidget {
                   bounds.southEast,
                   bounds.southWest,
                 ];
-                break;
               case RegionType.circle:
                 holePoints = CircleRegion(
                   provider.coordinates[0],
@@ -63,7 +62,6 @@ class RegionShape extends StatelessWidget {
                       ) /
                       1000,
                 ).toOutline().toList();
-                break;
               case RegionType.line:
                 throw Error();
               case RegionType.customPolygon:
@@ -71,11 +69,11 @@ class RegionShape extends StatelessWidget {
                     ? provider.coordinates
                     : [
                         ...provider.coordinates,
-                        provider.customPolygonSnap
-                            ? provider.coordinates.first
-                            : provider.currentNewPointPos,
+                        if (provider.customPolygonSnap)
+                          provider.coordinates.first
+                        else
+                          provider.currentNewPointPos,
                       ];
-                break;
             }
           }
 

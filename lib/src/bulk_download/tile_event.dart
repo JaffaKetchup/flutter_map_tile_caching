@@ -66,6 +66,17 @@ enum TileEventResult {
 /// [DownloadProgress]' responsibility.
 @immutable
 class TileEvent {
+  const TileEvent._(
+    this.result, {
+    required this.url,
+    required this.coordinates,
+    this.tileImage,
+    this.fetchResponse,
+    this.fetchError,
+    this.isRepeat = false,
+    bool wasBufferReset = false,
+  }) : _wasBufferReset = wasBufferReset;
+
   /// The status of this event, the result of attempting to cache this tile
   ///
   /// See [TileEventResult.category] ([TileEventResultCategory]) for
@@ -120,17 +131,6 @@ class TileEvent {
   final bool isRepeat;
 
   final bool _wasBufferReset;
-
-  const TileEvent._(
-    this.result, {
-    required this.url,
-    required this.coordinates,
-    this.tileImage,
-    this.fetchResponse,
-    this.fetchError,
-    this.isRepeat = false,
-    bool wasBufferReset = false,
-  }) : _wasBufferReset = wasBufferReset;
 
   TileEvent _repeat() => TileEvent._(
         result,

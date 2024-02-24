@@ -13,15 +13,16 @@ class StatDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
         children: [
-          statistic == null
-              ? const CircularProgressIndicator()
-              : Text(
-                  statistic!,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+          if (statistic == null)
+            const CircularProgressIndicator()
+          else
+            Text(
+              statistic!,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           Text(
             description,
             style: const TextStyle(

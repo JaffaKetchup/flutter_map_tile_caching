@@ -7,6 +7,22 @@ part of flutter_map_tile_caching;
 ///
 /// Construct via [BaseRegion.toDownloadable].
 class DownloadableRegion<R extends BaseRegion> {
+  DownloadableRegion._(
+    this.originalRegion, {
+    required this.minZoom,
+    required this.maxZoom,
+    required this.options,
+    required this.start,
+    required this.end,
+    required this.crs,
+  }) {
+    if (minZoom > maxZoom) {
+      throw ArgumentError(
+        '`minZoom` should be less than or equal to `maxZoom`',
+      );
+    }
+  }
+
   /// A copy of the [BaseRegion] used to form this object
   ///
   /// To make decisions based on the type of this region, prefer [when] over
@@ -34,22 +50,6 @@ class DownloadableRegion<R extends BaseRegion> {
 
   /// The map projection to use to calculate tiles. Defaults to [Epsg3857].
   final Crs crs;
-
-  DownloadableRegion._(
-    this.originalRegion, {
-    required this.minZoom,
-    required this.maxZoom,
-    required this.options,
-    required this.start,
-    required this.end,
-    required this.crs,
-  }) {
-    if (minZoom > maxZoom) {
-      throw ArgumentError(
-        '`minZoom` should be less than or equal to `maxZoom`',
-      );
-    }
-  }
 
   /// Cast [originalRegion] from [R] to [N]
   @optionalTypeArgs

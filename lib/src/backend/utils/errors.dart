@@ -30,9 +30,9 @@ final class RootAlreadyInitialised extends FMTCBackendError {
 /// Indicates that the specified store structure was not available for use in
 /// operations, likely because it didn't exist
 final class StoreNotExists extends FMTCBackendError {
-  final String storeName;
-
   StoreNotExists({required this.storeName});
+
+  final String storeName;
 
   @override
   String toString() =>
@@ -42,9 +42,9 @@ final class StoreNotExists extends FMTCBackendError {
 /// Indicates that the specified store structure could not be created because it
 /// already existed
 final class StoreAlreadyExists extends FMTCBackendError {
-  final String storeName;
-
   StoreAlreadyExists({required this.storeName});
+
+  final String storeName;
 
   @override
   String toString() =>

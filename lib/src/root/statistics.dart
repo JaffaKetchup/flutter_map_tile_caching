@@ -23,7 +23,7 @@ class RootStats {
   Stream<void> watchRecovery({
     bool triggerImmediately = false,
   }) async* {
-    final stream = await FMTCBackendAccess.internal.watchRecovery(
+    final stream = FMTCBackendAccess.internal.watchRecovery(
       triggerImmediately: triggerImmediately,
     );
     yield* stream;
@@ -34,7 +34,7 @@ class RootStats {
     List<String> storeNames = const [],
     bool triggerImmediately = false,
   }) async* {
-    final stream = await FMTCBackendAccess.internal.watchStores(
+    final stream = FMTCBackendAccess.internal.watchStores(
       storeNames: storeNames,
       triggerImmediately: triggerImmediately,
     );

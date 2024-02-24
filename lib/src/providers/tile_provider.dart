@@ -7,17 +7,6 @@ part of flutter_map_tile_caching;
 ///
 /// Create from the store directory chain, eg. [FMTCStore.getTileProvider].
 class FMTCTileProvider extends TileProvider {
-  /// The store directory attached to this provider
-  final FMTCStore _store;
-
-  /// The tile provider settings to use
-  final FMTCTileProviderSettings settings;
-
-  /// [http.Client] (such as a [IOClient]) used to make all network requests
-  ///
-  /// Defaults to a standard [IOClient]/[HttpClient] for HTTP/1.1 servers.
-  final http.Client httpClient;
-
   FMTCTileProvider._(
     this._store, {
     required FMTCTileProviderSettings? settings,
@@ -33,6 +22,17 @@ class FMTCTileProvider extends TileProvider {
                 : 'flutter_map_tile_caching for ${headers['User-Agent']}',
           },
         );
+
+  /// The store directory attached to this provider
+  final FMTCStore _store;
+
+  /// The tile provider settings to use
+  final FMTCTileProviderSettings settings;
+
+  /// [http.Client] (such as a [IOClient]) used to make all network requests
+  ///
+  /// Defaults to a standard [IOClient]/[HttpClient] for HTTP/1.1 servers.
+  final http.Client httpClient;
 
   /// Closes the open [httpClient] - this will make the provider unable to
   /// perform network requests

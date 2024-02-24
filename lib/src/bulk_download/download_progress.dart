@@ -12,6 +12,39 @@ part of flutter_map_tile_caching;
 /// See the documentation on each individual property for more information.
 @immutable
 class DownloadProgress {
+  const DownloadProgress.__({
+    required TileEvent? latestTileEvent,
+    required this.cachedTiles,
+    required this.cachedSize,
+    required this.bufferedTiles,
+    required this.bufferedSize,
+    required this.skippedTiles,
+    required this.skippedSize,
+    required this.failedTiles,
+    required this.maxTiles,
+    required this.elapsedDuration,
+    required this.tilesPerSecond,
+    required this.isTPSArtificiallyCapped,
+    required this.isComplete,
+  }) : _latestTileEvent = latestTileEvent;
+
+  factory DownloadProgress._initial({required int maxTiles}) =>
+      DownloadProgress.__(
+        latestTileEvent: null,
+        cachedTiles: 0,
+        cachedSize: 0,
+        bufferedTiles: 0,
+        bufferedSize: 0,
+        skippedTiles: 0,
+        skippedSize: 0,
+        failedTiles: 0,
+        maxTiles: maxTiles,
+        elapsedDuration: Duration.zero,
+        tilesPerSecond: 0,
+        isTPSArtificiallyCapped: false,
+        isComplete: false,
+      );
+
   /// The result of the latest attempted tile
   ///
   /// Note that there a number of things to keep in mind when tracking the
@@ -164,39 +197,6 @@ class DownloadProgress {
       estTotalDuration - elapsedDuration < Duration.zero
           ? Duration.zero
           : estTotalDuration - elapsedDuration;
-
-  const DownloadProgress.__({
-    required TileEvent? latestTileEvent,
-    required this.cachedTiles,
-    required this.cachedSize,
-    required this.bufferedTiles,
-    required this.bufferedSize,
-    required this.skippedTiles,
-    required this.skippedSize,
-    required this.failedTiles,
-    required this.maxTiles,
-    required this.elapsedDuration,
-    required this.tilesPerSecond,
-    required this.isTPSArtificiallyCapped,
-    required this.isComplete,
-  }) : _latestTileEvent = latestTileEvent;
-
-  factory DownloadProgress._initial({required int maxTiles}) =>
-      DownloadProgress.__(
-        latestTileEvent: null,
-        cachedTiles: 0,
-        cachedSize: 0,
-        bufferedTiles: 0,
-        bufferedSize: 0,
-        skippedTiles: 0,
-        skippedSize: 0,
-        failedTiles: 0,
-        maxTiles: maxTiles,
-        elapsedDuration: Duration.zero,
-        tilesPerSecond: 0,
-        isTPSArtificiallyCapped: false,
-        isComplete: false,
-      );
 
   DownloadProgress _fallbackReportUpdate({
     required Duration newDuration,

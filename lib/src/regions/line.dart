@@ -52,22 +52,22 @@ class LineRegion extends BaseRegion {
       final anticlockwiseRotation =
           (bearing - 90) < 0 ? 360 + (bearing - 90) : (bearing - 90);
 
-      final topRight = dist.offset(cp, rad, clockwiseRotation);
-      final bottomRight = dist.offset(np, rad, clockwiseRotation);
-      final bottomLeft = dist.offset(np, rad, anticlockwiseRotation);
-      final topLeft = dist.offset(cp, rad, anticlockwiseRotation);
+      final tr = dist.offset(cp, rad, clockwiseRotation); // Top right
+      final br = dist.offset(np, rad, clockwiseRotation); // Bottom right
+      final bl = dist.offset(np, rad, anticlockwiseRotation); // Bottom left
+      final tl = dist.offset(cp, rad, anticlockwiseRotation); // Top left
 
-      if (overlap == 0) yield [topRight, bottomRight, bottomLeft, topLeft];
+      if (overlap == 0) yield [tr, br, bl, tl];
 
       final r = overlap == -1;
       final os = i == 0;
       final oe = i == line.length - 2;
 
       yield [
-        os ? topRight : dist.offset(topRight, r ? rad : -rad, bearing),
-        oe ? bottomRight : dist.offset(bottomRight, r ? -rad : rad, bearing),
-        oe ? bottomLeft : dist.offset(bottomLeft, r ? -rad : rad, bearing),
-        os ? topLeft : dist.offset(topLeft, r ? rad : -rad, bearing),
+        if (os) tr else dist.offset(tr, r ? rad : -rad, bearing),
+        if (oe) br else dist.offset(br, r ? -rad : rad, bearing),
+        if (oe) bl else dist.offset(bl, r ? -rad : rad, bearing),
+        if (os) tl else dist.offset(tl, r ? rad : -rad, bearing),
       ];
     }
   }

@@ -8,18 +8,18 @@ import 'package:meta/meta.dart';
 /// Can be thrown for multiple reasons. See [type] and
 /// [FMTCDamagedStoreExceptionType] for more information.
 class FMTCDamagedStoreException implements Exception {
-  /// Friendly message
-  final String message;
-
-  /// Programmatic error descriptor
-  final FMTCDamagedStoreExceptionType type;
-
   /// An [Exception] indicating that an operation was attempted on a damaged store
   ///
   /// Can be thrown for multiple reasons. See [type] and
   /// [FMTCDamagedStoreExceptionType] for more information.
   @internal
   FMTCDamagedStoreException(this.message, this.type);
+
+  /// Friendly message
+  final String message;
+
+  /// Programmatic error descriptor
+  final FMTCDamagedStoreExceptionType type;
 
   @override
   String toString() => 'FMTCDamagedStoreException: $message';

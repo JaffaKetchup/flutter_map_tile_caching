@@ -63,9 +63,10 @@ class LineRegionPane extends StatelessWidget {
               icon: const Icon(Icons.route),
               tooltip: 'Import from GPX',
             ),
-            layoutDirection == Axis.vertical
-                ? const Divider(height: 8)
-                : const VerticalDivider(width: 8),
+            if (layoutDirection == Axis.vertical)
+              const Divider(height: 8)
+            else
+              const VerticalDivider(width: 8),
             const SizedBox.square(dimension: 4),
             if (layoutDirection == Axis.vertical) ...[
               Text('${provider.lineRadius.round()}m'),

@@ -57,12 +57,14 @@ class TilesCounter {
 
         outlineTileNums[zoomLvl]![tile.x] ??= [largestInt, smallestInt];
         outlineTileNums[zoomLvl]![tile.x] = [
-          tile.y < outlineTileNums[zoomLvl]![tile.x]![0]
-              ? tile.y
-              : outlineTileNums[zoomLvl]![tile.x]![0],
-          tile.y > outlineTileNums[zoomLvl]![tile.x]![1]
-              ? tile.y
-              : outlineTileNums[zoomLvl]![tile.x]![1],
+          if (tile.y < outlineTileNums[zoomLvl]![tile.x]![0])
+            tile.y
+          else
+            outlineTileNums[zoomLvl]![tile.x]![0],
+          if (tile.y > outlineTileNums[zoomLvl]![tile.x]![1])
+            tile.y
+          else
+            outlineTileNums[zoomLvl]![tile.x]![1],
         ];
       }
 

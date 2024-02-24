@@ -10,41 +10,6 @@ import '../../../../../../flutter_map_tile_caching.dart';
 
 @Entity()
 base class ObjectBoxRecovery {
-  @Id()
-  @internal
-  int id = 0;
-
-  @Index()
-  @Unique()
-  int refId;
-
-  String storeName;
-  @Property(type: PropertyType.date)
-  DateTime creationTime;
-
-  int minZoom;
-  int maxZoom;
-  int startTile;
-  int? endTile;
-
-  int typeId; // 0 - rect, 1 - circle, 2 - line, 3 - custom polygon
-
-  double? rectNwLat;
-  double? rectNwLng;
-  double? rectSeLat;
-  double? rectSeLng;
-
-  double? circleCenterLat;
-  double? circleCenterLng;
-  double? circleRadius;
-
-  List<double>? lineLats;
-  List<double>? lineLngs;
-  double? lineRadius;
-
-  List<double>? customPolygonLats;
-  List<double>? customPolygonLngs;
-
   ObjectBoxRecovery({
     required this.refId,
     required this.storeName,
@@ -143,6 +108,41 @@ base class ObjectBoxRecovery {
                 .map((c) => c.longitude)
                 .toList()
             : null;
+
+  @Id()
+  @internal
+  int id = 0;
+
+  @Index()
+  @Unique()
+  int refId;
+
+  String storeName;
+  @Property(type: PropertyType.date)
+  DateTime creationTime;
+
+  int minZoom;
+  int maxZoom;
+  int startTile;
+  int? endTile;
+
+  int typeId; // 0 - rect, 1 - circle, 2 - line, 3 - custom polygon
+
+  double? rectNwLat;
+  double? rectNwLng;
+  double? rectSeLat;
+  double? rectSeLng;
+
+  double? circleCenterLat;
+  double? circleCenterLng;
+  double? circleRadius;
+
+  List<double>? lineLats;
+  List<double>? lineLngs;
+  double? lineRadius;
+
+  List<double>? customPolygonLats;
+  List<double>? customPolygonLngs;
 
   RecoveredRegion toRegion() => RecoveredRegion(
         id: refId,

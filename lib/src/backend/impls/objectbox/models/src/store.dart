@@ -7,6 +7,14 @@ import 'tile.dart';
 
 @Entity()
 class ObjectBoxStore {
+  ObjectBoxStore({
+    required this.name,
+    required this.length,
+    required this.size,
+    required this.hits,
+    required this.misses,
+  }) : metadataJson = '';
+
   @Id()
   int id = 0;
 
@@ -23,12 +31,4 @@ class ObjectBoxStore {
   int hits;
   int misses;
   String metadataJson;
-
-  ObjectBoxStore({
-    required this.name,
-    required this.length,
-    required this.size,
-    required this.hits,
-    required this.misses,
-  }) : metadataJson = '';
 }

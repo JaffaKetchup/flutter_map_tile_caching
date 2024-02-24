@@ -19,6 +19,26 @@ import '../../flutter_map_tile_caching.dart';
 /// [message] for a user-friendly English description of this exception. Also
 /// see the other properties for more information.
 class FMTCBrowsingError implements Exception {
+  /// An [Exception] indicating that there was an error retrieving tiles to be
+  /// displayed on the map
+  ///
+  /// These can usually be safely ignored, as they simply represent a fall
+  /// through of all valid/possible cases, but you may wish to handle them
+  /// anyway using [FMTCTileProviderSettings.errorHandler].
+  ///
+  /// Use [type] to establish the condition that threw this exception, and
+  /// [message] for a user-friendly English description of this exception. Also
+  /// see the other properties for more information.
+  @internal
+  FMTCBrowsingError({
+    required this.type,
+    required this.networkUrl,
+    required this.matcherUrl,
+    this.request,
+    this.response,
+    this.originalError,
+  }) : message = '${type.explanation} ${type.resolution}';
+
   /// Defines the condition that threw this exception
   ///
   /// See [message] for a user friendly description of this value.
@@ -59,26 +79,6 @@ class FMTCBrowsingError implements Exception {
   /// [FMTCBrowsingErrorType.noConnectionDuringFetch] or
   /// [FMTCBrowsingErrorType.unknownFetchException].
   final Object? originalError;
-
-  /// An [Exception] indicating that there was an error retrieving tiles to be
-  /// displayed on the map
-  ///
-  /// These can usually be safely ignored, as they simply represent a fall
-  /// through of all valid/possible cases, but you may wish to handle them
-  /// anyway using [FMTCTileProviderSettings.errorHandler].
-  ///
-  /// Use [type] to establish the condition that threw this exception, and
-  /// [message] for a user-friendly English description of this exception. Also
-  /// see the other properties for more information.
-  @internal
-  FMTCBrowsingError({
-    required this.type,
-    required this.networkUrl,
-    required this.matcherUrl,
-    this.request,
-    this.response,
-    this.originalError,
-  }) : message = '${type.explanation} ${type.resolution}';
 
   @override
   String toString() => 'FMTCBrowsingError ($type): $message';
