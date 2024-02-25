@@ -76,61 +76,69 @@ Future<void> _worker(
   // Create memory for streamed output subscription storage
   final streamedOutputSubscriptions = <int, StreamSubscription>{};
 
-  //! UTIL FUNCTIONS !//
-
-  /// Convert store name to database store object
-  ///
-  /// Returns `null` if store not found. Throw the [StoreNotExists] error if it
-  /// was required.
-  ObjectBoxStore? getStore(String storeName) {
-    final query = root
-        .box<ObjectBoxStore>()
-        .query(ObjectBoxStore_.name.equals(storeName))
-        .build();
-    final store = query.findUnique();
-    query.close();
-    return store;
-  }
-
   /// Delete the specified tiles from the specified store
   ///
   /// Note that [tilesQuery] is not closed internally. Ensure it is closed after
   /// usage.
   ///
-  /// Returns whether each tile was actually deleted (whether it was an orphan),
-  /// in iteration order of [tilesQuery.find].
-  List<bool> deleteTiles({
+  /// Note that a transaction is used internally as necessary.
+  ///
+  /// Returns the number of orphaned (deleted) tiles.
+  int deleteTiles({
     required String storeName,
     required Query<ObjectBoxTile> tilesQuery,
   }) {
     final stores = root.box<ObjectBoxStore>();
     final tiles = root.box<ObjectBoxTile>();
 
-    return tilesQuery.find().map(
-      (tile) {
-        // For the correct store, adjust the statistics
-        for (final store in tile.stores) {
-          if (store.name != storeName) continue;
-          stores.put(
-            store
-              ..length -= 1
-              ..size -= tile.bytes.lengthInBytes,
-            mode: PutMode.update,
-          );
-          break;
-        }
+    final storeQuery =
+        stores.query(ObjectBoxStore_.name.equals(storeName)).build();
 
-        // Remove the store relation from the tile
-        tile.stores.removeWhere((store) => store.name == storeName);
+    final tilesToUpdate = <ObjectBoxTile>[];
 
-        // Delete the tile if it belongs to no stores
-        if (tile.stores.isEmpty) return tiles.remove(tile.id);
+    final deletedNum = root.runInTransaction(
+      TxMode.write,
+      () {
+        final queriedTiles = tilesQuery.find();
+        final store = storeQuery.findUnique() ??
+            (throw StoreNotExists(storeName: storeName));
 
-        // Otherwise just update the tile
-        tile.stores.applyToDb(mode: PutMode.update);
-        return false;
+        final tilesToDelete = List.generate(
+          queriedTiles.length,
+          (i) {
+            final tile = queriedTiles[i];
+
+            // Linear search through related stores, and modify when located
+            for (final store in tile.stores) {
+              if (store.name != storeName) continue;
+              store
+                ..length -= 1
+                ..size -= tile.bytes.lengthInBytes;
+              break;
+            }
+
+            // Remove the store relation from the tile
+            tile.stores.removeWhere((store) => store.name == storeName);
+
+            // Register the tile for deletion if it belongs to no stores
+            if (tile.stores.isEmpty) return tile.id;
+
+            // Otherwise register the tile to be updated (the new relation applied)
+            tilesToUpdate.add(tile);
+            return -1;
+          },
+          growable: false,
+        );
+
+        stores.put(store, mode: PutMode.update);
+        return (tiles..putMany(tilesToUpdate, mode: PutMode.update))
+            .removeMany(tilesToDelete);
       },
-    ).toList();
+    );
+
+    storeQuery.close();
+
+    return deletedNum;
   }
 
   //! MAIN LOOP !//
@@ -197,7 +205,13 @@ Future<void> _worker(
           query.close();
         case _WorkerCmdType.getStoreStats:
           final storeName = cmd.args['storeName']! as String;
-          final store = getStore(storeName) ??
+
+          final query = root
+              .box<ObjectBoxStore>()
+              .query(ObjectBoxStore_.name.equals(storeName))
+              .build();
+
+          final store = query.findUnique() ??
               (throw StoreNotExists(storeName: storeName));
 
           sendRes(
@@ -211,6 +225,8 @@ Future<void> _worker(
               ),
             },
           );
+
+          query.close();
         case _WorkerCmdType.createStore:
           final storeName = cmd.args['storeName']! as String;
 
@@ -222,6 +238,7 @@ Future<void> _worker(
                     size: 0,
                     hits: 0,
                     misses: 0,
+                    metadataJson: '',
                   ),
                   mode: PutMode.insert,
                 );
@@ -466,12 +483,8 @@ Future<void> _worker(
           sendRes(
             id: cmd.id,
             data: {
-              'wasOrphan': root
-                  .runInTransaction(
-                    TxMode.write,
-                    () => deleteTiles(storeName: storeName, tilesQuery: query),
-                  )
-                  .singleOrNull,
+              'wasOrphan':
+                  deleteTiles(storeName: storeName, tilesQuery: query) == 1,
             },
           );
 
@@ -520,28 +533,20 @@ Future<void> _worker(
               .query(ObjectBoxStore_.name.equals(storeName))
               .build();
 
+          final store = storeQuery.findUnique() ??
+              (throw StoreNotExists(storeName: storeName));
+
+          final numToRemove = store.length - tilesLimit;
+
           sendRes(
             id: cmd.id,
             data: {
-              'numOrphans': root
-                  .runInTransaction(
-                    TxMode.write,
-                    () {
-                      final store = storeQuery.findUnique() ??
-                          (throw StoreNotExists(storeName: storeName));
-
-                      final numToRemove = store.length - tilesLimit;
-
-                      return numToRemove <= 0
-                          ? const Iterable.empty()
-                          : deleteTiles(
-                              storeName: storeName,
-                              tilesQuery: tilesQuery..limit = numToRemove,
-                            );
-                    },
-                  )
-                  .where((e) => e)
-                  .length,
+              'numOrphans': numToRemove <= 0
+                  ? 0
+                  : deleteTiles(
+                      storeName: storeName,
+                      tilesQuery: tilesQuery..limit = numToRemove,
+                    ),
             },
           );
 
@@ -563,23 +568,23 @@ Future<void> _worker(
           sendRes(
             id: cmd.id,
             data: {
-              'numOrphans': root
-                  .runInTransaction(
-                    TxMode.write,
-                    () => deleteTiles(
-                      storeName: storeName,
-                      tilesQuery: tilesQuery,
-                    ),
-                  )
-                  .where((e) => e)
-                  .length,
+              'numOrphans': deleteTiles(
+                storeName: storeName,
+                tilesQuery: tilesQuery,
+              ),
             },
           );
 
           tilesQuery.close();
         case _WorkerCmdType.readMetadata:
           final storeName = cmd.args['storeName']! as String;
-          final store = getStore(storeName) ??
+
+          final query = root
+              .box<ObjectBoxStore>()
+              .query(ObjectBoxStore_.name.equals(storeName))
+              .build();
+
+          final store = query.findUnique() ??
               (throw StoreNotExists(storeName: storeName));
 
           sendRes(
@@ -590,6 +595,8 @@ Future<void> _worker(
                       .cast<String, String>(),
             },
           );
+
+          query.close();
         case _WorkerCmdType.setMetadata:
           final storeName = cmd.args['storeName']! as String;
           final key = cmd.args['key']! as String;

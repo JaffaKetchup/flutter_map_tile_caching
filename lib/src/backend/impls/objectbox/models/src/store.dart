@@ -13,7 +13,8 @@ class ObjectBoxStore {
     required this.size,
     required this.hits,
     required this.misses,
-  }) : metadataJson = '';
+    required this.metadataJson,
+  });
 
   @Id()
   int id = 0;

@@ -68,38 +68,28 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
     final storeQuery =
         stores.query(ObjectBoxStore_.name.equals(storeName)).build();
 
-    final storeAdjustments = <String, ({int deltaSize, int deltaLength})>{};
+    final storesToUpdate = <String, ObjectBoxStore>{};
 
     root!.runInTransaction(
       TxMode.write,
       () {
-        final store = storeQuery.findUnique()!;
+        final existingTile = tilesQuery.findUnique();
+        final store = storeQuery.findUnique() ??
+            (throw StoreNotExists(storeName: storeName));
 
-        final existingTile =
-            (tilesQuery..param(ObjectBoxTile_.url).value = url).findUnique();
+        if (existingTile == null) {
+          storesToUpdate[storeName] = store
+            ..length += 1
+            ..size += bytes.lengthInBytes;
+        } else {
+          storesToUpdate[storeName] = store
+            ..size += -existingTile.bytes.lengthInBytes + bytes.lengthInBytes;
 
-        storeAdjustments[storeName] = storeAdjustments[storeName] == null
-            ? (deltaLength: 1, deltaSize: bytes.lengthInBytes)
-            : (
-                deltaLength: storeAdjustments[storeName]!.deltaLength + 1,
-                deltaSize: storeAdjustments[storeName]!.deltaSize +
-                    bytes.lengthInBytes,
-              );
-
-        if (existingTile != null) {
-          for (final store in existingTile.stores) {
-            storeAdjustments[store.name] = storeAdjustments[store.name] == null
-                ? (
-                    deltaLength: 0,
-                    deltaSize:
-                        -existingTile.bytes.lengthInBytes + bytes.lengthInBytes,
-                  )
-                : (
-                    deltaLength: storeAdjustments[store.name]!.deltaLength,
-                    deltaSize: storeAdjustments[store.name]!.deltaSize +
-                        (-existingTile.bytes.lengthInBytes +
-                            bytes.lengthInBytes),
-                  );
+          for (final relatedStore in existingTile.stores) {
+            storesToUpdate[relatedStore.name] =
+                (storesToUpdate[relatedStore.name] ?? relatedStore)
+                  ..size +=
+                      -existingTile.bytes.lengthInBytes + bytes.lengthInBytes;
           }
         }
 
@@ -108,23 +98,9 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
             url: url,
             lastModified: DateTime.timestamp(),
             bytes: bytes,
-          )..stores.addAll(
-              {
-                store,
-                if (existingTile != null) ...existingTile.stores,
-              },
-            ),
+          )..stores.addAll({store, ...?existingTile?.stores}),
         );
-
-        stores.putMany(
-          storeAdjustments.entries
-              .map(
-                (e) => store
-                  ..length += e.value.deltaLength
-                  ..size += e.value.deltaSize,
-              )
-              .toList(),
-        );
+        stores.putMany(storesToUpdate.values.toList(), mode: PutMode.update);
       },
     );
 
@@ -144,83 +120,52 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
     final stores = root!.box<ObjectBoxStore>();
 
     final tilesQuery = tiles.query(ObjectBoxTile_.url.equals('')).build();
-    final storeQuery = stores.query(ObjectBoxStore_.name.equals('')).build();
+    final storeQuery =
+        stores.query(ObjectBoxStore_.name.equals(storeName)).build();
 
-    final storeAdjustments = <String, ({int deltaSize, int deltaLength})>{};
+    final storesToUpdate = <String, ObjectBoxStore>{};
 
     root!.runInTransaction(
       TxMode.write,
       () {
-        final store = (storeQuery
-              ..param(ObjectBoxStore_.name).value = storeName)
-            .findUnique()!;
+        final store = storeQuery.findUnique() ??
+            (throw StoreNotExists(storeName: storeName));
 
-        tiles.putMany(
-          List.generate(
-            urls.length,
-            (i) {
-              final existingTile = (tilesQuery
-                    ..param(ObjectBoxTile_.url).value = urls[i])
-                  .findUnique();
+        final tilesToUpdate = List.generate(
+          urls.length,
+          (i) {
+            final existingTile = (tilesQuery
+                  ..param(ObjectBoxTile_.url).value = urls[i])
+                .findUnique();
 
-              storeAdjustments[storeName] = storeAdjustments[storeName] == null
-                  ? (deltaLength: 1, deltaSize: bytess[i].lengthInBytes)
-                  : (
-                      deltaLength: storeAdjustments[storeName]!.deltaLength + 1,
-                      deltaSize: storeAdjustments[storeName]!.deltaSize +
-                          bytess[i].lengthInBytes,
-                    );
+            if (existingTile == null) {
+              storesToUpdate[storeName] = store
+                ..length += 1
+                ..size += bytess[i].lengthInBytes;
+            } else {
+              storesToUpdate[storeName] = store
+                ..size +=
+                    -existingTile.bytes.lengthInBytes + bytess[i].lengthInBytes;
 
-              if (existingTile != null) {
-                for (final store in existingTile.stores) {
-                  storeAdjustments[store.name] =
-                      storeAdjustments[store.name] == null
-                          ? (
-                              deltaLength: 0,
-                              deltaSize: -existingTile.bytes.lengthInBytes +
-                                  bytess[i].lengthInBytes,
-                            )
-                          : (
-                              deltaLength:
-                                  storeAdjustments[store.name]!.deltaLength,
-                              deltaSize:
-                                  storeAdjustments[store.name]!.deltaSize +
-                                      (-existingTile.bytes.lengthInBytes +
-                                          bytess[i].lengthInBytes),
-                            );
-                }
+              for (final relatedStore in existingTile.stores) {
+                storesToUpdate[relatedStore.name] =
+                    (storesToUpdate[relatedStore.name] ?? relatedStore)
+                      ..size += -existingTile.bytes.lengthInBytes +
+                          bytess[i].lengthInBytes;
               }
+            }
 
-              return ObjectBoxTile(
-                url: urls[i],
-                lastModified: DateTime.timestamp(),
-                bytes: bytess[i],
-              )..stores.addAll(
-                  {
-                    store,
-                    if (existingTile != null) ...existingTile.stores,
-                  },
-                );
-            },
-            growable: false,
-          ),
+            return ObjectBoxTile(
+              url: urls[i],
+              lastModified: DateTime.timestamp(),
+              bytes: bytess[i],
+            )..stores.addAll({store, ...?existingTile?.stores});
+          },
+          growable: false,
         );
 
-        assert(
-          storeAdjustments.isNotEmpty,
-          '`storeAdjustments` should not be empty if relations are being set correctly',
-        );
-
-        stores.putMany(
-          storeAdjustments.entries
-              .map(
-                (e) => (storeQuery..param(ObjectBoxStore_.name).value = e.key)
-                    .findUnique()!
-                  ..length += e.value.deltaLength
-                  ..size += e.value.deltaSize,
-              )
-              .toList(),
-        );
+        tiles.putMany(tilesToUpdate);
+        stores.putMany(storesToUpdate.values.toList(), mode: PutMode.update);
       },
     );
 

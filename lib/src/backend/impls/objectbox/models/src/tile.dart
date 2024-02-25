@@ -12,8 +12,8 @@ import 'store.dart';
 base class ObjectBoxTile extends BackendTile {
   ObjectBoxTile({
     required this.url,
-    required this.lastModified,
     required this.bytes,
+    required this.lastModified,
   });
 
   @Id()
@@ -25,12 +25,12 @@ base class ObjectBoxTile extends BackendTile {
   String url;
 
   @override
+  Uint8List bytes;
+
+  @override
   @Index()
   @Property(type: PropertyType.date)
   DateTime lastModified;
-
-  @override
-  Uint8List bytes;
 
   @Index()
   final stores = ToMany<ObjectBoxStore>();

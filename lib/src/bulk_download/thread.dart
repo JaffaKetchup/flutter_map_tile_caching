@@ -70,9 +70,11 @@ Future<void> _singleDownloadThread(
       url: networkUrl,
       obscuredQueryParams: input.obscuredQueryParams,
     );
+
+    // TODO: Work across stores in the event of an error
     final existingTile = await input.backend.readTile(
       url: matcherUrl,
-      storeName: input.storeName, // TODO: Test
+      storeName: input.storeName,
     );
 
     // Skip if tile already exists and user demands existing tile pruning

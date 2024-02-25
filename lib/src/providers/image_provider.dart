@@ -91,6 +91,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       obscuredQueryParams: provider.settings.obscuredQueryParams,
     );
 
+    // TODO: Work across stores in event of error
     final existingTile = await FMTCBackendAccess.internal.readTile(
       url: matcherUrl,
       storeName: storeName,
