@@ -11,7 +11,6 @@ enum TileEventResultCategory {
   cached,
 
   /// The associated tile may have been downloaded, but was not cached
-  /// intentionally
   ///
   /// This may be because it:
   /// - already existed & `skipExistingTiles` was `true`:
@@ -20,7 +19,7 @@ enum TileEventResultCategory {
   skipped,
 
   /// The associated tile was not successfully downloaded, potentially for a
-  /// variety of reasons.
+  /// variety of reasons
   ///
   /// Category for [TileEventResult.negativeFetchResponse],
   /// [TileEventResult.noConnectionDuringFetch], and

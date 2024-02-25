@@ -71,7 +71,6 @@ Future<void> _singleDownloadThread(
       obscuredQueryParams: input.obscuredQueryParams,
     );
 
-    // TODO: Work across stores in the event of an error
     final existingTile = await input.backend.readTile(
       url: matcherUrl,
       storeName: input.storeName,
@@ -136,7 +135,6 @@ Future<void> _singleDownloadThread(
     }
 
     // Write tile directly to database or place in buffer queue
-    //final tile = DbTile(url: matcherUrl, bytes: response.bodyBytes);
     if (input.maxBufferLength == 0) {
       await input.backend.htWriteTile(
         storeName: input.storeName,

@@ -85,13 +85,26 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       return decode(await ImmutableBuffer.fromUint8List(bytes));
     }
 
+    // TODO: Test
+    Future<Codec?> attemptFinishViaAltStore(String matcherUrl) async {
+      if (provider.settings.fallbackToAlternativeStore) {
+        final existingTileAltStore =
+            await FMTCBackendAccess.internal.readTile(url: matcherUrl);
+        if (existingTileAltStore == null) return null;
+        return finishSuccessfully(
+          bytes: existingTileAltStore.bytes,
+          cacheHit: false,
+        );
+      }
+      return null;
+    }
+
     final networkUrl = provider.getTileUrl(coords, options);
     final matcherUrl = obscureQueryParams(
       url: networkUrl,
       obscuredQueryParams: provider.settings.obscuredQueryParams,
     );
 
-    // TODO: Work across stores in event of error
     final existingTile = await FMTCBackendAccess.internal.readTile(
       url: matcherUrl,
       storeName: storeName,
@@ -119,6 +132,9 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     // before attempting a network call
     if (provider.settings.behavior == CacheBehavior.cacheOnly &&
         needsCreating) {
+      final codec = await attemptFinishViaAltStore(matcherUrl);
+      if (codec != null) return codec;
+
       return finishWithError(
         FMTCBrowsingError(
           type: FMTCBrowsingErrorType.missingInCacheOnlyMode,
@@ -138,6 +154,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       if (!needsCreating) {
         return finishSuccessfully(bytes: bytes!, cacheHit: false);
       }
+
+      final codec = await attemptFinishViaAltStore(matcherUrl);
+      if (codec != null) return codec;
+
       return finishWithError(
         FMTCBrowsingError(
           type: e is SocketException
@@ -156,6 +176,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       if (!needsCreating) {
         return finishSuccessfully(bytes: bytes!, cacheHit: false);
       }
+
+      final codec = await attemptFinishViaAltStore(matcherUrl);
+      if (codec != null) return codec;
+
       return finishWithError(
         FMTCBrowsingError(
           type: FMTCBrowsingErrorType.negativeFetchResponse,
@@ -200,6 +224,10 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       if (!needsCreating) {
         return finishSuccessfully(bytes: bytes!, cacheHit: false);
       }
+
+      final codec = await attemptFinishViaAltStore(matcherUrl);
+      if (codec != null) return codec;
+
       return finishWithError(
         FMTCBrowsingError(
           type: FMTCBrowsingErrorType.invalidImageData,
