@@ -49,8 +49,6 @@ class StoreManagement {
       FMTCBackendAccess.internal
           .removeTilesOlderThan(storeName: _storeName, expiry: expiry);
 
-  // TODO: Define deprecation for `tileImageAsync`
-
   /// {@macro fmtc.backend.readLatestTile}
   /// , then render the bytes to an [Image]
   Future<Image?> tileImage({

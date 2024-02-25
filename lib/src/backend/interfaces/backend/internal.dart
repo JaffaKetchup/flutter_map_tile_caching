@@ -13,8 +13,8 @@ import '../../export_internal.dart';
 ///
 /// Should implement methods that operate in another isolate/thread to avoid
 /// blocking the normal thread. In this case, [FMTCBackendInternalThreadSafe]
-/// must also be implemented, which should not operate in another thread, must be
-/// sendable between isolates (because it will already be operated in another
+/// should also be implemented, which should not operate in another thread & must
+/// be sendable between isolates (because it will already be operated in another
 /// thread), and must be suitable for simultaneous initialisation across multiple
 /// threads.
 ///
@@ -37,9 +37,20 @@ abstract interface class FMTCBackendInternal
   /// initialised.
   Directory? get rootDirectory;
 
+  /// {@template fmtc.backend.realSize}
+  /// Retrieve the actual total size of the database in KiBs
+  ///
+  /// Should include 'unused' space, 'calculation' space, overheads, etc. May be
+  /// much larger than `rootSize` in some backends.
+  /// {@endtemplate}
+  Future<double> realSize();
+
   /// {@template fmtc.backend.rootSize}
   /// Retrieve the total number of KiBs of all tiles' bytes (not 'real total'
   /// size) from all stores
+  ///
+  /// Does not include any storage used by metadata or database overheads, as in
+  /// `realSize`.
   /// {@endtemplate}
   Future<double> rootSize();
 
@@ -62,6 +73,8 @@ abstract interface class FMTCBackendInternal
 
   /// {@template fmtc.backend.createStore}
   /// Create a new store with the specified name
+  ///
+  /// Throws [StoreAlreadyExists] if the specified store already exists.
   /// {@endtemplate}
   Future<void> createStore({
     required String storeName,
@@ -295,8 +308,9 @@ abstract interface class FMTCBackendInternal
   /// Whenever this has an event, it is likely the other statistics will have
   /// changed.
   ///
-  /// Emits an event every time a change is made to a store (every time a
-  /// statistic changes, which should include every time a tile is changed).
+  /// Emits an event every time a change is made to a store:
+  ///  * a statistic change, which should include every time a tile is changed
+  ///  * a metadata change
   /// {@endtemplate}
   Stream<void> watchStores({
     required List<String> storeNames,

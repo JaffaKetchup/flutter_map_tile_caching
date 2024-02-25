@@ -6,6 +6,7 @@ part of 'backend.dart';
 enum _WorkerCmdType {
   initialise_, // Only valid as a request
   destroy,
+  realSize,
   rootSize,
   rootLength,
   listStores,
@@ -162,6 +163,14 @@ Future<void> _worker(
           sendRes(id: cmd.id);
 
           Isolate.exit();
+        case _WorkerCmdType.realSize:
+          sendRes(
+            id: cmd.id,
+            data: {
+              'size': Store.dbFileSize(input.rootDirectory.absolute.path) /
+                  1024, // Convert to KiB
+            },
+          );
         case _WorkerCmdType.rootSize:
           final query = root
               .box<ObjectBoxStore>()
@@ -248,7 +257,6 @@ Future<void> _worker(
 
           sendRes(id: cmd.id);
         case _WorkerCmdType.resetStore:
-          // TODO: Consider just deleting then creating
           final storeName = cmd.args['storeName']! as String;
           final removeIds = <int>[];
 
@@ -290,16 +298,16 @@ Future<void> _worker(
                   (throw StoreNotExists(storeName: storeName));
               storeQuery.close();
 
-              assert(store.tiles.isEmpty);
-              // TODO: Hits & misses
-
               stores.put(
-                store
-                  ..tiles.clear()
-                  ..length = 0
-                  ..size = 0
-                  ..hits = 0
-                  ..misses = 0,
+                ObjectBoxStore(
+                  name: store.name,
+                  length: 0,
+                  size: 0,
+                  hits: 0,
+                  misses: 0,
+                  metadataJson: '',
+                ),
+                mode: PutMode.update,
               );
             },
           );

@@ -48,9 +48,11 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     // Handle errors (if missed by direct handler)
     final err = res?['error'];
     if (err != null) {
-      if (err is FMTCBackendError) throw err;
+      if (err is RootUnavailable) throw err;
 
-      debugPrint('An unexpected error in the FMTC backend occurred:');
+      debugPrint(
+        'An unexpected error in the FMTC ObjectBox Backend occurred, and should not have occurred at this point:',
+      );
       Error.throwWithStackTrace(
         err,
         StackTrace.fromString(
@@ -125,16 +127,29 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         // Killed forcefully by environment (eg. hot restart)
         if (evt == null) {
           _workerComplete.complete();
-          _workerHandler.cancel();
+          _workerHandler.cancel(); // Ensure this handler is cancelled on return
           return;
         }
 
         // Handle errors
         final err = evt.data?['error'];
         if (err != null) {
-          if (err is FMTCBackendError) throw err;
+          if (err is FMTCBackendError) {
+            debugPrint(
+              'It looks like you may have made an incorrect assumption when using FMTC:',
+            );
+            throw err;
+          }
+          if (err is StorageException) {
+            debugPrint(
+              'It looks like the FMTC ObjectBox Backend failed to write/read some data:',
+            );
+            throw err;
+          }
 
-          debugPrint('An unexpected error in the FMTC backend occurred:');
+          debugPrint(
+            'An unexpected error in the FMTC ObjectBox Backend occurred:',
+          );
           Error.throwWithStackTrace(
             err,
             StackTrace.fromString(
@@ -217,6 +232,10 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     FMTCBackendAccess.internal = null;
     FMTCBackendAccessThreadSafe.internal = null;
   }
+
+  @override
+  Future<double> realSize() async =>
+      (await _sendCmdOneShot(type: _WorkerCmdType.realSize))!['size'];
 
   @override
   Future<double> rootSize() async =>

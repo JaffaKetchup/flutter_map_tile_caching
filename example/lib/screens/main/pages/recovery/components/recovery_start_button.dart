@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
@@ -33,9 +32,6 @@ class RecoveryStartButton extends StatelessWidget {
                       ..setSelectedStore(
                         FMTCStore(result.region.storeName),
                       );
-
-                // TODO: Check
-                //..regionTiles = tiles.data;
 
                 await Navigator.of(context).push(
                   MaterialPageRoute<String>(

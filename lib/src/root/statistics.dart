@@ -13,11 +13,14 @@ class RootStats {
           .listStores()
           .then((s) => s.map(FMTCStore.new).toList());
 
+  /// {@macro fmtc.backend.realSize}
+  Future<double> get realSize async => FMTCBackendAccess.internal.realSize();
+
   /// {@macro fmtc.backend.rootSize}
-  Future<double> get rootSize async => FMTCBackendAccess.internal.rootSize();
+  Future<double> get size async => FMTCBackendAccess.internal.rootSize();
 
   /// {@macro fmtc.backend.rootLength}
-  Future<int> get rootLength async => FMTCBackendAccess.internal.rootLength();
+  Future<int> get length async => FMTCBackendAccess.internal.rootLength();
 
   /// {@macro fmtc.backend.watchRecovery}
   Stream<void> watchRecovery({
