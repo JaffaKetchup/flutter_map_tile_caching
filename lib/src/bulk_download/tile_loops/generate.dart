@@ -46,8 +46,11 @@ class TilesGenerator {
     // 3. Under the previous record, add all the Y values within the circle (ie. to opposite the X value)
     // 4. Loop over these XY values and add them to the list
     // Theoretically, this could have been done using the same method as `lineTiles`, but `lineTiles` was built after this algorithm and this makes more sense for a circle
-
-    // TODO: https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
+    // Could also implement with the simpler method:
+    // 1. Calculate the radius in tiles using `Distance`
+    // 2. Iterate through y, then x
+    // 3. Use the circle formula x^2 + y^2 = r^2 to determine all points within the radius
+    // However, effectively scaling this proved to be difficult.
 
     final region = input.region as DownloadableRegion<CircleRegion>;
     final circleOutline = region.originalRegion.toOutline();

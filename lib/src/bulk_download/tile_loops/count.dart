@@ -33,13 +33,6 @@ class TilesCounter {
   static int circleTiles(DownloadableRegion region) {
     region as DownloadableRegion<CircleRegion>;
 
-    // This took some time and is fairly complicated, so this is the overall explanation:
-    // 1. Given a `LatLng` for every x degrees on a circle's circumference, convert it into a tile number
-    // 2. Using a `Map` per zoom level, record all the X values in it without duplicates
-    // 3. Under the previous record, add all the Y values within the circle (ie. to opposite the X value)
-    // 4. Loop over these XY values and add them to the list
-    // Theoretically, this could have been done using the same method as `lineTiles`, but `lineTiles` was built after this algorithm and this makes more sense for a circle
-
     final circleOutline = region.originalRegion.toOutline();
 
     // Format: Map<z, Map<x, List<y>>>
@@ -80,13 +73,6 @@ class TilesCounter {
 
   static int lineTiles(DownloadableRegion region) {
     region as DownloadableRegion<LineRegion>;
-
-    // This took some time and is fairly complicated, so this is the overall explanation:
-    // 1. Given 4 `LatLng` points, create a 'straight' rectangle around the 'rotated' rectangle, that can be defined with just 2 `LatLng` points
-    // 2. Convert the straight rectangle into tile numbers, and loop through the same as `rectangleTiles`
-    // 3. For every generated tile number (which represents top-left of the tile), generate the rest of the tile corners
-    // 4. Check whether the square tile overlaps the rotated rectangle from the start, add it to the list if it does
-    // 5. Keep track of the number of overlaps per row: if there was one overlap and now there isn't, skip the rest of the row because we can be sure there are no more tiles
 
     // Overlap algorithm originally in Python, available at https://stackoverflow.com/a/56962827/11846040
     bool overlap(_Polygon a, _Polygon b) {

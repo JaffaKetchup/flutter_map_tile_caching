@@ -114,12 +114,10 @@ Future<void> main(List<String> _) async {
         final x = ctx.pathParams.getInt('x', -1)!;
         final y = ctx.pathParams.getInt('y', -1)!;
 
-        // Check if tile request is in valid format
-        if (z == -1 || x == -1 || y == -1) {
+        // Check if tile request is inside valid range
+        if (x < 0 || y < 0 || z < 0) {
           return Response(statusCode: 400);
         }
-
-        // Check if tile request is inside valid range
         final maxTileNum = sqrt(pow(4, z)) - 1;
         if (x > maxTileNum || y > maxTileNum) {
           return Response(statusCode: 400);
