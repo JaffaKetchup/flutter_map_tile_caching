@@ -93,6 +93,9 @@ abstract interface class FMTCBackendInternal
   /// {@template fmtc.backend.resetStore}
   /// Remove all the tiles from within the specified store
   ///
+  /// Also resets the hits & misses stats. Does not reset any associated
+  /// metadata.
+  ///
   /// This operation cannot be undone! Ensure you confirm with the user that
   /// this action is expected.
   /// {@endtemplate}

@@ -48,7 +48,12 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     // Handle errors (if missed by direct handler)
     final err = res?['error'];
     if (err != null) {
-      if (err is RootUnavailable) throw err;
+      // Thrown by immediate shutdown
+      if (err is RootUnavailable && kDebugMode) {
+        debugPrint(
+          '[FMTC] Immediate uninitialisation caused an operation to be lost.',
+        );
+      }
 
       debugPrint(
         'An unexpected error in the FMTC ObjectBox Backend occurred, and should not have occurred at this point:',
@@ -97,6 +102,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String? rootDirectory,
     required int maxDatabaseSize,
     required String? macosApplicationGroup,
+    FMTCExceptionHandler? exceptionHandler,
   }) async {
     if (_sendPort != null) throw RootAlreadyInitialised();
 
@@ -109,10 +115,21 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     ).create(recursive: true);
 
     // Prepare to recieve `SendPort` from worker
-    late final ByteData storeReference;
+    ByteData? storeReference;
     _workerResOneShot[0] = Completer();
     final workerInitialRes = _workerResOneShot[0]!.future.then((res) {
-      storeReference = res!['storeReference'];
+      if (res!['error'] != null) {
+        _workerHandler.cancel();
+        _workerComplete.complete();
+
+        _workerId = 0;
+        _workerResOneShot.clear();
+        _workerResStreamed.clear();
+
+        return;
+      }
+
+      storeReference = res['storeReference'];
       _sendPort = res['sendPort'];
       _workerResOneShot.remove(0);
     });
@@ -126,37 +143,31 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
         // Killed forcefully by environment (eg. hot restart)
         if (evt == null) {
-          _workerComplete.complete();
           _workerHandler.cancel(); // Ensure this handler is cancelled on return
+          _workerComplete.complete();
+          // Doesn't require full cleanup, because hot restart has done that
           return;
         }
 
         // Handle errors
         final err = evt.data?['error'];
         if (err != null) {
-          if (err is FMTCBackendError) {
-            debugPrint(
-              'It looks like you may have made an incorrect assumption when using FMTC:',
-            );
-            throw err;
-          }
-          if (err is StorageException) {
-            debugPrint(
-              'It looks like the FMTC ObjectBox Backend failed to write/read some data:',
-            );
-            throw err;
-          }
+          if (err is FMTCBackendError) throw err;
 
-          debugPrint(
-            'An unexpected error in the FMTC ObjectBox Backend occurred:',
+          final stackTrace = StackTrace.fromString(
+            (evt.data?['stackTrace']! as StackTrace).toString() +
+                StackTrace.current.toString(),
           );
-          Error.throwWithStackTrace(
-            err,
-            StackTrace.fromString(
-              (evt.data?['stackTrace']! as StackTrace).toString() +
-                  StackTrace.current.toString(),
-            ),
-          );
+
+          if (exceptionHandler != null) {
+            // TODO: Was exception at startup?
+            final handled = exceptionHandler(err, stackTrace);
+            if (handled == null || !handled) {
+              Error.throwWithStackTrace(err, stackTrace);
+            }
+          } else {
+            Error.throwWithStackTrace(err, stackTrace);
+          }
         }
 
         if (evt.data?['expectStream'] == true) {
@@ -176,17 +187,22 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         rootDirectory: this.rootDirectory!,
         maxDatabaseSize: maxDatabaseSize,
         macosApplicationGroup: macosApplicationGroup,
+        rootIsolateToken: ServicesBinding.rootIsolateToken!,
       ),
       onExit: receivePort.sendPort,
       debugName: '[FMTC] ObjectBox Backend Worker',
     );
 
+    // Wait for initial response from isolate
     await workerInitialRes;
 
-    FMTCBackendAccess.internal = this;
-    FMTCBackendAccessThreadSafe.internal = _ObjectBoxBackendThreadSafeImpl._(
-      storeReference: storeReference,
-    );
+    // Check whether initialisation was successful
+    if (storeReference != null) {
+      FMTCBackendAccess.internal = this;
+      FMTCBackendAccessThreadSafe.internal = _ObjectBoxBackendThreadSafeImpl._(
+        storeReference: storeReference!,
+      );
+    }
   }
 
   Future<void> uninitialise({

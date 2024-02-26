@@ -14,7 +14,7 @@ class StatDisplay extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         children: [
           if (statistic == null)
-            const CircularProgressIndicator()
+            const CircularProgressIndicator.adaptive()
           else
             Text(
               statistic!,

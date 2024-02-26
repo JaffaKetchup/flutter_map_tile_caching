@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -20,7 +21,12 @@ void main() async {
     ),
   );
 
-  await FMTCObjectBoxBackend().initialise();
+  await FMTCObjectBoxBackend().initialise(
+    exceptionHandler: (_, __) {
+      if (kDebugMode) print('Caught internal exception externally');
+      return false;
+    },
+  );
 
   runApp(const _AppContainer());
 }

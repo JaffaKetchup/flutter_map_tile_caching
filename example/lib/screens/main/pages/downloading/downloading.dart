@@ -94,7 +94,7 @@ class _DownloadingPageState extends State<DownloadingPage>
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              CircularProgressIndicator(),
+                              CircularProgressIndicator.adaptive(),
                               SizedBox(height: 16),
                               Text(
                                 'Taking a while?',

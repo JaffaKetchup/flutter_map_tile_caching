@@ -140,9 +140,6 @@ class _MainScreenState extends State<MainScreen> {
                     left: MediaQuery.sizeOf(context).width > 950
                         ? BorderSide(color: Theme.of(context).dividerColor)
                         : BorderSide.none,
-                    bottom: MediaQuery.sizeOf(context).width <= 950
-                        ? BorderSide(color: Theme.of(context).dividerColor)
-                        : BorderSide.none,
                   ),
                 ),
                 position: DecorationPosition.foreground,

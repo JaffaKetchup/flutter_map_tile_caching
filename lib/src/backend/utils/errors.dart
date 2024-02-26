@@ -1,6 +1,31 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
+import '../export_external.dart';
+
+/// A method called by FMTC internals when an exception occurs in a backend
+///
+/// A thrown [FMTCBackendError] will NOT result in this method being invoked, as
+/// that error should be fixed in code, and should not occur at runtime. It will
+/// always be thrown.
+///
+/// Other [Exception]s/[Error]s will result in this method being invoked, with a
+/// modified [StackTrace] that gives an indication as to where the issue occured
+/// internally, useful should a bug need to be reported. The trace will not
+/// include where the original method that caused the error was invoked. This
+/// exception/error may or may not be an issue directly in FMTC, it may be an
+/// issue in the usage of a dependency (such as an exception caused by
+/// exceeding a database's storage limit).
+///
+/// If the callback returns `true`, then FMTC will not continue to handle the
+/// error. Otherwise (`false` or `null`), then FMTC will also throw the
+/// exception/error. If the callback is not defined (in
+/// [FMTCBackend.initialise]), then FMTC will throw the exception/error.
+typedef FMTCExceptionHandler = bool? Function(
+  Object? exception,
+  StackTrace stackTrace,
+);
+
 /// An error to be thrown by backend implementations in known events only
 ///
 /// A backend can create custom errors of this type, which is useful to show

@@ -49,6 +49,7 @@ Future<void> _worker(
     Directory rootDirectory,
     int maxDatabaseSize,
     String? macosApplicationGroup,
+    RootIsolateToken rootIsolateToken,
   }) input,
 ) async {
   //! SETUP !//
@@ -61,12 +62,21 @@ Future<void> _worker(
   }) =>
       input.sendPort.send((id: id, data: data));
 
+  /// Enable ObjectBox usage from this background isolate
+  BackgroundIsolateBinaryMessenger.ensureInitialized(input.rootIsolateToken);
+
   // Initialise database
-  final root = await openStore(
-    directory: input.rootDirectory.absolute.path,
-    maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
-    macosApplicationGroup: input.macosApplicationGroup,
-  );
+  late final Store root;
+  try {
+    root = await openStore(
+      directory: input.rootDirectory.absolute.path,
+      maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
+      macosApplicationGroup: input.macosApplicationGroup,
+    );
+  } catch (e, s) {
+    sendRes(id: 0, data: {'error': e, 'stackTrace': s});
+    Isolate.exit();
+  }
 
   // Respond with comms channel for future cmds
   sendRes(
@@ -299,14 +309,11 @@ Future<void> _worker(
               storeQuery.close();
 
               stores.put(
-                ObjectBoxStore(
-                  name: store.name,
-                  length: 0,
-                  size: 0,
-                  hits: 0,
-                  misses: 0,
-                  metadataJson: '',
-                ),
+                store
+                  ..length = 0
+                  ..size = 0
+                  ..hits = 0
+                  ..misses = 0,
                 mode: PutMode.update,
               );
             },

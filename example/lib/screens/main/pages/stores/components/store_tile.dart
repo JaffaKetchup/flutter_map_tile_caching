@@ -8,13 +8,10 @@ import '../../../../store_editor/store_editor.dart';
 import 'stat_display.dart';
 
 class StoreTile extends StatefulWidget {
-  const StoreTile({
-    super.key,
-    required this.context,
+  StoreTile({
     required this.storeName,
-  });
+  }) : super(key: ValueKey(storeName));
 
-  final BuildContext context;
   final String storeName;
 
   @override
@@ -22,114 +19,16 @@ class StoreTile extends StatefulWidget {
 }
 
 class _StoreTileState extends State<StoreTile> {
-  Future<String>? _length;
-  Future<String>? _size;
-  Future<String>? _hits;
-  Future<String>? _misses;
-  Future<Image?>? _image;
-
   bool _deletingProgress = false;
   bool _emptyingProgress = false;
   bool _exportingProgress = false;
 
-  late final _store = FMTCStore(widget.storeName);
-
-  void _loadStatistics() {
-    final stats = _store.stats.all;
-
-    _length = stats.then((s) => s.length.toString());
-    _size = stats.then((s) => (s.size * 1024).asReadableSize);
-    _hits = stats.then((s) => s.hits.toString());
-    _misses = stats.then((s) => s.misses.toString());
-
-    _image = _store.manage.tileImage(size: 125);
-
-    setState(() {});
-  }
-
-  List<FutureBuilder<String>> get stats => [
-        FutureBuilder<String>(
-          future: _length,
-          builder: (context, snapshot) => StatDisplay(
-            statistic: snapshot.connectionState != ConnectionState.done
-                ? null
-                : snapshot.data,
-            description: 'Total Tiles',
-          ),
-        ),
-        FutureBuilder<String>(
-          future: _size,
-          builder: (context, snapshot) => StatDisplay(
-            statistic: snapshot.connectionState != ConnectionState.done
-                ? null
-                : snapshot.data,
-            description: 'Total Size',
-          ),
-        ),
-        FutureBuilder<String>(
-          future: _hits,
-          builder: (context, snapshot) => StatDisplay(
-            statistic: snapshot.connectionState != ConnectionState.done
-                ? null
-                : snapshot.data,
-            description: 'Cache Hits',
-          ),
-        ),
-        FutureBuilder<String>(
-          future: _misses,
-          builder: (context, snapshot) => StatDisplay(
-            statistic: snapshot.connectionState != ConnectionState.done
-                ? null
-                : snapshot.data,
-            description: 'Cache Misses',
-          ),
-        ),
-      ];
-
-  IconButton deleteStoreButton({required bool isCurrentStore}) => IconButton(
-        icon: _deletingProgress
-            ? const CircularProgressIndicator(
-                strokeWidth: 3,
-              )
-            : Icon(
-                Icons.delete_forever,
-                color: isCurrentStore ? null : Colors.red,
-              ),
-        tooltip: 'Delete Store',
-        onPressed: isCurrentStore || _deletingProgress
-            ? null
-            : () async {
-                setState(() {
-                  _deletingProgress = true;
-                  _emptyingProgress = true;
-                });
-                await _store.manage.delete();
-              },
-      );
-
   @override
-  Widget build(BuildContext context) => Consumer<GeneralProvider>(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            FutureBuilder<Image?>(
-              future: _image,
-              builder: (context, snapshot) => snapshot.data == null
-                  ? const SizedBox(
-                      height: 125,
-                      width: 125,
-                      child: Icon(Icons.help_outline, size: 36),
-                    )
-                  : snapshot.data!,
-            ),
-            if (MediaQuery.sizeOf(context).width > 675)
-              ...stats
-            else
-              Column(children: stats),
-          ],
-        ),
-        builder: (context, provider, statistics) {
-          final bool isCurrentStore = provider.currentStore == widget.storeName;
+  Widget build(BuildContext context) => Selector<GeneralProvider, String?>(
+        selector: (context, provider) => provider.currentStore,
+        builder: (context, currentStore, child) {
+          final store = FMTCStore(widget.storeName);
+          final isCurrentStore = currentStore == widget.storeName;
 
           return ExpansionTile(
             title: Text(
@@ -137,173 +36,258 @@ class _StoreTileState extends State<StoreTile> {
               style: TextStyle(
                 fontWeight:
                     isCurrentStore ? FontWeight.bold : FontWeight.normal,
-                // color: _store.manage.ready == false ? Colors.red : null,
               ),
             ),
             subtitle: _deletingProgress ? const Text('Deleting...') : null,
-            // leading: _store.manage.ready == false
-            //   ? const Icon(
-            //        Icons.error,
-            //       color: Colors.red,
-            //     )
-            //   : null,
-            onExpansionChanged: (e) {
-              if (e) _loadStatistics();
-            },
             children: [
-              FutureBuilder(
-                future: _store.manage.ready,
-                builder: (context, snapshot) {
-                  if (snapshot.data == null) {
-                    return const CircularProgressIndicator.adaptive();
-                  }
+              SizedBox(
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: FutureBuilder(
+                            future: store.manage.ready,
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return const UnconstrainedBox(
+                                  child: CircularProgressIndicator.adaptive(),
+                                );
+                              }
 
-                  return SizedBox(
-                    width: double.infinity,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 18, bottom: 10),
-                      child: snapshot.data!
-                          ? Column(
-                              children: [
-                                statistics!,
-                                const SizedBox(height: 15),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
+                              if (!snapshot.data!) {
+                                return const Wrap(
+                                  alignment: WrapAlignment.center,
+                                  runAlignment: WrapAlignment.center,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 24,
+                                  runSpacing: 12,
                                   children: [
-                                    deleteStoreButton(
-                                      isCurrentStore: isCurrentStore,
+                                    Icon(
+                                      Icons.broken_image_rounded,
+                                      size: 38,
                                     ),
-                                    IconButton(
-                                      icon: _emptyingProgress
-                                          ? const CircularProgressIndicator(
-                                              strokeWidth: 3,
-                                            )
-                                          : const Icon(Icons.delete),
-                                      tooltip: 'Empty Store',
-                                      onPressed: _emptyingProgress
-                                          ? null
-                                          : () async {
-                                              setState(
-                                                () => _emptyingProgress = true,
-                                              );
-                                              await _store.manage.reset();
-                                              setState(
-                                                () => _emptyingProgress = false,
-                                              );
+                                    Text(
+                                      'Invalid/missing store',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                );
+                              }
 
-                                              _loadStatistics();
-                                            },
-                                    ),
-                                    IconButton(
-                                      icon: _exportingProgress
-                                          ? const CircularProgressIndicator(
-                                              strokeWidth: 3,
-                                            )
-                                          : const Icon(
-                                              Icons.upload_file_rounded,
-                                            ),
-                                      tooltip: 'Export Store',
-                                      onPressed: _exportingProgress
-                                          ? null
-                                          : () async {
-                                              // TODO: Implement
-                                              /* setState(
-                                                () => _exportingProgress = true,
-                                              );
-                                              final bool result = await _store
-                                                  .export
-                                                  .withGUI(context: context);
-                                              setState(
-                                                () =>
-                                                    _exportingProgress = false,
-                                              );
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      result
-                                                          ? 'Exported Sucessfully'
-                                                          : 'Export Cancelled',
-                                                    ),
-                                                  ),
-                                                );
-                                              }*/
-                                            },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.edit),
-                                      tooltip: 'Edit Store',
-                                      onPressed: () =>
-                                          Navigator.of(context).push(
-                                        MaterialPageRoute<String>(
-                                          builder: (BuildContext context) =>
-                                              StoreEditorPopup(
-                                            existingStoreName: widget.storeName,
-                                            isStoreInUse: isCurrentStore,
-                                          ),
-                                          fullscreenDialog: true,
+                              return FutureBuilder(
+                                future: store.stats.all,
+                                builder: (context, snapshot) {
+                                  if (!snapshot.hasData) {
+                                    return const UnconstrainedBox(
+                                      child:
+                                          CircularProgressIndicator.adaptive(),
+                                    );
+                                  }
+
+                                  return Wrap(
+                                    alignment: WrapAlignment.spaceEvenly,
+                                    runAlignment: WrapAlignment.spaceEvenly,
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    spacing: 32,
+                                    runSpacing: 16,
+                                    children: [
+                                      FutureBuilder(
+                                        future: store.manage.tileImage(
+                                          size: 256 * 3 / 5,
+                                          gaplessPlayback: true,
                                         ),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState !=
+                                              ConnectionState.done) {
+                                            return const UnconstrainedBox(
+                                              child: CircularProgressIndicator
+                                                  .adaptive(),
+                                            );
+                                          }
+
+                                          if (snapshot.data == null) {
+                                            return const Icon(
+                                              Icons.grid_view_rounded,
+                                              size: 38,
+                                            );
+                                          }
+
+                                          return snapshot.data!;
+                                        },
                                       ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.refresh),
-                                      tooltip: 'Force Refresh Statistics',
-                                      onPressed: _loadStatistics,
-                                    ),
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.done,
-                                        color: isCurrentStore
-                                            ? Colors.green
-                                            : null,
+                                      Wrap(
+                                        alignment: WrapAlignment.spaceEvenly,
+                                        runAlignment: WrapAlignment.spaceEvenly,
+                                        crossAxisAlignment:
+                                            WrapCrossAlignment.center,
+                                        spacing: 42,
+                                        children: [
+                                          StatDisplay(
+                                            statistic: snapshot.data!.length
+                                                .toString(),
+                                            description: 'tiles',
+                                          ),
+                                          StatDisplay(
+                                            statistic:
+                                                (snapshot.data!.size * 1024)
+                                                    .asReadableSize,
+                                            description: 'size',
+                                          ),
+                                          StatDisplay(
+                                            statistic:
+                                                snapshot.data!.hits.toString(),
+                                            description: 'hits',
+                                          ),
+                                          StatDisplay(
+                                            statistic: snapshot.data!.misses
+                                                .toString(),
+                                            description: 'misses',
+                                          ),
+                                        ],
                                       ),
-                                      tooltip: 'Use Store',
-                                      onPressed: isCurrentStore
-                                          ? null
-                                          : () {
-                                              provider
-                                                ..currentStore =
-                                                    widget.storeName
-                                                ..resetMap();
-                                            },
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox.square(dimension: 8),
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Wrap(
+                            alignment: WrapAlignment.spaceEvenly,
+                            runAlignment: WrapAlignment.spaceEvenly,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              IconButton(
+                                icon: _deletingProgress
+                                    ? const CircularProgressIndicator(
+                                        strokeWidth: 3,
+                                      )
+                                    : Icon(
+                                        Icons.delete_forever,
+                                        color:
+                                            isCurrentStore ? null : Colors.red,
+                                      ),
+                                tooltip: 'Delete Store',
+                                onPressed: isCurrentStore || _deletingProgress
+                                    ? null
+                                    : () async {
+                                        setState(() {
+                                          _deletingProgress = true;
+                                          _emptyingProgress = true;
+                                        });
+                                        await FMTCStore(widget.storeName)
+                                            .manage
+                                            .delete();
+                                      },
+                              ),
+                              IconButton(
+                                icon: _emptyingProgress
+                                    ? const CircularProgressIndicator(
+                                        strokeWidth: 3,
+                                      )
+                                    : const Icon(Icons.delete),
+                                tooltip: 'Empty Store',
+                                onPressed: _emptyingProgress
+                                    ? null
+                                    : () async {
+                                        setState(
+                                          () => _emptyingProgress = true,
+                                        );
+                                        await FMTCStore(widget.storeName)
+                                            .manage
+                                            .reset();
+                                        setState(
+                                          () => _emptyingProgress = false,
+                                        );
+                                      },
+                              ),
+                              IconButton(
+                                icon: _exportingProgress
+                                    ? const CircularProgressIndicator(
+                                        strokeWidth: 3,
+                                      )
+                                    : const Icon(
+                                        Icons.send_time_extension_rounded,
+                                      ),
+                                tooltip: 'Export Store',
+                                onPressed: _exportingProgress
+                                    ? null
+                                    : () async {
+                                        // TODO: Implement
+                                        /* setState(
+                                                    () => _exportingProgress = true,
+                                                  );
+                                                  final bool result = await _store
+                                                      .export
+                                                      .withGUI(context: context);
+                                                  setState(
+                                                    () =>
+                                                        _exportingProgress = false,
+                                                  );
+                                                  if (mounted) {
+                                                    ScaffoldMessenger.of(context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          result
+                                                              ? 'Exported Sucessfully'
+                                                              : 'Export Cancelled',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }*/
+                                      },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.edit),
+                                tooltip: 'Edit Store',
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute<String>(
+                                    builder: (BuildContext context) =>
+                                        StoreEditorPopup(
+                                      existingStoreName: widget.storeName,
+                                      isStoreInUse: isCurrentStore,
                                     ),
-                                  ],
-                                ),
-                              ],
-                            )
-                          : Column(
-                              children: [
-                                const SizedBox(height: 10),
-                                const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.broken_image, size: 34),
-                                    Icon(Icons.error, size: 34),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Invalid Store',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
+                                    fullscreenDialog: true,
                                   ),
                                 ),
-                                const Text(
-                                  "This store's directory structure appears to have been corrupted. You must delete the store to resolve the issue.",
-                                  textAlign: TextAlign.center,
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.done,
+                                  color: isCurrentStore ? Colors.green : null,
                                 ),
-                                const SizedBox(height: 5),
-                                deleteStoreButton(
-                                  isCurrentStore: isCurrentStore,
-                                ),
-                              ],
-                            ),
-                    ),
-                  );
-                },
+                                tooltip: 'Use Store',
+                                onPressed: isCurrentStore
+                                    ? null
+                                    : () {
+                                        context.read<GeneralProvider>()
+                                          ..currentStore = widget.storeName
+                                          ..resetMap();
+                                      },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           );
