@@ -42,6 +42,8 @@ jobs:
               channel: "stable"
           - name: Get Package Dependencies
             run: flutter pub get
+          - name: Get Dart Package Dependencies
+            run: dart pub get
           - name: Get Example Dependencies
             run: flutter pub get -C example
           - name: Get Test Tile Server Dependencies
@@ -65,6 +67,8 @@ jobs:
               channel: "stable"
           - name: Get Dependencies
             run: flutter pub get
+          - name: Get Dart Dependencies
+            run: dart pub get
           - name: Generate Code
             run: dart run build_runner build
           - name: Run Tests
@@ -91,6 +95,8 @@ jobs:
               channel: "stable"
           - name: Get Dependencies
             run: flutter pub get
+          - name: Get Dart Dependencies
+            run: dart pub get
           - name: Generate Code
             run: dart run build_runner build
           - name: Build
@@ -118,6 +124,8 @@ jobs:
               channel: "stable"
           - name: Get Dependencies
             run: flutter pub get
+          - name: Get Dart Dependencies
+            run: dart pub get
           - name: Generate Code
             run: dart run build_runner build
           - name: Build
@@ -145,6 +153,8 @@ jobs:
           - name: Setup Dart Environment
             uses: dart-lang/setup-dart@v1.6.2
           - name: Get Dependencies
+            run: dart pub get
+          - name: Get Dart Dependencies
             run: dart pub get
           - name: Generate Tile Images
             run: dart run bin/generate_dart_images.dart
