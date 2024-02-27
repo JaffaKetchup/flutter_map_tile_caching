@@ -63,6 +63,8 @@ jobs:
             uses: subosito/flutter-action@master
             with:
               channel: "stable"
+          - name: Get Dependencies
+            run: flutter pub get
           - name: Generate Code
             run: dart run build_runner build
           - name: Run Tests
@@ -87,6 +89,8 @@ jobs:
             uses: subosito/flutter-action@master
             with:
               channel: "stable"
+          - name: Get Dependencies
+            run: flutter pub get
           - name: Generate Code
             run: dart run build_runner build
           - name: Build
@@ -112,6 +116,8 @@ jobs:
             uses: subosito/flutter-action@master
             with:
               channel: "stable"
+          - name: Get Dependencies
+            run: flutter pub get
           - name: Generate Code
             run: dart run build_runner build
           - name: Build
