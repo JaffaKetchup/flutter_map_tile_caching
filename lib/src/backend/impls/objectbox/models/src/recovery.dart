@@ -85,13 +85,13 @@ base class ObjectBoxRecovery {
             ? (region.originalRegion as LineRegion)
                 .line
                 .map((c) => c.latitude)
-                .toList()
+                .toList(growable: false)
             : null,
         lineLngs = region.originalRegion is LineRegion
             ? (region.originalRegion as LineRegion)
                 .line
                 .map((c) => c.longitude)
-                .toList()
+                .toList(growable: false)
             : null,
         lineRadius = region.originalRegion is LineRegion
             ? (region.originalRegion as LineRegion).radius
@@ -100,13 +100,13 @@ base class ObjectBoxRecovery {
             ? (region.originalRegion as CustomPolygonRegion)
                 .outline
                 .map((c) => c.latitude)
-                .toList()
+                .toList(growable: false)
             : null,
         customPolygonLngs = region.originalRegion is CustomPolygonRegion
             ? (region.originalRegion as CustomPolygonRegion)
                 .outline
                 .map((c) => c.longitude)
-                .toList()
+                .toList(growable: false)
             : null;
 
   @Id()

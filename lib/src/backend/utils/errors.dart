@@ -9,6 +9,11 @@ import '../export_external.dart';
 /// that error should be fixed in code, and should not occur at runtime. It will
 /// always be thrown.
 ///
+/// [initialisationFailure] indicates whether the error occured during
+/// intialisation. If it is `true`, then the error was fatal and will have
+/// killed the backend. Otherwise, the backend should still recieve and respond
+/// to future operations.
+///
 /// Other [Exception]s/[Error]s will result in this method being invoked, with a
 /// modified [StackTrace] that gives an indication as to where the issue occured
 /// internally, useful should a bug need to be reported. The trace will not
@@ -18,13 +23,13 @@ import '../export_external.dart';
 /// exceeding a database's storage limit).
 ///
 /// If the callback returns `true`, then FMTC will not continue to handle the
-/// error. Otherwise (`false` or `null`), then FMTC will also throw the
-/// exception/error. If the callback is not defined (in
-/// [FMTCBackend.initialise]), then FMTC will throw the exception/error.
-typedef FMTCExceptionHandler = bool? Function(
-  Object? exception,
-  StackTrace stackTrace,
-);
+/// error. Otherwise, FMTC will also throw the exception/error. If the callback
+/// is not defined (in [FMTCBackend.initialise]), then FMTC will throw the exception/error.
+typedef FMTCExceptionHandler = bool Function({
+  required Object? exception,
+  required StackTrace stackTrace,
+  required bool initialisationFailure,
+});
 
 /// An error to be thrown by backend implementations in known events only
 ///

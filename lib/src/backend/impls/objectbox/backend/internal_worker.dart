@@ -119,14 +119,10 @@ Future<void> _worker(
           (i) {
             final tile = queriedTiles[i];
 
-            // Linear search through related stores, and modify when located
-            for (final store in tile.stores) {
-              if (store.name != storeName) continue;
-              store
-                ..length -= 1
-                ..size -= tile.bytes.lengthInBytes;
-              break;
-            }
+            // Modify current store
+            store
+              ..length -= 1
+              ..size -= tile.bytes.lengthInBytes;
 
             // Remove the store relation from the tile
             tile.stores.removeWhere((store) => store.name == storeName);
@@ -136,14 +132,14 @@ Future<void> _worker(
 
             // Otherwise register the tile to be updated (the new relation applied)
             tilesToUpdate.add(tile);
-            return -1;
+            return null;
           },
           growable: false,
         );
 
         stores.put(store, mode: PutMode.update);
         return (tiles..putMany(tilesToUpdate, mode: PutMode.update))
-            .removeMany(tilesToDelete);
+            .removeMany(tilesToDelete.whereNotNull().toList(growable: false));
       },
     );
 
@@ -154,11 +150,13 @@ Future<void> _worker(
 
   //! MAIN LOOP !//
 
-  await for (final ({
-    int id,
-    _WorkerCmdType type,
-    Map<String, dynamic> args,
-  }) cmd in receivePort) {
+  await receivePort.listen((cmd) {
+    cmd as ({
+      int id,
+      _WorkerCmdType type,
+      Map<String, dynamic> args,
+    });
+
     try {
       switch (cmd.type) {
         case _WorkerCmdType.initialise_:
@@ -208,7 +206,7 @@ Future<void> _worker(
                   .box<ObjectBoxStore>()
                   .getAll()
                   .map((e) => e.name)
-                  .toList(),
+                  .toList(growable: false),
             },
           );
         case _WorkerCmdType.storeExists:
@@ -297,7 +295,7 @@ Future<void> _worker(
                       return null;
                     })
                     .whereNotNull()
-                    .toList(),
+                    .toList(growable: false),
                 mode: PutMode.update,
               );
               tilesQuery.close();
@@ -475,7 +473,7 @@ Future<void> _worker(
                             ..size += (bytes.lengthInBytes -
                                 existingTile.bytes.lengthInBytes),
                         )
-                        .toList(),
+                        .toList(growable: false),
                   );
                 case (true, true): // FMTC internal error
                   throw StateError(
@@ -553,15 +551,15 @@ Future<void> _worker(
 
           final numToRemove = store.length - tilesLimit;
 
+          if (numToRemove <= 0) sendRes(id: cmd.id, data: {'numOrphans': 0});
+
+          tilesQuery.limit = numToRemove;
+
           sendRes(
             id: cmd.id,
             data: {
-              'numOrphans': numToRemove <= 0
-                  ? 0
-                  : deleteTiles(
-                      storeName: storeName,
-                      tilesQuery: tilesQuery..limit = numToRemove,
-                    ),
+              'numOrphans':
+                  deleteTiles(storeName: storeName, tilesQuery: tilesQuery),
             },
           );
 
@@ -736,7 +734,7 @@ Future<void> _worker(
                   .box<ObjectBoxRecovery>()
                   .getAll()
                   .map((r) => r.toRegion())
-                  .toList(),
+                  .toList(growable: false),
             },
           );
         case _WorkerCmdType.getRecoverableRegion:
@@ -803,7 +801,7 @@ Future<void> _worker(
         case _WorkerCmdType.cancelWatch:
           final id = cmd.args['id']! as int;
 
-          await streamedOutputSubscriptions[id]?.cancel();
+          streamedOutputSubscriptions[id]?.cancel();
           streamedOutputSubscriptions.remove(id);
 
           sendRes(id: cmd.id);
@@ -811,5 +809,5 @@ Future<void> _worker(
     } catch (e, s) {
       sendRes(id: cmd.id, data: {'error': e, 'stackTrace': s});
     }
-  }
+  }).asFuture<void>();
 }

@@ -212,7 +212,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                               FilteringTextInputFormatter.digitsOnly,
                             ],
                             initialValue: metadata.data!.isEmpty
-                                ? '20000'
+                                ? '100000'
                                 : metadata.data!['maxLength'],
                             textInputAction: TextInputAction.done,
                           ),

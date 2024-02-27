@@ -39,6 +39,7 @@ class _StoreTileState extends State<StoreTile> {
               ),
             ),
             subtitle: _deletingProgress ? const Text('Deleting...') : null,
+            initiallyExpanded: isCurrentStore,
             children: [
               SizedBox(
                 width: double.infinity,
@@ -100,36 +101,43 @@ class _StoreTileState extends State<StoreTile> {
                                     spacing: 32,
                                     runSpacing: 16,
                                     children: [
-                                      FutureBuilder(
-                                        future: store.manage.tileImage(
-                                          size: 256 * 3 / 5,
-                                          gaplessPlayback: true,
+                                      SizedBox.square(
+                                        dimension: 160,
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          child: FutureBuilder(
+                                            future: store.manage.tileImage(
+                                              gaplessPlayback: true,
+                                            ),
+                                            builder: (context, snapshot) {
+                                              if (snapshot.connectionState !=
+                                                  ConnectionState.done) {
+                                                return const UnconstrainedBox(
+                                                  child:
+                                                      CircularProgressIndicator
+                                                          .adaptive(),
+                                                );
+                                              }
+
+                                              if (snapshot.data == null) {
+                                                return const Icon(
+                                                  Icons.grid_view_rounded,
+                                                  size: 38,
+                                                );
+                                              }
+
+                                              return snapshot.data!;
+                                            },
+                                          ),
                                         ),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.connectionState !=
-                                              ConnectionState.done) {
-                                            return const UnconstrainedBox(
-                                              child: CircularProgressIndicator
-                                                  .adaptive(),
-                                            );
-                                          }
-
-                                          if (snapshot.data == null) {
-                                            return const Icon(
-                                              Icons.grid_view_rounded,
-                                              size: 38,
-                                            );
-                                          }
-
-                                          return snapshot.data!;
-                                        },
                                       ),
                                       Wrap(
                                         alignment: WrapAlignment.spaceEvenly,
                                         runAlignment: WrapAlignment.spaceEvenly,
                                         crossAxisAlignment:
                                             WrapCrossAlignment.center,
-                                        spacing: 42,
+                                        spacing: 64,
                                         children: [
                                           StatDisplay(
                                             statistic: snapshot.data!.length
@@ -171,6 +179,7 @@ class _StoreTileState extends State<StoreTile> {
                             alignment: WrapAlignment.spaceEvenly,
                             runAlignment: WrapAlignment.spaceEvenly,
                             crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 16,
                             children: [
                               IconButton(
                                 icon: _deletingProgress

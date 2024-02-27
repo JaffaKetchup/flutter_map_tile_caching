@@ -22,8 +22,16 @@ void main() async {
   );
 
   await FMTCObjectBoxBackend().initialise(
-    exceptionHandler: (_, __) {
-      if (kDebugMode) print('Caught internal exception externally');
+    exceptionHandler: ({
+      required exception,
+      required initialisationFailure,
+      required stackTrace,
+    }) {
+      if (kDebugMode) {
+        print(
+          'Caught error externally (was init error: $initialisationFailure)',
+        );
+      }
       return false;
     },
   );

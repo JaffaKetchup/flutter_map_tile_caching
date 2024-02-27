@@ -250,7 +250,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     // Clear out old tiles if the maximum store length has been exceeded
     if (needsCreating && provider.settings.maxStoreLength != 0) {
-      // TODO: Check if performance is acceptable without checking limit excess first
       unawaited(
         FMTCBackendAccess.internal.removeOldestTilesAboveLimit(
           storeName: storeName,

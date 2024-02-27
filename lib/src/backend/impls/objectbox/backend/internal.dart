@@ -19,19 +19,19 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   @override
   Directory? rootDirectory;
 
-  SendPort? _sendPort;
   void get expectInitialised => _sendPort ?? (throw RootUnavailable());
+
+  // Worker communication protocol storage
+  SendPort? _sendPort;
   final _workerResOneShot = <int, Completer<Map<String, dynamic>?>>{};
   final _workerResStreamed = <int, StreamSink<Map<String, dynamic>?>>{};
   int _workerId = 0;
   late Completer<void> _workerComplete;
   late StreamSubscription<dynamic> _workerHandler;
 
-  // TODO: Verify if necessary and remove if not
-  //`removeOldestTilesAboveLimit` tracking & debouncing
-  //late int _rotalLength;
-  //late Timer _rotalDebouncer;
-  //late String? _rotalStore;
+  // `removeOldestTilesAboveLimit` tracking & debouncing
+  Timer? _rotalDebouncer;
+  String? _rotalStore;
 
   Future<Map<String, dynamic>?> _sendCmdOneShot({
     required _WorkerCmdType type,
@@ -160,11 +160,12 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
           );
 
           if (exceptionHandler != null) {
-            // TODO: Was exception at startup?
-            final handled = exceptionHandler(err, stackTrace);
-            if (handled == null || !handled) {
-              Error.throwWithStackTrace(err, stackTrace);
-            }
+            final handled = exceptionHandler(
+              exception: err,
+              stackTrace: stackTrace,
+              initialisationFailure: evt.id == 0,
+            );
+            if (!handled) Error.throwWithStackTrace(err, stackTrace);
           } else {
             Error.throwWithStackTrace(err, stackTrace);
           }
@@ -241,9 +242,9 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     _workerId = 0;
     _workerResOneShot.clear();
     _workerResStreamed.clear();
-    //_rotalStore = null;
-    //_rotalLength = 0;
-    //_rotalDebouncer.cancel();
+    _rotalDebouncer?.cancel();
+    _rotalDebouncer = null;
+    _rotalStore = null;
 
     FMTCBackendAccess.internal = null;
     FMTCBackendAccessThreadSafe.internal = null;
@@ -387,11 +388,41 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   Future<int> removeOldestTilesAboveLimit({
     required String storeName,
     required int tilesLimit,
-  }) async =>
-      (await _sendCmdOneShot(
-        type: _WorkerCmdType.removeOldestTilesAboveLimit,
-        args: {'storeName': storeName, 'tilesLimit': tilesLimit},
-      ))!['numOrphans'];
+  }) async {
+    const type = _WorkerCmdType.removeOldestTilesAboveLimit;
+    final args = {'storeName': storeName, 'tilesLimit': tilesLimit};
+
+    // Attempts to avoid flooding worker with requests to delete oldest tile,
+    // and 'batches' them instead
+
+    if (_rotalStore != storeName) {
+      // If the store has changed, failing to reset the batch/queue will mean
+      // tiles are removed from the wrong store
+      _rotalStore = storeName;
+      if (_rotalDebouncer?.isActive ?? false) {
+        _rotalDebouncer!.cancel();
+        return (await _sendCmdOneShot(type: type, args: args))!['numOrphans'];
+      }
+    }
+
+    if (_rotalDebouncer?.isActive ?? false) {
+      _rotalDebouncer!.cancel();
+      _rotalDebouncer = Timer(
+        const Duration(milliseconds: 500),
+        () async =>
+            (await _sendCmdOneShot(type: type, args: args))!['numOrphans'],
+      );
+      return -1;
+    }
+
+    _rotalDebouncer = Timer(
+      const Duration(seconds: 1),
+      () async =>
+          (await _sendCmdOneShot(type: type, args: args))!['numOrphans'],
+    );
+
+    return -1;
+  }
 
   /* FOR ABOVE METHOD
     // Attempts to avoid flooding worker with requests to delete oldest tile,

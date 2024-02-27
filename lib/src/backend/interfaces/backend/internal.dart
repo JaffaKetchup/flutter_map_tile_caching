@@ -183,13 +183,12 @@ abstract interface class FMTCBackendInternal
     required bool hit,
   });
 
-  // TODO: Verify below and add to belower doc string
-  //
-  // It is recommended to invoke this operation as few times as possible, for
-  // example by debouncing, as this operation may be expensive.
-
   /// Remove tiles in excess of the specified limit from the specified store,
   /// oldest first
+  ///
+  /// May internally debounce, as this is a potentially expensive operation that
+  /// is likely to have no effect. When an invocation has been debounced, this
+  /// method will return `-1`.
   ///
   /// Returns the number of tiles that were actually deleted (they were
   /// orphaned). See [deleteTile] for more information about orphan tiles.

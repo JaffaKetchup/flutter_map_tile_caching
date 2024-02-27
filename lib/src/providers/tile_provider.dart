@@ -53,7 +53,18 @@ class FMTCTileProvider extends TileProvider {
         coords: coords,
       );
 
-  // TODO: Define deprecation for `Async`
+  /// Check whether a specified tile is cached in the current store
+  @Deprecated('''
+Migrate to `checkTileCached`.
+
+Synchronous operations have been removed throughout FMTC v9, therefore the
+distinction between sync and async operations has been removed. This deprecated
+member will be removed in a future version.''')
+  Future<bool> checkTileCachedAsync({
+    required TileCoordinates coords,
+    required TileLayer options,
+  }) =>
+      checkTileCached(coords: coords, options: options);
 
   /// Check whether a specified tile is cached in the current store
   Future<bool> checkTileCached({
