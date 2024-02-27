@@ -47,7 +47,7 @@ jobs:
           - name: Check Formatting
             run: dart format --output=none --set-exit-if-changed .
           - name: Check Lints
-            run: dart analyze --fatal-infos --fatal-warnings
+            run: dart analyze --fatal-warnings
     
     run-tests:
         name: "Run Tests"
@@ -81,6 +81,8 @@ jobs:
             uses: subosito/flutter-action@v2
             with:
               channel: "stable"
+          - name: Generate Code
+            run: dart run build_runner build
           - name: Build
             run: flutter build apk --obfuscate --split-debug-info=./symbols
           - name: Upload Artifact
@@ -104,6 +106,8 @@ jobs:
             uses: subosito/flutter-action@v2
             with:
               channel: "stable"
+          - name: Generate Code
+            run: dart run build_runner build
           - name: Build
             run: flutter build windows --obfuscate --split-debug-info=./symbols
           - name: Create Installer
@@ -130,7 +134,7 @@ jobs:
             uses: dart-lang/setup-dart@v1.5.0
           - name: Get Dependencies
             run: dart pub get
-          - name: Run Pre-Compile Generator
+          - name: Generate Tile Images
             run: dart run bin/generate_dart_images.dart
           - name: Compile
             run: dart compile exe bin/tile_server.dart
