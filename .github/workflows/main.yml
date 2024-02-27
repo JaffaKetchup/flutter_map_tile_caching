@@ -15,7 +15,7 @@ jobs:
           - name: Checkout Repository
             uses: actions/checkout@v3
           - name: Run Dart Package Analyser
-            uses: axel-op/dart-package-analyzer@master
+            uses: JaffaKetchup/dart-package-analyzer@master
             id: analysis
             with:
               githubToken: ${{ secrets.GITHUB_TOKEN }}
@@ -40,10 +40,14 @@ jobs:
             uses: subosito/flutter-action@v2
             with:
               channel: "stable"
-          - name: Get Package & Example Dependencies
+          - name: Get Package Dependencies
             run: flutter pub get
+          - name: Get Example Dependencies
+            run: flutter pub get -C example
           - name: Get Test Tile Server Dependencies
             run: dart pub get -C tile_server
+          - name: Generate Code
+            run: dart run build_runner build
           - name: Check Formatting
             run: dart format --output=none --set-exit-if-changed .
           - name: Check Lints
@@ -59,6 +63,8 @@ jobs:
             uses: subosito/flutter-action@v2
             with:
               channel: "stable"
+          - name: Generate Code
+            run: dart run build_runner build
           - name: Run Tests
             run: flutter test -r expanded
 
