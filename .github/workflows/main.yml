@@ -13,9 +13,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@v3
+            uses: actions/checkout@master
           - name: Run Dart Package Analyser
-            uses: JaffaKetchup/dart-package-analyzer@master
+            uses: axel-op/dart-package-analyzer@master
             id: analysis
             with:
               githubToken: ${{ secrets.GITHUB_TOKEN }}
@@ -35,9 +35,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@v3
+            uses: actions/checkout@master
           - name: Setup Flutter Environment
-            uses: subosito/flutter-action@v2
+            uses: subosito/flutter-action@master
             with:
               channel: "stable"
           - name: Get Package Dependencies
@@ -58,9 +58,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@v3
+            uses: actions/checkout@master
           - name: Setup Flutter Environment
-            uses: subosito/flutter-action@v2
+            uses: subosito/flutter-action@master
             with:
               channel: "stable"
           - name: Generate Code
@@ -71,20 +71,20 @@ jobs:
     build-demo-android:
         name: "Build Demo App (Android)"
         runs-on: ubuntu-latest
-        needs: [analyse-code, run-tests, score-package]
+        needs: [analyse-code, run-tests]
         defaults:
           run:
             working-directory: ./example
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@v3
+            uses: actions/checkout@master
           - name: Setup Java 17 Environment
             uses: actions/setup-java@v3
             with:
               distribution: "temurin"
               java-version: "17"
           - name: Setup Flutter Environment
-            uses: subosito/flutter-action@v2
+            uses: subosito/flutter-action@master
             with:
               channel: "stable"
           - name: Generate Code
@@ -101,15 +101,15 @@ jobs:
     build-demo-windows:
         name: "Build Demo App (Windows)"
         runs-on: windows-latest
-        needs: [analyse-code, run-tests, score-package]
+        needs: [analyse-code, run-tests]
         defaults:
           run:
             working-directory: ./example
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@v3
+            uses: actions/checkout@master
           - name: Setup Flutter Environment
-            uses: subosito/flutter-action@v2
+            uses: subosito/flutter-action@master
             with:
               channel: "stable"
           - name: Generate Code
@@ -129,15 +129,15 @@ jobs:
     build-tile-server-windows:
         name: "Build Tile Server (Windows)"
         runs-on: windows-latest
-        needs: [analyse-code, run-tests, score-package]
+        needs: [analyse-code, run-tests]
         defaults:
           run:
             working-directory: ./tile_server
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@v3
+            uses: actions/checkout@master
           - name: Setup Dart Environment
-            uses: dart-lang/setup-dart@v1.5.0
+            uses: dart-lang/setup-dart@v1.6.2
           - name: Get Dependencies
             run: dart pub get
           - name: Generate Tile Images
@@ -145,7 +145,7 @@ jobs:
           - name: Compile
             run: dart compile exe bin/tile_server.dart
           - name: Upload Artifact
-            uses: actions/upload-artifact@v3.1.2
+            uses: actions/upload-artifact@v4.3.1
             with:
               name: windows-ts
               path: tile_server/bin/tile_server.exe
@@ -154,15 +154,15 @@ jobs:
     build-tile-server-linux:
         name: "Build Tile Server (Linux/Ubuntu)"
         runs-on: ubuntu-latest
-        needs: [analyse-code, run-tests, score-package]
+        needs: [analyse-code, run-tests]
         defaults:
           run:
             working-directory: ./tile_server
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@v3
+            uses: actions/checkout@master
           - name: Setup Dart Environment
-            uses: dart-lang/setup-dart@v1.5.0
+            uses: dart-lang/setup-dart@v1.6.2
           - name: Get Dependencies
             run: dart pub get
           - name: Run Pre-Compile Generator
