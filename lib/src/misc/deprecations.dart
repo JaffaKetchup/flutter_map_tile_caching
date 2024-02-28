@@ -82,6 +82,43 @@ extension StoreManagementDeprecations on StoreManagement {
   /// {@macro fmtc.backend.renameStore}
   @Deprecated('Migrate to `rename`. $_syncRemoval')
   Future<FMTCStore> renameAsync(String newStoreName) => rename(newStoreName);
+}
+
+/// Provides deprecations where possible for previous methods in [StoreStats]
+/// after the v9 release.
+///
+/// Synchronous operations have been removed throughout FMTC v9, therefore the
+/// distinction between sync and async operations has been removed.
+///
+/// Provided in an extension method for easy differentiation and quick removal.
+@Deprecated(
+  'Migrate to the suggested replacements for each operation. $_syncRemoval',
+)
+extension StoreStatsDeprecations on StoreStats {
+  /// Retrieve the total number of KiBs of all tiles' bytes (not 'real total'
+  /// size)
+  ///
+  /// {@macro fmtc.frontend.storestats.efficiency}
+  @Deprecated('Migrate to `size`. $_syncRemoval')
+  Future<double> get storeSizeAsync => size;
+
+  /// Retrieve the number of tiles belonging to this store
+  ///
+  /// {@macro fmtc.frontend.storestats.efficiency}
+  @Deprecated('Migrate to `length`. $_syncRemoval')
+  Future<int> get storeLengthAsync => length;
+
+  /// Retrieve the number of successful tile retrievals when browsing
+  ///
+  /// {@macro fmtc.frontend.storestats.efficiency}
+  @Deprecated('Migrate to `hits`.$_syncRemoval')
+  Future<int> get cacheHitsAsync => hits;
+
+  /// Retrieve the number of unsuccessful tile retrievals when browsing
+  ///
+  /// {@macro fmtc.frontend.storestats.efficiency}
+  @Deprecated('Migrate to `misses`. $_syncRemoval')
+  Future<int> get cacheMissesAsync => misses;
 
   /// {@macro fmtc.backend.tileImage}
   /// , then render the bytes to an [Image]
@@ -130,43 +167,6 @@ extension StoreManagementDeprecations on StoreManagement {
         cacheWidth: cacheWidth,
         cacheHeight: cacheHeight,
       );
-}
-
-/// Provides deprecations where possible for previous methods in [StoreStats]
-/// after the v9 release.
-///
-/// Synchronous operations have been removed throughout FMTC v9, therefore the
-/// distinction between sync and async operations has been removed.
-///
-/// Provided in an extension method for easy differentiation and quick removal.
-@Deprecated(
-  'Migrate to the suggested replacements for each operation. $_syncRemoval',
-)
-extension StoreStatsDeprecations on StoreStats {
-  /// Retrieve the total number of KiBs of all tiles' bytes (not 'real total'
-  /// size)
-  ///
-  /// {@macro fmtc.frontend.storestats.efficiency}
-  @Deprecated('Migrate to `size`. $_syncRemoval')
-  Future<double> get storeSizeAsync => size;
-
-  /// Retrieve the number of tiles belonging to this store
-  ///
-  /// {@macro fmtc.frontend.storestats.efficiency}
-  @Deprecated('Migrate to `length`. $_syncRemoval')
-  Future<int> get storeLengthAsync => length;
-
-  /// Retrieve the number of successful tile retrievals when browsing
-  ///
-  /// {@macro fmtc.frontend.storestats.efficiency}
-  @Deprecated('Migrate to `hits`.$_syncRemoval')
-  Future<int> get cacheHitsAsync => hits;
-
-  /// Retrieve the number of unsuccessful tile retrievals when browsing
-  ///
-  /// {@macro fmtc.frontend.storestats.efficiency}
-  @Deprecated('Migrate to `misses`. $_syncRemoval')
-  Future<int> get cacheMissesAsync => misses;
 }
 
 /// Provides deprecations where possible for previous methods in [StoreMetadata]

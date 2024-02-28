@@ -107,7 +107,7 @@ class _StoreTileState extends State<StoreTile> {
                                           borderRadius:
                                               BorderRadius.circular(16),
                                           child: FutureBuilder(
-                                            future: store.manage.tileImage(
+                                            future: store.stats.tileImage(
                                               gaplessPlayback: true,
                                             ),
                                             builder: (context, snapshot) {

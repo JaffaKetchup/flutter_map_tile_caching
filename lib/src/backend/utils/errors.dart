@@ -24,7 +24,8 @@ import '../export_external.dart';
 ///
 /// If the callback returns `true`, then FMTC will not continue to handle the
 /// error. Otherwise, FMTC will also throw the exception/error. If the callback
-/// is not defined (in [FMTCBackend.initialise]), then FMTC will throw the exception/error.
+/// is not defined (in [FMTCBackend.initialise]), then FMTC will throw the
+/// exception/error.
 typedef FMTCExceptionHandler = bool Function({
   required Object? exception,
   required StackTrace stackTrace,

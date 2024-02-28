@@ -57,4 +57,58 @@ class StoreStats {
     );
     yield* stream;
   }
+
+  /// {@macro fmtc.backend.readLatestTile}
+  /// , then render the bytes to an [Image]
+  Future<Image?> tileImage({
+    double? size,
+    Key? key,
+    double scale = 1.0,
+    ImageFrameBuilder? frameBuilder,
+    ImageErrorWidgetBuilder? errorBuilder,
+    String? semanticLabel,
+    bool excludeFromSemantics = false,
+    Color? color,
+    Animation<double>? opacity,
+    BlendMode? colorBlendMode,
+    BoxFit? fit,
+    AlignmentGeometry alignment = Alignment.center,
+    ImageRepeat repeat = ImageRepeat.noRepeat,
+    Rect? centerSlice,
+    bool matchTextDirection = false,
+    bool gaplessPlayback = false,
+    bool isAntiAlias = false,
+    FilterQuality filterQuality = FilterQuality.low,
+    int? cacheWidth,
+    int? cacheHeight,
+  }) async {
+    final latestTile =
+        await FMTCBackendAccess.internal.readLatestTile(storeName: _storeName);
+    if (latestTile == null) return null;
+
+    return Image.memory(
+      Uint8List.fromList(latestTile.bytes),
+      key: key,
+      scale: scale,
+      frameBuilder: frameBuilder,
+      errorBuilder: errorBuilder,
+      semanticLabel: semanticLabel,
+      excludeFromSemantics: excludeFromSemantics,
+      width: size,
+      height: size,
+      color: color,
+      opacity: opacity,
+      colorBlendMode: colorBlendMode,
+      fit: fit,
+      alignment: alignment,
+      repeat: repeat,
+      centerSlice: centerSlice,
+      matchTextDirection: matchTextDirection,
+      gaplessPlayback: gaplessPlayback,
+      isAntiAlias: isAntiAlias,
+      filterQuality: filterQuality,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
+    );
+  }
 }
