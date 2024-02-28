@@ -551,17 +551,19 @@ Future<void> _worker(
 
           final numToRemove = store.length - tilesLimit;
 
-          if (numToRemove <= 0) sendRes(id: cmd.id, data: {'numOrphans': 0});
+          if (numToRemove <= 0) {
+            sendRes(id: cmd.id, data: {'numOrphans': 0});
+          } else {
+            tilesQuery.limit = numToRemove;
 
-          tilesQuery.limit = numToRemove;
-
-          sendRes(
-            id: cmd.id,
-            data: {
-              'numOrphans':
-                  deleteTiles(storeName: storeName, tilesQuery: tilesQuery),
-            },
-          );
+            sendRes(
+              id: cmd.id,
+              data: {
+                'numOrphans':
+                    deleteTiles(storeName: storeName, tilesQuery: tilesQuery),
+              },
+            );
+          }
 
           storeQuery.close();
           tilesQuery.close();
