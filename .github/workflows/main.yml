@@ -19,6 +19,8 @@ jobs:
             id: analysis
             with:
               githubToken: ${{ secrets.GITHUB_TOKEN }}
+          - name: Disable Git Security False Alarm
+            run: git config --global --add safe.directory /github/workspace
           - name: Check Package Scores
             env:
               TOTAL: ${{ steps.analysis.outputs.total }}
