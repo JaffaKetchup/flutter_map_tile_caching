@@ -180,6 +180,7 @@ Future<void> _worker(
             },
           );
         case _WorkerCmdType.rootSize:
+          // TODO: Invalid, considers ALL tiles (related ones multiple times), not UNIQUE tiles
           final query = root
               .box<ObjectBoxStore>()
               .query()
@@ -583,10 +584,8 @@ Future<void> _worker(
           sendRes(
             id: cmd.id,
             data: {
-              'numOrphans': deleteTiles(
-                storeName: storeName,
-                tilesQuery: tilesQuery,
-              ),
+              'numOrphans':
+                  deleteTiles(storeName: storeName, tilesQuery: tilesQuery),
             },
           );
 

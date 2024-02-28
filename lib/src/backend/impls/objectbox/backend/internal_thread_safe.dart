@@ -78,18 +78,29 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
             (throw StoreNotExists(storeName: storeName));
 
         if (existingTile == null) {
+          // If tile doesn't exist, just add to this store
           storesToUpdate[storeName] = store
             ..length += 1
             ..size += bytes.lengthInBytes;
         } else {
-          storesToUpdate[storeName] = store
-            ..size += -existingTile.bytes.lengthInBytes + bytes.lengthInBytes;
+          // If tile exists in this store, just update size, otherwise
+          // length and size
+          // Also update size of all related stores
+          bool didContainAlready = false;
 
           for (final relatedStore in existingTile.stores) {
+            if (relatedStore.name == storeName) didContainAlready = true;
+
             storesToUpdate[relatedStore.name] =
                 (storesToUpdate[relatedStore.name] ?? relatedStore)
                   ..size +=
                       -existingTile.bytes.lengthInBytes + bytes.lengthInBytes;
+          }
+
+          if (!didContainAlready) {
+            storesToUpdate[storeName] = store
+              ..length += 1
+              ..size += bytes.lengthInBytes;
           }
         }
 
@@ -139,19 +150,29 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
                 .findUnique();
 
             if (existingTile == null) {
-              storesToUpdate[storeName] = store
+              // If tile doesn't exist, just add to this store
+              storesToUpdate[storeName] = (storesToUpdate[storeName] ?? store)
                 ..length += 1
                 ..size += bytess[i].lengthInBytes;
             } else {
-              storesToUpdate[storeName] = store
-                ..size +=
-                    -existingTile.bytes.lengthInBytes + bytess[i].lengthInBytes;
+              // If tile exists in this store, just update size, otherwise
+              // length and size
+              // Also update size of all related stores
+              bool didContainAlready = false;
 
               for (final relatedStore in existingTile.stores) {
+                if (relatedStore.name == storeName) didContainAlready = true;
+
                 storesToUpdate[relatedStore.name] =
                     (storesToUpdate[relatedStore.name] ?? relatedStore)
                       ..size += -existingTile.bytes.lengthInBytes +
                           bytess[i].lengthInBytes;
+              }
+
+              if (!didContainAlready) {
+                storesToUpdate[storeName] = store
+                  ..length += 1
+                  ..size += bytess[i].lengthInBytes;
               }
             }
 
