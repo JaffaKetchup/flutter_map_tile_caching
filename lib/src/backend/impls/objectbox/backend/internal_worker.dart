@@ -180,19 +180,18 @@ Future<void> _worker(
             },
           );
         case _WorkerCmdType.rootSize:
-          // TODO: Invalid, considers ALL tiles (related ones multiple times), not UNIQUE tiles
-          final query = root
-              .box<ObjectBoxStore>()
-              .query()
-              .build()
-              .property(ObjectBoxStore_.size);
-
+          // TODO: Consider caching root stats in a model as well
           sendRes(
             id: cmd.id,
-            data: {'size': query.find().sum / 1024}, // Convert to KiB
+            data: {
+              'size': root
+                      .box<ObjectBoxTile>()
+                      .getAll()
+                      .map((t) => t.bytes.lengthInBytes)
+                      .sum /
+                  1024, // Convert to KiB
+            },
           );
-
-          query.close();
         case _WorkerCmdType.rootLength:
           final query = root.box<ObjectBoxTile>().query().build();
 
@@ -200,16 +199,15 @@ Future<void> _worker(
 
           query.close();
         case _WorkerCmdType.listStores:
-          sendRes(
-            id: cmd.id,
-            data: {
-              'stores': root
-                  .box<ObjectBoxStore>()
-                  .getAll()
-                  .map((e) => e.name)
-                  .toList(growable: false),
-            },
-          );
+          final query = root
+              .box<ObjectBoxStore>()
+              .query()
+              .build()
+              .property(ObjectBoxStore_.name);
+
+          sendRes(id: cmd.id, data: {'stores': query.find()});
+
+          query.close();
         case _WorkerCmdType.storeExists:
           final query = root
               .box<ObjectBoxStore>()

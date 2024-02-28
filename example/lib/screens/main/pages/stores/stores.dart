@@ -184,10 +184,10 @@ class _StoresPageState extends State<StoresPage> {
       builder: (context) => AlertDialog.adaptive(
         title: const Text('Database Size'),
         content: const Text(
-          '''
-This measurement refers to the actual size of the database root (which may be a
-flat/file or another structure). Includes database overheads, and may not follow
-the total tiles size in a linear relationship, or any relationship at all.''',
+          'This measurement refers to the actual size of the database root '
+          '(which may be a flat/file or another structure).\nIncludes database '
+          'overheads, and may not follow the total tiles size in a linear '
+          'relationship, or any relationship at all.',
         ),
         actions: [
           TextButton(
