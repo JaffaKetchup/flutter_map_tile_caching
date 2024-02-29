@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -21,20 +20,8 @@ void main() async {
     ),
   );
 
-  await FMTCObjectBoxBackend().initialise(
-    exceptionHandler: ({
-      required exception,
-      required initialisationFailure,
-      required stackTrace,
-    }) {
-      if (kDebugMode) {
-        print(
-          'Caught error externally (was init error: $initialisationFailure)',
-        );
-      }
-      return false;
-    },
-  );
+  // TODO: Implement handling
+  await FMTCObjectBoxBackend().initialise();
 
   runApp(const _AppContainer());
 }

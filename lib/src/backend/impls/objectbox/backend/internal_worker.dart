@@ -56,16 +56,13 @@ Future<void> _worker(
 
   // Setup comms
   final receivePort = ReceivePort();
-  void sendRes({
-    required int id,
-    Map<String, dynamic>? data,
-  }) =>
+  void sendRes({required int id, Map<String, dynamic>? data}) =>
       input.sendPort.send((id: id, data: data));
 
-  /// Enable ObjectBox usage from this background isolate
+  // Enable ObjectBox usage from this background isolate
   BackgroundIsolateBinaryMessenger.ensureInitialized(input.rootIsolateToken);
 
-  // Initialise database
+  // Open database, kill self if failed
   late final Store root;
   try {
     root = await openStore(
@@ -73,10 +70,19 @@ Future<void> _worker(
       maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
       macosApplicationGroup: input.macosApplicationGroup,
     );
+
+    // If the database is new, create the root statistics object
+    final rootBox = root.box<ObjectBoxRoot>();
+    if (!rootBox.contains(1)) {
+      rootBox.put(ObjectBoxRoot(length: 0, size: 0), mode: PutMode.insert);
+    }
   } catch (e, s) {
     sendRes(id: 0, data: {'error': e, 'stackTrace': s});
     Isolate.exit();
   }
+
+  // Create memory for streamed output subscription storage
+  final streamedOutputSubscriptions = <int, StreamSubscription>{};
 
   // Respond with comms channel for future cmds
   sendRes(
@@ -84,8 +90,23 @@ Future<void> _worker(
     data: {'sendPort': receivePort.sendPort, 'storeReference': root.reference},
   );
 
-  // Create memory for streamed output subscription storage
-  final streamedOutputSubscriptions = <int, StreamSubscription>{};
+  //! UTIL METHODS !//
+
+  /// Update the root statistics object (ID 0) with the existing values plus
+  /// the specified values respectively
+  ///
+  /// Should be run within a transaction.
+  ///
+  /// Specified values may be negative.
+  ///
+  /// Handles cases where there is no root statistics object yet.
+  void updateRootStatistics({int deltaLength = 0, int deltaSize = 0}) =>
+      root.box<ObjectBoxRoot>().put(
+            root.box<ObjectBoxRoot>().get(1)!
+              ..length += deltaLength
+              ..size += deltaSize,
+            mode: PutMode.update,
+          );
 
   /// Delete the specified tiles from the specified store
   ///
@@ -105,47 +126,48 @@ Future<void> _worker(
     final storeQuery =
         stores.query(ObjectBoxStore_.name.equals(storeName)).build();
 
-    final tilesToUpdate = <ObjectBoxTile>[];
+    int rootDeltaLength = 0;
+    int rootDeltaSize = 0;
 
-    final deletedNum = root.runInTransaction(
+    root.runInTransaction(
       TxMode.write,
       () {
         final queriedTiles = tilesQuery.find();
         final store = storeQuery.findUnique() ??
             (throw StoreNotExists(storeName: storeName));
 
-        final tilesToDelete = List.generate(
-          queriedTiles.length,
-          (i) {
-            final tile = queriedTiles[i];
+        for (final tile in queriedTiles) {
+          // Modify current store
+          store
+            ..length -= 1
+            ..size -= tile.bytes.lengthInBytes;
 
-            // Modify current store
-            store
-              ..length -= 1
-              ..size -= tile.bytes.lengthInBytes;
+          // Remove the store relation from the tile
+          tile.stores.removeWhere((store) => store.name == storeName);
 
-            // Remove the store relation from the tile
-            tile.stores.removeWhere((store) => store.name == storeName);
+          // Delete the tile if it is now orphaned
+          if (tile.stores.isEmpty) {
+            rootDeltaLength -= 1;
+            rootDeltaSize -= tile.bytes.lengthInBytes;
+            tiles.remove(tile.id);
+            continue;
+          }
 
-            // Register the tile for deletion if it belongs to no stores
-            if (tile.stores.isEmpty) return tile.id;
+          // Otherwise apply the new relation
+          tile.stores.applyToDb(mode: PutMode.update);
+        }
 
-            // Otherwise register the tile to be updated (the new relation applied)
-            tilesToUpdate.add(tile);
-            return null;
-          },
-          growable: false,
+        updateRootStatistics(
+          deltaLength: rootDeltaLength,
+          deltaSize: rootDeltaSize,
         );
-
         stores.put(store, mode: PutMode.update);
-        return (tiles..putMany(tilesToUpdate, mode: PutMode.update))
-            .removeMany(tilesToDelete.whereNotNull().toList(growable: false));
       },
     );
 
     storeQuery.close();
 
-    return deletedNum;
+    return rootDeltaLength.abs();
   }
 
   //! MAIN LOOP !//
@@ -180,24 +202,15 @@ Future<void> _worker(
             },
           );
         case _WorkerCmdType.rootSize:
-          // TODO: Consider caching root stats in a model as well
           sendRes(
             id: cmd.id,
-            data: {
-              'size': root
-                      .box<ObjectBoxTile>()
-                      .getAll()
-                      .map((t) => t.bytes.lengthInBytes)
-                      .sum /
-                  1024, // Convert to KiB
-            },
+            data: {'size': root.box<ObjectBoxRoot>().get(1)!.size / 1024},
           );
         case _WorkerCmdType.rootLength:
-          final query = root.box<ObjectBoxTile>().query().build();
-
-          sendRes(id: cmd.id, data: {'length': query.count()});
-
-          query.close();
+          sendRes(
+            id: cmd.id,
+            data: {'length': root.box<ObjectBoxRoot>().get(1)!.length},
+          );
         case _WorkerCmdType.listStores:
           final query = root
               .box<ObjectBoxStore>()
@@ -259,13 +272,13 @@ Future<void> _worker(
                   mode: PutMode.insert,
                 );
           } on UniqueViolationException {
-            throw StoreAlreadyExists(storeName: storeName);
+            sendRes(id: cmd.id);
+            break;
           }
 
           sendRes(id: cmd.id);
         case _WorkerCmdType.resetStore:
           final storeName = cmd.args['storeName']! as String;
-          final removeIds = <int>[];
 
           final tiles = root.box<ObjectBoxTile>();
           final stores = root.box<ObjectBoxStore>();
@@ -283,23 +296,7 @@ Future<void> _worker(
           root.runInTransaction(
             TxMode.write,
             () {
-              tiles.putMany(
-                tilesQuery
-                    .find()
-                    .map((tile) {
-                      tile.stores
-                          .removeWhere((store) => store.name == storeName);
-                      if (tile.stores.isNotEmpty) return tile;
-                      removeIds.add(tile.id);
-                      return null;
-                    })
-                    .whereNotNull()
-                    .toList(growable: false),
-                mode: PutMode.update,
-              );
-              tilesQuery.close();
-
-              tiles.removeMany(removeIds);
+              deleteTiles(storeName: storeName, tilesQuery: tilesQuery);
 
               final store = storeQuery.findUnique() ??
                   (throw StoreNotExists(storeName: storeName));
@@ -342,8 +339,10 @@ Future<void> _worker(
         case _WorkerCmdType.deleteStore:
           final storeName = cmd.args['storeName']! as String;
 
-          final stores = root.box<ObjectBoxStore>();
-
+          final storesQuery = root
+              .box<ObjectBoxStore>()
+              .query(ObjectBoxStore_.name.equals(storeName))
+              .build();
           final tilesQuery = (root.box<ObjectBoxTile>().query()
                 ..linkMany(
                   ObjectBoxTile_.stores,
@@ -351,14 +350,17 @@ Future<void> _worker(
                 ))
               .build();
 
-          deleteTiles(storeName: storeName, tilesQuery: tilesQuery);
-
-          stores.query(ObjectBoxStore_.name.equals(storeName)).build()
-            ..remove()
-            ..close();
+          root.runInTransaction(
+            TxMode.write,
+            () {
+              deleteTiles(storeName: storeName, tilesQuery: tilesQuery);
+              storesQuery.remove();
+            },
+          );
 
           sendRes(id: cmd.id);
 
+          storesQuery.close();
           tilesQuery.close();
         case _WorkerCmdType.tileExistsInStore:
           final storeName = cmd.args['storeName']! as String;
@@ -420,7 +422,6 @@ Future<void> _worker(
 
           final tilesQuery =
               tiles.query(ObjectBoxTile_.url.equals(url)).build();
-
           final storeQuery =
               stores.query(ObjectBoxStore_.name.equals(storeName)).build();
 
@@ -428,11 +429,9 @@ Future<void> _worker(
             TxMode.write,
             () {
               final existingTile = tilesQuery.findUnique();
-              tilesQuery.close();
 
               final store = storeQuery.findUnique() ??
                   (throw StoreNotExists(storeName: storeName));
-              storeQuery.close();
 
               switch ((existingTile == null, bytes == null)) {
                 case (true, false): // No existing tile
@@ -448,6 +447,10 @@ Future<void> _worker(
                       ..length += 1
                       ..size += bytes.lengthInBytes,
                   );
+                  updateRootStatistics(
+                    deltaLength: 1,
+                    deltaSize: bytes.lengthInBytes,
+                  );
                 case (false, true): // Existing tile, no update
                   // Only take action if it's not already belonging to the store
                   if (!existingTile!.stores.contains(store)) {
@@ -457,8 +460,13 @@ Future<void> _worker(
                         ..length += 1
                         ..size += existingTile.bytes.lengthInBytes,
                     );
+                    updateRootStatistics(
+                      deltaLength: 1,
+                      deltaSize: existingTile.bytes.lengthInBytes,
+                    );
                   }
                 case (false, false): // Existing tile, update required
+                  int rootDeltaSize = 0;
                   tiles.put(
                     existingTile!
                       ..lastModified = DateTime.timestamp()
@@ -466,14 +474,16 @@ Future<void> _worker(
                     mode: PutMode.update,
                   );
                   stores.putMany(
-                    existingTile.stores
-                        .map(
-                          (store) => store
-                            ..size += (bytes.lengthInBytes -
-                                existingTile.bytes.lengthInBytes),
-                        )
-                        .toList(growable: false),
+                    existingTile.stores.map(
+                      (store) {
+                        final diff = bytes.lengthInBytes -
+                            existingTile.bytes.lengthInBytes;
+                        rootDeltaSize += diff;
+                        return store..size += diff;
+                      },
+                    ).toList(growable: false),
                   );
+                  updateRootStatistics(deltaSize: rootDeltaSize);
                 case (true, true): // FMTC internal error
                   throw StateError(
                     'FMTC ObjectBox backend internal state error: $url',
@@ -483,6 +493,9 @@ Future<void> _worker(
           );
 
           sendRes(id: cmd.id);
+
+          storeQuery.close();
+          tilesQuery.close();
         case _WorkerCmdType.deleteTile:
           final storeName = cmd.args['storeName']! as String;
           final url = cmd.args['url']! as String;

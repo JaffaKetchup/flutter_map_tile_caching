@@ -7,8 +7,8 @@ part of flutter_map_tile_caching;
 /// creation and deletion
 ///
 /// If the store is not in the expected state (of existence) when invoking an
-/// operation, then an error will be thrown (likely [StoreNotExists] or
-/// [StoreAlreadyExists]). It is recommended to check [ready] when necessary.
+/// operation, then an error will be thrown ([StoreNotExists]). It is
+/// recommended to check [ready] when necessary.
 class StoreManagement {
   StoreManagement._(FMTCStore store) : _storeName = store.storeName;
 

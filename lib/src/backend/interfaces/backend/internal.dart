@@ -74,7 +74,7 @@ abstract interface class FMTCBackendInternal
   /// {@template fmtc.backend.createStore}
   /// Create a new store with the specified name
   ///
-  /// Throws [StoreAlreadyExists] if the specified store already exists.
+  /// Does nothing if the store already exists.
   /// {@endtemplate}
   Future<void> createStore({
     required String storeName,

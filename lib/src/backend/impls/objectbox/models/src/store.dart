@@ -28,7 +28,7 @@ class ObjectBoxStore {
   final tiles = ToMany<ObjectBoxTile>();
 
   int length;
-  double size;
+  int size;
   int hits;
   int misses;
   String metadataJson;

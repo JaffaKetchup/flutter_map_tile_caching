@@ -6,8 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -16,6 +14,7 @@ import '../../../../../flutter_map_tile_caching.dart';
 import '../../../export_internal.dart';
 import '../models/generated/objectbox.g.dart';
 import '../models/src/recovery.dart';
+import '../models/src/root.dart';
 import '../models/src/store.dart';
 import '../models/src/tile.dart';
 
@@ -28,10 +27,6 @@ part 'internal_worker.dart';
 /// Implementation of [FMTCBackend] that uses ObjectBox as the storage database
 final class FMTCObjectBoxBackend implements FMTCBackend {
   /// {@macro fmtc.backend.initialise}
-  ///
-  /// Consider handling [StorageException], which is an exception thrown by
-  /// ObjectBox which indicates an issue when reading/writing data to the
-  /// database - for example, due to exceeding the [maxDatabaseSize].
   ///
   /// ---
   ///
@@ -47,13 +42,11 @@ final class FMTCObjectBoxBackend implements FMTCBackend {
     String? rootDirectory,
     int maxDatabaseSize = 10000000,
     String? macosApplicationGroup,
-    FMTCExceptionHandler? exceptionHandler,
   }) =>
       FMTCObjectBoxBackendInternal._instance.initialise(
         rootDirectory: rootDirectory,
         maxDatabaseSize: maxDatabaseSize,
         macosApplicationGroup: macosApplicationGroup,
-        exceptionHandler: exceptionHandler,
       );
 
   /// {@macro fmtc.backend.uninitialise}

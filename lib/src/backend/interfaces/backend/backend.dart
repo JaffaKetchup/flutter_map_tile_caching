@@ -30,12 +30,9 @@ abstract interface class FMTCBackend {
   /// `getApplicationDocumentsDirectory()`. Alternatively, pass a custom
   /// directory - it is recommended to not use a typical cache directory, as the
   /// OS can clear these without notice at any time.
-  ///
-  /// For information on [exceptionHandler], see [FMTCExceptionHandler]'s docs.
   /// {@endtemplate}
   Future<void> initialise({
     String? rootDirectory,
-    FMTCExceptionHandler? exceptionHandler,
   });
 
   /// {@template fmtc.backend.uninitialise}

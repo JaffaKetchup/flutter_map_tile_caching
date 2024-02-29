@@ -8,12 +8,13 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
     required this.storeReference,
   });
 
-  final ByteData storeReference;
-  Store? root;
-  void get expectInitialised => root ?? (throw RootUnavailable());
-
   @override
   String get friendlyIdentifier => 'ObjectBox';
+
+  void get expectInitialised => root ?? (throw RootUnavailable());
+
+  final ByteData storeReference;
+  Store? root;
 
   @override
   void initialise() {
@@ -63,6 +64,7 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
 
     final tiles = root!.box<ObjectBoxTile>();
     final stores = root!.box<ObjectBoxStore>();
+    final rootBox = root!.box<ObjectBoxRoot>();
 
     final tilesQuery = tiles.query(ObjectBoxTile_.url.equals(url)).build();
     final storeQuery =
@@ -77,17 +79,12 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
         final store = storeQuery.findUnique() ??
             (throw StoreNotExists(storeName: storeName));
 
-        if (existingTile == null) {
-          // If tile doesn't exist, just add to this store
-          storesToUpdate[storeName] = store
-            ..length += 1
-            ..size += bytes.lengthInBytes;
-        } else {
-          // If tile exists in this store, just update size, otherwise
-          // length and size
-          // Also update size of all related stores
-          bool didContainAlready = false;
+        // If tile exists in this store, just update size, otherwise
+        // length and size
+        // Also update size of all related stores
+        bool didContainAlready = false;
 
+        if (existingTile != null) {
           for (final relatedStore in existingTile.stores) {
             if (relatedStore.name == storeName) didContainAlready = true;
 
@@ -97,11 +94,24 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
                       -existingTile.bytes.lengthInBytes + bytes.lengthInBytes;
           }
 
-          if (!didContainAlready) {
-            storesToUpdate[storeName] = store
+          rootBox.put(
+            rootBox.get(1)!
+              ..size += -existingTile.bytes.lengthInBytes + bytes.lengthInBytes,
+            mode: PutMode.update,
+          );
+        }
+
+        if (!didContainAlready || existingTile == null) {
+          storesToUpdate[storeName] = store
+            ..length += 1
+            ..size += bytes.lengthInBytes;
+
+          rootBox.put(
+            rootBox.get(1)!
               ..length += 1
-              ..size += bytes.lengthInBytes;
-          }
+              ..size += bytes.lengthInBytes,
+            mode: PutMode.update,
+          );
         }
 
         tiles.put(
@@ -129,6 +139,7 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
 
     final tiles = root!.box<ObjectBoxTile>();
     final stores = root!.box<ObjectBoxStore>();
+    final rootBox = root!.box<ObjectBoxRoot>();
 
     final tilesQuery = tiles.query(ObjectBoxTile_.url.equals('')).build();
     final storeQuery =
@@ -139,53 +150,56 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
     root!.runInTransaction(
       TxMode.write,
       () {
+        final rootData = rootBox.get(1)!;
         final store = storeQuery.findUnique() ??
             (throw StoreNotExists(storeName: storeName));
 
-        final tilesToUpdate = List.generate(
-          urls.length,
-          (i) {
-            final existingTile = (tilesQuery
-                  ..param(ObjectBoxTile_.url).value = urls[i])
-                .findUnique();
+        for (int i = 0; i <= urls.length; i++) {
+          final url = urls[i];
+          final bytes = bytess[i];
 
-            if (existingTile == null) {
-              // If tile doesn't exist, just add to this store
-              storesToUpdate[storeName] = (storesToUpdate[storeName] ?? store)
-                ..length += 1
-                ..size += bytess[i].lengthInBytes;
-            } else {
-              // If tile exists in this store, just update size, otherwise
-              // length and size
-              // Also update size of all related stores
-              bool didContainAlready = false;
+          final existingTile =
+              (tilesQuery..param(ObjectBoxTile_.url).value = url).findUnique();
 
-              for (final relatedStore in existingTile.stores) {
-                if (relatedStore.name == storeName) didContainAlready = true;
+          // If tile exists in this store, just update size, otherwise
+          // length and size
+          // Also update size of all related stores
+          bool didContainAlready = false;
 
-                storesToUpdate[relatedStore.name] =
-                    (storesToUpdate[relatedStore.name] ?? relatedStore)
-                      ..size += -existingTile.bytes.lengthInBytes +
-                          bytess[i].lengthInBytes;
-              }
+          if (existingTile != null) {
+            for (final relatedStore in existingTile.stores) {
+              if (relatedStore.name == storeName) didContainAlready = true;
 
-              if (!didContainAlready) {
-                storesToUpdate[storeName] = store
-                  ..length += 1
-                  ..size += bytess[i].lengthInBytes;
-              }
+              storesToUpdate[relatedStore.name] =
+                  (storesToUpdate[relatedStore.name] ?? relatedStore)
+                    ..size +=
+                        -existingTile.bytes.lengthInBytes + bytes.lengthInBytes;
             }
 
-            return ObjectBoxTile(
-              url: urls[i],
-              lastModified: DateTime.timestamp(),
-              bytes: bytess[i],
-            )..stores.addAll({store, ...?existingTile?.stores});
-          },
-          growable: false,
-        );
+            rootData.size +=
+                -existingTile.bytes.lengthInBytes + bytes.lengthInBytes;
+          }
 
-        tiles.putMany(tilesToUpdate);
+          if (!didContainAlready || existingTile == null) {
+            storesToUpdate[storeName] = store
+              ..length += 1
+              ..size += bytes.lengthInBytes;
+
+            rootData
+              ..length += 1
+              ..size += bytes.lengthInBytes;
+          }
+
+          tiles.put(
+            ObjectBoxTile(
+              url: url,
+              lastModified: DateTime.timestamp(),
+              bytes: bytes,
+            )..stores.addAll({store, ...?existingTile?.stores}),
+          );
+        }
+
+        rootBox.put(rootData, mode: PutMode.update);
         stores.putMany(storesToUpdate.values.toList(), mode: PutMode.update);
       },
     );
