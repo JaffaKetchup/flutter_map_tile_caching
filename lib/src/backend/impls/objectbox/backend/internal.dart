@@ -78,9 +78,21 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         controller.sink; // Will be inserted into by direct handler
     _sendPort!.send((id: id, type: type, args: args)); // Send cmd
 
-    // TODO: error handle
     try {
-      yield* controller.stream; // Return responses
+      // Not using yield* as it doesn't allow for correct error handling
+      await for (final evt in controller.stream) {
+        // Listen to responses
+        yield evt;
+      }
+    } catch (err, stackTrace) {
+      yield Error.throwWithStackTrace(
+        err,
+        StackTrace.fromString(
+          '$stackTrace<asynchronous suspension>\n#+      [FMTC]      Unable to '
+          'attach final `StackTrace` when streaming results\n<asynchronous '
+          'suspension>\n#+      [FMTC]      (Debug Info) $type: $args\n',
+        ),
+      );
     } finally {
       // Goto `onCancel` once output listening cancelled
       await controller.close();
@@ -103,17 +115,19 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     ).create(recursive: true);
 
     // Prepare to recieve `SendPort` from worker
-    late ByteData storeReference;
     _workerResOneShot[0] = Completer();
     final workerInitialRes = _workerResOneShot[0]!
-        .future
-        .then<({Object err, StackTrace stackTrace})?>(
+        .future // Completed directly by handler below
+        .then<({ByteData? storeRef, Object? err, StackTrace? stackTrace})>(
       (res) {
-        storeReference = res!['storeReference'];
-        _sendPort = res['sendPort'];
         _workerResOneShot.remove(0);
+        _sendPort = res!['sendPort'];
 
-        return null;
+        return (
+          storeRef: res['storeReference'] as ByteData,
+          err: null,
+          stackTrace: null,
+        );
       },
       onError: (err, stackTrace) {
         _workerHandler.cancel();
@@ -123,7 +137,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         _workerResOneShot.clear();
         _workerResStreamed.clear();
 
-        return (err: err, stackTrace: stackTrace);
+        return (storeRef: null, err: err, stackTrace: stackTrace);
       },
     );
 
@@ -145,17 +159,12 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         // Handle errors
         final err = evt.data?['error'];
         if (err != null) {
-          final stackTrace = StackTrace.fromString(
-            '${evt.data?['stackTrace']! as StackTrace}<asynchronous suspension>'
-            '\n${StackTrace.current}',
-          );
-
           if (evt.data?['expectStream'] == true) {
-            _workerResStreamed[evt.id]!.addError(err, stackTrace);
+            _workerResStreamed[evt.id]!.addError(err, evt.data!['stackTrace']);
           } else {
-            _workerResOneShot[evt.id]!.completeError(err, stackTrace);
+            _workerResOneShot[evt.id]!
+                .completeError(err, evt.data!['stackTrace']);
           }
-
           return;
         }
 
@@ -186,13 +195,13 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     final initResult = await workerInitialRes;
 
     // Check whether initialisation was successful
-    if (initResult == null) {
+    if (initResult.storeRef != null) {
       FMTCBackendAccess.internal = this;
       FMTCBackendAccessThreadSafe.internal = _ObjectBoxBackendThreadSafeImpl._(
-        storeReference: storeReference,
+        storeReference: initResult.storeRef!,
       );
     } else {
-      Error.throwWithStackTrace(initResult.err, initResult.stackTrace);
+      Error.throwWithStackTrace(initResult.err!, initResult.stackTrace!);
     }
   }
 

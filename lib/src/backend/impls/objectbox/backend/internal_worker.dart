@@ -819,7 +819,14 @@ Future<void> _worker(
           sendRes(id: cmd.id);
       }
     } catch (e, s) {
-      sendRes(id: cmd.id, data: {'error': e, 'stackTrace': s});
+      sendRes(
+        id: cmd.id,
+        data: {
+          if (cmd.type.streamCancel != null) 'expectStream': true,
+          'error': e,
+          'stackTrace': s,
+        },
+      );
     }
   }).asFuture<void>();
 }
