@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 //import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 //import 'package:fmtc_plus_sharing/fmtc_plus_sharing.dart';
 
@@ -13,6 +14,17 @@ class ImportStorePopup extends StatefulWidget {
 
 class _ImportStorePopupState extends State<ImportStorePopup> {
   final Map<String, _ImportStore> importStores = {};
+
+  @override
+  void initState() {
+    super.initState();
+
+    FMTCRoot.external
+        .import(path: r'C:\Users\lukas\Documents\fmtc_export\wow.fmtc')
+        .listen((_) {
+      print('evt');
+    });
+  }
 
   // TODO: Implement
   @override

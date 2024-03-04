@@ -20,6 +20,7 @@ import '../models/src/tile.dart';
 
 export 'package:objectbox/objectbox.dart' show StorageException;
 
+part 'errors.dart';
 part 'internal_thread_safe.dart';
 part 'internal.dart';
 part 'internal_worker.dart';

@@ -39,5 +39,5 @@ abstract class FMTCRoot {
   ///
   /// The 'fmtc_plus_sharing' module must be installed to add the functionality,
   /// without it, this object provides no functionality.
-  static RootImport get import => const RootImport._();
+  static RootExternal get external => const RootExternal._();
 }

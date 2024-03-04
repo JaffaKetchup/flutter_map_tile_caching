@@ -318,4 +318,14 @@ abstract interface class FMTCBackendInternal
     required List<String> storeNames,
     required bool triggerImmediately,
   });
+
+  Future<void> exportStores({
+    required List<String> storeNames,
+    required String outputPath,
+  });
+
+  Future<Map<String, Future<bool>>> importStores({
+    required String path,
+    required ImportConflictStrategy strategy,
+  });
 }

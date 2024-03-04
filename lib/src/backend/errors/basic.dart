@@ -1,12 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-/// An error to be thrown by backend implementations in known events only
-///
-/// A backend can create custom errors of this type, which is useful to show
-/// that the backend is throwing a known expected error, rather than an
-/// unexpected one.
-base class FMTCBackendError extends Error {}
+part of 'errors.dart';
 
 /// Indicates that the backend/root structure (ie. database and/or directory) was
 /// not available for use in operations, because either:
@@ -24,7 +19,8 @@ final class RootUnavailable extends FMTCBackendError {
 final class RootAlreadyInitialised extends FMTCBackendError {
   @override
   String toString() =>
-      'RootAlreadyInitialised: The requested backend/root could not be initialised because it was already initialised';
+      'RootAlreadyInitialised: The requested backend/root could not be '
+      'initialised because it was already initialised';
 }
 
 /// Indicates that the specified store structure was not available for use in

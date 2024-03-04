@@ -423,45 +423,6 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     return -1;
   }
 
-  /* FOR ABOVE METHOD
-    // Attempts to avoid flooding worker with requests to delete oldest tile,
-    // and 'batches' them instead
-
-    if (_dotStore != storeName) {
-      // If the store has changed, failing to reset the batch/queue will mean
-      // tiles are removed from the wrong store
-      _dotStore = storeName;
-      if (_dotDebouncer.isActive) {
-        _dotDebouncer.cancel();
-        _sendROTCmd(storeName);
-        _dotLength += numToRemove;
-      }
-    }
-
-    if (_dotDebouncer.isActive) {
-      _dotDebouncer.cancel();
-      _dotDebouncer = Timer(
-        const Duration(milliseconds: 500),
-        () => _sendROTCmd(storeName),
-      );
-      _dotLength += numToRemove;
-      return;
-    }
-
-    _dotDebouncer =
-        Timer(const Duration(seconds: 1), () => _sendROTCmd(storeName));
-    _dotLength += numToRemove;
-
-    // may need to be moved out
-     void _sendROTCmd(String storeName) {
-      _sendCmd(
-        type: _WorkerCmdType.removeOldestTile,
-        args: {'storeName': storeName, 'number': _dotLength},
-      );
-      _dotLength = 0;
-    }
-    */
-
   @override
   Future<int> removeTilesOlderThan({
     required String storeName,
@@ -573,4 +534,32 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
           'triggerImmediately': triggerImmediately,
         },
       );
+
+  @override
+  Future<void> exportStores({
+    required List<String> storeNames,
+    required String outputPath,
+  }) =>
+      _sendCmdOneShot(
+        type: _WorkerCmdType.exportStores,
+        args: {'storeNames': storeNames, 'outputPath': outputPath},
+      );
+
+  @override
+  Future<Map<String, Future<bool>>> importStores({
+    required String path,
+    required ImportConflictStrategy strategy,
+  }) async {
+    final storeStatuses = <String, Completer<bool>>{};
+
+    await for (final evt in _sendCmdStreamed(
+      type: _WorkerCmdType.importStores,
+      args: {'path': path, 'strategy': strategy},
+    )) {
+      if (evt!.containsKey('finished')) break;
+      if (evt['storeName'] case final String storeName) {
+        storeStatuses[storeName] = Completer();
+      }
+    }
+  }
 }

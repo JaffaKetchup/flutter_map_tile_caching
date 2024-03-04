@@ -50,13 +50,7 @@ class FMTCStore {
   /// advanced requirements should use another package, as this is a basic
   /// implementation.
   StoreMetadata get metadata => StoreMetadata._(this);
-
-  /// Provides export functionality for this store
-  ///
-  /// The 'fmtc_plus_sharing' module must be installed to add the functionality,
-  /// without it, this object provides no functionality.
-  StoreExport get export => StoreExport._(this);
-
+  
   /// Get tools to manage bulk downloading to this store
   ///
   /// The 'fmtc_plus_background_downloading' module must be installed to add the
