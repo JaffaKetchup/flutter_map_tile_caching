@@ -15,7 +15,7 @@ dependencies:
   better_open_file: ^3.6.4
   collection: ^1.18.0
   dart_earcut: ^1.0.1
-  file_picker: ^5.2.10
+  file_picker: ^6.2.0
   flutter:
     sdk: flutter
   flutter_foreground_task: ^6.1.2

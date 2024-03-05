@@ -3,6 +3,11 @@
 
 part of flutter_map_tile_caching;
 
+typedef ImportResult = ({
+  Future<List<({String importingName, bool conflict, String? newName})>> stores,
+  Future<void> complete,
+});
+
 class RootExternal {
   const RootExternal._();
 
@@ -13,16 +18,14 @@ class RootExternal {
       FMTCBackendAccess.internal
           .exportStores(storeNames: storeNames, outputPath: outputPath);
 
-  Stream<void> import({
+  ImportResult import({
     required String path,
     ImportConflictStrategy strategy = ImportConflictStrategy.skip,
-  }) async* {
-    yield* FMTCBackendAccess.internal.importStores(
-      path: path,
-      strategy: strategy,
-    );
-    //throw UnimplementedError();
-  }
+  }) =>
+      FMTCBackendAccess.internal.importStores(
+        path: path,
+        strategy: strategy,
+      );
 }
 
 /// Determines what action should be taken when an importing store conflicts

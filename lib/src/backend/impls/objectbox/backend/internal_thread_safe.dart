@@ -154,7 +154,7 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
         final store = storeQuery.findUnique() ??
             (throw StoreNotExists(storeName: storeName));
 
-        for (int i = 0; i <= urls.length; i++) {
+        for (int i = 0; i <= urls.length - 1; i++) {
           final url = urls[i];
           final bytes = bytess[i];
 

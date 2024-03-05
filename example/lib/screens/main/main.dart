@@ -30,8 +30,8 @@ class _MainScreenState extends State<MainScreen> {
         ),
         const NavigationDestination(
           label: 'Stores',
-          icon: Icon(Icons.inventory_2_outlined),
-          selectedIcon: Icon(Icons.inventory_2),
+          icon: Icon(Icons.folder_outlined),
+          selectedIcon: Icon(Icons.folder),
         ),
         const NavigationDestination(
           label: 'Download',

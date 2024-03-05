@@ -324,7 +324,7 @@ abstract interface class FMTCBackendInternal
     required String outputPath,
   });
 
-  Future<Map<String, Future<bool>>> importStores({
+  ImportResult importStores({
     required String path,
     required ImportConflictStrategy strategy,
   });

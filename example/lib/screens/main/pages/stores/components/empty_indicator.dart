@@ -12,7 +12,7 @@ class EmptyIndicator extends StatelessWidget {
           children: [
             Icon(Icons.folder_off, size: 36),
             SizedBox(height: 10),
-            Text('No Stores Found'),
+            Text('Get started by creating a store!'),
           ],
         ),
       );

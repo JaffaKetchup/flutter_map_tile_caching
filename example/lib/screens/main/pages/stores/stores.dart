@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 import '../../../../shared/components/loading_indicator.dart';
-import '../../../import_store/import_store.dart';
+import '../../../export_import/export_import.dart';
 import '../../../store_editor/store_editor.dart';
 import 'components/empty_indicator.dart';
 import 'components/header.dart';
@@ -91,13 +91,13 @@ class _StoresPageState extends State<StoresPage> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           FloatingActionButton.small(
-            heroTag: null,
-            tooltip: 'Import Store',
+            heroTag: 'importExport',
+            tooltip: 'Export/Import',
             shape: const CircleBorder(),
-            child: const Icon(Icons.file_open_rounded),
+            child: const Icon(Icons.folder_zip_rounded),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<String>(
-                builder: (BuildContext context) => const ImportStorePopup(),
+                builder: (BuildContext context) => const ExportImportPopup(),
                 fullscreenDialog: true,
               ),
             ),

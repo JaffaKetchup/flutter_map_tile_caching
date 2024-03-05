@@ -21,7 +21,6 @@ class StoreTile extends StatefulWidget {
 class _StoreTileState extends State<StoreTile> {
   bool _deletingProgress = false;
   bool _emptyingProgress = false;
-  bool _exportingProgress = false;
 
   @override
   Widget build(BuildContext context) => Selector<GeneralProvider, String?>(
@@ -223,43 +222,6 @@ class _StoreTileState extends State<StoreTile> {
                                         setState(
                                           () => _emptyingProgress = false,
                                         );
-                                      },
-                              ),
-                              IconButton(
-                                icon: _exportingProgress
-                                    ? const CircularProgressIndicator(
-                                        strokeWidth: 3,
-                                      )
-                                    : const Icon(
-                                        Icons.send_time_extension_rounded,
-                                      ),
-                                tooltip: 'Export Store',
-                                onPressed: _exportingProgress
-                                    ? null
-                                    : () async {
-                                        // TODO: Implement
-                                        /* setState(
-                                                    () => _exportingProgress = true,
-                                                  );
-                                                  final bool result = await _store
-                                                      .export
-                                                      .withGUI(context: context);
-                                                  setState(
-                                                    () =>
-                                                        _exportingProgress = false,
-                                                  );
-                                                  if (mounted) {
-                                                    ScaffoldMessenger.of(context)
-                                                        .showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          result
-                                                              ? 'Exported Sucessfully'
-                                                              : 'Export Cancelled',
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }*/
                                       },
                               ),
                               IconButton(

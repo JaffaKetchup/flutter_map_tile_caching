@@ -828,7 +828,7 @@ Future<void> _worker(
 
         Directory(outputDir).createSync(recursive: true);
 
-        final exportableStore = Store(
+        final exportingRoot = Store(
           getObjectBoxModel(),
           directory: outputDir,
           maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
@@ -847,84 +847,89 @@ Future<void> _worker(
               ))
             .build();
 
-        final storesRaw = root.runInTransaction(
+        final storesObjectsForRelations = <String, ObjectBoxStore>{};
+
+        final exportingStores = root.runInTransaction(
           TxMode.read,
           storesQuery.stream,
         );
 
-        final newStores = storesRaw.map(
-          (s) => ObjectBoxStore(
-            name: s.name,
-            length: s.length,
-            size: s.size,
-            hits: s.hits,
-            misses: s.misses,
-            metadataJson: s.metadataJson,
-          ),
-        );
-
-        exportableStore
+        exportingRoot
             .runInTransaction(
               TxMode.write,
-              () => newStores.listen(
-                (store) {
-                  exportableStore
-                      .box<ObjectBoxStore>()
-                      .put(store, mode: PutMode.insert);
+              () => exportingStores.listen(
+                (exportingStore) {
+                  exportingRoot.box<ObjectBoxStore>().put(
+                        storesObjectsForRelations[exportingStore.name] =
+                            ObjectBoxStore(
+                          name: exportingStore.name,
+                          length: exportingStore.length,
+                          size: exportingStore.size,
+                          hits: exportingStore.hits,
+                          misses: exportingStore.misses,
+                          metadataJson: exportingStore.metadataJson,
+                        ),
+                        mode: PutMode.insert,
+                      );
                 },
               ),
             )
             .asFuture<void>()
-            .then((_) {
-          final tilesRaw = root.runInTransaction(
-            TxMode.read,
-            tilesQuery.stream,
-          );
+            .then(
+          (_) {
+            final exportingTiles = root.runInTransaction(
+              TxMode.read,
+              tilesQuery.stream,
+            );
 
-          final newTiles = tilesRaw.map(
-            (t) => ObjectBoxTile(
-              url: t.url,
-              bytes: t.bytes,
-              lastModified: t.lastModified,
-            )..stores.addAll(t.stores),
-          );
+            exportingRoot
+                .runInTransaction(
+                  TxMode.write,
+                  () => exportingTiles.listen(
+                    (exportingTile) {
+                      exportingRoot.box<ObjectBoxTile>().put(
+                            ObjectBoxTile(
+                              url: exportingTile.url,
+                              bytes: exportingTile.bytes,
+                              lastModified: exportingTile.lastModified,
+                            )..stores.addAll(
+                                exportingTile.stores.map(
+                                  (s) => storesObjectsForRelations[s.name]!,
+                                ),
+                              ),
+                            mode: PutMode.insert,
+                          );
+                    },
+                  ),
+                )
+                .asFuture<void>()
+                .then(
+              (_) {
+                storesQuery.close();
+                tilesQuery.close();
+                exportingRoot.close();
 
-          exportableStore
-              .runInTransaction(
-                TxMode.write,
-                () => newTiles.listen(
-                  (tile) {
-                    exportableStore
-                        .box<ObjectBoxTile>()
-                        .put(tile, mode: PutMode.insert);
-                  },
-                ),
-              )
-              .asFuture<void>()
-              .then((_) {
-            storesQuery.close();
-            tilesQuery.close();
-            exportableStore.close();
+                File(path.join(outputDir, 'lock.mdb')).delete();
 
-            File(path.join(outputDir, 'lock.mdb')).delete();
+                final ram = File(path.join(outputDir, 'data.mdb'))
+                    .renameSync(outputPath)
+                    .openSync(mode: FileMode.writeOnlyAppend);
+                try {
+                  ram
+                    ..writeFromSync(List.filled(4, 255))
+                    ..writeStringSync('ObjectBox') // Backend identifier
+                    ..writeByteSync(255)
+                    ..writeByteSync(255)
+                    ..writeStringSync('FMTC'); // Signature
+                } finally {
+                  ram.closeSync();
+                }
 
-            final ram = File(path.join(outputDir, 'data.mdb'))
-                .renameSync(outputPath)
-                .openSync(mode: FileMode.writeOnlyAppend);
-            try {
-              ram
-                ..writeFromSync(List.filled(4, 255))
-                ..writeStringSync('ObjectBox') // Backend identifier
-                ..writeByteSync(255)
-                ..writeByteSync(255)
-                ..writeStringSync('FMTC'); // Signature
-            } finally {
-              ram.closeSync();
-            }
-
-            sendRes(id: cmd.id);
-          });
-        });
+                sendRes(id: cmd.id);
+              },
+            );
+          },
+        );
       case _WorkerCmdType.importStores:
         final importPath = cmd.args['path']! as String;
         final strategy = cmd.args['strategy'] as ImportConflictStrategy;
@@ -983,30 +988,66 @@ Future<void> _worker(
         );
 
         final storesQuery = importingRoot.box<ObjectBoxStore>().query().build();
-        //final tilesQuery = importingRoot.box<ObjectBoxTile>().query().build();
+        final tilesQuery = importingRoot.box<ObjectBoxTile>().query().build();
 
         final specificStoresQuery = root
             .box<ObjectBoxStore>()
             .query(ObjectBoxStore_.name.equals(''))
             .build();
+        final specificTilesQuery = root
+            .box<ObjectBoxTile>()
+            .query(ObjectBoxTile_.url.equals(''))
+            .build();
+
+        final storesObjectsForRelations = <String, ObjectBoxStore>{};
+        final storesToSkipTiles = <String>[];
+        int rootDeltaLength = 0;
+        int rootDeltaSize = 0;
 
         final importingStores = importingRoot.runInTransaction(
           TxMode.read,
           storesQuery.stream,
         );
 
-        root.runInTransaction(
-          TxMode.write,
-          // ignore: prefer_expression_function_bodies
-          () {
-            return importingStores.listen(
-              (importingStore) {
-                final existingStore = (specificStoresQuery
-                      ..param(ObjectBoxStore_.name).value = importingStore.name)
-                    .findUnique();
+        root
+            .runInTransaction(
+              TxMode.write,
+              () => importingStores.listen(
+                (importingStore) {
+                  final existingStore = (specificStoresQuery
+                        ..param(ObjectBoxStore_.name).value =
+                            importingStore.name)
+                      .findUnique();
 
-                if (existingStore != null) {
+                  if (existingStore == null) {
+                    sendRes(
+                      id: cmd.id,
+                      data: {
+                        'expectStream': true,
+                        'storeName': importingStore.name,
+                        'newStoreName': null,
+                        'conflict': false,
+                      },
+                    );
+
+                    root.box<ObjectBoxStore>().put(
+                          storesObjectsForRelations[importingStore.name] =
+                              ObjectBoxStore(
+                            name: importingStore.name,
+                            length: importingStore.length,
+                            size: importingStore.size,
+                            hits: importingStore.hits,
+                            misses: importingStore.misses,
+                            metadataJson: importingStore.metadataJson,
+                          ),
+                          mode: PutMode.insert,
+                        );
+
+                    return;
+                  }
+
                   if (strategy == ImportConflictStrategy.skip) {
+                    storesToSkipTiles.add(importingStore.name);
                     sendRes(
                       id: cmd.id,
                       data: {
@@ -1056,96 +1097,125 @@ Future<void> _worker(
                     tilesQuery.close();
                   }
 
-                  switch (strategy) {
-                    case ImportConflictStrategy.rename ||
-                          ImportConflictStrategy.replace:
-                    // These can now be handled identically, because they have
-                    // been pre-processed as necessary
-                    // TODO: Implement
-                    case ImportConflictStrategy.merge:
-                    // TODO: Implement
-                    case ImportConflictStrategy.skip:
-                      throw Error();
+                  if (strategy != ImportConflictStrategy.merge) {
+                    root.box<ObjectBoxStore>().put(
+                          storesObjectsForRelations[importingStore.name] =
+                              ObjectBoxStore(
+                            name: newName ?? importingStore.name,
+                            length: importingStore.length,
+                            size: importingStore.size,
+                            hits: importingStore.hits,
+                            misses: importingStore.misses,
+                            metadataJson: importingStore.metadataJson,
+                          ),
+                          mode: PutMode.insert,
+                        );
                   }
-                } else {
-                  sendRes(
-                    id: cmd.id,
-                    data: {
-                      'expectStream': true,
-                      'storeName': importingStore.name,
-                      'newStoreName': null,
-                      'conflict': false,
+                },
+              ),
+            )
+            .asFuture<void>()
+            .then(
+          (_) {
+            sendRes(
+              id: cmd.id,
+              data: {'expectStream': true, 'tiles': null},
+            );
+
+            final importingTiles = importingRoot.runInTransaction(
+              TxMode.read,
+              tilesQuery.stream,
+            );
+
+            root
+                .runInTransaction(
+                  TxMode.write,
+                  () => importingTiles.listen(
+                    (importingTile) {
+                      if (strategy == ImportConflictStrategy.skip &&
+                          importingTile.stores.length == 1 &&
+                          storesToSkipTiles.contains(
+                            importingTile.stores[0].name,
+                          )) return;
+
+                      importingTile.stores.removeWhere(
+                        (s) => storesToSkipTiles.contains(s.name),
+                      );
+
+                      try {
+                        root.box<ObjectBoxTile>().put(
+                              ObjectBoxTile(
+                                url: importingTile.url,
+                                bytes: importingTile.bytes,
+                                lastModified: importingTile.lastModified,
+                              )..stores.addAll(
+                                  importingTile.stores.map(
+                                    (e) => storesObjectsForRelations[e.name]!,
+                                  ),
+                                ),
+                              mode: PutMode.insert,
+                            );
+
+                        rootDeltaLength++;
+                        rootDeltaSize += importingTile.bytes.lengthInBytes;
+                      } on UniqueViolationException {
+                        final existingTile = (specificTilesQuery
+                              ..param(ObjectBoxTile_.url).value =
+                                  importingTile.url)
+                            .findUnique()!;
+
+                        if (existingTile.lastModified
+                            .isAfter(importingTile.lastModified)) return;
+
+                        root.box<ObjectBoxTile>().put(
+                              ObjectBoxTile(
+                                url: importingTile.url,
+                                bytes: importingTile.bytes,
+                                lastModified: importingTile.lastModified,
+                              )..stores.addAll(
+                                  {
+                                    ...existingTile.stores,
+                                    ...importingTile.stores.map(
+                                      (e) => storesObjectsForRelations[e.name]!,
+                                    ),
+                                  },
+                                ),
+                              mode: PutMode.update,
+                            );
+
+                        rootDeltaSize += -existingTile.bytes.lengthInBytes +
+                            importingTile.bytes.lengthInBytes;
+                      }
+
+                      //TODO: mergeing strategy
                     },
-                  );
+                  ),
+                )
+                .asFuture<void>()
+                .then(
+              (_) {
+                print(rootDeltaLength);
+                updateRootStatistics(
+                  deltaLength: rootDeltaLength,
+                  deltaSize: rootDeltaSize,
+                );
 
-                  // TODO: Implement
-                }
+                storesQuery.close();
+                tilesQuery.close();
+                importingRoot.close();
 
-                /*root.box<ObjectBoxStore>().put(
-                        ObjectBoxStore(
-                          name: importingStore.name,
-                          length: importingStore.length,
-                          size: importingStore.size,
-                          hits: importingStore.hits,
-                          misses: importingStore.misses,
-                          metadataJson: importingStore.metadataJson,
-                        ),
-                        mode: PutMode.insert,
-                      );*/
+                importFile.deleteSync();
+                File(path.join(importDir, 'lock.mdb')).deleteSync();
+                importDirIO.deleteSync();
+
+                sendRes(
+                  id: cmd.id,
+                  data: {'expectStream': true, 'finished': null},
+                );
               },
             );
           },
-        ).asFuture<void>();
-      /*.then(
-                (_) {
-                  sendRes(
-                    id: cmd.id,
-                    data: {'expectStream': true, 'tiles': null},
-                  );
-
-                  final importingTiles = importingRoot.runInTransaction(
-                    TxMode.read,
-                    tilesQuery.stream,
-                  );
-
-                  /*final newTiles = tilesRaw.map(
-              (t) => ObjectBoxTile(
-                url: t.url,
-                bytes: t.bytes,
-                lastModified: t.lastModified,
-              )..stores.addAll(t.stores),
-            );*/
-
-                  root
-                      .runInTransaction(
-                        TxMode.write,
-                        () => newTiles.listen(
-                          (tile) {
-                            root
-                                .box<ObjectBoxTile>()
-                                .put(tile, mode: PutMode.insert);
-                          },
-                        ),
-                      )
-                      .asFuture<void>()
-                      .then(
-                    (_) {
-                      storesQuery.close();
-                      tilesQuery.close();
-                      importingRoot.close();
-
-                      importFile.deleteSync();
-                      File(path.join(importDir, 'lock.mdb')).deleteSync();
-                      importDirIO.deleteSync();
-
-                      sendRes(
-                        id: cmd.id,
-                        data: {'expectStream': true, 'finished': null},
-                      );
-                    },
-                  );
-                },
-              );*/
+        );
     }
   }
 

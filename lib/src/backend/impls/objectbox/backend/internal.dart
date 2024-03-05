@@ -546,20 +546,45 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       );
 
   @override
-  Future<Map<String, Future<bool>>> importStores({
+  ImportResult importStores({
     required String path,
     required ImportConflictStrategy strategy,
-  }) async {
-    final storeStatuses = <String, Completer<bool>>{};
+  }) {
+    final storesStreamController = StreamController<
+        ({String importingName, bool conflict, String? newName})>();
 
-    await for (final evt in _sendCmdStreamed(
+    final complete = Completer<void>();
+
+    late final StreamSubscription<Map<String, dynamic>?> listener;
+    listener = _sendCmdStreamed(
       type: _WorkerCmdType.importStores,
       args: {'path': path, 'strategy': strategy},
-    )) {
-      if (evt!.containsKey('finished')) break;
-      if (evt['storeName'] case final String storeName) {
-        storeStatuses[storeName] = Completer();
-      }
-    }
+    ).listen(
+      cancelOnError: true,
+      (evt) {
+        if (evt!.containsKey('finished')) {
+          complete.complete();
+          listener.cancel();
+          return;
+        }
+        if (evt.containsKey('tiles')) {
+          storesStreamController.close();
+          return;
+        }
+
+        storesStreamController.add(
+          (
+            importingName: evt['storeName'],
+            conflict: evt['conflict'],
+            newName: evt['newStoreName'],
+          ),
+        );
+      },
+    );
+
+    return (
+      stores: storesStreamController.stream.toList(),
+      complete: complete.future,
+    );
   }
 }
