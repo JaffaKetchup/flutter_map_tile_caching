@@ -39,7 +39,7 @@ jobs:
           - name: Setup Flutter Environment
             uses: subosito/flutter-action@master
             with:
-              channel: "stable"
+              channel: "beta"
           - name: Get Package Dependencies
             run: flutter pub get
           - name: Get Example Dependencies
@@ -60,7 +60,7 @@ jobs:
           - name: Setup Flutter Environment
             uses: subosito/flutter-action@master
             with:
-              channel: "stable"
+              channel: "beta"
           - name: Get Dependencies
             run: flutter pub get
           - name: Run Tests
@@ -84,7 +84,7 @@ jobs:
           - name: Setup Flutter Environment
             uses: subosito/flutter-action@master
             with:
-              channel: "stable"
+              channel: "beta"
           - name: Build
             run: flutter build apk --obfuscate --split-debug-info=./symbols
           - name: Upload Artifact
@@ -107,7 +107,7 @@ jobs:
           - name: Setup Flutter Environment
             uses: subosito/flutter-action@master
             with:
-              channel: "stable"
+              channel: "beta"
           - name: Build
             run: flutter build windows --obfuscate --split-debug-info=./symbols
           - name: Create Installer
