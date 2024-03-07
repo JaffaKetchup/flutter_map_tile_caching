@@ -46,8 +46,6 @@ jobs:
             run: flutter pub get -C example
           - name: Get Test Tile Server Dependencies
             run: dart pub get -C tile_server
-          - name: Generate Code
-            run: dart run build_runner build
           - name: Check Formatting
             run: dart format --output=none --set-exit-if-changed .
           - name: Check Lints
@@ -65,8 +63,6 @@ jobs:
               channel: "stable"
           - name: Get Dependencies
             run: flutter pub get
-          - name: Generate Code
-            run: dart run build_runner build
           - name: Run Tests
             run: flutter test -r expanded
 
@@ -89,12 +85,6 @@ jobs:
             uses: subosito/flutter-action@master
             with:
               channel: "stable"
-          - name: Get Dependencies
-            run: flutter pub get
-            working-directory: .
-          - name: Generate Code
-            run: dart run build_runner build
-            working-directory: .
           - name: Build
             run: flutter build apk --obfuscate --split-debug-info=./symbols
           - name: Upload Artifact
@@ -118,12 +108,6 @@ jobs:
             uses: subosito/flutter-action@master
             with:
               channel: "stable"
-          - name: Get Dependencies
-            run: flutter pub get
-            working-directory: .
-          - name: Generate Code
-            run: dart run build_runner build
-            working-directory: .
           - name: Build
             run: flutter build windows --obfuscate --split-debug-info=./symbols
           - name: Create Installer
