@@ -3,7 +3,7 @@
 
 // ignore_for_file: use_late_for_private_fields_and_variables
 
-part of flutter_map_tile_caching;
+part of '../../flutter_map_tile_caching.dart';
 
 /// Provides statistics about an [FMTCStore]
 ///

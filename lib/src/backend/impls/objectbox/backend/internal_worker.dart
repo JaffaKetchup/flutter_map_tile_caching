@@ -1222,9 +1222,9 @@ Future<void> _worker(
                             importingTile.bytes.lengthInBytes;
                       }
 
-                      // TODO: mergeing strategy
+                      // TODO: Implement merging strategy
 
-                      // TODO: Write `storesToUpdate`
+                      // TODO: Write `storesToUpdate` to db
                     },
                   ),
                 )
