@@ -863,7 +863,7 @@ Future<void> _worker(
         final outputDir = path.dirname(outputPath);
 
         if (outputDir == input.rootDirectory.absolute.path) {
-          throw ExportInRootDirectoryForbidden(directory: outputDir);
+          throw ExportInRootDirectoryForbidden();
         }
 
         Directory(outputDir).createSync(recursive: true);

@@ -28,6 +28,7 @@ final class RootAlreadyInitialised extends FMTCBackendError {
 final class StoreNotExists extends FMTCBackendError {
   StoreNotExists({required this.storeName});
 
+  /// The referenced store name
   final String storeName;
 
   @override

@@ -13,12 +13,10 @@ base class FMTCObjectBoxBackendError extends FMTCBackendError {}
 /// Indicates that an export failed because the specified output path directory
 /// was the same as the root directory
 final class ExportInRootDirectoryForbidden extends FMTCObjectBoxBackendError {
-  ExportInRootDirectoryForbidden({required this.directory});
-
-  final String directory;
+  ExportInRootDirectoryForbidden();
 
   @override
   String toString() =>
       'ExportInRootDirectoryForbidden: It is forbidden to export stores to the '
-      'same directory ($directory) as the `rootDirectory`';
+      'same directory as the `rootDirectory`';
 }

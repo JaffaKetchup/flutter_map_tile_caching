@@ -71,7 +71,7 @@ class PathPicker extends StatelessWidget {
                       color: Theme.of(context)
                           .buttonTheme
                           .colorScheme!
-                          .primaryFixedDim,
+                          .primaryFixed,
                     ),
                   ),
                 ),
