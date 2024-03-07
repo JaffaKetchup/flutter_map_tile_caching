@@ -538,18 +538,28 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   @override
   Future<void> exportStores({
     required List<String> storeNames,
-    required String outputPath,
-  }) =>
-      _sendCmdOneShot(
-        type: _WorkerCmdType.exportStores,
-        args: {'storeNames': storeNames, 'outputPath': outputPath},
-      );
+    required String path,
+  }) async {
+    final type = await FileSystemEntity.type(path);
+    if (type == FileSystemEntityType.directory) {
+      throw ImportExportPathNotFile();
+    }
+
+    await _sendCmdOneShot(
+      type: _WorkerCmdType.exportStores,
+      args: {'storeNames': storeNames, 'outputPath': path},
+    );
+  }
 
   @override
-  ImportResult importStores({
+  @experimental // TODO: Finish implementation
+  Future<ImportResult> importStores({
     required String path,
     required ImportConflictStrategy strategy,
-  }) {
+    required List<String>? storeNames,
+  }) async {
+    await _checkImportPathType(path);
+
     final storesStreamController = StreamController<
         ({String importingName, bool conflict, String? newName})>();
 
@@ -558,7 +568,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     late final StreamSubscription<Map<String, dynamic>?> listener;
     listener = _sendCmdStreamed(
       type: _WorkerCmdType.importStores,
-      args: {'path': path, 'strategy': strategy},
+      args: {'path': path, 'strategy': strategy, 'stores': storeNames},
     ).listen(
       cancelOnError: true,
       (evt) {
@@ -586,5 +596,27 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       stores: storesStreamController.stream.toList(),
       complete: complete.future,
     );
+  }
+
+  @override
+  Future<List<String>> listImportableStores({
+    required String path,
+  }) async {
+    await _checkImportPathType(path);
+
+    return (await _sendCmdOneShot(
+      type: _WorkerCmdType.listImportableStores,
+      args: {'path': path},
+    ))!['stores'];
+  }
+
+  Future<void> _checkImportPathType(String path) async {
+    final type = await FileSystemEntity.type(path);
+    if (type == FileSystemEntityType.notFound) {
+      throw ImportPathNotExists(path: path);
+    }
+    if (type == FileSystemEntityType.directory) {
+      throw ImportExportPathNotFile();
+    }
   }
 }

@@ -14,11 +14,39 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [9.0.0] - 2023/XX/XX
+## [9.0.0] - "Hundreds of hours" - 2024/XX/XX
 
-* Migrated to Flutter 3.13 and Dart 3.1
-* Migrated to flutter_map v6
-* Bulk downloading reimplementation
+This update has essentially rewritten FMTC from the ground up, over hundreds of hours. It focuses on:
+
+* improved future maintainability by modularity
+* improved stability & performance across the board
+* support of 'tiles across stores': reduced duplication
+
+I would hugely appricate any donations - please see the documentation site, GitHub repo, or pub.dev package.
+
+I would also like to thank all those who have been waiting and contributing their feedback throughout the process: it means a lot to me that FMTC is such a crucial component to your application.
+
+And without further ado, let's get the biggest changes out of the way first:
+
+* Added support for modular storage/root backends through `FMTCBackend`
+  * Removed Isar support  
+    Isar unfortunately caused too many stability issues, and is not as actively maintained as I would like (I can sympathise :D).
+  * Added ObjectBox as the default backend (`FMTCObjectBoxBackend`)  
+    ObjectBox uses the same underlying database technology as Isar (MBDX), but is more maintained, and I'm hoping, more stable. Note that ObjectBox declares it only supports 64-bit systems, whereas Isar was just 'mostly unstable' on 32-bit systems until recently (where is also became 64-bit only): it's time for the future!
+  * It is expected that backends support a many-to-many relationship between tiles and stores  
+    This has reduced duplication between stores and tiles massively, and now allows for smaller, fine-grained region control. The default backend supports this with as minimal hit to performance as possible, although of course, database operations are now considerably more complex than in previous versions, and so therefore will take slightly longer. In practise, there is no noticeable performance difference.
+  * It is expected that backends cache statistics instead of calculating them at get time  
+    This has decreased the time spent fetching basic statistics, and allowed for increased efficiency when getting multiple stats at once. Of course, there is some impact on performance at write time: it must all be accurately tracked, else it will be inaccacurate/out-of-sync.
+
+* Restructured top-level access APIs
+  * Deprecated `StoreDirectory` & `RootDirectory` in favour of `FMTCStore` and `FMTCRoot`  
+    The term 'directory' has been misleading for a couple of years now, as it hasn't been actual filesystem directories storing information since the introduction of v7.
+  * Removed the `FlutterMapTileCaching`/`FMTC` access object, in favour of `FMTCStore` and `FMTCRoot` direct constructors  
+    Much of the configuration and state management performed by this top-level object and it's close relatives were transferred to the backend, and as such, there is no longer a requirement for these objects.
+  * Removed support for synchronous operations (and renamed asynchronous operations to reflect this)  
+    These were incompatible with the new `Isolate`d `FMTCObjectBoxBackend`, and to keep scope reasonable, I decided to remove them, in favour of backends implementing their own `Isolate`ion as well.
+
+* Reimplemented bulk downloading
   * Added `CustomPolygonRegion`, a `BaseRegion` that is formed of any* outline
   * Added pause and resume functionality
   * Added rate limiting functionality
@@ -30,14 +58,22 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
   * Fixed usage of `obscuredQueryParams`
   * Removed support for bulk download buffering by size capacity
   * Removed support for custom `HttpClient`s
-* Added secondary check to `FMTCImageProvider` to ensure responses are valid images
+* Deprecated plugins
+  * Transfered support for import/export operations to core (`RootExternal`)
+  * Deprecated support for background bulk downloading
+* Migrated to Flutter 3.19 and Dart 3.3
+* Migrated to flutter_map v6
+
+With those out of the way, we can take a look at the smaller changes:
+
+* Improved error handling (especially in backends)
 * Added `StoreManagement.pruneTilesOlderThan` method
-* Improved performance of `tileImage` methods
-* Improved error objects
+* Added shortcut for getting multiple stats: `StoreStats.all`
+* Added secondary check to `FMTCImageProvider` to ensure responses are valid images
 * Replaced public facing `RegionType`/`type` with Dart 3 exhaustive switch statements through `BaseRegion/DownloadableRegion.when` & `RecoverableRegion.toRegion`
 * Removed HTTP/2 support
 
-Also:
+In addition, there's been more action in the surrounding enviroment:
 
 * Created a miniature testing tile server
 * Created automated tests for tile generation

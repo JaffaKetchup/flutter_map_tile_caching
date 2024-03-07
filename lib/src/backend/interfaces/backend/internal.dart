@@ -319,13 +319,33 @@ abstract interface class FMTCBackendInternal
     required bool triggerImmediately,
   });
 
+  /// Create an archive at the file [path] containing the specifed stores and
+  /// their respective tiles
+  ///
+  /// See [RootExternal] for more information about expected behaviour and
+  /// errors.
   Future<void> exportStores({
+    required String path,
     required List<String> storeNames,
-    required String outputPath,
   });
 
-  ImportResult importStores({
+  /// Load the specified stores (or all stores if `null`) from the archive file
+  /// at [path] into the current root, using [strategy] where there are
+  /// conflicts
+  ///
+  /// See [RootExternal] for more information about expected behaviour and
+  /// errors.
+  Future<ImportResult> importStores({
     required String path,
     required ImportConflictStrategy strategy,
+    required List<String>? storeNames,
+  });
+
+  /// Check the stores available inside the archive file at [path]
+  ///
+  /// See [RootExternal] for more information about expected behaviour and
+  /// errors.
+  Future<List<String>> listImportableStores({
+    required String path,
   });
 }

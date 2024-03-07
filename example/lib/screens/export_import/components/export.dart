@@ -32,7 +32,7 @@ class _ExportState extends State<Export> {
               future: stores,
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return const LoadingIndicator('Loading available stores');
+                  return const LoadingIndicator('Loading exportable stores');
                 }
 
                 if (snapshot.data!.isEmpty) {

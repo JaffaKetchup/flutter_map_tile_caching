@@ -99,19 +99,19 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
               ..size += -existingTile.bytes.lengthInBytes + bytes.lengthInBytes,
             mode: PutMode.update,
           );
-        }
-
-        if (!didContainAlready || existingTile == null) {
-          storesToUpdate[storeName] = store
-            ..length += 1
-            ..size += bytes.lengthInBytes;
-
+        } else {
           rootBox.put(
             rootBox.get(1)!
               ..length += 1
               ..size += bytes.lengthInBytes,
             mode: PutMode.update,
           );
+        }
+
+        if (!didContainAlready || existingTile == null) {
+          storesToUpdate[storeName] = store
+            ..length += 1
+            ..size += bytes.lengthInBytes;
         }
 
         tiles.put(
@@ -178,14 +178,14 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
 
             rootData.size +=
                 -existingTile.bytes.lengthInBytes + bytes.lengthInBytes;
+          } else {
+            rootData
+              ..length += 1
+              ..size += bytes.lengthInBytes;
           }
 
           if (!didContainAlready || existingTile == null) {
             storesToUpdate[storeName] = store
-              ..length += 1
-              ..size += bytes.lengthInBytes;
-
-            rootData
               ..length += 1
               ..size += bytes.lengthInBytes;
           }

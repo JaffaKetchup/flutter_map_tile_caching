@@ -35,9 +35,8 @@ abstract class FMTCRoot {
   static RootRecovery get recovery =>
       RootRecovery._instance ?? RootRecovery._();
 
-  /// Provides store import functionality for this root
-  ///
-  /// The 'fmtc_plus_sharing' module must be installed to add the functionality,
-  /// without it, this object provides no functionality.
-  static RootExternal get external => const RootExternal._();
+  /// Export & import 'archives' of selected stores and tiles, outside of the
+  /// FMTC environment
+  static RootExternal external({required String pathToArchive}) =>
+      RootExternal._(pathToArchive);
 }

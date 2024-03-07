@@ -20,7 +20,7 @@ void main() async {
     ),
   );
 
-  // TODO: Implement handling
+  // TODO: Implement error handling
   await FMTCObjectBoxBackend().initialise();
 
   runApp(const _AppContainer());

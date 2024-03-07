@@ -43,8 +43,8 @@ enum _WorkerCmdType {
   watchStores(streamCancel: cancelStreamedOutputs),
   exportStores,
   importStores(streamCancel: cancelStreamedOutputs),
-  cancelStreamedOutputs,
-  ;
+  listImportableStores,
+  cancelStreamedOutputs;
 
   const _WorkerCmdType({this.streamCancel});
 
@@ -179,6 +179,46 @@ Future<void> _worker(
     storeQuery.close();
 
     return rootDeltaLength.abs();
+  }
+
+  /// Verify that the specified file is a valid FMTC format archive, compatible
+  /// with this ObjectBox backend
+  ///
+  /// If [truncate] is `true` (default), the FMTC information will be stripped
+  /// from the file.
+  void verifyImportableArchive(
+    File importFile, {
+    bool truncate = true,
+  }) {
+    final ram = importFile.openSync(mode: FileMode.append);
+    try {
+      int cursorPos = ram.positionSync() - 1;
+      ram.setPositionSync(cursorPos);
+
+      // Check for FMTC footer signature ("**FMTC")
+      const signature = [255, 255, 70, 77, 84, 67];
+      for (int i = 5; i >= 0; i--) {
+        if (signature[i] != ram.readByteSync()) {
+          throw ImportFileNotFMTCStandard();
+        }
+        ram.setPositionSync(--cursorPos);
+      }
+
+      // Check for expected backend identifier ("**ObjectBox")
+      const id = [255, 255, 79, 98, 106, 101, 99, 116, 66, 111, 120];
+      for (int i = 10; i >= 0; i--) {
+        if (id[i] != ram.readByteSync()) {
+          throw ImportFileNotBackendCompatible();
+        }
+        ram.setPositionSync(--cursorPos);
+      }
+
+      if (truncate) ram.truncateSync(--cursorPos);
+    } catch (e) {
+      ram.closeSync();
+      rethrow;
+    }
+    ram.closeSync();
   }
 
   //! MAIN HANDLER !//
@@ -933,52 +973,22 @@ Future<void> _worker(
       case _WorkerCmdType.importStores:
         final importPath = cmd.args['path']! as String;
         final strategy = cmd.args['strategy'] as ImportConflictStrategy;
-
-        final importFileRaw = File(importPath);
-
-        if (!importFileRaw.existsSync()) {
-          throw ImportFileNotExists(path: importPath);
-        }
+        final storesToImport = cmd.args['stores'] as List<String>;
 
         final importDir =
             path.join(input.rootDirectory.absolute.path, 'import_tmp');
         final importDirIO = Directory(importDir)..createSync();
 
         final importFile =
-            importFileRaw.copySync(path.join(importDir, 'data.mdb'));
+            File(importPath).copySync(path.join(importDir, 'data.mdb'));
 
-        // Verify file is valid for import
-        final ram = importFile.openSync(mode: FileMode.append);
         try {
-          int cursorPos = ram.positionSync() - 1;
-          ram.setPositionSync(cursorPos);
-
-          // Check for FMTC footer signature ("**FMTC")
-          const signature = [255, 255, 70, 77, 84, 67];
-          for (int i = 5; i >= 0; i--) {
-            if (signature[i] != ram.readByteSync()) {
-              throw ImportFileNotFMTCStandard();
-            }
-            ram.setPositionSync(--cursorPos);
-          }
-
-          // Check for expected backend identifier ("**ObjectBox")
-          const id = [255, 255, 79, 98, 106, 101, 99, 116, 66, 111, 120];
-          for (int i = 10; i >= 0; i--) {
-            if (id[i] != ram.readByteSync()) {
-              throw ImportFileNotBackendCompatible();
-            }
-            ram.setPositionSync(--cursorPos);
-          }
-
-          ram.truncateSync(--cursorPos);
+          verifyImportableArchive(importFile);
         } catch (e) {
-          ram.closeSync();
           importFile.deleteSync();
           importDirIO.deleteSync();
           rethrow;
         }
-        ram.closeSync();
 
         final importingRoot = Store(
           getObjectBoxModel(),
@@ -999,6 +1009,7 @@ Future<void> _worker(
             .query(ObjectBoxTile_.url.equals(''))
             .build();
 
+        final storesToUpdate = <String, ObjectBoxStore>{};
         final storesObjectsForRelations = <String, ObjectBoxStore>{};
         final storesToSkipTiles = <String>[];
         int rootDeltaLength = 0;
@@ -1014,6 +1025,11 @@ Future<void> _worker(
               TxMode.write,
               () => importingStores.listen(
                 (importingStore) {
+                  if (!storesToImport.contains(importingStore.name)) {
+                    storesToSkipTiles.add(importingStore.name);
+                    return;
+                  }
+
                   final existingStore = (specificStoresQuery
                         ..param(ObjectBoxStore_.name).value =
                             importingStore.name)
@@ -1164,8 +1180,21 @@ Future<void> _worker(
                                   importingTile.url)
                             .findUnique()!;
 
+                        final newRelatedStores = importingTile.stores.map(
+                          (e) => storesObjectsForRelations[e.name]!,
+                        );
+
                         if (existingTile.lastModified
-                            .isAfter(importingTile.lastModified)) return;
+                            .isAfter(importingTile.lastModified)) {
+                          for (final newRelatedStore in newRelatedStores) {
+                            storesToUpdate[newRelatedStore.name] =
+                                (storesToUpdate[newRelatedStore.name] ??
+                                    newRelatedStore)
+                                  ..size += -importingTile.bytes.lengthInBytes +
+                                      existingTile.bytes.lengthInBytes;
+                          }
+                          return;
+                        }
 
                         root.box<ObjectBoxTile>().put(
                               ObjectBoxTile(
@@ -1175,26 +1204,33 @@ Future<void> _worker(
                               )..stores.addAll(
                                   {
                                     ...existingTile.stores,
-                                    ...importingTile.stores.map(
-                                      (e) => storesObjectsForRelations[e.name]!,
-                                    ),
+                                    ...newRelatedStores,
                                   },
                                 ),
                               mode: PutMode.update,
                             );
 
+                        for (final existingTileStore in existingTile.stores) {
+                          storesToUpdate[existingTileStore.name] =
+                              (storesToUpdate[existingTileStore.name] ??
+                                  existingTileStore)
+                                ..size += -existingTile.bytes.lengthInBytes +
+                                    importingTile.bytes.lengthInBytes;
+                        }
+
                         rootDeltaSize += -existingTile.bytes.lengthInBytes +
                             importingTile.bytes.lengthInBytes;
                       }
 
-                      //TODO: mergeing strategy
+                      // TODO: mergeing strategy
+
+                      // TODO: Write `storesToUpdate`
                     },
                   ),
                 )
                 .asFuture<void>()
                 .then(
               (_) {
-                print(rootDeltaLength);
                 updateRootStatistics(
                   deltaLength: rootDeltaLength,
                   deltaSize: rootDeltaSize,
@@ -1216,6 +1252,47 @@ Future<void> _worker(
             );
           },
         );
+      case _WorkerCmdType.listImportableStores:
+        final importPath = cmd.args['path']! as String;
+
+        final importDir =
+            path.join(input.rootDirectory.absolute.path, 'import_tmp');
+        final importDirIO = Directory(importDir)..createSync();
+
+        final importFile =
+            File(importPath).copySync(path.join(importDir, 'data.mdb'));
+
+        try {
+          verifyImportableArchive(importFile);
+        } catch (e) {
+          importFile.deleteSync();
+          importDirIO.deleteSync();
+          rethrow;
+        }
+
+        final importingRoot = Store(
+          getObjectBoxModel(),
+          directory: importDir,
+          maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
+          macosApplicationGroup: input.macosApplicationGroup,
+        );
+
+        sendRes(
+          id: cmd.id,
+          data: {
+            'stores': importingRoot
+                .box<ObjectBoxStore>()
+                .getAll()
+                .map((e) => e.name)
+                .toList(growable: false),
+          },
+        );
+
+        importingRoot.close();
+
+        importFile.deleteSync();
+        File(path.join(importDir, 'lock.mdb')).deleteSync();
+        importDirIO.deleteSync();
     }
   }
 

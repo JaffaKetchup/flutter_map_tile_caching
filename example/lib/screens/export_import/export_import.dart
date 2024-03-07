@@ -109,6 +109,7 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
                                 right: 12,
                               ),
                               child: Import(
+                                path: pathController.text,
                                 changeForceOverrideExisting: onPathChanged,
                               ),
                             );
@@ -171,9 +172,10 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
                       if (isExporting) {
                         setState(() => isProcessingExporting = true);
                         final stopwatch = Stopwatch()..start();
-                        await FMTCRoot.external.export(
+                        await FMTCRoot.external(
+                          pathToArchive: pathController.text,
+                        ).import(
                           storeNames: selectedStores.toList(),
-                          outputPath: pathController.text,
                         );
                         stopwatch.stop();
                         if (context.mounted) {

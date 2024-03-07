@@ -7,6 +7,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:flutter/services.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
