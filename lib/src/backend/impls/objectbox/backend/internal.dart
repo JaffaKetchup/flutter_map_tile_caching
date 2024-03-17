@@ -22,6 +22,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   void get expectInitialised => _sendPort ?? (throw RootUnavailable());
 
   // Worker communication protocol storage
+
   SendPort? _sendPort;
   final _workerResOneShot = <int, Completer<Map<String, dynamic>?>>{};
   final _workerResStreamed = <int, StreamSink<Map<String, dynamic>?>>{};
@@ -30,8 +31,11 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   late StreamSubscription<dynamic> _workerHandler;
 
   // `removeOldestTilesAboveLimit` tracking & debouncing
+
   Timer? _rotalDebouncer;
   String? _rotalStore;
+
+  // Define communicators
 
   Future<Map<String, dynamic>?> _sendCmdOneShot({
     required _WorkerCmdType type,
@@ -98,6 +102,8 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       await controller.close();
     }
   }
+
+  // Lifecycle implementations
 
   Future<void> initialise({
     required String? rootDirectory,
@@ -248,6 +254,8 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     FMTCBackendAccess.internal = null;
     FMTCBackendAccessThreadSafe.internal = null;
   }
+
+  // Implementation & worker connectors
 
   @override
   Future<double> realSize() async =>

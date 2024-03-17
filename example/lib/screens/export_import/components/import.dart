@@ -113,15 +113,13 @@ class _ImportState extends State<Import> {
                       title: Text(storeName),
                       subtitle: FutureBuilder(
                         future: FMTCStore(storeName).manage.ready,
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return const Text('Checking for conflicts...');
-                          }
-                          if (snapshot.data!) {
-                            return const Text('Conflicts with existing store');
-                          }
-                          return const SizedBox.shrink();
-                        },
+                        builder: (context, snapshot) => Text(
+                          switch (snapshot.data) {
+                            null => 'Checking for conflicts...',
+                            true => 'Conflicts with existing store',
+                            false => 'No conflicts',
+                          },
+                        ),
                       ),
                       dense: true,
                       trailing: Row(

@@ -54,6 +54,7 @@ class DownloadLayout extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Table(
+                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                     children: [
                       TableRow(
                         children: [
@@ -73,12 +74,12 @@ class DownloadLayout extends StatelessWidget {
                         children: [
                           StatDisplay(
                             statistic:
-                                '${download.skippedTiles} (${download.skippedTiles == 0 ? 0 : (100 - ((download.cachedTiles - download.skippedTiles) / download.cachedTiles) * 100).toStringAsFixed(1)}%)',
+                                '${download.skippedTiles} (${download.skippedTiles == 0 ? 0 : (100 - ((download.cachedTiles - download.skippedTiles) / download.cachedTiles) * 100).clamp(double.minPositive, 100).toStringAsFixed(1)}%)',
                             description: 'skipped tiles (% saving)',
                           ),
                           StatDisplay(
                             statistic:
-                                '${(download.skippedSize * 1024).asReadableSize} (${download.skippedTiles == 0 ? 0 : (100 - ((download.cachedSize - download.skippedSize) / download.cachedSize) * 100).toStringAsFixed(1)}%)',
+                                '${(download.skippedSize * 1024).asReadableSize} (${download.skippedTiles == 0 ? 0 : (100 - ((download.cachedSize - download.skippedSize) / download.cachedSize) * 100).clamp(double.minPositive, 100).toStringAsFixed(1)}%)',
                             description: 'skipped size (% saving)',
                           ),
                         ],
