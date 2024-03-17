@@ -32,10 +32,10 @@ Future<void> _downloadManager(
 
   // Count number of tiles
   final maxTiles = input.region.when(
-    rectangle: TilesCounter.rectangleTiles,
-    circle: TilesCounter.circleTiles,
-    line: TilesCounter.lineTiles,
-    customPolygon: TilesCounter.customPolygonTiles,
+    rectangle: TileCounters.rectangleTiles,
+    circle: TileCounters.circleTiles,
+    line: TileCounters.lineTiles,
+    customPolygon: TileCounters.customPolygonTiles,
   );
 
   // Setup sea tile removal system
@@ -70,10 +70,10 @@ Future<void> _downloadManager(
   final tilereceivePort = ReceivePort();
   final tileIsolate = await Isolate.spawn(
     input.region.when(
-      rectangle: (_) => TilesGenerator.rectangleTiles,
-      circle: (_) => TilesGenerator.circleTiles,
-      line: (_) => TilesGenerator.lineTiles,
-      customPolygon: (_) => TilesGenerator.customPolygonTiles,
+      rectangle: (_) => TileGenerators.rectangleTiles,
+      circle: (_) => TileGenerators.circleTiles,
+      line: (_) => TileGenerators.lineTiles,
+      customPolygon: (_) => TileGenerators.customPolygonTiles,
     ),
     (sendPort: tilereceivePort.sendPort, region: input.region),
     onExit: tilereceivePort.sendPort,
@@ -87,12 +87,11 @@ Future<void> _downloadManager(
   final tileQueue = StreamQueue(
     input.rateLimit == null
         ? rawTileStream
-        : RateLimitedStream.fromSourceStream(
-            emitEvery: Duration(
+        : rawTileStream.rateLimit(
+            minimumSpacing: Duration(
               microseconds: ((1 / input.rateLimit!) * 1000000).ceil(),
             ),
-            sourceStream: rawTileStream,
-          ).stream,
+          ),
   );
   final requestTilePort = await tileQueue.next as SendPort;
 

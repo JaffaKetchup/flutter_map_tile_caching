@@ -40,10 +40,16 @@ class DownloadableRegion<R extends BaseRegion> {
 
   /// Optionally skip past a number of tiles 'at the start' of a region
   ///
+  /// The order of the tiles in a region is directly chosen by the underlying
+  /// tile generators, and so may not be stable between updates.
+  ///
   /// Set to 0 to skip none, which is the default.
   final int start;
 
   /// Optionally skip a number of tiles 'at the end' of a region
+  ///
+  /// The order of the tiles in a region is directly chosen by the underlying
+  /// tile generators, and so may not be stable between updates.
   ///
   /// Set to `null` to skip none, which is the default.
   final int? end;

@@ -81,7 +81,7 @@ class FMTCBrowsingError implements Exception {
   final Object? originalError;
 
   @override
-  String toString() => 'FMTCBrowsingError ($type): $message';
+  String toString() => 'FMTCBrowsingError (${type.name}): $message';
 }
 
 /// Defines the type of issue that a [FMTCBrowsingError] is reporting
@@ -104,7 +104,9 @@ enum FMTCBrowsingErrorType {
   ///
   /// Check your Internet connection.
   noConnectionDuringFetch(
-    'Failed to load the tile from the cache or the network because it was missing from the cache and a connection to the server could not be established.',
+    'Failed to load the tile from the cache or the network because it was '
+        'missing from the cache and a connection to the server could not be '
+        'established.',
     'Check your Internet connection.',
   ),
 
@@ -117,8 +119,13 @@ enum FMTCBrowsingErrorType {
   /// correct, that any necessary authorization data is correctly included, and
   /// that the server serves the viewed region.
   unknownFetchException(
-    'Failed to load the tile from the cache or network because it was missing from the cache and there was an unexpected error when requesting from the server.',
-    'Try specifying a normal HTTP/1.1 `IOClient` when using `getTileProvider`. Check that the `TileLayer.urlTemplate` is correct, that any necessary authorization data is correctly included, and that the server serves the viewed region.',
+    'Failed to load the tile from the cache or network because it was missing '
+        'from the cache and there was an unexpected error when requesting from '
+        'the server.',
+    'Try specifying a normal HTTP/1.1 `IOClient` when using `getTileProvider`. '
+        'Check that the `TileLayer.urlTemplate` is correct, that any necessary '
+        'authorization data is correctly included, and that the server serves '
+        'the viewed region.',
   ),
 
   /// Failed to load the tile from the cache or the network because it was
@@ -129,8 +136,12 @@ enum FMTCBrowsingErrorType {
   /// authorization data is correctly included, and that the server serves the
   /// viewed region.
   negativeFetchResponse(
-    'Failed to load the tile from the cache or the network because it was missing from the cache and the server responded with a HTTP code other than 200 OK.',
-    'Check that the `TileLayer.urlTemplate` is correct, that any necessary authorization data is correctly included, and that the server serves the viewed region.',
+    'Failed to load the tile from the cache or the network because it was '
+        'missing from the cache and the server responded with a HTTP code other '
+        'than 200 OK.',
+    'Check that the `TileLayer.urlTemplate` is correct, that any necessary '
+        'authorization data is correctly included, and that the server serves '
+        'the viewed region.',
   ),
 
   /// Failed to load the tile from the network because it responded with an HTTP
@@ -141,8 +152,12 @@ enum FMTCBrowsingErrorType {
   /// that any necessary authorization data is correctly included, and that the
   /// server serves the viewed region.
   invalidImageData(
-    'Failed to load the tile from the network because it responded with an HTTP code of 200 OK but an invalid image data.',
-    'Your server may be misconfigured and returning an error message or blank response under 200 OK. Check that the `TileLayer.urlTemplate` is correct, that any necessary authorization data is correctly included, and that the server serves the viewed region.',
+    'Failed to load the tile from the network because it responded with an '
+        'HTTP code of 200 OK but an invalid image data.',
+    'Your server may be misconfigured and returning an error message or blank '
+        'response under 200 OK. Check that the `TileLayer.urlTemplate` is '
+        'correct, that any necessary authorization data is correctly included, '
+        'and that the server serves the viewed region.',
   );
 
   /// Defines the type of issue that a [FMTCBrowsingError] is reporting

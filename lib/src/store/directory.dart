@@ -59,6 +59,10 @@ class FMTCStore {
 
   /// Get the [TileProvider] suitable to connect the [TileLayer] to FMTC's
   /// internals
+  ///
+  /// [settings] defaults to the current ambient
+  /// [FMTCTileProviderSettings.instance], which defaults to the initial
+  /// configuration if no other instance has been set.
   FMTCTileProvider getTileProvider({
     FMTCTileProviderSettings? settings,
     Map<String, String>? headers,

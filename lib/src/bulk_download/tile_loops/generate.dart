@@ -3,7 +3,29 @@
 
 part of 'shared.dart';
 
-class TilesGenerator {
+/// A set of methods for each type of [BaseRegion] that generates the coordinates
+/// of every tile within the specified [DownloadableRegion]
+///
+/// Each method should handle a [DownloadableRegion] with a specific generic type
+/// [BaseRegion]. If a method is passed a non-compatible region, it is expected
+/// to throw a `CastError`.
+///
+/// These methods must be run within seperate isolates, as they do heavy,
+/// potentially lengthy computation. They do perform multiple-communication,
+/// sending a new coordinate after they recieve a request message only. They will
+/// kill themselves after there are no tiles left to generate.
+///
+/// See [TileCounters] for methods that do not generate each coordinate, but
+/// just count the number of tiles with a more efficient method.
+///
+/// The number of tiles returned by each method must match the number of tiles
+/// returned by the respective method in [TileCounters]. This is enforced by
+/// automated tests.
+@internal
+class TileGenerators {
+  /// Generate the coordinates of each tile within a [DownloadableRegion] with
+  /// generic type [RectangleRegion]
+  @internal
   static Future<void> rectangleTiles(
     ({SendPort sendPort, DownloadableRegion region}) input,
   ) async {
@@ -37,6 +59,9 @@ class TilesGenerator {
     Isolate.exit();
   }
 
+  /// Generate the coordinates of each tile within a [DownloadableRegion] with
+  /// generic type [CircleRegion]
+  @internal
   static Future<void> circleTiles(
     ({SendPort sendPort, DownloadableRegion region}) input,
   ) async {
@@ -96,6 +121,9 @@ class TilesGenerator {
     Isolate.exit();
   }
 
+  /// Generate the coordinates of each tile within a [DownloadableRegion] with
+  /// generic type [LineRegion]
+  @internal
   static Future<void> lineTiles(
     ({SendPort sendPort, DownloadableRegion region}) input,
   ) async {
@@ -245,6 +273,9 @@ class TilesGenerator {
     Isolate.exit();
   }
 
+  /// Generate the coordinates of each tile within a [DownloadableRegion] with
+  /// generic type [CustomPolygonRegion]
+  @internal
   static Future<void> customPolygonTiles(
     ({SendPort sendPort, DownloadableRegion region}) input,
   ) async {

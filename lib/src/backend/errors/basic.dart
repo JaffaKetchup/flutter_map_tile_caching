@@ -26,6 +26,8 @@ final class RootAlreadyInitialised extends FMTCBackendError {
 /// Indicates that the specified store structure was not available for use in
 /// operations, likely because it didn't exist
 final class StoreNotExists extends FMTCBackendError {
+  /// Indicates that the specified store structure was not available for use in
+  /// operations, likely because it didn't exist
   StoreNotExists({required this.storeName});
 
   /// The referenced store name

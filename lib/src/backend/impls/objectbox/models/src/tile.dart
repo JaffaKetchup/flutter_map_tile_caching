@@ -8,14 +8,17 @@ import 'package:objectbox/objectbox.dart';
 import '../../../../interfaces/models.dart';
 import 'store.dart';
 
+/// ObjectBox-specific implementation of [BackendTile]
 @Entity()
 base class ObjectBoxTile extends BackendTile {
+  /// Create an ObjectBox-specific implementation of [BackendTile]
   ObjectBoxTile({
     required this.url,
     required this.bytes,
     required this.lastModified,
   });
 
+  /// ObjectBox ID
   @Id()
   int id = 0;
 
@@ -32,6 +35,7 @@ base class ObjectBoxTile extends BackendTile {
   @Property(type: PropertyType.date)
   DateTime lastModified;
 
+  /// Relation to all stores that this tile belongs to
   @Index()
   final stores = ToMany<ObjectBoxStore>();
 }

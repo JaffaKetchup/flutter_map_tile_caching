@@ -3,6 +3,8 @@
 
 import 'package:meta/meta.dart';
 
+/// Removes all matches of [obscuredQueryParams] from [url] after the query
+/// delimiter '?'
 @internal
 String obscureQueryParams({
   required String url,

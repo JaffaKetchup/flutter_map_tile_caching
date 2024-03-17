@@ -17,10 +17,10 @@ void main() {
     final tilereceivePort = ReceivePort();
     final tileIsolate = await Isolate.spawn(
       region.when(
-        rectangle: (_) => TilesGenerator.rectangleTiles,
-        circle: (_) => TilesGenerator.circleTiles,
-        line: (_) => TilesGenerator.lineTiles,
-        customPolygon: (_) => TilesGenerator.customPolygonTiles,
+        rectangle: (_) => TileGenerators.rectangleTiles,
+        circle: (_) => TileGenerators.circleTiles,
+        line: (_) => TileGenerators.lineTiles,
+        customPolygon: (_) => TileGenerators.customPolygonTiles,
       ),
       (sendPort: tilereceivePort.sendPort, region: region),
       onExit: tilereceivePort.sendPort,
@@ -52,7 +52,7 @@ void main() {
 
       test(
         'Count By Counter',
-        () => expect(TilesCounter.rectangleTiles(rectRegion), 179196),
+        () => expect(TileCounters.rectangleTiles(rectRegion), 179196),
       );
 
       test(
@@ -67,7 +67,7 @@ void main() {
             2000,
             (index) {
               final clock = Stopwatch()..start();
-              TilesCounter.rectangleTiles(rectRegion);
+              TileCounters.rectangleTiles(rectRegion);
               clock.stop();
               return clock.elapsedMilliseconds;
             },
@@ -97,7 +97,7 @@ void main() {
 
       test(
         'Count By Counter',
-        () => expect(TilesCounter.circleTiles(circleRegion), 61564),
+        () => expect(TileCounters.circleTiles(circleRegion), 61564),
       );
 
       test(
@@ -112,7 +112,7 @@ void main() {
             500,
             (index) {
               final clock = Stopwatch()..start();
-              TilesCounter.circleTiles(circleRegion);
+              TileCounters.circleTiles(circleRegion);
               clock.stop();
               return clock.elapsedMilliseconds;
             },
@@ -144,7 +144,7 @@ void main() {
 
       test(
         'Count By Counter',
-        () => expect(TilesCounter.lineTiles(lineRegion), 5040),
+        () => expect(TileCounters.lineTiles(lineRegion), 5040),
       );
 
       test(
@@ -159,7 +159,7 @@ void main() {
             300,
             (index) {
               final clock = Stopwatch()..start();
-              TilesCounter.lineTiles(lineRegion);
+              TileCounters.lineTiles(lineRegion);
               clock.stop();
               return clock.elapsedMilliseconds;
             },
@@ -203,7 +203,7 @@ void main() {
       test(
         'Count By Counter',
         () => expect(
-          TilesCounter.customPolygonTiles(customPolygonRegion1),
+          TileCounters.customPolygonTiles(customPolygonRegion1),
           15962,
         ),
       );
@@ -216,7 +216,7 @@ void main() {
       test(
         'Count By Counter (Compare to Rectangle Region)',
         () => expect(
-          TilesCounter.customPolygonTiles(customPolygonRegion2),
+          TileCounters.customPolygonTiles(customPolygonRegion2),
           712096,
         ),
       );
@@ -234,7 +234,7 @@ void main() {
             500,
             (index) {
               final clock = Stopwatch()..start();
-              TilesCounter.customPolygonTiles(customPolygonRegion1);
+              TileCounters.customPolygonTiles(customPolygonRegion1);
               clock.stop();
               return clock.elapsedMilliseconds;
             },

@@ -10,6 +10,7 @@ import 'package:dart_earcut/dart_earcut.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/flutter_map.dart' hide Polygon;
 import 'package:latlong2/latlong.dart';
+import 'package:meta/meta.dart';
 
 import '../../../flutter_map_tile_caching.dart';
 import '../../misc/int_extremes.dart';

@@ -455,7 +455,6 @@ Future<void> _worker(
 
         query.close();
       case _WorkerCmdType.writeTile:
-        // TODO: Test all
         final storeName = cmd.args['storeName']! as String;
         final url = cmd.args['url']! as String;
         final bytes = cmd.args['bytes'] as Uint8List?;

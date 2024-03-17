@@ -12,6 +12,14 @@ part of '../../flutter_map_tile_caching.dart';
 /// represented type of the recovered region. Use [toDownloadable] to restore a
 /// valid [DownloadableRegion].
 class RecoveredRegion {
+  /// A mixture between [BaseRegion] and [DownloadableRegion] containing all the
+  /// salvaged data from a recovered download
+  ///
+  /// See [RootRecovery] for information about the recovery system.
+  ///
+  /// The availability of [bounds], [line], [center] & [radius] depend on the
+  /// represented type of the recovered region. Use [toDownloadable] to restore
+  /// a valid [DownloadableRegion].
   @internal
   RecoveredRegion({
     required this.id,

@@ -3,7 +3,30 @@
 
 part of 'shared.dart';
 
-class TilesCounter {
+/// A set of methods for each type of [BaseRegion] that counts the number of
+/// tiles within the specified [DownloadableRegion]
+///
+/// Each method should handle a [DownloadableRegion] with a specific generic type
+/// [BaseRegion]. If a method is passed a non-compatible region, it is expected
+/// to throw a `CastError`.
+///
+/// These methods should be run within seperate isolates, as they do heavy,
+/// potentially lengthy computation. They do not perform multiple-communication,
+/// and so only require simple Isolate protocols such as [Isolate.run].
+///
+/// Where possible, these methods do not generate every coordinate for improved
+/// efficiency, as the number of tiles can be counted without looping through
+/// them all (in most cases). See [TileGenerators] for methods that actually
+/// generate the coordinates of each tile, but with added complexity.
+///
+/// The number of tiles returned by each method must match the number of tiles
+/// returned by the respective method in [TileGenerators]. This is enforced by
+/// automated tests.
+@internal
+class TileCounters {
+  /// Returns the number of tiles within a [DownloadableRegion] with generic type
+  /// [RectangleRegion]
+  @internal
   static int rectangleTiles(DownloadableRegion region) {
     region as DownloadableRegion<RectangleRegion>;
 
@@ -30,6 +53,9 @@ class TilesCounter {
     return numberOfTiles;
   }
 
+  /// Returns the number of tiles within a [DownloadableRegion] with generic type
+  /// [CircleRegion]
+  @internal
   static int circleTiles(DownloadableRegion region) {
     region as DownloadableRegion<CircleRegion>;
 
@@ -71,10 +97,14 @@ class TilesCounter {
     return numberOfTiles;
   }
 
+  /// Returns the number of tiles within a [DownloadableRegion] with generic type
+  /// [LineRegion]
+  @internal
   static int lineTiles(DownloadableRegion region) {
     region as DownloadableRegion<LineRegion>;
 
-    // Overlap algorithm originally in Python, available at https://stackoverflow.com/a/56962827/11846040
+    // Overlap algorithm originally in Python, available at
+    // https://stackoverflow.com/a/56962827/11846040
     bool overlap(_Polygon a, _Polygon b) {
       for (int x = 0; x < 2; x++) {
         final _Polygon polygon = x == 0 ? a : b;
@@ -209,6 +239,9 @@ class TilesCounter {
     return numberOfTiles;
   }
 
+  /// Returns the number of tiles within a [DownloadableRegion] with generic type
+  /// [CustomPolygonRegion]
+  @internal
   static int customPolygonTiles(DownloadableRegion region) {
     region as DownloadableRegion<CustomPolygonRegion>;
 

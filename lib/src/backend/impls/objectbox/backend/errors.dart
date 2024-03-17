@@ -13,6 +13,8 @@ base class FMTCObjectBoxBackendError extends FMTCBackendError {}
 /// Indicates that an export failed because the specified output path directory
 /// was the same as the root directory
 final class ExportInRootDirectoryForbidden extends FMTCObjectBoxBackendError {
+  /// Indicates that an export failed because the specified output path directory
+  /// was the same as the root directory
   ExportInRootDirectoryForbidden();
 
   @override

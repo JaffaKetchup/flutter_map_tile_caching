@@ -7,5 +7,3 @@ analyzer:
 linter:
   rules:
     avoid_slow_async_io: false
-    # TODO: Remove
-    public_member_api_docs: false 

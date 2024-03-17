@@ -8,8 +8,12 @@ import 'package:objectbox/objectbox.dart';
 
 import '../../../../../../flutter_map_tile_caching.dart';
 
+/// Represents a [RecoveredRegion] in ObjectBox
 @Entity()
 base class ObjectBoxRecovery {
+  /// Create a raw representation of a [RecoveredRegion] in ObjectBox
+  ///
+  /// Prefer using [ObjectBoxRecovery.fromRegion].
   ObjectBoxRecovery({
     required this.refId,
     required this.storeName,
@@ -33,6 +37,8 @@ base class ObjectBoxRecovery {
     required this.customPolygonLngs,
   });
 
+  /// Create a raw representation of a [RecoveredRegion] in ObjectBox from a
+  /// [DownloadableRegion]
   ObjectBoxRecovery.fromRegion({
     required this.refId,
     required this.storeName,
@@ -109,41 +115,83 @@ base class ObjectBoxRecovery {
                 .toList(growable: false)
             : null;
 
+  /// ObjectBox ID
+  ///
+  /// Not to be confused with [refId].
   @Id()
   @internal
   int id = 0;
 
+  /// Corresponds to [RecoveredRegion.id]
   @Index()
   @Unique()
   int refId;
 
+  /// Corresponds to [RecoveredRegion.storeName]
   String storeName;
+
+  /// The timestamp of when this object was created/stored
   @Property(type: PropertyType.date)
   DateTime creationTime;
 
+  /// Corresponds to [RecoveredRegion.minZoom] & [DownloadableRegion.minZoom]
   int minZoom;
+
+  /// Corresponds to [RecoveredRegion.maxZoom] & [DownloadableRegion.maxZoom]
   int maxZoom;
+
+  /// Corresponds to [RecoveredRegion.start] & [DownloadableRegion.start]
   int startTile;
+
+  /// Corresponds to [RecoveredRegion.end] & [DownloadableRegion.end]
   int? endTile;
 
-  int typeId; // 0 - rect, 1 - circle, 2 - line, 3 - custom polygon
+  /// Corresponds to the generic type of [DownloadableRegion]
+  ///
+  /// Values must be as follows:
+  /// * 0: rect
+  /// * 1: circle
+  /// * 2: line
+  /// * 3: custom polygon
+  int typeId;
 
+  /// Corresponds to [RecoveredRegion.bounds] ([RectangleRegion.bounds])
   double? rectNwLat;
+
+  /// Corresponds to [RecoveredRegion.bounds] ([RectangleRegion.bounds])
   double? rectNwLng;
+
+  /// Corresponds to [RecoveredRegion.bounds] ([RectangleRegion.bounds])
   double? rectSeLat;
+
+  /// Corresponds to [RecoveredRegion.bounds] ([RectangleRegion.bounds])
   double? rectSeLng;
 
+  /// Corresponds to [RecoveredRegion.center] ([CircleRegion.center])
   double? circleCenterLat;
+
+  /// Corresponds to [RecoveredRegion.center] ([CircleRegion.center])
   double? circleCenterLng;
+
+  /// Corresponds to [RecoveredRegion.radius] ([CircleRegion.radius])
   double? circleRadius;
 
+  /// Corresponds to [RecoveredRegion.line] ([LineRegion.line])
   List<double>? lineLats;
+
+  /// Corresponds to [RecoveredRegion.line] ([LineRegion.line])
   List<double>? lineLngs;
+
+  /// Corresponds to [RecoveredRegion.radius] ([LineRegion.radius])
   double? lineRadius;
 
+  /// Corresponds to [RecoveredRegion.line] ([CustomPolygonRegion.outline])
   List<double>? customPolygonLats;
+
+  /// Corresponds to [RecoveredRegion.line] ([CustomPolygonRegion.outline])
   List<double>? customPolygonLngs;
 
+  /// Convert this object into a [RecoveredRegion]
   RecoveredRegion toRegion() => RecoveredRegion(
         id: refId,
         storeName: storeName,
