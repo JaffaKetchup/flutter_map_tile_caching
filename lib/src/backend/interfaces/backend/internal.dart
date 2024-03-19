@@ -19,6 +19,7 @@ import '../../export_internal.dart';
 /// threads.
 ///
 /// Should be set in [FMTCBackendAccess] when ready to use, and unset when not.
+/// See documentation on that class for more information.
 ///
 /// Methods with a doc template in the doc string are for 'direct' public
 /// invocation.

@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import '../../export_external.dart';
 import '../../export_internal.dart';
 
 /// An abstract interface that FMTC will use to communicate with a storage
@@ -15,14 +16,13 @@ import '../../export_internal.dart';
 ///
 /// Should be set-up ready for intialisation, and set in the
 /// [FMTCBackendAccessThreadSafe], from the initialisation of
-/// [FMTCBackendInternal].
+/// [FMTCBackendInternal]. See documentation on that class for more information.
 ///
 /// Methods with a doc template in the doc string are for 'direct' public
 /// invocation.
 ///
 /// See [FMTCBackend] for more information.
-abstract interface class FMTCBackendInternalThreadSafe
-    with FMTCBackendAccessThreadSafe {
+abstract interface class FMTCBackendInternalThreadSafe {
   const FMTCBackendInternalThreadSafe._();
 
   /// Generic description/name of this backend

@@ -14,13 +14,13 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [9.0.0] - "Hundreds of hours" - 2024/XX/XX
+## [9.0.0] - "Just Another Rewrite" - 2024/XX/XX
 
 This update has essentially rewritten FMTC from the ground up, over hundreds of hours. It focuses on:
 
-* improved future maintainability by modularity
-* improved stability & performance across the board
-* support of 'tiles across stores': reduced duplication
+* improving future maintainability by improving modularity and seperation of concerns
+* improving stability & performance across the board
+* supporting a many-to-many relationship between tiles and stores to reduce duplication
 
 I would hugely appricate any donations - please see the documentation site, GitHub repo, or pub.dev package.
 
@@ -58,9 +58,11 @@ And without further ado, let's get the biggest changes out of the way first:
   * Fixed usage of `obscuredQueryParams`
   * Removed support for bulk download buffering by size capacity
   * Removed support for custom `HttpClient`s
+
 * Deprecated plugins
   * Transfered support for import/export operations to core (`RootExternal`)
   * Deprecated support for background bulk downloading
+
 * Migrated to Flutter 3.19 and Dart 3.3
 * Migrated to flutter_map v6
 

@@ -3,11 +3,16 @@
 
 import 'dart:async';
 
+import '../../export_external.dart';
 import '../../export_internal.dart';
 
 /// {@template fmtc.backend.backend}
 /// An abstract interface that FMTC will use to communicate with a storage
 /// 'backend' (usually one root)
+///
+/// ---
+///
+/// For implementers:
 ///
 /// See also [FMTCBackendInternal] and [FMTCBackendInternalThreadSafe], which
 /// have the actual method signatures. This is provided as a public means to
@@ -15,6 +20,12 @@ import '../../export_internal.dart';
 ///
 /// When creating a custom implementation, follow the same pattern as the
 /// built-in ObjectBox backend ([FMTCObjectBoxBackend]).
+///
+/// [initialise] & [uninitialise]'s implementations should redirect to an
+/// implementation in a [FMTCBackendInternal], where the setter of
+/// [FMTCBackendAccess.internal] and [FMTCBackendAccessThreadSafe.internal] may
+/// be accessed -  see documentation on [FMTCBackendAccess] for more
+/// information.
 /// {@endtemplate}
 abstract interface class FMTCBackend {
   /// {@macro fmtc.backend.backend}

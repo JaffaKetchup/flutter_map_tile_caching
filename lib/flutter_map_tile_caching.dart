@@ -1,9 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-/// A plugin for flutter_map providing advanced caching functionality, with
-/// ability to download map regions for offline use. Also includes useful
-/// prebuilt widgets.
+/// A plugin for 'flutter_map' providing advanced offline functionality
 ///
 /// * [GitHub Repository](https://github.com/JaffaKetchup/flutter_map_tile_caching)
 /// * [pub.dev Package](https://pub.dev/packages/flutter_map_tile_caching)
@@ -28,6 +26,7 @@ import 'package:http/io_client.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
+import 'src/backend/export_external.dart';
 import 'src/backend/export_internal.dart';
 import 'src/bulk_download/instance.dart';
 import 'src/bulk_download/rate_limited_stream.dart';
@@ -54,11 +53,11 @@ part 'src/regions/downloadable_region.dart';
 part 'src/regions/line.dart';
 part 'src/regions/recovered_region.dart';
 part 'src/regions/rectangle.dart';
-part 'src/root/directory.dart';
+part 'src/root/root.dart';
 part 'src/root/external.dart';
 part 'src/root/recovery.dart';
 part 'src/root/statistics.dart';
-part 'src/store/directory.dart';
+part 'src/store/store.dart';
 part 'src/store/download.dart';
 part 'src/store/manage.dart';
 part 'src/store/metadata.dart';
