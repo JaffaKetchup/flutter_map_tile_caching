@@ -75,6 +75,14 @@ class RootExternal {
 ///
 /// See documentation on individual values for more information.
 enum ImportConflictStrategy {
+  /// Deletes all existing stores, and imports all new stores
+  ///
+  /// This is significantly quicker than other options, as it only requires
+  /// a few filesystem operations and quicker calculations to complete, but is
+  /// mostly intended for situations where an archive is being shipped to new
+  /// users.
+  restart,
+
   /// Skips the importing of the store
   skip,
 
