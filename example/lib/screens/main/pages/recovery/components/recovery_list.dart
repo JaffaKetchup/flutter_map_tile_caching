@@ -11,7 +11,7 @@ class RecoveryList extends StatefulWidget {
     required this.moveToDownloadPage,
   });
 
-  final List<RecoveredRegion> all;
+  final Iterable<({bool isFailed, RecoveredRegion region})> all;
   final void Function() moveToDownloadPage;
 
   @override
@@ -23,24 +23,22 @@ class _RecoveryListState extends State<RecoveryList> {
   Widget build(BuildContext context) => ListView.builder(
         itemCount: widget.all.length,
         itemBuilder: (context, index) {
-          final region = widget.all[index];
+          final result = widget.all.elementAt(index);
+          final region = result.region;
+          final isFailed = result.isFailed;
+
           return ListTile(
-            leading: FutureBuilder<RecoveredRegion?>(
-              future: FMTC.instance.rootDirectory.recovery
-                  .getFailedRegion(region.id),
-              builder: (context, isFailed) => Icon(
-                isFailed.data != null
-                    ? Icons.warning
-                    : region.type == RegionType.circle
-                        ? Icons.circle_outlined
-                        : region.type == RegionType.line
-                            ? Icons.timeline
-                            : Icons.rectangle_outlined,
-                color: isFailed.data != null ? Colors.red : null,
-              ),
+            leading: Icon(
+              isFailed ? Icons.warning : Icons.pending_actions,
+              color: isFailed ? Colors.red : null,
             ),
             title: Text(
-              '${region.storeName} - ${region.type.name[0].toUpperCase() + region.type.name.substring(1)} Type',
+              '${region.storeName} - ${switch (region.toRegion()) {
+                RectangleRegion() => 'Rectangle',
+                CircleRegion() => 'Circle',
+                LineRegion() => 'Line',
+                CustomPolygonRegion() => 'Custom Polygon',
+              }} Type',
             ),
             subtitle: FutureBuilder<Place>(
               future: Nominatim.reverseSearch(
@@ -54,7 +52,7 @@ class _RecoveryListState extends State<RecoveryList> {
                 addressDetails: true,
               ),
               builder: (context, response) => Text(
-                'Started at ${region.time} (~${DateTime.now().difference(region.time).inMinutes} minutes ago)\n${response.hasData ? 'Center near ${response.data!.address!['postcode']}, ${response.data!.address!['country']}' : response.hasError ? 'Unable To Reverse Geocode Location' : 'Please Wait...'}',
+                'Started at ${region.time} (~${DateTime.timestamp().difference(region.time).inMinutes} minutes ago)\n${response.hasData ? 'Center near ${response.data!.address!['postcode']}, ${response.data!.address!['country']}' : response.hasError ? 'Unable To Reverse Geocode Location' : 'Please Wait...'}',
               ),
             ),
             onTap: () {},
@@ -64,21 +62,19 @@ class _RecoveryListState extends State<RecoveryList> {
                 IconButton(
                   icon: const Icon(Icons.delete_forever, color: Colors.red),
                   onPressed: () async {
-                    await FMTC.instance.rootDirectory.recovery
-                        .cancel(region.id);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Deleted Recovery Information'),
-                        ),
-                      );
-                    }
+                    await FMTCRoot.recovery.cancel(region.id);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Deleted Recovery Information'),
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(width: 10),
                 RecoveryStartButton(
                   moveToDownloadPage: widget.moveToDownloadPage,
-                  region: region,
+                  result: result,
                 ),
               ],
             ),

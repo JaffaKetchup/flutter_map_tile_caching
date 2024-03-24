@@ -19,19 +19,18 @@ class RecoveryPage extends StatefulWidget {
 }
 
 class _RecoveryPageState extends State<RecoveryPage> {
-  late Future<List<RecoveredRegion>> _recoverableRegions;
+  late Future<Iterable<({bool isFailed, RecoveredRegion region})>>
+      _recoverableRegions;
 
   @override
   void initState() {
     super.initState();
 
-    void listRecoverableRegions() => _recoverableRegions =
-        FMTC.instance.rootDirectory.recovery.recoverableRegions;
+    void listRecoverableRegions() =>
+        _recoverableRegions = FMTCRoot.recovery.recoverableRegions;
 
     listRecoverableRegions();
-    FMTC.instance.rootDirectory.stats
-        .watchChanges(watchRecovery: true)
-        .listen((_) {
+    FMTCRoot.stats.watchRecovery().listen((_) {
       if (mounted) {
         listRecoverableRegions();
         setState(() {});
@@ -50,7 +49,7 @@ class _RecoveryPageState extends State<RecoveryPage> {
                 const Header(),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: FutureBuilder<List<RecoveredRegion>>(
+                  child: FutureBuilder(
                     future: _recoverableRegions,
                     builder: (context, all) => all.hasData
                         ? all.data!.isEmpty
@@ -60,7 +59,7 @@ class _RecoveryPageState extends State<RecoveryPage> {
                                 moveToDownloadPage: widget.moveToDownloadPage,
                               )
                         : const LoadingIndicator(
-                            message: 'Loading Recoverable Downloads...',
+                            'Retrieving Recoverable Downloads',
                           ),
                   ),
                 ),

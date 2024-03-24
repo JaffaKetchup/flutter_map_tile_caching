@@ -6,10 +6,10 @@ class EmptyIndicator extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Center(
+  Widget build(BuildContext context) => const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(Icons.done, size: 38),
             SizedBox(height: 10),
             Text('No Recoverable Regions Found'),

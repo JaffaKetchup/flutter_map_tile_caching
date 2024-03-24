@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
 import '../../../../shared/components/loading_indicator.dart';
-import '../../../import_store/import_store.dart';
+import '../../../export_import/export_import.dart';
 import '../../../store_editor/store_editor.dart';
 import 'components/empty_indicator.dart';
 import 'components/header.dart';
+import 'components/root_stats_pane.dart';
 import 'components/store_tile.dart';
 
 class StoresPage extends StatefulWidget {
@@ -17,90 +17,107 @@ class StoresPage extends StatefulWidget {
 }
 
 class _StoresPageState extends State<StoresPage> {
-  late Future<List<StoreDirectory>> _stores;
+  late final storesStream = FMTCRoot.stats
+      .watchStores(triggerImmediately: true)
+      .asyncMap((_) => FMTCRoot.stats.storesAvailable);
 
   @override
-  void initState() {
-    super.initState();
+  Widget build(BuildContext context) {
+    const loadingIndicator = LoadingIndicator('Retrieving Stores');
 
-    void listStores() =>
-        _stores = FMTC.instance.rootDirectory.stats.storesAvailableAsync;
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              const Header(),
+              const SizedBox(height: 16),
+              Expanded(
+                child: StreamBuilder(
+                  stream: storesStream,
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: loadingIndicator,
+                      );
+                    }
 
-    listStores();
-    FMTC.instance.rootDirectory.stats.watchChanges().listen((_) {
-      if (mounted) {
-        listStores();
-        setState(() {});
-      }
-    });
-  }
+                    if (snapshot.data!.isEmpty) {
+                      return const Column(
+                        children: [
+                          RootStatsPane(),
+                          Expanded(child: EmptyIndicator()),
+                        ],
+                      );
+                    }
 
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Header(),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: FutureBuilder<List<StoreDirectory>>(
-                    future: _stores,
-                    builder: (context, snapshot) => snapshot.hasError
-                        ? throw snapshot.error! as FMTCDamagedStoreException
-                        : snapshot.hasData
-                            ? snapshot.data!.isEmpty
-                                ? const EmptyIndicator()
-                                : ListView.builder(
-                                    itemCount: snapshot.data!.length,
-                                    itemBuilder: (context, index) => StoreTile(
-                                      context: context,
-                                      storeName:
-                                          snapshot.data![index].storeName,
-                                      key: ValueKey(
-                                        snapshot.data![index].storeName,
-                                      ),
-                                    ),
-                                  )
-                            : const LoadingIndicator(
-                                message: 'Loading Stores...',
-                              ),
-                  ),
+                    return ListView.builder(
+                      itemCount: snapshot.data!.length + 2,
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          return const RootStatsPane();
+                        }
+
+                        // Ensure the store buttons are not obscured by the FABs
+                        if (index >= snapshot.data!.length + 1) {
+                          return const SizedBox(height: 124);
+                        }
+
+                        final storeName =
+                            snapshot.data!.elementAt(index - 1).storeName;
+                        return FutureBuilder(
+                          future: FMTCStore(storeName).manage.ready,
+                          builder: (context, snapshot) {
+                            if (snapshot.data == null) {
+                              return const SizedBox.shrink();
+                            }
+
+                            return StoreTile(storeName: storeName);
+                          },
+                        );
+                      },
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        floatingActionButton: SpeedDial(
-          icon: Icons.create_new_folder,
-          activeIcon: Icons.close,
-          children: [
-            SpeedDialChild(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<String>(
-                  builder: (BuildContext context) => const StoreEditorPopup(
-                    existingStoreName: null,
-                    isStoreInUse: false,
-                  ),
-                  fullscreenDialog: true,
-                ),
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'importExport',
+            tooltip: 'Export/Import',
+            shape: const CircleBorder(),
+            child: const Icon(Icons.folder_zip_rounded),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<String>(
+                builder: (BuildContext context) => const ExportImportPopup(),
+                fullscreenDialog: true,
               ),
-              child: const Icon(Icons.add),
-              label: 'Create New Store',
             ),
-            SpeedDialChild(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<String>(
-                  builder: (BuildContext context) => const ImportStorePopup(),
-                  fullscreenDialog: true,
+          ),
+          const SizedBox.square(dimension: 12),
+          FloatingActionButton.extended(
+            label: const Text('Create Store'),
+            icon: const Icon(Icons.create_new_folder_rounded),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<String>(
+                builder: (BuildContext context) => const StoreEditorPopup(
+                  existingStoreName: null,
+                  isStoreInUse: false,
                 ),
+                fullscreenDialog: true,
               ),
-              child: const Icon(Icons.file_open),
-              label: 'Import Stores',
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
 }

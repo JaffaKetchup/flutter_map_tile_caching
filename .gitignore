@@ -1,6 +1,5 @@
 # Custom
 local/
-.fvm/
 
 # Miscellaneous
 *.class

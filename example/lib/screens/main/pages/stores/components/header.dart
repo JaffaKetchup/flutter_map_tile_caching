@@ -18,7 +18,7 @@ class Header extends StatelessWidget {
               children: [
                 Text(
                   'Stores',
-                  style: GoogleFonts.openSans(
+                  style: GoogleFonts.ubuntu(
                     fontWeight: FontWeight.bold,
                     fontSize: 24,
                   ),

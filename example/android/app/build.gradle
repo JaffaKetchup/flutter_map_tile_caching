@@ -13,12 +13,12 @@ if (flutterRoot == null) {
 
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
 if (flutterVersionCode == null) {
-    flutterVersionCode = '8'
+    flutterVersionCode = '9'
 }
 
 def flutterVersionName = localProperties.getProperty('flutter.versionName')
 if (flutterVersionName == null) {
-    flutterVersionName = '8.0.0'
+    flutterVersionName = '9.0.0'
 }
 
 apply plugin: 'com.android.application'
@@ -53,7 +53,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "dev.org.fmtc.example.fmtc_example"
+        applicationId "dev.jaffaketchup.fmtc.demo"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode flutterVersionCode.toInteger()

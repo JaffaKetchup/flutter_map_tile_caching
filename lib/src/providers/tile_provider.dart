@@ -1,44 +1,19 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of flutter_map_tile_caching;
+part of '../../flutter_map_tile_caching.dart';
 
 /// FMTC's custom [TileProvider] for use in a [TileLayer]
 ///
-/// Create from the store directory chain, eg. [StoreDirectory.getTileProvider].
+/// Create from the store directory chain, eg. [FMTCStore.getTileProvider].
 class FMTCTileProvider extends TileProvider {
-  /// The store directory attached to this provider
-  final StoreDirectory storeDirectory;
-
-  /// The tile provider settings to use
-  ///
-  /// Defaults to the one provided by [FMTCSettings] when initialising
-  /// [FlutterMapTileCaching].
-  final FMTCTileProviderSettings settings;
-
-  /// [BaseClient] (such as a [HttpClient]) used to make all network requests
-  ///
-  /// Defaults to a [HttpPlusClient] which supports HTTP/2 and falls back to a
-  /// standard [IOClient]/[HttpClient] for HTTP/1.1 servers. Timeout is set to
-  /// 5 seconds by default.
-  final BaseClient httpClient;
-
-  FMTCTileProvider._({
-    required this.storeDirectory,
+  FMTCTileProvider._(
+    this._store, {
     required FMTCTileProviderSettings? settings,
-    Map<String, String> headers = const {},
-    BaseClient? httpClient,
-  })  : settings =
-            settings ?? FMTC.instance.settings.defaultTileProviderSettings,
-        httpClient = httpClient ??
-            HttpPlusClient(
-              http1Client: IOClient(
-                HttpClient()
-                  ..connectionTimeout = const Duration(seconds: 5)
-                  ..userAgent = null,
-              ),
-              connectionTimeout: const Duration(seconds: 5),
-            ),
+    required Map<String, String> headers,
+    required http.Client? httpClient,
+  })  : settings = settings ?? FMTCTileProviderSettings.instance,
+        httpClient = httpClient ?? IOClient(HttpClient()..userAgent = null),
         super(
           headers: {
             ...headers,
@@ -47,6 +22,17 @@ class FMTCTileProvider extends TileProvider {
                 : 'flutter_map_tile_caching for ${headers['User-Agent']}',
           },
         );
+
+  /// The store directory attached to this provider
+  final FMTCStore _store;
+
+  /// The tile provider settings to use
+  final FMTCTileProviderSettings settings;
+
+  /// [http.Client] (such as a [IOClient]) used to make all network requests
+  ///
+  /// Defaults to a standard [IOClient]/[HttpClient] for HTTP/1.1 servers.
+  final http.Client httpClient;
 
   /// Closes the open [httpClient] - this will make the provider unable to
   /// perform network requests
@@ -61,52 +47,47 @@ class FMTCTileProvider extends TileProvider {
   @override
   ImageProvider getImage(TileCoordinates coords, TileLayer options) =>
       FMTCImageProvider(
+        storeName: _store.storeName,
         provider: this,
         options: options,
         coords: coords,
-        directory: FMTC.instance.rootDirectory.directory.absolute.path,
       );
 
-  /// Check whether a specified tile is cached in the current store synchronously
-  bool checkTileCached({
-    required TileCoordinates coords,
-    required TileLayer options,
-  }) =>
-      FMTCRegistry.instance(storeDirectory.storeName).tiles.getSync(
-            DatabaseTools.hash(
-              settings.obscureQueryParams(getTileUrl(coords, options)),
-            ),
-          ) !=
-      null;
-
   /// Check whether a specified tile is cached in the current store
-  /// asynchronously
+  @Deprecated('''
+Migrate to `checkTileCached`.
+
+Synchronous operations have been removed throughout FMTC v9, therefore the
+distinction between sync and async operations has been removed. This deprecated
+member will be removed in a future version.''')
   Future<bool> checkTileCachedAsync({
     required TileCoordinates coords,
     required TileLayer options,
-  }) async =>
-      await FMTCRegistry.instance(storeDirectory.storeName).tiles.get(
-            DatabaseTools.hash(
-              settings.obscureQueryParams(getTileUrl(coords, options)),
-            ),
-          ) !=
-      null;
+  }) =>
+      checkTileCached(coords: coords, options: options);
+
+  /// Check whether a specified tile is cached in the current store
+  Future<bool> checkTileCached({
+    required TileCoordinates coords,
+    required TileLayer options,
+  }) =>
+      FMTCBackendAccess.internal.tileExistsInStore(
+        storeName: _store.storeName,
+        url: obscureQueryParams(
+          url: getTileUrl(coords, options),
+          obscuredQueryParams: settings.obscuredQueryParams,
+        ),
+      );
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is FMTCTileProvider &&
-          other.runtimeType == runtimeType &&
-          other.httpClient == httpClient &&
+          other._store == _store &&
+          other.headers == headers &&
           other.settings == settings &&
-          other.storeDirectory == storeDirectory &&
-          other.headers == headers);
+          other.httpClient == httpClient);
 
   @override
-  int get hashCode => Object.hashAllUnordered([
-        httpClient.hashCode,
-        settings.hashCode,
-        storeDirectory.hashCode,
-        headers.hashCode,
-      ]);
+  int get hashCode => Object.hash(_store, settings, headers, httpClient);
 }
