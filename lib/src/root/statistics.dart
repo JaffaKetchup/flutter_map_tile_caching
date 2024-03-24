@@ -33,6 +33,8 @@ class RootStats {
   }
 
   /// {@macro fmtc.backend.watchStores}
+  ///
+  /// If [storeNames] is empty, changes will be watched in all stores.
   Stream<void> watchStores({
     List<String> storeNames = const [],
     bool triggerImmediately = false,

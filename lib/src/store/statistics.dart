@@ -41,7 +41,7 @@ class StoreStats {
   /// {@macro fmtc.frontend.storestats.efficiency}
   Future<int> get hits => all.then((a) => a.hits);
 
-  /// Retrieve number of unsuccessful tile retrievals when browsing
+  /// Retrieve the number of unsuccessful tile retrievals when browsing
   ///
   /// {@macro fmtc.frontend.storestats.efficiency}
   Future<int> get misses => all.then((a) => a.misses);

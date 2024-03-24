@@ -219,8 +219,8 @@ abstract interface class FMTCBackendInternal
   /// {@template fmtc.backend.setMetadata}
   /// Set a key-value pair in the metadata for the specified store
   ///
-  /// Note that this operation will override the stored value if there is already
-  /// a matching key present.
+  /// Note that this operation will overwrite any existing value for the
+  /// specified key.
   ///
   /// Prefer using [setBulkMetadata] when setting multiple keys. Only one backend
   /// operation is required to set them all at once, and so is more efficient.
@@ -234,8 +234,8 @@ abstract interface class FMTCBackendInternal
   /// {@template fmtc.backend.setBulkMetadata}
   /// Set multiple key-value pairs in the metadata for the specified store
   ///
-  /// Note that this operation will override the stored value if there is already
-  /// a matching key present.
+  /// Note that this operation will overwrite any existing value for each
+  /// specified key.
   /// {@endtemplate}
   Future<void> setBulkMetadata({
     required String storeName,
@@ -304,8 +304,7 @@ abstract interface class FMTCBackendInternal
   });
 
   /// {@template fmtc.backend.watchStores}
-  /// Watch for changes in the specified stores, or all stores if no stores
-  /// are provided
+  /// Watch for changes in the specified stores
   ///
   /// Useful to update UI only when required, for example, in a `StreamBuilder`.
   /// Whenever this has an event, it is likely the other statistics will have

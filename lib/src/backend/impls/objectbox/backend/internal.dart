@@ -5,6 +5,8 @@ part of 'backend.dart';
 
 /// Internal implementation of [FMTCBackend] that uses ObjectBox as the storage
 /// database
+///
+/// Actual implementation performed by `_worker` via `_ObjectBoxBackendImpl`.
 abstract interface class FMTCObjectBoxBackendInternal
     implements FMTCBackendInternal {
   static final _instance = _ObjectBoxBackendImpl._();
@@ -84,6 +86,8 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
     try {
       // Not using yield* as it doesn't allow for correct error handling
+      // (because result must be 'evaluated' here, instead of a direct
+      // passthrough)
       await for (final evt in controller.stream) {
         // Listen to responses
         yield evt;
