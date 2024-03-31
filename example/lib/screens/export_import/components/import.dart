@@ -172,8 +172,6 @@ class _ImportState extends State<Import> {
                         children: [
                           Icon(
                             switch (e) {
-                              ImportConflictStrategy.restart =>
-                                Icons.restart_alt_rounded,
                               ImportConflictStrategy.merge =>
                                 Icons.merge_rounded,
                               ImportConflictStrategy.rename =>
@@ -187,7 +185,6 @@ class _ImportState extends State<Import> {
                           const SizedBox(width: 8),
                           Text(
                             switch (e) {
-                              ImportConflictStrategy.restart => 'Restart',
                               ImportConflictStrategy.merge => 'Merge',
                               ImportConflictStrategy.rename => 'Rename',
                               ImportConflictStrategy.replace => 'Replace',

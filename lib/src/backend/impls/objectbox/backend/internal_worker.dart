@@ -184,12 +184,9 @@ Future<void> _worker(
   /// Verify that the specified file is a valid FMTC format archive, compatible
   /// with this ObjectBox backend
   ///
-  /// If [truncate] is `true` (default), the FMTC information will be stripped
-  /// from the file.
-  void verifyImportableArchive(
-    File importFile, {
-    bool truncate = true,
-  }) {
+  /// Note that this method writes to the input file, converting it to a valid
+  /// database if possible
+  void verifyImportableArchive(File importFile) {
     final ram = importFile.openSync(mode: FileMode.append);
     try {
       int cursorPos = ram.positionSync() - 1;
@@ -213,7 +210,7 @@ Future<void> _worker(
         ram.setPositionSync(--cursorPos);
       }
 
-      if (truncate) ram.truncateSync(--cursorPos);
+      ram.truncateSync(--cursorPos);
     } catch (e) {
       ram.closeSync();
       rethrow;
@@ -996,7 +993,18 @@ Future<void> _worker(
           macosApplicationGroup: input.macosApplicationGroup,
         );
 
-        final storesQuery = importingRoot.box<ObjectBoxStore>().query().build();
+        switch (strategy) {
+          case ImportConflictStrategy.skip:
+          // TODO: Handle this case.
+          case ImportConflictStrategy.replace:
+          // TODO: Handle this case.
+          case ImportConflictStrategy.rename:
+          // TODO: Handle this case.
+          case ImportConflictStrategy.merge:
+          // TODO: Handle this case.
+        }
+
+      /*final storesQuery = importingRoot.box<ObjectBoxStore>().query().build();
         final tilesQuery = importingRoot.box<ObjectBoxTile>().query().build();
 
         final specificStoresQuery = root
@@ -1220,10 +1228,6 @@ Future<void> _worker(
                         rootDeltaSize += -existingTile.bytes.lengthInBytes +
                             importingTile.bytes.lengthInBytes;
                       }
-
-                      // TODO: Implement merging strategy
-
-                      // TODO: Write `storesToUpdate` to db
                     },
                   ),
                 )
@@ -1250,7 +1254,7 @@ Future<void> _worker(
               },
             );
           },
-        );
+        );*/
       case _WorkerCmdType.listImportableStores:
         final importPath = cmd.args['path']! as String;
 

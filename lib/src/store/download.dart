@@ -151,7 +151,8 @@ class DownloadManagement {
     final instance = DownloadInstance.registerIfAvailable(instanceId);
     if (instance == null) {
       throw StateError(
-        "Download instance with ID $instanceId already exists\nIf you're sure you want to start multiple downloads, use a unique `instanceId`.",
+        "Download instance with ID $instanceId already exists\nIf you're sure "
+        'you want to start multiple downloads, use a unique `instanceId`.',
       );
     }
 

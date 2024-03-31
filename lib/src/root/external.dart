@@ -24,7 +24,7 @@ typedef ImportResult = ({
 /// the file will be unreadable by non-FMTC database implementations.
 ///
 /// If the specified archive (at [pathToArchive]) is not of the expected format,
-/// an error from the [ImportExportError] group:
+/// an error from the [ImportExportError] group will be thrown:
 ///
 ///  - Doesn't exist (except [export]): [ImportPathNotExists]
 ///  - Not a file: [ImportExportPathNotFile]
@@ -54,13 +54,13 @@ class RootExternal {
   /// CAUTION: HIGHLY EXPERIMENTAL, INCOMPLETE, AND UNTESTED
   @experimental
   Future<ImportResult> import({
-    ImportConflictStrategy strategy = ImportConflictStrategy.skip,
     List<String>? storeNames,
+    ImportConflictStrategy strategy = ImportConflictStrategy.skip,
   }) =>
       FMTCBackendAccess.internal.importStores(
         path: pathToArchive,
-        strategy: strategy,
         storeNames: storeNames,
+        strategy: strategy,
       );
 
   /// List the available store names within the archive at [pathToArchive]
@@ -75,14 +75,6 @@ class RootExternal {
 ///
 /// See documentation on individual values for more information.
 enum ImportConflictStrategy {
-  /// Deletes all existing stores, and imports all new stores
-  ///
-  /// This is significantly quicker than other options, as it only requires
-  /// a few filesystem operations and quicker calculations to complete, but is
-  /// mostly intended for situations where an archive is being shipped to new
-  /// users.
-  restart,
-
   /// Skips the importing of the store
   skip,
 
@@ -92,8 +84,8 @@ enum ImportConflictStrategy {
   /// not belong to the importing store).
   replace,
 
-  /// Renames the importing store by appending it with the current time (which
-  /// should be unique in all reasonable usecases)
+  /// Renames the importing store by appending it with the current date & time
+  /// (which should be unique in all reasonable usecases)
   ///
   /// All tiles are retained. In the event of a conflict between two tiles, only
   /// the one modified most recently is retained.
