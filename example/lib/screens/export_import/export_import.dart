@@ -23,7 +23,7 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
   final selectedStores = <String>{};
   Future<FileSystemEntityType>? typeOfPath;
   bool forceOverrideExisting = false;
-  bool isProcessingExporting = false;
+  bool isProcessing = false;
 
   void onPathChanged({required bool forceOverrideExisting}) => setState(() {
         this.forceOverrideExisting = forceOverrideExisting;
@@ -71,7 +71,7 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
                 ),
               ),
               Expanded(
-                child: pathController.text != '' && !isProcessingExporting
+                child: pathController.text != '' && !isProcessing
                     ? SizedBox(
                         width: double.infinity,
                         child: FutureBuilder(
@@ -166,15 +166,15 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
 
             return FloatingActionButton(
               heroTag: 'importExport',
-              onPressed: isProcessingExporting
+              onPressed: isProcessing
                   ? null
                   : () async {
                       if (isExporting) {
-                        setState(() => isProcessingExporting = true);
+                        setState(() => isProcessing = true);
                         final stopwatch = Stopwatch()..start();
                         await FMTCRoot.external(
                           pathToArchive: pathController.text,
-                        ).import(
+                        ).export(
                           storeNames: selectedStores.toList(),
                         );
                         stopwatch.stop();
@@ -192,9 +192,30 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
                           );
                           Navigator.pop(context);
                         }
+                      } else {
+                        setState(() => isProcessing = true);
+                        final stopwatch = Stopwatch()..start();
+                        await FMTCRoot.external(
+                          pathToArchive: pathController.text,
+                        ).import();
+                        stopwatch.stop();
+                        if (context.mounted) {
+                          final elapsedTime =
+                              (stopwatch.elapsedMilliseconds / 1000)
+                                  .toStringAsFixed(1);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Successfully exported stores (in $elapsedTime '
+                                'secs)',
+                              ),
+                            ),
+                          );
+                          Navigator.pop(context);
+                        }
                       }
                     },
-              child: isProcessingExporting
+              child: isProcessing
                   ? const SizedBox.square(
                       dimension: 26,
                       child: CircularProgressIndicator.adaptive(),

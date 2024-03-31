@@ -179,6 +179,8 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         }
 
         if (evt.data?['expectStream'] == true) {
+          // TODO: FIX worker should stop sending events if possible,
+          // otherwise, don't use null check (eg. import stream)
           _workerResStreamed[evt.id]!.add(evt.data);
         } else {
           _workerResOneShot[evt.id]!.complete(evt.data);
@@ -572,7 +574,20 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   }) async {
     await _checkImportPathType(path);
 
-    final storesStreamController = StreamController<
+    final res = (await _sendCmdOneShot(
+      type: _WorkerCmdType.importStores,
+      args: {'path': path, 'strategy': strategy, 'stores': storeNames},
+    ))!;
+    print(res);
+
+    return (
+      stores: Future.sync(
+        () => <({bool conflict, String importingName, String? newName})>[],
+      ),
+      complete: Future.sync(() => null),
+    );
+
+    /*final storesStreamController = StreamController<
         ({String importingName, bool conflict, String? newName})>();
 
     final complete = Completer<void>();
@@ -607,7 +622,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     return (
       stores: storesStreamController.stream.toList(),
       complete: complete.future,
-    );
+    );*/
   }
 
   @override
