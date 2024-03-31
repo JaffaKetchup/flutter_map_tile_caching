@@ -504,28 +504,46 @@ Future<void> _worker(
                   );
                 }
               case (false, false): // Existing tile, update required
-                int rootDeltaSize = 0;
+                final storesToUpdate = <String, ObjectBoxStore>{};
+
+                // If tile exists in this store, just update size, otherwise
+                // length and size
+                // Also update size of all related stores
+                bool didContainAlready = false;
+
+                for (final relatedStore in existingTile!.stores) {
+                  if (relatedStore.name == storeName) didContainAlready = true;
+
+                  storesToUpdate[relatedStore.name] =
+                      (storesToUpdate[relatedStore.name] ?? relatedStore)
+                        ..size += -existingTile.bytes.lengthInBytes +
+                            bytes!.lengthInBytes;
+                }
+
+                updateRootStatistics(
+                  deltaSize:
+                      -existingTile.bytes.lengthInBytes + bytes!.lengthInBytes,
+                );
+
+                if (!didContainAlready) {
+                  storesToUpdate[storeName] = store
+                    ..length += 1
+                    ..size += bytes.lengthInBytes;
+                }
+
                 tiles.put(
-                  existingTile!
-                    ..lastModified = DateTime.timestamp()
-                    ..bytes = bytes!,
-                  mode: PutMode.update,
+                  ObjectBoxTile(
+                    url: url,
+                    lastModified: DateTime.timestamp(),
+                    bytes: bytes,
+                  )..stores.addAll({store, ...existingTile.stores}),
                 );
                 stores.putMany(
-                  existingTile.stores.map(
-                    (store) {
-                      final diff = bytes.lengthInBytes -
-                          existingTile.bytes.lengthInBytes;
-                      rootDeltaSize += diff;
-                      return store..size += diff;
-                    },
-                  ).toList(growable: false),
+                  storesToUpdate.values.toList(),
+                  mode: PutMode.update,
                 );
-                updateRootStatistics(deltaSize: rootDeltaSize);
               case (true, true): // FMTC internal error
-                throw StateError(
-                  'FMTC ObjectBox backend internal state error: $url',
-                );
+                throw UnsupportedError('Unpossible.');
             }
           },
         );
