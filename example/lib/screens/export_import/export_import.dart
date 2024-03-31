@@ -156,8 +156,7 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
 
             late final bool isExporting;
             late final Icon icon;
-            if (snapshot.data! == FileSystemEntityType.notFound &&
-                !forceOverrideExisting) {
+            if (snapshot.data! == FileSystemEntityType.notFound) {
               icon = const Icon(Icons.save);
               isExporting = true;
             } else if (snapshot.data! == FileSystemEntityType.file &&
