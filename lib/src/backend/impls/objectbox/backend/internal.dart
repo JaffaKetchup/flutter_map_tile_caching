@@ -574,11 +574,10 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   }) async {
     await _checkImportPathType(path);
 
-    final res = (await _sendCmdOneShot(
+    _sendCmdStreamed(
       type: _WorkerCmdType.importStores,
       args: {'path': path, 'strategy': strategy, 'stores': storeNames},
-    ))!;
-    print(res);
+    ).listen(print);
 
     return (
       stores: Future.sync(

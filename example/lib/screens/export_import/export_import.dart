@@ -23,6 +23,7 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
   final selectedStores = <String>{};
   Future<FileSystemEntityType>? typeOfPath;
   bool forceOverrideExisting = false;
+  ImportConflictStrategy selectedConflictStrategy = ImportConflictStrategy.skip;
   bool isProcessing = false;
 
   void onPathChanged({required bool forceOverrideExisting}) => setState(() {
@@ -111,6 +112,10 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
                               child: Import(
                                 path: pathController.text,
                                 changeForceOverrideExisting: onPathChanged,
+                                conflictStrategy: selectedConflictStrategy,
+                                changeConflictStrategy: (c) => setState(
+                                  () => selectedConflictStrategy = c,
+                                ),
                               ),
                             );
                           },
@@ -197,7 +202,9 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
                         final stopwatch = Stopwatch()..start();
                         await FMTCRoot.external(
                           pathToArchive: pathController.text,
-                        ).import();
+                        ).import(
+                          strategy: selectedConflictStrategy,
+                        );
                         stopwatch.stop();
                         if (context.mounted) {
                           final elapsedTime =

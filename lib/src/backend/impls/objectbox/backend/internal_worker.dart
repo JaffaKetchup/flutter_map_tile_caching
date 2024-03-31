@@ -1050,7 +1050,7 @@ Future<void> _worker(
 
                 if (hasConflict) return false;
 
-                root.box<ObjectBoxStore>().putQueued(
+                root.box<ObjectBoxStore>().put(
                       ObjectBoxStore(
                         name: name,
                         length: importingStore.length,
@@ -1073,7 +1073,7 @@ Future<void> _worker(
                       .count() ==
                   0) {
                 nameToState[name] = name;
-                root.box<ObjectBoxStore>().putQueued(
+                root.box<ObjectBoxStore>().put(
                       ObjectBoxStore(
                         name: name,
                         length: importingStore.length,
@@ -1087,12 +1087,12 @@ Future<void> _worker(
                 return importingStore;
               } else {
                 final newName =
-                    nameToState[name] = name + DateTime.now().toString();
+                    nameToState[name] = '$name [Imported ${DateTime.now()}]';
                 final newStore = importingStore..name = newName;
                 importingRoot
                     .box<ObjectBoxStore>()
                     .put(newStore, mode: PutMode.update);
-                root.box<ObjectBoxStore>().putQueued(
+                root.box<ObjectBoxStore>().put(
                       ObjectBoxStore(
                         name: newName,
                         length: importingStore.length,
@@ -1116,7 +1116,7 @@ Future<void> _worker(
                           ..param(ObjectBoxStore_.name).value = name)
                         .count() ==
                     0) {
-                  root.box<ObjectBoxStore>().putQueued(
+                  root.box<ObjectBoxStore>().put(
                         ObjectBoxStore(
                           name: name,
                           length: importingStore.length,
@@ -1166,10 +1166,6 @@ Future<void> _worker(
         })
             .then(
           (storesToImport) {
-            if (!root.awaitQueueSubmitted()) {
-              throw StateError('Store import queue failed unexpectedly');
-            }
-
             sendRes(
               id: cmd.id,
               data: {
@@ -1194,152 +1190,7 @@ Future<void> _worker(
           },
         );
 
-      /*final storesQuery = importingRoot.box<ObjectBoxStore>().query().build();
-        final tilesQuery = importingRoot.box<ObjectBoxTile>().query().build();
-
-        final specificStoresQuery = root
-            .box<ObjectBoxStore>()
-            .query(ObjectBoxStore_.name.equals(''))
-            .build();
-        final specificTilesQuery = root
-            .box<ObjectBoxTile>()
-            .query(ObjectBoxTile_.url.equals(''))
-            .build();
-
-        final storesToUpdate = <String, ObjectBoxStore>{};
-        final storesObjectsForRelations = <String, ObjectBoxStore>{};
-        final storesToSkipTiles = <String>[];
-        int rootDeltaLength = 0;
-        int rootDeltaSize = 0;
-
-        final importingStores = importingRoot.runInTransaction(
-          TxMode.read,
-          storesQuery.stream,
-        );
-
-        root
-            .runInTransaction(
-              TxMode.write,
-              () => importingStores.listen(
-                (importingStore) {
-                  if (!storesToImport.contains(importingStore.name)) {
-                    storesToSkipTiles.add(importingStore.name);
-                    return;
-                  }
-
-                  final existingStore = (specificStoresQuery
-                        ..param(ObjectBoxStore_.name).value =
-                            importingStore.name)
-                      .findUnique();
-
-                  if (existingStore == null) {
-                    sendRes(
-                      id: cmd.id,
-                      data: {
-                        'expectStream': true,
-                        'storeName': importingStore.name,
-                        'newStoreName': null,
-                        'conflict': false,
-                      },
-                    );
-
-                    root.box<ObjectBoxStore>().put(
-                          storesObjectsForRelations[importingStore.name] =
-                              ObjectBoxStore(
-                            name: importingStore.name,
-                            length: importingStore.length,
-                            size: importingStore.size,
-                            hits: importingStore.hits,
-                            misses: importingStore.misses,
-                            metadataJson: importingStore.metadataJson,
-                          ),
-                          mode: PutMode.insert,
-                        );
-
-                    return;
-                  }
-
-                  if (strategy == ImportConflictStrategy.skip) {
-                    storesToSkipTiles.add(importingStore.name);
-                    sendRes(
-                      id: cmd.id,
-                      data: {
-                        'expectStream': true,
-                        'storeName': importingStore.name,
-                        'newStoreName': null,
-                        'conflict': true,
-                      },
-                    );
-                    return;
-                  }
-
-                  String? newName;
-                  if (strategy == ImportConflictStrategy.rename) {
-                    newName =
-                        '${existingStore.name} (Imported ${DateTime.now()})';
-                    importingRoot.box<ObjectBoxStore>().put(
-                          importingStore..name = newName,
-                          mode: PutMode.update,
-                        );
-                  }
-
-                  sendRes(
-                    id: cmd.id,
-                    data: {
-                      'expectStream': true,
-                      'storeName': importingStore.name,
-                      'newStoreName': newName,
-                      'conflict': true,
-                    },
-                  );
-
-                  if (strategy == ImportConflictStrategy.replace) {
-                    final tilesQuery = (root.box<ObjectBoxTile>().query()
-                          ..linkMany(
-                            ObjectBoxTile_.stores,
-                            ObjectBoxStore_.name.equals(existingStore.name),
-                          ))
-                        .build();
-
-                    deleteTiles(
-                      storeName: existingStore.name,
-                      tilesQuery: tilesQuery,
-                    );
-                    root.box<ObjectBoxStore>().remove(existingStore.id);
-
-                    tilesQuery.close();
-                  }
-
-                  if (strategy != ImportConflictStrategy.merge) {
-                    root.box<ObjectBoxStore>().put(
-                          storesObjectsForRelations[importingStore.name] =
-                              ObjectBoxStore(
-                            name: newName ?? importingStore.name,
-                            length: importingStore.length,
-                            size: importingStore.size,
-                            hits: importingStore.hits,
-                            misses: importingStore.misses,
-                            metadataJson: importingStore.metadataJson,
-                          ),
-                          mode: PutMode.insert,
-                        );
-                  }
-                },
-              ),
-            )
-            .asFuture<void>()
-            .then(
-          (_) {
-            sendRes(
-              id: cmd.id,
-              data: {'expectStream': true, 'tiles': null},
-            );
-
-            final importingTiles = importingRoot.runInTransaction(
-              TxMode.read,
-              tilesQuery.stream,
-            );
-
+      /*
             root
                 .runInTransaction(
                   TxMode.write,

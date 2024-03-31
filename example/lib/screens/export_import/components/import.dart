@@ -8,11 +8,16 @@ class Import extends StatefulWidget {
     super.key,
     required this.path,
     required this.changeForceOverrideExisting,
+    required this.conflictStrategy,
+    required this.changeConflictStrategy,
   });
 
   final String path;
   final void Function({required bool forceOverrideExisting})
       changeForceOverrideExisting;
+
+  final ImportConflictStrategy conflictStrategy;
+  final void Function(ImportConflictStrategy) changeConflictStrategy;
 
   @override
   State<Import> createState() => _ImportState();
@@ -23,8 +28,6 @@ class _ImportState extends State<Import> {
       ImportConflictStrategy.values.toList(growable: false);
   late Future<List<String>> importableStores =
       FMTCRoot.external(pathToArchive: widget.path).listStores;
-
-  ImportConflictStrategy selectedConflictStrategy = ImportConflictStrategy.skip;
 
   @override
   void didUpdateWidget(covariant Import oldWidget) {
@@ -163,7 +166,7 @@ class _ImportState extends State<Import> {
             width: double.infinity,
             child: DropdownButton(
               isExpanded: true,
-              value: selectedConflictStrategy,
+              value: widget.conflictStrategy,
               items: _conflictStrategies
                   .map(
                     (e) => DropdownMenuItem(
@@ -197,8 +200,7 @@ class _ImportState extends State<Import> {
                     ),
                   )
                   .toList(growable: false),
-              onChanged: (choice) =>
-                  setState(() => selectedConflictStrategy = choice!),
+              onChanged: (choice) => widget.changeConflictStrategy(choice!),
             ),
           ),
         ],
