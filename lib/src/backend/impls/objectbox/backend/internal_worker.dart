@@ -1175,39 +1175,7 @@ Future<void> _worker(
 
                 return name;
               },
-            ).toList()
-          /*.then(
-                (importingStoreNames) {
-                  final storesQuery = root
-                      .box<ObjectBoxStore>()
-                      .query(ObjectBoxStore_.name.oneOf(importingStoreNames))
-                      .build();
-                  final tilesQuery = (root.box<ObjectBoxTile>().query()
-                        ..linkMany(
-                          ObjectBoxTile_.stores,
-                          ObjectBoxStore_.name.oneOf(importingStoreNames),
-                        ))
-                      .build();
-
-                  root.runInTransaction(
-                    TxMode.write,
-                    () {
-                      deleteTiles(
-                        storesQuery: storesQuery,
-                        tilesQuery: tilesQuery,
-                      );
-
-                      storesQuery.remove();
-                    },
-                  );
-
-                  storesQuery.close();
-                  tilesQuery.close();
-
-                  return importingStoreNames;
-                },
-              )*/
-          ,
+            ).toList(),
         })
             .then(
           (storesToImport) {
@@ -1231,8 +1199,7 @@ Future<void> _worker(
             // It is important never to 'copy' from the import root to the
             // in-use root
 
-            if (strategy == ImportConflictStrategy.skip ||
-                strategy == ImportConflictStrategy.rename) {
+            if (strategy != ImportConflictStrategy.merge) {
               final importingTilesQuery =
                   (importingRoot.box<ObjectBoxTile>().query()
                         ..linkMany(
@@ -1240,7 +1207,6 @@ Future<void> _worker(
                           ObjectBoxStore_.name.oneOf(storesToImport),
                         ))
                       .build();
-
               final importingTiles = importingTilesQuery.stream();
 
               final existingStoresQuery = root
@@ -1271,8 +1237,57 @@ Future<void> _worker(
               root
                   .runInTransaction(
                     TxMode.write,
-                    () => importingTiles.map(
-                      (importingTile) {
+                    () {
+                      if (strategy == ImportConflictStrategy.replace) {
+                        final storesQuery = root
+                            .box<ObjectBoxStore>()
+                            .query(
+                              ObjectBoxStore_.name.oneOf(storesToImport),
+                            )
+                            .build();
+                        final tilesQuery = (root.box<ObjectBoxTile>().query()
+                              ..linkMany(
+                                ObjectBoxTile_.stores,
+                                ObjectBoxStore_.name.oneOf(storesToImport),
+                              ))
+                            .build();
+
+                        deleteTiles(
+                          storesQuery: storesQuery,
+                          tilesQuery: tilesQuery,
+                        );
+
+                        final importingStoresQuery = importingRoot
+                            .box<ObjectBoxStore>()
+                            .query(ObjectBoxStore_.name.oneOf(storesToImport))
+                            .build();
+
+                        final importingStores = importingStoresQuery.find();
+
+                        storesQuery.remove();
+
+                        root.box<ObjectBoxStore>().putMany(
+                              List.generate(
+                                importingStores.length,
+                                (i) => ObjectBoxStore(
+                                  name: importingStores[i].name,
+                                  length: importingStores[i].length,
+                                  size: importingStores[i].size,
+                                  hits: importingStores[i].hits,
+                                  misses: importingStores[i].misses,
+                                  metadataJson: importingStores[i].metadataJson,
+                                ),
+                                growable: false,
+                              ),
+                              mode: PutMode.insert,
+                            );
+
+                        storesQuery.close();
+                        tilesQuery.close();
+                        importingStoresQuery.close();
+                      }
+
+                      return importingTiles.map((importingTile) {
                         final existingTile = (existingTilesQuery
                               ..param(ObjectBoxTile_.url).value =
                                   importingTile.url)
@@ -1335,27 +1350,30 @@ Future<void> _worker(
                             importingTile.bytes.lengthInBytes;
 
                         return 1;
-                      },
-                    ),
+                      });
+                    },
                   )
                   .where((e) => e != null)
                   .length
                   .then((numImportedTiles) {
-                updateRootStatistics(
-                  deltaLength: rootDeltaLength,
-                  deltaSize: rootDeltaSize,
-                );
+                    updateRootStatistics(
+                      deltaLength: rootDeltaLength,
+                      deltaSize: rootDeltaSize,
+                    );
 
-                importingTilesQuery.close();
-                existingStoresQuery.close();
-                existingTilesQuery.close();
-                cleanup();
+                    importingTilesQuery.close();
+                    existingStoresQuery.close();
+                    existingTilesQuery.close();
+                    cleanup();
 
-                sendRes(
-                  id: cmd.id,
-                  data: {'expectStream': true, 'complete': numImportedTiles},
-                );
-              });
+                    sendRes(
+                      id: cmd.id,
+                      data: {
+                        'expectStream': true,
+                        'complete': numImportedTiles,
+                      },
+                    );
+                  });
             } else {
               throw UnimplementedError();
             }
