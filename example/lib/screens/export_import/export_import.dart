@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -199,11 +200,13 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
                       } else {
                         setState(() => isProcessing = true);
                         final stopwatch = Stopwatch()..start();
-                        await FMTCRoot.external(
+                        final importResult = FMTCRoot.external(
                           pathToArchive: pathController.text,
                         ).import(
                           strategy: selectedConflictStrategy,
                         );
+                        unawaited(importResult.storesToStates.then(print));
+                        final numImportedTiles = await importResult.complete;
                         stopwatch.stop();
                         if (context.mounted) {
                           final elapsedTime =
@@ -212,8 +215,8 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Successfully exported stores (in $elapsedTime '
-                                'secs)',
+                                'Successfully imported $numImportedTiles tiles '
+                                '(in $elapsedTime secs)',
                               ),
                             ),
                           );

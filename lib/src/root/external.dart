@@ -5,14 +5,23 @@ part of '../../flutter_map_tile_caching.dart';
 
 /// The result of [RootExternal.import]
 ///
-/// `stores` will complete when the store names become available, and whether
-/// they have conflicted with existing stores.
+/// `storesToStates` will complete when the final store names become available.
+/// See [StoresToStates] for more information.
 ///
-/// `complete` will complete when the import is complete.
+/// `complete` will complete when the import is complete, with the number of
+/// imported/overwritten tiles.
 typedef ImportResult = ({
-  Future<List<({String importingName, bool conflict, String? newName})>> stores,
-  Future<void> complete,
+  Future<StoresToStates> storesToStates,
+  Future<int> complete,
 });
+
+/// A mapping of the original store name (as exported), to:
+///  - its new store `name` (as will be used to import), or `null` if
+/// [ImportConflictStrategy.skip] was set (meaning it won't be importing)
+///  - whether it `hadConflict` with an existing store
+///
+/// Used in [ImportResult].
+typedef StoresToStates = Map<String, ({String? name, bool hadConflict})>;
 
 /// Export & import 'archives' of selected stores and tiles, outside of the
 /// FMTC environment
@@ -53,7 +62,8 @@ class RootExternal {
 
   /// CAUTION: HIGHLY EXPERIMENTAL, INCOMPLETE, AND UNTESTED
   @experimental
-  Future<ImportResult> import({
+  // TODO: Above
+  ImportResult import({
     List<String>? storeNames,
     ImportConflictStrategy strategy = ImportConflictStrategy.skip,
   }) =>

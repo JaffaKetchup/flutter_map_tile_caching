@@ -335,7 +335,9 @@ abstract interface class FMTCBackendInternal
   ///
   /// See [RootExternal] for more information about expected behaviour and
   /// errors.
-  Future<ImportResult> importStores({
+  ///
+  /// See [ImportResult] for information about how to handle the response.
+  ImportResult importStores({
     required String path,
     required ImportConflictStrategy strategy,
     required List<String>? storeNames,

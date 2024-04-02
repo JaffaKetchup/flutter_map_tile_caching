@@ -13,9 +13,7 @@ class RootStatsPane extends StatefulWidget {
 }
 
 class _RootStatsPaneState extends State<RootStatsPane> {
-  late final watchStream = FMTCRoot.stats.watchStores(
-    triggerImmediately: true,
-  );
+  late final watchStream = FMTCRoot.stats.watchStores(triggerImmediately: true);
 
   @override
   Widget build(BuildContext context) => Container(

@@ -75,8 +75,12 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       onCancel: () async {
         _workerResStreamed.remove(id); // Free memory
         // Cancel the worker stream if the worker is alive
-        if (!_workerComplete.isCompleted) {
-          await _sendCmdOneShot(type: type.streamCancel!, args: {'id': id});
+        if ((type.hasInternalStreamSub ?? false) &&
+            !_workerComplete.isCompleted) {
+          await _sendCmdOneShot(
+            type: _WorkerCmdType.cancelInternalStreamSub,
+            args: {'id': id},
+          );
         }
       },
     );
@@ -170,7 +174,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         final err = evt.data?['error'];
         if (err != null) {
           if (evt.data?['expectStream'] == true) {
-            _workerResStreamed[evt.id]!.addError(err, evt.data!['stackTrace']);
+            _workerResStreamed[evt.id]?.addError(err, evt.data!['stackTrace']);
           } else {
             _workerResOneShot[evt.id]!
                 .completeError(err, evt.data!['stackTrace']);
@@ -179,9 +183,11 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         }
 
         if (evt.data?['expectStream'] == true) {
-          // TODO: FIX worker should stop sending events if possible,
-          // otherwise, don't use null check (eg. import stream)
-          _workerResStreamed[evt.id]!.add(evt.data);
+          // May be `null` if cmd was streamed result, but has no way to prevent
+          // future results even after the listener has stopped
+          //
+          // See `_WorkerCmdType.hasInternalStreamSub` for info.
+          _workerResStreamed[evt.id]?.add(evt.data);
         } else {
           _workerResOneShot[evt.id]!.complete(evt.data);
         }
@@ -554,6 +560,10 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required List<String> storeNames,
     required String path,
   }) async {
+    if (storeNames.isEmpty) {
+      throw ArgumentError.value(storeNames, 'storeNames', 'must not be empty');
+    }
+
     final type = await FileSystemEntity.type(path);
     if (type == FileSystemEntityType.directory) {
       throw ImportExportPathNotFile();
@@ -566,62 +576,40 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   }
 
   @override
-  @experimental // TODO: Finish implementation
-  Future<ImportResult> importStores({
+  ImportResult importStores({
     required String path,
     required ImportConflictStrategy strategy,
     required List<String>? storeNames,
-  }) async {
-    await _checkImportPathType(path);
+  }) {
+    Stream<Map<String, dynamic>?> checkTypeAndStartImport() async* {
+      await _checkImportPathType(path);
+      yield* _sendCmdStreamed(
+        type: _WorkerCmdType.importStores,
+        args: {'path': path, 'strategy': strategy, 'stores': storeNames},
+      );
+    }
 
-    _sendCmdStreamed(
-      type: _WorkerCmdType.importStores,
-      args: {'path': path, 'strategy': strategy, 'stores': storeNames},
-    ).listen(print);
-
-    return (
-      stores: Future.sync(
-        () => <({bool conflict, String importingName, String? newName})>[],
-      ),
-      complete: Future.sync(() => null),
-    );
-
-    /*final storesStreamController = StreamController<
-        ({String importingName, bool conflict, String? newName})>();
-
-    final complete = Completer<void>();
+    final storesToStates = Completer<StoresToStates>();
+    final complete = Completer<int>();
 
     late final StreamSubscription<Map<String, dynamic>?> listener;
-    listener = _sendCmdStreamed(
-      type: _WorkerCmdType.importStores,
-      args: {'path': path, 'strategy': strategy, 'stores': storeNames},
-    ).listen(
-      cancelOnError: true,
+    listener = checkTypeAndStartImport().listen(
       (evt) {
-        if (evt!.containsKey('finished')) {
-          complete.complete();
+        if (evt!.containsKey('storesToStates')) {
+          storesToStates.complete(evt['storesToStates']);
+        }
+        if (evt.containsKey('complete')) {
+          complete.complete(evt['complete']);
           listener.cancel();
-          return;
         }
-        if (evt.containsKey('tiles')) {
-          storesStreamController.close();
-          return;
-        }
-
-        storesStreamController.add(
-          (
-            importingName: evt['storeName'],
-            conflict: evt['conflict'],
-            newName: evt['newStoreName'],
-          ),
-        );
       },
+      cancelOnError: true,
     );
 
     return (
-      stores: storesStreamController.stream.toList(),
+      storesToStates: storesToStates.future,
       complete: complete.future,
-    );*/
+    );
   }
 
   @override

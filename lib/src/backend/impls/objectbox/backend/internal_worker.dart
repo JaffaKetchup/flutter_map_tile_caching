@@ -39,19 +39,27 @@ enum _WorkerCmdType {
   getRecoverableRegion,
   startRecovery,
   cancelRecovery,
-  watchRecovery(streamCancel: cancelStreamedOutputs),
-  watchStores(streamCancel: cancelStreamedOutputs),
+  watchRecovery(hasInternalStreamSub: true),
+  watchStores(hasInternalStreamSub: true),
   exportStores,
-  importStores(streamCancel: cancelStreamedOutputs),
+  importStores(hasInternalStreamSub: false),
   listImportableStores,
-  cancelStreamedOutputs;
+  cancelInternalStreamSub;
 
-  const _WorkerCmdType({this.streamCancel});
+  const _WorkerCmdType({this.hasInternalStreamSub});
 
-  /// Command to execute when cancelling a streamed result
+  /// Whether this command streams multiple results back
   ///
-  /// All streamed cmds must specify a cancel cmd.
-  final _WorkerCmdType? streamCancel;
+  /// If `true`, then this command does stream results, and it has an internal
+  /// [StreamSubscription] that should be cancelled (using
+  /// [cancelInternalStreamSub]) when it no longer needs to stream results.
+  ///
+  /// If `false`, then this command does stream results, but has no stream sub
+  /// to be cancelled.
+  ///
+  /// If `null`, then this command does not stream results, and just returns a
+  /// single result.
+  final bool? hasInternalStreamSub;
 }
 
 Future<void> _worker(
@@ -142,7 +150,7 @@ Future<void> _worker(
       TxMode.write,
       () {
         final queriedStores = storesQuery.property(ObjectBoxStore_.name).find();
-        final queriedTiles = tilesQuery.find(); // TODO: Memory improvements
+        final queriedTiles = tilesQuery.find();
 
         if (queriedStores.isEmpty || queriedTiles.isEmpty) return;
 
@@ -875,10 +883,16 @@ Future<void> _worker(
             )
             .watch(triggerImmediately: triggerImmediately)
             .listen((_) => sendRes(id: cmd.id, data: {'expectStream': true}));
-      case _WorkerCmdType.cancelStreamedOutputs:
+      case _WorkerCmdType.cancelInternalStreamSub:
         final id = cmd.args['id']! as int;
 
-        streamedOutputSubscriptions[id]?.cancel();
+        if (streamedOutputSubscriptions[id] == null) {
+          throw StateError(
+            'Cannot cancel internal streamed result because none was registered.',
+          );
+        }
+
+        streamedOutputSubscriptions[id]!.cancel();
         streamedOutputSubscriptions.remove(id);
 
         sendRes(id: cmd.id);
@@ -940,9 +954,11 @@ Future<void> _worker(
                 },
               ),
             )
-            .last
+            .length
             .then(
-          (_) {
+          (numExportedStores) {
+            if (numExportedStores == 0) throw StateError('Unpossible.');
+
             final exportingTiles = root.runInTransaction(
               TxMode.read,
               tilesQuery.stream,
@@ -968,9 +984,17 @@ Future<void> _worker(
                     },
                   ),
                 )
-                .last
+                .length
                 .then(
-              (_) {
+              (numExportedTiles) {
+                if (numExportedTiles == 0) {
+                  throw ArgumentError(
+                    'must include at least one tile in any of the specified '
+                        'stores',
+                    'storeNames',
+                  );
+                }
+
                 storesQuery.close();
                 tilesQuery.close();
                 exportingRoot.close();
@@ -1036,7 +1060,17 @@ Future<void> _worker(
             .query(ObjectBoxStore_.name.equals(''))
             .build();
 
-        final nameToState = <String, String?>{};
+        void cleanup() {
+          importingStoresQuery.close();
+          specificStoresQuery.close();
+          importingRoot.close();
+
+          importFile.deleteSync();
+          File(path.join(importDir, 'lock.mdb')).deleteSync();
+          importDirIO.deleteSync();
+        }
+
+        final StoresToStates storesToStates = {};
         // ignore: unnecessary_parenthesis
         (switch (strategy) {
           ImportConflictStrategy.skip => importingStoresQuery
@@ -1048,7 +1082,10 @@ Future<void> _worker(
                             ..param(ObjectBoxStore_.name).value = name)
                           .count() ==
                       1;
-                  nameToState[name] = hasConflict ? null : name;
+                  storesToStates[name] = (
+                    name: hasConflict ? null : name,
+                    hadConflict: hasConflict,
+                  );
 
                   if (hasConflict) return false;
 
@@ -1076,7 +1113,7 @@ Future<void> _worker(
                         ..param(ObjectBoxStore_.name).value = name)
                       .count() ==
                   0) {
-                nameToState[name] = name;
+                storesToStates[name] = (name: name, hadConflict: false);
                 root.box<ObjectBoxStore>().put(
                       ObjectBoxStore(
                         name: name,
@@ -1090,8 +1127,8 @@ Future<void> _worker(
                     );
                 return name;
               } else {
-                final newName =
-                    nameToState[name] = '$name [Imported ${DateTime.now()}]';
+                final newName = '$name [Imported ${DateTime.now()}]';
+                storesToStates[name] = (name: newName, hadConflict: true);
                 final newStore = importingStore..name = newName;
                 importingRoot
                     .box<ObjectBoxStore>()
@@ -1115,11 +1152,12 @@ Future<void> _worker(
             importingStoresQuery.stream().map(
               (importingStore) {
                 final name = importingStore.name;
-                nameToState[name] = name;
+
                 if ((specificStoresQuery
                           ..param(ObjectBoxStore_.name).value = name)
                         .count() ==
                     0) {
+                  storesToStates[name] = (name: name, hadConflict: false);
                   root.box<ObjectBoxStore>().put(
                         ObjectBoxStore(
                           name: name,
@@ -1131,7 +1169,10 @@ Future<void> _worker(
                         ),
                         mode: PutMode.insert,
                       );
+                } else {
+                  storesToStates[name] = (name: name, hadConflict: true);
                 }
+
                 return name;
               },
             ).toList()
@@ -1173,10 +1214,15 @@ Future<void> _worker(
             sendRes(
               id: cmd.id,
               data: {
-                'expectStream': true, // TODO: Needs subscription?
-                'nameToState': nameToState,
+                'expectStream': true,
+                'storesToStates': storesToStates,
+                if (storesToImport.isEmpty) 'complete': 0,
               },
             );
+            if (storesToImport.isEmpty) {
+              cleanup();
+              return;
+            }
 
             // At this point:
             //  * storesToImport should contain only the required IMPORT stores
@@ -1188,7 +1234,13 @@ Future<void> _worker(
             if (strategy == ImportConflictStrategy.skip ||
                 strategy == ImportConflictStrategy.rename) {
               final importingTilesQuery =
-                  importingRoot.box<ObjectBoxTile>().query().build();
+                  (importingRoot.box<ObjectBoxTile>().query()
+                        ..linkMany(
+                          ObjectBoxTile_.stores,
+                          ObjectBoxStore_.name.oneOf(storesToImport),
+                        ))
+                      .build();
+
               final importingTiles = importingTilesQuery.stream();
 
               final existingStoresQuery = root
@@ -1209,9 +1261,7 @@ Future<void> _worker(
                 Iterable<ObjectBoxStore> importingStores,
               ) =>
                   importingStores
-                      .where(
-                        (s) => storesToImport.contains(s.name),
-                      )
+                      .where((s) => storesToImport.contains(s.name))
                       .map(
                         (s) => storesToUpdate[s.name] ??= (existingStoresQuery
                               ..param(ObjectBoxStore_.name).value = s.name)
@@ -1223,7 +1273,12 @@ Future<void> _worker(
                     TxMode.write,
                     () => importingTiles.map(
                       (importingTile) {
-                        try {
+                        final existingTile = (existingTilesQuery
+                              ..param(ObjectBoxTile_.url).value =
+                                  importingTile.url)
+                            .findUnique();
+
+                        if (existingTile == null) {
                           root.box<ObjectBoxTile>().put(
                                 ObjectBoxTile(
                                   url: importingTile.url,
@@ -1239,58 +1294,53 @@ Future<void> _worker(
 
                           rootDeltaLength++;
                           rootDeltaSize += importingTile.bytes.lengthInBytes;
-                        } on UniqueViolationException {
-                          final existingTile = (existingTilesQuery
-                                ..param(ObjectBoxTile_.url).value =
-                                    importingTile.url)
-                              .findUnique()!;
 
-                          final newRelatedStores =
-                              convertToExistingStores(importingTile.stores);
-
-                          if (existingTile.lastModified
-                              .isAfter(importingTile.lastModified)) {
-                            /*for (final newRelatedStore in newRelatedStores) {
-                              storesToUpdate[newRelatedStore.name] =
-                                  (storesToUpdate[newRelatedStore.name] ??
-                                      newRelatedStore)
-                                    ..size +=
-                                        -importingTile.bytes.lengthInBytes +
-                                            existingTile.bytes.lengthInBytes;
-                            }*/
-                            return;
-                          }
-
-                          root.box<ObjectBoxTile>().put(
-                                ObjectBoxTile(
-                                  url: importingTile.url,
-                                  bytes: importingTile.bytes,
-                                  lastModified: importingTile.lastModified,
-                                )..stores.addAll(
-                                    {
-                                      ...existingTile.stores,
-                                      ...newRelatedStores,
-                                    },
-                                  ),
-                                mode: PutMode.update,
-                              );
-
-                          for (final existingTileStore in existingTile.stores) {
-                            storesToUpdate[existingTileStore.name] =
-                                (storesToUpdate[existingTileStore.name] ??
-                                    existingTileStore)
-                                  ..size += -existingTile.bytes.lengthInBytes +
-                                      importingTile.bytes.lengthInBytes;
-                          }
-
-                          rootDeltaSize += -existingTile.bytes.lengthInBytes +
-                              importingTile.bytes.lengthInBytes;
+                          return 1;
                         }
+
+                        final newRelatedStores =
+                            convertToExistingStores(importingTile.stores);
+
+                        final existingTileIsNewer = existingTile.lastModified
+                            .isAfter(importingTile.lastModified);
+
+                        root.box<ObjectBoxTile>().put(
+                              ObjectBoxTile(
+                                url: importingTile.url,
+                                bytes: existingTileIsNewer
+                                    ? existingTile.bytes
+                                    : importingTile.bytes,
+                                lastModified: existingTileIsNewer
+                                    ? existingTile.lastModified
+                                    : importingTile.lastModified,
+                              )..stores.addAll(
+                                  {
+                                    ...existingTile.stores,
+                                    ...newRelatedStores,
+                                  },
+                                ),
+                            );
+
+                        if (existingTileIsNewer) return null;
+
+                        for (final existingTileStore in existingTile.stores) {
+                          storesToUpdate[existingTileStore.name] =
+                              (storesToUpdate[existingTileStore.name] ??
+                                  existingTileStore)
+                                ..size += -existingTile.bytes.lengthInBytes +
+                                    importingTile.bytes.lengthInBytes;
+                        }
+
+                        rootDeltaSize += -existingTile.bytes.lengthInBytes +
+                            importingTile.bytes.lengthInBytes;
+
+                        return 1;
                       },
                     ),
                   )
-                  .last
-                  .then((_) {
+                  .where((e) => e != null)
+                  .length
+                  .then((numImportedTiles) {
                 updateRootStatistics(
                   deltaLength: rootDeltaLength,
                   deltaSize: rootDeltaSize,
@@ -1299,15 +1349,11 @@ Future<void> _worker(
                 importingTilesQuery.close();
                 existingStoresQuery.close();
                 existingTilesQuery.close();
-                importingRoot.close();
-
-                importFile.deleteSync();
-                File(path.join(importDir, 'lock.mdb')).deleteSync();
-                importDirIO.deleteSync();
+                cleanup();
 
                 sendRes(
                   id: cmd.id,
-                  data: {'expectStream': true, 'finished': null},
+                  data: {'expectStream': true, 'complete': numImportedTiles},
                 );
               });
             } else {
@@ -1315,42 +1361,6 @@ Future<void> _worker(
             }
           },
         );
-
-      /*
-            root
-                .runInTransaction(
-                  TxMode.write,
-                  () => importingTiles.listen(
-                    (importingTile) {
-                      
-                      }
-                    },
-                  ),
-                )
-                .asFuture<void>()
-                .then(
-              (_) {
-                updateRootStatistics(
-                  deltaLength: rootDeltaLength,
-                  deltaSize: rootDeltaSize,
-                );
-
-                storesQuery.close();
-                tilesQuery.close();
-                importingRoot.close();
-
-                importFile.deleteSync();
-                File(path.join(importDir, 'lock.mdb')).deleteSync();
-                importDirIO.deleteSync();
-
-                sendRes(
-                  id: cmd.id,
-                  data: {'expectStream': true, 'finished': null},
-                );
-              },
-            );
-          },
-        );*/
       case _WorkerCmdType.listImportableStores:
         final importPath = cmd.args['path']! as String;
 
@@ -1406,7 +1416,7 @@ Future<void> _worker(
       sendRes(
         id: cmd.id,
         data: {
-          if (cmd.type.streamCancel != null) 'expectStream': true,
+          if (cmd.type.hasInternalStreamSub != null) 'expectStream': true,
           'error': e,
           'stackTrace': s,
         },
