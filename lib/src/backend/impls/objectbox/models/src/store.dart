@@ -7,6 +7,8 @@ import 'tile.dart';
 
 /// Cache for store-level statistics & storage for metadata, referenced by
 /// unique name, in ObjectBox
+///
+/// Only [name] is used for equality.
 @Entity()
 class ObjectBoxStore {
   /// Create a cache for store-level statistics & storage for metadata,
@@ -25,6 +27,8 @@ class ObjectBoxStore {
   int id = 0;
 
   /// Human-readable name of the store
+  ///
+  /// Only this property is used for equality.
   @Index()
   @Unique()
   String name;
@@ -50,4 +54,14 @@ class ObjectBoxStore {
   ///
   /// Only supports string-string key-value pairs.
   String metadataJson;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || (other is ObjectBoxStore && name == other.name);
+
+  @override
+  int get hashCode => name.hashCode;
+
+  @override
+  String toString() => 'ObjectBoxStore(name: $name)';
 }

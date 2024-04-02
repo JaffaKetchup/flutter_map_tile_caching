@@ -63,10 +63,11 @@ class RootExternal {
   /// Imports specified stores and all necessary tiles into the current root
   ///
   /// See [ImportConflictStrategy] to set how conflicts between existing and
-  /// importing stores should be resolved.
+  /// importing stores should be resolved. Defaults to
+  /// [ImportConflictStrategy.rename].
   ImportResult import({
     List<String>? storeNames,
-    ImportConflictStrategy strategy = ImportConflictStrategy.skip,
+    ImportConflictStrategy strategy = ImportConflictStrategy.rename,
   }) =>
       FMTCBackendAccess.internal.importStores(
         path: pathToArchive,
@@ -81,8 +82,6 @@ class RootExternal {
 
 /// Determines what action should be taken when an importing store conflicts
 /// with an existing store of the same name
-///
-/// If speed is a necessity, prefer using [skip] or [replace].
 ///
 /// See documentation on individual values for more information.
 enum ImportConflictStrategy {

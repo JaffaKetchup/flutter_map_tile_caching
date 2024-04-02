@@ -975,9 +975,11 @@ Future<void> _worker(
                               bytes: exportingTile.bytes,
                               lastModified: exportingTile.lastModified,
                             )..stores.addAll(
-                                exportingTile.stores.map(
-                                  (s) => storesObjectsForRelations[s.name]!,
-                                ),
+                                exportingTile.stores
+                                    .map(
+                                      (s) => storesObjectsForRelations[s.name],
+                                    )
+                                    .whereNotNull(),
                               ),
                             mode: PutMode.insert,
                           );
@@ -1094,8 +1096,8 @@ Future<void> _worker(
                           name: name,
                           length: importingStore.length,
                           size: importingStore.size,
-                          hits: importingStore.hits,
-                          misses: importingStore.misses,
+                          hits: 0,
+                          misses: 0,
                           metadataJson: importingStore.metadataJson,
                         ),
                         mode: PutMode.insert,
@@ -1119,8 +1121,8 @@ Future<void> _worker(
                         name: name,
                         length: importingStore.length,
                         size: importingStore.size,
-                        hits: importingStore.hits,
-                        misses: importingStore.misses,
+                        hits: 0,
+                        misses: 0,
                         metadataJson: importingStore.metadataJson,
                       ),
                       mode: PutMode.insert,
@@ -1138,8 +1140,8 @@ Future<void> _worker(
                         name: newName,
                         length: importingStore.length,
                         size: importingStore.size,
-                        hits: importingStore.hits,
-                        misses: importingStore.misses,
+                        hits: 0,
+                        misses: 0,
                         metadataJson: importingStore.metadataJson,
                       ),
                       mode: PutMode.insert,
@@ -1153,24 +1155,38 @@ Future<void> _worker(
               (importingStore) {
                 final name = importingStore.name;
 
-                if ((specificStoresQuery
-                          ..param(ObjectBoxStore_.name).value = name)
-                        .count() ==
-                    0) {
+                final existingStore = (specificStoresQuery
+                      ..param(ObjectBoxStore_.name).value = name)
+                    .findUnique();
+                if (existingStore == null) {
                   storesToStates[name] = (name: name, hadConflict: false);
                   root.box<ObjectBoxStore>().put(
                         ObjectBoxStore(
                           name: name,
-                          length: importingStore.length,
-                          size: importingStore.size,
-                          hits: importingStore.hits,
-                          misses: importingStore.misses,
+                          length: 0, // Will be set when writing tiles
+                          size: 0, // Will be set when writing tiles
+                          hits: 0,
+                          misses: 0,
                           metadataJson: importingStore.metadataJson,
                         ),
                         mode: PutMode.insert,
                       );
                 } else {
                   storesToStates[name] = (name: name, hadConflict: true);
+                  if (strategy == ImportConflictStrategy.merge) {
+                    root.box<ObjectBoxStore>().put(
+                          existingStore
+                            ..metadataJson = jsonEncode(
+                              (jsonDecode(existingStore.metadataJson)
+                                  as Map<String, dynamic>)
+                                ..addAll(
+                                  jsonDecode(importingStore.metadataJson)
+                                      as Map<String, dynamic>,
+                                ),
+                            ),
+                          mode: PutMode.update,
+                        );
+                  }
                 }
 
                 return name;
@@ -1199,145 +1215,185 @@ Future<void> _worker(
             // It is important never to 'copy' from the import root to the
             // in-use root
 
-            if (strategy != ImportConflictStrategy.merge) {
-              final importingTilesQuery =
-                  (importingRoot.box<ObjectBoxTile>().query()
-                        ..linkMany(
-                          ObjectBoxTile_.stores,
-                          ObjectBoxStore_.name.oneOf(storesToImport),
-                        ))
-                      .build();
-              final importingTiles = importingTilesQuery.stream();
+            final importingTilesQuery =
+                (importingRoot.box<ObjectBoxTile>().query()
+                      ..linkMany(
+                        ObjectBoxTile_.stores,
+                        ObjectBoxStore_.name.oneOf(storesToImport),
+                      ))
+                    .build();
+            final importingTiles = importingTilesQuery.stream();
 
-              final existingStoresQuery = root
-                  .box<ObjectBoxStore>()
-                  .query(ObjectBoxStore_.name.equals(''))
-                  .build();
-              final existingTilesQuery = root
-                  .box<ObjectBoxTile>()
-                  .query(ObjectBoxTile_.url.equals(''))
-                  .build();
+            final existingStoresQuery = root
+                .box<ObjectBoxStore>()
+                .query(ObjectBoxStore_.name.equals(''))
+                .build();
+            final existingTilesQuery = root
+                .box<ObjectBoxTile>()
+                .query(ObjectBoxTile_.url.equals(''))
+                .build();
 
-              final storesToUpdate = <String, ObjectBoxStore>{};
+            final storesToUpdate = <String, ObjectBoxStore>{};
 
-              int rootDeltaLength = 0;
-              int rootDeltaSize = 0;
+            int rootDeltaLength = 0;
+            int rootDeltaSize = 0;
 
-              Iterable<ObjectBoxStore> convertToExistingStores(
-                Iterable<ObjectBoxStore> importingStores,
-              ) =>
-                  importingStores
-                      .where((s) => storesToImport.contains(s.name))
-                      .map(
-                        (s) => storesToUpdate[s.name] ??= (existingStoresQuery
-                              ..param(ObjectBoxStore_.name).value = s.name)
-                            .findUnique()!,
+            Iterable<ObjectBoxStore> convertToExistingStores(
+              Iterable<ObjectBoxStore> importingStores,
+            ) =>
+                importingStores
+                    .where((s) => storesToImport.contains(s.name))
+                    .map(
+                      (s) => storesToUpdate[s.name] ??= (existingStoresQuery
+                            ..param(ObjectBoxStore_.name).value = s.name)
+                          .findUnique()!,
+                    );
+
+            root
+                .runInTransaction(
+                  TxMode.write,
+                  () {
+                    if (strategy == ImportConflictStrategy.replace) {
+                      final storesQuery = root
+                          .box<ObjectBoxStore>()
+                          .query(ObjectBoxStore_.name.oneOf(storesToImport))
+                          .build();
+                      final tilesQuery = (root.box<ObjectBoxTile>().query()
+                            ..linkMany(
+                              ObjectBoxTile_.stores,
+                              ObjectBoxStore_.name.oneOf(storesToImport),
+                            ))
+                          .build();
+
+                      deleteTiles(
+                        storesQuery: storesQuery,
+                        tilesQuery: tilesQuery,
                       );
 
-              root
-                  .runInTransaction(
-                    TxMode.write,
-                    () {
-                      if (strategy == ImportConflictStrategy.replace) {
-                        final storesQuery = root
-                            .box<ObjectBoxStore>()
-                            .query(
-                              ObjectBoxStore_.name.oneOf(storesToImport),
-                            )
-                            .build();
-                        final tilesQuery = (root.box<ObjectBoxTile>().query()
-                              ..linkMany(
-                                ObjectBoxTile_.stores,
-                                ObjectBoxStore_.name.oneOf(storesToImport),
-                              ))
-                            .build();
+                      final importingStoresQuery = importingRoot
+                          .box<ObjectBoxStore>()
+                          .query(ObjectBoxStore_.name.oneOf(storesToImport))
+                          .build();
 
-                        deleteTiles(
-                          storesQuery: storesQuery,
-                          tilesQuery: tilesQuery,
-                        );
+                      final importingStores = importingStoresQuery.find();
 
-                        final importingStoresQuery = importingRoot
-                            .box<ObjectBoxStore>()
-                            .query(ObjectBoxStore_.name.oneOf(storesToImport))
-                            .build();
+                      storesQuery.remove();
 
-                        final importingStores = importingStoresQuery.find();
-
-                        storesQuery.remove();
-
-                        root.box<ObjectBoxStore>().putMany(
-                              List.generate(
-                                importingStores.length,
-                                (i) => ObjectBoxStore(
-                                  name: importingStores[i].name,
-                                  length: importingStores[i].length,
-                                  size: importingStores[i].size,
-                                  hits: importingStores[i].hits,
-                                  misses: importingStores[i].misses,
-                                  metadataJson: importingStores[i].metadataJson,
-                                ),
-                                growable: false,
+                      root.box<ObjectBoxStore>().putMany(
+                            List.generate(
+                              importingStores.length,
+                              (i) => ObjectBoxStore(
+                                name: importingStores[i].name,
+                                length: importingStores[i].length,
+                                size: importingStores[i].size,
+                                hits: importingStores[i].hits,
+                                misses: importingStores[i].misses,
+                                metadataJson: importingStores[i].metadataJson,
                               ),
-                              mode: PutMode.insert,
-                            );
+                              growable: false,
+                            ),
+                            mode: PutMode.insert,
+                          );
 
-                        storesQuery.close();
-                        tilesQuery.close();
-                        importingStoresQuery.close();
-                      }
+                      storesQuery.close();
+                      tilesQuery.close();
+                      importingStoresQuery.close();
+                    }
 
-                      return importingTiles.map((importingTile) {
-                        final existingTile = (existingTilesQuery
-                              ..param(ObjectBoxTile_.url).value =
-                                  importingTile.url)
-                            .findUnique();
+                    return importingTiles.map((importingTile) {
+                      final convertedRelatedStores =
+                          convertToExistingStores(importingTile.stores);
 
-                        if (existingTile == null) {
-                          root.box<ObjectBoxTile>().put(
-                                ObjectBoxTile(
-                                  url: importingTile.url,
-                                  bytes: importingTile.bytes,
-                                  lastModified: importingTile.lastModified,
-                                )..stores.addAll(
-                                    convertToExistingStores(
-                                      importingTile.stores,
-                                    ),
-                                  ),
-                                mode: PutMode.insert,
-                              );
+                      final existingTile = (existingTilesQuery
+                            ..param(ObjectBoxTile_.url).value =
+                                importingTile.url)
+                          .findUnique();
 
-                          rootDeltaLength++;
-                          rootDeltaSize += importingTile.bytes.lengthInBytes;
-
-                          return 1;
-                        }
-
-                        final newRelatedStores =
-                            convertToExistingStores(importingTile.stores);
-
-                        final existingTileIsNewer = existingTile.lastModified
-                            .isAfter(importingTile.lastModified);
-
+                      if (existingTile == null) {
                         root.box<ObjectBoxTile>().put(
                               ObjectBoxTile(
                                 url: importingTile.url,
-                                bytes: existingTileIsNewer
-                                    ? existingTile.bytes
-                                    : importingTile.bytes,
-                                lastModified: existingTileIsNewer
-                                    ? existingTile.lastModified
-                                    : importingTile.lastModified,
-                              )..stores.addAll(
-                                  {
-                                    ...existingTile.stores,
-                                    ...newRelatedStores,
-                                  },
-                                ),
+                                bytes: importingTile.bytes,
+                                lastModified: importingTile.lastModified,
+                              )..stores.addAll(convertedRelatedStores),
+                              mode: PutMode.insert,
                             );
 
-                        if (existingTileIsNewer) return null;
+                        // No need to modify store stats, because if tile didn't
+                        // already exist, then was not present in an existing
+                        // store that needs changing, and all importing stores
+                        // are brand new and already contain accurate stats.
+                        // EXCEPT in merge mode - importing stores may not be
+                        // new.
+                        if (strategy == ImportConflictStrategy.merge) {
+                          // No need to worry if it was brand new, we use the
+                          // same logic, treating it as an existing related
+                          // store, because when we created it, we made it
+                          // empty.
+                          for (final convertedRelatedStore
+                              in convertedRelatedStores) {
+                            storesToUpdate[convertedRelatedStore.name] =
+                                (storesToUpdate[convertedRelatedStore.name] ??
+                                    convertedRelatedStore)
+                                  ..length += 1
+                                  ..size += importingTile.bytes.lengthInBytes;
+                          }
+                        }
 
+                        rootDeltaLength++;
+                        rootDeltaSize += importingTile.bytes.lengthInBytes;
+
+                        return 1;
+                      }
+
+                      final existingTileIsNewer = existingTile.lastModified
+                          .isAfter(importingTile.lastModified);
+
+                      final relations = {
+                        ...existingTile.stores,
+                        ...convertedRelatedStores,
+                      };
+
+                      root.box<ObjectBoxTile>().put(
+                            ObjectBoxTile(
+                              url: importingTile.url,
+                              bytes: existingTileIsNewer
+                                  ? existingTile.bytes
+                                  : importingTile.bytes,
+                              lastModified: existingTileIsNewer
+                                  ? existingTile.lastModified
+                                  : importingTile.lastModified,
+                            )..stores.addAll(relations),
+                          );
+
+                      if (existingTileIsNewer) return null;
+
+                      if (strategy == ImportConflictStrategy.merge) {
+                        print(relations);
+                        print(convertedRelatedStores.toSet());
+                        print(existingTile.stores.toSet());
+                        print(convertedRelatedStores
+                            .toSet()
+                            .difference(existingTile.stores.toSet()));
+                        for (final existingTileStore in existingTile.stores) {
+                          storesToUpdate[existingTileStore.name] =
+                              (storesToUpdate[existingTileStore.name] ??
+                                  existingTileStore)
+                                ..length
+                                ..size += -existingTile.bytes.lengthInBytes +
+                                    importingTile.bytes.lengthInBytes;
+                        }
+                        for (final newConvertedRelatedStore
+                            in convertedRelatedStores
+                                .toSet()
+                                .difference(existingTile.stores.toSet())) {
+                          storesToUpdate[newConvertedRelatedStore.name] =
+                              (storesToUpdate[newConvertedRelatedStore.name] ??
+                                  newConvertedRelatedStore)
+                                ..length += 1
+                                ..size += importingTile.bytes.lengthInBytes;
+                        }
+                      } else {
                         for (final existingTileStore in existingTile.stores) {
                           storesToUpdate[existingTileStore.name] =
                               (storesToUpdate[existingTileStore.name] ??
@@ -1345,38 +1401,40 @@ Future<void> _worker(
                                 ..size += -existingTile.bytes.lengthInBytes +
                                     importingTile.bytes.lengthInBytes;
                         }
+                      }
 
-                        rootDeltaSize += -existingTile.bytes.lengthInBytes +
-                            importingTile.bytes.lengthInBytes;
+                      rootDeltaSize += -existingTile.bytes.lengthInBytes +
+                          importingTile.bytes.lengthInBytes;
 
-                        return 1;
-                      });
+                      return 1;
+                    });
+                  },
+                )
+                .where((e) => e != null)
+                .length
+                .then((numImportedTiles) {
+                  root.box<ObjectBoxStore>().putMany(
+                        storesToUpdate.values.toList(),
+                        mode: PutMode.update,
+                      );
+                  updateRootStatistics(
+                    deltaLength: rootDeltaLength,
+                    deltaSize: rootDeltaSize,
+                  );
+
+                  importingTilesQuery.close();
+                  existingStoresQuery.close();
+                  existingTilesQuery.close();
+                  cleanup();
+
+                  sendRes(
+                    id: cmd.id,
+                    data: {
+                      'expectStream': true,
+                      'complete': numImportedTiles,
                     },
-                  )
-                  .where((e) => e != null)
-                  .length
-                  .then((numImportedTiles) {
-                    updateRootStatistics(
-                      deltaLength: rootDeltaLength,
-                      deltaSize: rootDeltaSize,
-                    );
-
-                    importingTilesQuery.close();
-                    existingStoresQuery.close();
-                    existingTilesQuery.close();
-                    cleanup();
-
-                    sendRes(
-                      id: cmd.id,
-                      data: {
-                        'expectStream': true,
-                        'complete': numImportedTiles,
-                      },
-                    );
-                  });
-            } else {
-              throw UnimplementedError();
-            }
+                  );
+                });
           },
         );
       case _WorkerCmdType.listImportableStores:
