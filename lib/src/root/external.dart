@@ -60,9 +60,10 @@ class RootExternal {
       FMTCBackendAccess.internal
           .exportStores(storeNames: storeNames, path: pathToArchive);
 
-  /// CAUTION: HIGHLY EXPERIMENTAL, INCOMPLETE, AND UNTESTED
-  @experimental
-  // TODO: Above
+  /// Imports specified stores and all necessary tiles into the current root
+  ///
+  /// See [ImportConflictStrategy] to set how conflicts between existing and
+  /// importing stores should be resolved.
   ImportResult import({
     List<String>? storeNames,
     ImportConflictStrategy strategy = ImportConflictStrategy.skip,
