@@ -14,7 +14,7 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [9.0.0] - "Just Another Rewrite" - 2024/XX/XX
+## [9.0.0] - "Just Another Rewrite" - 2024/04/XX
 
 This update has essentially rewritten FMTC from the ground up, over hundreds of hours. It focuses on:
 
