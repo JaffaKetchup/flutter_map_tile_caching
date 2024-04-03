@@ -108,7 +108,6 @@ class _DownloadingPageState extends State<DownloadingPage>
                         );
                       }
 
-                      // TODO: Make responsive
                       return DownloadLayout(
                         storeDirectory:
                             context.select<RegionSelectionProvider, FMTCStore?>(

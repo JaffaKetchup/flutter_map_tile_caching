@@ -50,7 +50,7 @@ class FMTCTileProviderSettings {
   /// To access the existing settings, if any, get [instance].
   factory FMTCTileProviderSettings({
     CacheBehavior behavior = CacheBehavior.cacheFirst,
-    bool fallbackToAlternativeStore = false,
+    bool fallbackToAlternativeStore = true,
     Duration cachedValidDuration = const Duration(days: 16),
     int maxStoreLength = 0,
     List<String> obscuredQueryParams = const [],
@@ -103,6 +103,8 @@ class FMTCTileProviderSettings {
   ///
   /// See details on [CacheBehavior] for information. Fallback to an alternative
   /// store is always the last-resort option before throwing an error.
+  ///
+  /// Defaults to `true`.
   final bool fallbackToAlternativeStore;
 
   /// The duration until a tile expires and needs to be fetched again when

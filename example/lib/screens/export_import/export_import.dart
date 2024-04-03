@@ -131,7 +131,7 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
                                 CircularProgressIndicator.adaptive(),
                                 SizedBox(height: 12),
                                 Text(
-                                  'Exporting your stores, tiles, and metadata',
+                                  'Exporting/importing your stores, tiles, and metadata',
                                   textAlign: TextAlign.center,
                                 ),
                                 Text(
@@ -205,7 +205,6 @@ class _ExportImportPopupState extends State<ExportImportPopup> {
                         ).import(
                           strategy: selectedConflictStrategy,
                         );
-                        unawaited(importResult.storesToStates.then(print));
                         final numImportedTiles = await importResult.complete;
                         stopwatch.stop();
                         if (context.mounted) {

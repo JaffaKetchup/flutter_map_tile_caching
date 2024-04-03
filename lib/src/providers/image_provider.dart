@@ -85,7 +85,6 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       return decode(await ImmutableBuffer.fromUint8List(bytes));
     }
 
-    // TODO: Test
     Future<Codec?> attemptFinishViaAltStore(String matcherUrl) async {
       if (provider.settings.fallbackToAlternativeStore) {
         final existingTileAltStore =

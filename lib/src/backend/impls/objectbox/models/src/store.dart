@@ -55,7 +55,7 @@ class ObjectBoxStore {
   /// Only supports string-string key-value pairs.
   String metadataJson;
 
-  @override
+  /*@override
   bool operator ==(Object other) =>
       identical(this, other) || (other is ObjectBoxStore && name == other.name);
 
@@ -63,5 +63,5 @@ class ObjectBoxStore {
   int get hashCode => name.hashCode;
 
   @override
-  String toString() => 'ObjectBoxStore(name: $name)';
+  String toString() => 'ObjectBoxStore(name: $name)';*/
 }

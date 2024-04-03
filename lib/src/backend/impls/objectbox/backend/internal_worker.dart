@@ -433,9 +433,10 @@ Future<void> _worker(
 
         final stores = root.box<ObjectBoxTile>();
 
+        final queryPart = stores.query(ObjectBoxTile_.url.equals(url));
         final query = storeName == null
-            ? stores.query(ObjectBoxTile_.url.equals(url)).build()
-            : (stores.query(ObjectBoxTile_.url.equals(url))
+            ? queryPart.build()
+            : (queryPart
                   ..linkMany(
                     ObjectBoxTile_.stores,
                     ObjectBoxStore_.name.equals(storeName),
@@ -1347,7 +1348,9 @@ Future<void> _worker(
                       }
 
                       final existingTileIsNewer = existingTile.lastModified
-                          .isAfter(importingTile.lastModified);
+                              .isAfter(importingTile.lastModified) ||
+                          existingTile.lastModified ==
+                              importingTile.lastModified;
 
                       final relations = {
                         ...existingTile.stores,
@@ -1366,41 +1369,35 @@ Future<void> _worker(
                             )..stores.addAll(relations),
                           );
 
-                      if (existingTileIsNewer) return null;
-
                       if (strategy == ImportConflictStrategy.merge) {
-                        print(relations);
-                        print(convertedRelatedStores.toSet());
-                        print(existingTile.stores.toSet());
-                        print(convertedRelatedStores
-                            .toSet()
-                            .difference(existingTile.stores.toSet()));
-                        for (final existingTileStore in existingTile.stores) {
-                          storesToUpdate[existingTileStore.name] =
-                              (storesToUpdate[existingTileStore.name] ??
-                                  existingTileStore)
-                                ..length
-                                ..size += -existingTile.bytes.lengthInBytes +
-                                    importingTile.bytes.lengthInBytes;
-                        }
                         for (final newConvertedRelatedStore
-                            in convertedRelatedStores
-                                .toSet()
-                                .difference(existingTile.stores.toSet())) {
+                            in convertedRelatedStores) {
+                          if (existingTile.stores
+                              .map((e) => e.name)
+                              .contains(newConvertedRelatedStore.name)) {
+                            continue;
+                          }
+
                           storesToUpdate[newConvertedRelatedStore.name] =
                               (storesToUpdate[newConvertedRelatedStore.name] ??
                                   newConvertedRelatedStore)
                                 ..length += 1
-                                ..size += importingTile.bytes.lengthInBytes;
+                                ..size += (existingTileIsNewer
+                                        ? existingTile
+                                        : importingTile)
+                                    .bytes
+                                    .lengthInBytes;
                         }
-                      } else {
-                        for (final existingTileStore in existingTile.stores) {
-                          storesToUpdate[existingTileStore.name] =
-                              (storesToUpdate[existingTileStore.name] ??
-                                  existingTileStore)
-                                ..size += -existingTile.bytes.lengthInBytes +
-                                    importingTile.bytes.lengthInBytes;
-                        }
+                      }
+
+                      if (existingTileIsNewer) return null;
+
+                      for (final existingTileStore in existingTile.stores) {
+                        storesToUpdate[existingTileStore.name] =
+                            (storesToUpdate[existingTileStore.name] ??
+                                existingTileStore)
+                              ..size += -existingTile.bytes.lengthInBytes +
+                                  importingTile.bytes.lengthInBytes;
                       }
 
                       rootDeltaSize += -existingTile.bytes.lengthInBytes +
