@@ -173,7 +173,6 @@ class DownloadManagement {
       _downloadManager,
       (
         sendPort: receivePort.sendPort,
-        rootDirectory: FMTCBackendAccess.internal.rootDirectory!.absolute.path,
         region: region,
         storeName: _storeDirectory.storeName,
         parallelThreads: parallelThreads,

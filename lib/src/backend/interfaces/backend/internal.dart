@@ -2,8 +2,9 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:meta/meta.dart';
 
 import '../../../../flutter_map_tile_caching.dart';
 import '../../export_internal.dart';
@@ -31,12 +32,6 @@ abstract interface class FMTCBackendInternal
 
   /// Generic description/name of this backend
   abstract final String friendlyIdentifier;
-
-  /// The filesystem directory in use
-  ///
-  /// May also be used as an indicator as to whether the root has been
-  /// initialised.
-  Directory? get rootDirectory;
 
   /// {@template fmtc.backend.realSize}
   /// Retrieve the actual total size of the database in KiBs
@@ -86,6 +81,8 @@ abstract interface class FMTCBackendInternal
   ///
   /// This operation cannot be undone! Ensure you confirm with the user that
   /// this action is expected.
+  ///
+  /// Does nothing if the store does not already exist.
   /// {@endtemplate}
   Future<void> deleteStore({
     required String storeName,
@@ -99,6 +96,8 @@ abstract interface class FMTCBackendInternal
   ///
   /// This operation cannot be undone! Ensure you confirm with the user that
   /// this action is expected.
+  ///
+  /// Does nothing if the store does not already exist.
   /// {@endtemplate}
   Future<void> resetStore({
     required String storeName,
@@ -173,6 +172,7 @@ abstract interface class FMTCBackendInternal
   ///  * `null` : if there was no existing tile
   ///  * `true` : if the tile itself could be deleted (it was orphaned)
   ///  * `false`: if the tile still belonged to at least one other store
+  @visibleForTesting
   Future<bool?> deleteTile({
     required String storeName,
     required String url,

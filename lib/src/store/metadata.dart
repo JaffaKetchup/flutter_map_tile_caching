@@ -33,7 +33,7 @@ class StoreMetadata {
           .setBulkMetadata(storeName: _storeName, kvs: kvs);
 
   /// {@macro fmtc.backend.removeMetadata}
-  Future<void> remove({
+  Future<String?> remove({
     required String key,
   }) =>
       FMTCBackendAccess.internal

@@ -7,7 +7,6 @@ Future<void> _singleDownloadThread(
   ({
     SendPort sendPort,
     String storeName,
-    String rootDirectory,
     TileLayer options,
     int maxBufferLength,
     bool skipExistingTiles,

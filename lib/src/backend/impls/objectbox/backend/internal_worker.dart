@@ -65,7 +65,7 @@ enum _WorkerCmdType {
 Future<void> _worker(
   ({
     SendPort sendPort,
-    Directory rootDirectory,
+    String rootDirectory,
     int maxDatabaseSize,
     String? macosApplicationGroup,
     RootIsolateToken rootIsolateToken,
@@ -85,7 +85,7 @@ Future<void> _worker(
   late final Store root;
   try {
     root = await openStore(
-      directory: input.rootDirectory.absolute.path,
+      directory: input.rootDirectory,
       maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
       macosApplicationGroup: input.macosApplicationGroup,
     );
@@ -238,7 +238,11 @@ Future<void> _worker(
         root.close();
 
         if (cmd.args['deleteRoot'] == true) {
-          input.rootDirectory.deleteSync(recursive: true);
+          if (input.rootDirectory.startsWith(Store.inMemoryPrefix)) {
+            Store.removeDbFiles(input.rootDirectory);
+          } else {
+            Directory(input.rootDirectory).deleteSync(recursive: true);
+          }
         }
 
         sendRes(id: cmd.id);
@@ -248,8 +252,8 @@ Future<void> _worker(
         sendRes(
           id: cmd.id,
           data: {
-            'size': Store.dbFileSize(input.rootDirectory.absolute.path) /
-                1024, // Convert to KiB
+            'size':
+                Store.dbFileSize(input.rootDirectory) / 1024, // Convert to KiB
           },
         );
       case _WorkerCmdType.rootSize:
@@ -318,7 +322,7 @@ Future<void> _worker(
                   size: 0,
                   hits: 0,
                   misses: 0,
-                  metadataJson: '',
+                  metadataJson: '{}',
                 ),
                 mode: PutMode.insert,
               );
@@ -465,6 +469,8 @@ Future<void> _worker(
       case _WorkerCmdType.writeTile:
         final storeName = cmd.args['storeName']! as String;
         final url = cmd.args['url']! as String;
+
+        // TODO: `null` `bytes` is never actually used. Do we need to keep it?
         final bytes = cmd.args['bytes'] as Uint8List?;
 
         final tiles = root.box<ObjectBoxTile>();
@@ -508,10 +514,6 @@ Future<void> _worker(
                     store
                       ..length += 1
                       ..size += existingTile.bytes.lengthInBytes,
-                  );
-                  updateRootStatistics(
-                    deltaLength: 1,
-                    deltaSize: existingTile.bytes.lengthInBytes,
                   );
                 }
               case (false, false): // Existing tile, update required
@@ -715,12 +717,12 @@ Future<void> _worker(
                 (throw StoreNotExists(storeName: storeName));
             query.close();
 
-            final Map<String, dynamic> json =
-                store.metadataJson == '' ? {} : jsonDecode(store.metadataJson);
-            json[key] = value;
-
             stores.put(
-              store..metadataJson = jsonEncode(json),
+              store
+                ..metadataJson = jsonEncode(
+                  (jsonDecode(store.metadataJson) as Map<String, dynamic>)
+                    ..[key] = value,
+                ),
               mode: PutMode.update,
             );
           },
@@ -743,13 +745,12 @@ Future<void> _worker(
                 (throw StoreNotExists(storeName: storeName));
             query.close();
 
-            final Map<String, dynamic> json =
-                store.metadataJson == '' ? {} : jsonDecode(store.metadataJson);
-            // ignore: cascade_invocations
-            json.addAll(kvs);
-
             stores.put(
-              store..metadataJson = jsonEncode(json),
+              store
+                ..metadataJson = jsonEncode(
+                  (jsonDecode(store.metadataJson) as Map<String, dynamic>)
+                    ..addAll(kvs),
+                ),
               mode: PutMode.update,
             );
           },
@@ -776,8 +777,8 @@ Future<void> _worker(
                 query.close();
 
                 final metadata =
-                    jsonDecode(store.metadataJson) as Map<String, String>;
-                final removedVal = metadata.remove(key);
+                    jsonDecode(store.metadataJson) as Map<String, dynamic>;
+                final removedVal = metadata.remove(key) as String?;
 
                 stores.put(
                   store..metadataJson = jsonEncode(metadata),
@@ -805,7 +806,7 @@ Future<void> _worker(
             query.close();
 
             stores.put(
-              store..metadataJson = jsonEncode(<String, String>{}),
+              store..metadataJson = '{}',
               mode: PutMode.update,
             );
           },
@@ -903,7 +904,7 @@ Future<void> _worker(
 
         final outputDir = path.dirname(outputPath);
 
-        if (outputDir == input.rootDirectory.absolute.path) {
+        if (path.equals(outputDir, input.rootDirectory)) {
           throw ExportInRootDirectoryForbidden();
         }
 
@@ -1028,8 +1029,7 @@ Future<void> _worker(
         final strategy = cmd.args['strategy'] as ImportConflictStrategy;
         final storesToImport = cmd.args['stores'] as List<String>?;
 
-        final importDir =
-            path.join(input.rootDirectory.absolute.path, 'import_tmp');
+        final importDir = path.join(input.rootDirectory, 'import_tmp');
         final importDirIO = Directory(importDir)..createSync();
 
         final importFile =
@@ -1437,8 +1437,7 @@ Future<void> _worker(
       case _WorkerCmdType.listImportableStores:
         final importPath = cmd.args['path']! as String;
 
-        final importDir =
-            path.join(input.rootDirectory.absolute.path, 'import_tmp');
+        final importDir = path.join(input.rootDirectory, 'import_tmp');
         final importDirIO = Directory(importDir)..createSync();
 
         final importFile =

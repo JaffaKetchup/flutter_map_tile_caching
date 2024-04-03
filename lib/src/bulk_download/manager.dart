@@ -6,7 +6,6 @@ part of '../../flutter_map_tile_caching.dart';
 Future<void> _downloadManager(
   ({
     SendPort sendPort,
-    String rootDirectory,
     DownloadableRegion region,
     String storeName,
     int parallelThreads,
@@ -189,7 +188,6 @@ Future<void> _downloadManager(
           (
             sendPort: downloadThreadReceivePort.sendPort,
             storeName: input.storeName,
-            rootDirectory: input.rootDirectory,
             options: input.region.options,
             maxBufferLength: threadBufferLength,
             skipExistingTiles: input.skipExistingTiles,

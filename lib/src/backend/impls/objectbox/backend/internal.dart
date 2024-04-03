@@ -18,10 +18,9 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   @override
   String get friendlyIdentifier => 'ObjectBox';
 
-  @override
-  Directory? rootDirectory;
-
   void get expectInitialised => _sendPort ?? (throw RootUnavailable());
+
+  late String rootDirectory;
 
   // Worker communication protocol storage
 
@@ -117,16 +116,21 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String? rootDirectory,
     required int maxDatabaseSize,
     required String? macosApplicationGroup,
+    required bool useInMemoryDatabase,
   }) async {
     if (_sendPort != null) throw RootAlreadyInitialised();
 
-    this.rootDirectory = await Directory(
-      path.join(
-        rootDirectory ??
-            (await getApplicationDocumentsDirectory()).absolute.path,
-        'fmtc',
-      ),
-    ).create(recursive: true);
+    if (useInMemoryDatabase) {
+      this.rootDirectory = Store.inMemoryPrefix + (rootDirectory ?? 'fmtc');
+    } else {
+      await Directory(
+        this.rootDirectory = path.join(
+          rootDirectory ??
+              (await getApplicationDocumentsDirectory()).absolute.path,
+          'fmtc',
+        ),
+      ).create(recursive: true);
+    }
 
     // Prepare to recieve `SendPort` from worker
     _workerResOneShot[0] = Completer();
@@ -200,7 +204,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       _worker,
       (
         sendPort: receivePort.sendPort,
-        rootDirectory: this.rootDirectory!,
+        rootDirectory: this.rootDirectory,
         maxDatabaseSize: maxDatabaseSize,
         macosApplicationGroup: macosApplicationGroup,
         rootIsolateToken: ServicesBinding.rootIsolateToken!,
@@ -389,7 +393,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String url,
   }) async =>
       (await _sendCmdOneShot(
-        type: _WorkerCmdType.deleteStore,
+        type: _WorkerCmdType.deleteTile,
         args: {'storeName': storeName, 'url': url},
       ))!['wasOrphan'];
 

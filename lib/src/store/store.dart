@@ -82,4 +82,7 @@ class FMTCStore {
 
   @override
   int get hashCode => storeName.hashCode;
+
+  @override
+  String toString() => 'FMTCStore(storeName: $storeName)';
 }

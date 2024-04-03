@@ -8,6 +8,7 @@ import 'dart:isolate';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -39,16 +40,20 @@ final class FMTCObjectBoxBackend implements FMTCBackend {
   /// specify the application group (of less than 20 chars). See
   /// [the ObjectBox docs](https://docs.objectbox.io/getting-started) for
   /// details.
+  ///
+  /// Avoid using [useInMemoryDatabase] outside of testing purposes.
   @override
   Future<void> initialise({
     String? rootDirectory,
     int maxDatabaseSize = 10000000,
     String? macosApplicationGroup,
+    @visibleForTesting bool useInMemoryDatabase = false,
   }) =>
       FMTCObjectBoxBackendInternal._instance.initialise(
         rootDirectory: rootDirectory,
         maxDatabaseSize: maxDatabaseSize,
         macosApplicationGroup: macosApplicationGroup,
+        useInMemoryDatabase: useInMemoryDatabase,
       );
 
   /// {@macro fmtc.backend.uninitialise}
