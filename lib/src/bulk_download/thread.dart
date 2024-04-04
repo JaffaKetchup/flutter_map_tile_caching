@@ -46,7 +46,7 @@ Future<void> _singleDownloadThread(
       httpClient.close();
 
       if (tileUrlsBuffer.isNotEmpty) {
-        await input.backend.htWriteTiles(
+        await input.backend.writeTiles(
           storeName: input.storeName,
           urls: tileUrlsBuffer,
           bytess: tileBytesBuffer,
@@ -135,7 +135,7 @@ Future<void> _singleDownloadThread(
 
     // Write tile directly to database or place in buffer queue
     if (input.maxBufferLength == 0) {
-      await input.backend.htWriteTile(
+      await input.backend.writeTile(
         storeName: input.storeName,
         url: matcherUrl,
         bytes: response.bodyBytes,
@@ -148,7 +148,7 @@ Future<void> _singleDownloadThread(
     // Write buffer to database if necessary
     final wasBufferReset = tileUrlsBuffer.length >= input.maxBufferLength;
     if (wasBufferReset) {
-      await input.backend.htWriteTiles(
+      await input.backend.writeTiles(
         storeName: input.storeName,
         urls: tileUrlsBuffer,
         bytess: tileBytesBuffer,

@@ -148,17 +148,10 @@ abstract interface class FMTCBackendInternal
 
   /// Create or update a tile (given a [url] and its [bytes]) in the specified
   /// store
-  ///
-  /// If the tile already existed, it will be added to the specified store.
-  /// Otherwise, [bytes] must be specified, and the tile will be created and
-  /// added.
-  ///
-  /// If [bytes] is provided and the tile already existed, it will be updated for
-  /// all stores.
   Future<void> writeTile({
     required String storeName,
     required String url,
-    required Uint8List? bytes,
+    required Uint8List bytes,
   });
 
   /// Remove the tile from the specified store, deleting it if was orphaned

@@ -1,66 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of 'backend.dart';
-
-typedef _IncomingCmd = ({
-  int id,
-  _WorkerCmdType type,
-  Map<String, dynamic> args
-});
-
-enum _WorkerCmdType {
-  initialise_, // Only valid as a request
-  destroy,
-  realSize,
-  rootSize,
-  rootLength,
-  listStores,
-  storeExists,
-  createStore,
-  resetStore,
-  renameStore,
-  deleteStore,
-  getStoreStats,
-  tileExistsInStore,
-  readTile,
-  readLatestTile,
-  writeTile,
-  deleteTile,
-  registerHitOrMiss,
-  removeOldestTilesAboveLimit,
-  removeTilesOlderThan,
-  readMetadata,
-  setMetadata,
-  setBulkMetadata,
-  removeMetadata,
-  resetMetadata,
-  listRecoverableRegions,
-  getRecoverableRegion,
-  startRecovery,
-  cancelRecovery,
-  watchRecovery(hasInternalStreamSub: true),
-  watchStores(hasInternalStreamSub: true),
-  exportStores,
-  importStores(hasInternalStreamSub: false),
-  listImportableStores,
-  cancelInternalStreamSub;
-
-  const _WorkerCmdType({this.hasInternalStreamSub});
-
-  /// Whether this command streams multiple results back
-  ///
-  /// If `true`, then this command does stream results, and it has an internal
-  /// [StreamSubscription] that should be cancelled (using
-  /// [cancelInternalStreamSub]) when it no longer needs to stream results.
-  ///
-  /// If `false`, then this command does stream results, but has no stream sub
-  /// to be cancelled.
-  ///
-  /// If `null`, then this command does not stream results, and just returns a
-  /// single result.
-  final bool? hasInternalStreamSub;
-}
+part of '../../backend.dart';
 
 Future<void> _worker(
   ({
@@ -232,9 +173,9 @@ Future<void> _worker(
 
   void mainHandler(_IncomingCmd cmd) {
     switch (cmd.type) {
-      case _WorkerCmdType.initialise_:
+      case _CmdType.initialise_:
         throw UnsupportedError('Invalid operation');
-      case _WorkerCmdType.destroy:
+      case _CmdType.destroy:
         root.close();
 
         if (cmd.args['deleteRoot'] == true) {
@@ -248,7 +189,7 @@ Future<void> _worker(
         sendRes(id: cmd.id);
 
         Isolate.exit();
-      case _WorkerCmdType.realSize:
+      case _CmdType.realSize:
         sendRes(
           id: cmd.id,
           data: {
@@ -256,17 +197,17 @@ Future<void> _worker(
                 Store.dbFileSize(input.rootDirectory) / 1024, // Convert to KiB
           },
         );
-      case _WorkerCmdType.rootSize:
+      case _CmdType.rootSize:
         sendRes(
           id: cmd.id,
           data: {'size': root.box<ObjectBoxRoot>().get(1)!.size / 1024},
         );
-      case _WorkerCmdType.rootLength:
+      case _CmdType.rootLength:
         sendRes(
           id: cmd.id,
           data: {'length': root.box<ObjectBoxRoot>().get(1)!.length},
         );
-      case _WorkerCmdType.listStores:
+      case _CmdType.listStores:
         final query = root
             .box<ObjectBoxStore>()
             .query()
@@ -276,7 +217,7 @@ Future<void> _worker(
         sendRes(id: cmd.id, data: {'stores': query.find()});
 
         query.close();
-      case _WorkerCmdType.storeExists:
+      case _CmdType.storeExists:
         final query = root
             .box<ObjectBoxStore>()
             .query(
@@ -287,7 +228,7 @@ Future<void> _worker(
         sendRes(id: cmd.id, data: {'exists': query.count() == 1});
 
         query.close();
-      case _WorkerCmdType.getStoreStats:
+      case _CmdType.getStoreStats:
         final storeName = cmd.args['storeName']! as String;
 
         final query = root
@@ -311,7 +252,7 @@ Future<void> _worker(
         );
 
         query.close();
-      case _WorkerCmdType.createStore:
+      case _CmdType.createStore:
         final storeName = cmd.args['storeName']! as String;
 
         try {
@@ -332,7 +273,7 @@ Future<void> _worker(
         }
 
         sendRes(id: cmd.id);
-      case _WorkerCmdType.resetStore:
+      case _CmdType.resetStore:
         final storeName = cmd.args['storeName']! as String;
 
         final tiles = root.box<ObjectBoxTile>();
@@ -369,7 +310,7 @@ Future<void> _worker(
         );
 
         sendRes(id: cmd.id);
-      case _WorkerCmdType.renameStore:
+      case _CmdType.renameStore:
         final currentStoreName = cmd.args['currentStoreName']! as String;
         final newStoreName = cmd.args['newStoreName']! as String;
 
@@ -390,7 +331,7 @@ Future<void> _worker(
         );
 
         sendRes(id: cmd.id);
-      case _WorkerCmdType.deleteStore:
+      case _CmdType.deleteStore:
         final storeName = cmd.args['storeName']! as String;
 
         final storesQuery = root
@@ -416,7 +357,7 @@ Future<void> _worker(
 
         storesQuery.close();
         tilesQuery.close();
-      case _WorkerCmdType.tileExistsInStore:
+      case _CmdType.tileExistsInStore:
         final storeName = cmd.args['storeName']! as String;
         final url = cmd.args['url']! as String;
 
@@ -431,7 +372,7 @@ Future<void> _worker(
         sendRes(id: cmd.id, data: {'exists': query.count() == 1});
 
         query.close();
-      case _WorkerCmdType.readTile:
+      case _CmdType.readTile:
         final url = cmd.args['url']! as String;
         final storeName = cmd.args['storeName'] as String?;
 
@@ -450,7 +391,7 @@ Future<void> _worker(
         sendRes(id: cmd.id, data: {'tile': query.findUnique()});
 
         query.close();
-      case _WorkerCmdType.readLatestTile:
+      case _CmdType.readLatestTile:
         final storeName = cmd.args['storeName']! as String;
 
         final query = (root
@@ -466,106 +407,20 @@ Future<void> _worker(
         sendRes(id: cmd.id, data: {'tile': query.findFirst()});
 
         query.close();
-      case _WorkerCmdType.writeTile:
+      case _CmdType.writeTile:
         final storeName = cmd.args['storeName']! as String;
         final url = cmd.args['url']! as String;
+        final bytes = cmd.args['bytes']! as Uint8List;
 
-        // TODO: `null` `bytes` is never actually used. Do we need to keep it?
-        final bytes = cmd.args['bytes'] as Uint8List?;
-
-        final tiles = root.box<ObjectBoxTile>();
-        final stores = root.box<ObjectBoxStore>();
-
-        final tilesQuery = tiles.query(ObjectBoxTile_.url.equals(url)).build();
-        final storeQuery =
-            stores.query(ObjectBoxStore_.name.equals(storeName)).build();
-
-        root.runInTransaction(
-          TxMode.write,
-          () {
-            final existingTile = tilesQuery.findUnique();
-
-            final store = storeQuery.findUnique() ??
-                (throw StoreNotExists(storeName: storeName));
-
-            switch ((existingTile == null, bytes == null)) {
-              case (true, false): // No existing tile
-                tiles.put(
-                  ObjectBoxTile(
-                    url: url,
-                    lastModified: DateTime.timestamp(),
-                    bytes: bytes!,
-                  )..stores.add(store),
-                );
-                stores.put(
-                  store
-                    ..length += 1
-                    ..size += bytes.lengthInBytes,
-                );
-                updateRootStatistics(
-                  deltaLength: 1,
-                  deltaSize: bytes.lengthInBytes,
-                );
-              case (false, true): // Existing tile, no update
-                // Only take action if it's not already belonging to the store
-                if (!existingTile!.stores.contains(store)) {
-                  tiles.put(existingTile..stores.add(store));
-                  stores.put(
-                    store
-                      ..length += 1
-                      ..size += existingTile.bytes.lengthInBytes,
-                  );
-                }
-              case (false, false): // Existing tile, update required
-                final storesToUpdate = <String, ObjectBoxStore>{};
-
-                // If tile exists in this store, just update size, otherwise
-                // length and size
-                // Also update size of all related stores
-                bool didContainAlready = false;
-
-                for (final relatedStore in existingTile!.stores) {
-                  if (relatedStore.name == storeName) didContainAlready = true;
-
-                  storesToUpdate[relatedStore.name] =
-                      (storesToUpdate[relatedStore.name] ?? relatedStore)
-                        ..size += -existingTile.bytes.lengthInBytes +
-                            bytes!.lengthInBytes;
-                }
-
-                updateRootStatistics(
-                  deltaSize:
-                      -existingTile.bytes.lengthInBytes + bytes!.lengthInBytes,
-                );
-
-                if (!didContainAlready) {
-                  storesToUpdate[storeName] = store
-                    ..length += 1
-                    ..size += bytes.lengthInBytes;
-                }
-
-                tiles.put(
-                  ObjectBoxTile(
-                    url: url,
-                    lastModified: DateTime.timestamp(),
-                    bytes: bytes,
-                  )..stores.addAll({store, ...existingTile.stores}),
-                );
-                stores.putMany(
-                  storesToUpdate.values.toList(),
-                  mode: PutMode.update,
-                );
-              case (true, true): // FMTC internal error
-                throw UnsupportedError('Unpossible.');
-            }
-          },
+        _sharedWriteSingleTile(
+          root: root,
+          storeName: storeName,
+          url: url,
+          bytes: bytes,
         );
 
         sendRes(id: cmd.id);
-
-        storeQuery.close();
-        tilesQuery.close();
-      case _WorkerCmdType.deleteTile:
+      case _CmdType.deleteTile:
         final storeName = cmd.args['storeName']! as String;
         final url = cmd.args['url']! as String;
 
@@ -589,7 +444,7 @@ Future<void> _worker(
 
         storesQuery.close();
         tilesQuery.close();
-      case _WorkerCmdType.registerHitOrMiss:
+      case _CmdType.registerHitOrMiss:
         final storeName = cmd.args['storeName']! as String;
         final hit = cmd.args['hit']! as bool;
 
@@ -614,7 +469,7 @@ Future<void> _worker(
         );
 
         sendRes(id: cmd.id);
-      case _WorkerCmdType.removeOldestTilesAboveLimit:
+      case _CmdType.removeOldestTilesAboveLimit:
         final storeName = cmd.args['storeName']! as String;
         final tilesLimit = cmd.args['tilesLimit']! as int;
 
@@ -654,7 +509,7 @@ Future<void> _worker(
 
         storeQuery.close();
         tilesQuery.close();
-      case _WorkerCmdType.removeTilesOlderThan:
+      case _CmdType.removeTilesOlderThan:
         final storeName = cmd.args['storeName']! as String;
         final expiry = cmd.args['expiry']! as DateTime;
 
@@ -680,7 +535,7 @@ Future<void> _worker(
         );
 
         tilesQuery.close();
-      case _WorkerCmdType.readMetadata:
+      case _CmdType.readMetadata:
         final storeName = cmd.args['storeName']! as String;
 
         final query = root
@@ -700,7 +555,7 @@ Future<void> _worker(
         );
 
         query.close();
-      case _WorkerCmdType.setMetadata:
+      case _CmdType.setMetadata:
         final storeName = cmd.args['storeName']! as String;
         final key = cmd.args['key']! as String;
         final value = cmd.args['value']! as String;
@@ -729,7 +584,7 @@ Future<void> _worker(
         );
 
         sendRes(id: cmd.id);
-      case _WorkerCmdType.setBulkMetadata:
+      case _CmdType.setBulkMetadata:
         final storeName = cmd.args['storeName']! as String;
         final kvs = cmd.args['kvs']! as Map<String, String>;
 
@@ -757,7 +612,7 @@ Future<void> _worker(
         );
 
         sendRes(id: cmd.id);
-      case _WorkerCmdType.removeMetadata:
+      case _CmdType.removeMetadata:
         final storeName = cmd.args['storeName']! as String;
         final key = cmd.args['key']! as String;
 
@@ -790,7 +645,7 @@ Future<void> _worker(
             ),
           },
         );
-      case _WorkerCmdType.resetMetadata:
+      case _CmdType.resetMetadata:
         final storeName = cmd.args['storeName']! as String;
 
         final stores = root.box<ObjectBoxStore>();
@@ -813,7 +668,7 @@ Future<void> _worker(
         );
 
         sendRes(id: cmd.id);
-      case _WorkerCmdType.listRecoverableRegions:
+      case _CmdType.listRecoverableRegions:
         sendRes(
           id: cmd.id,
           data: {
@@ -824,7 +679,7 @@ Future<void> _worker(
                 .toList(growable: false),
           },
         );
-      case _WorkerCmdType.getRecoverableRegion:
+      case _CmdType.getRecoverableRegion:
         final id = cmd.args['id']! as int;
 
         sendRes(
@@ -839,7 +694,7 @@ Future<void> _worker(
                 ?.toRegion(),
           },
         );
-      case _WorkerCmdType.startRecovery:
+      case _CmdType.startRecovery:
         final id = cmd.args['id']! as int;
         final storeName = cmd.args['storeName']! as String;
         final region = cmd.args['region']! as DownloadableRegion;
@@ -853,7 +708,7 @@ Future<void> _worker(
             );
 
         sendRes(id: cmd.id);
-      case _WorkerCmdType.cancelRecovery:
+      case _CmdType.cancelRecovery:
         final id = cmd.args['id']! as int;
 
         root
@@ -864,7 +719,7 @@ Future<void> _worker(
           ..close();
 
         sendRes(id: cmd.id);
-      case _WorkerCmdType.watchRecovery:
+      case _CmdType.watchRecovery:
         final triggerImmediately = cmd.args['triggerImmediately']! as bool;
 
         streamedOutputSubscriptions[cmd.id] = root
@@ -872,7 +727,7 @@ Future<void> _worker(
             .query()
             .watch(triggerImmediately: triggerImmediately)
             .listen((_) => sendRes(id: cmd.id, data: {'expectStream': true}));
-      case _WorkerCmdType.watchStores:
+      case _CmdType.watchStores:
         final storeNames = cmd.args['storeNames']! as List<String>;
         final triggerImmediately = cmd.args['triggerImmediately']! as bool;
 
@@ -885,7 +740,7 @@ Future<void> _worker(
             )
             .watch(triggerImmediately: triggerImmediately)
             .listen((_) => sendRes(id: cmd.id, data: {'expectStream': true}));
-      case _WorkerCmdType.cancelInternalStreamSub:
+      case _CmdType.cancelInternalStreamSub:
         final id = cmd.args['id']! as int;
 
         if (streamedOutputSubscriptions[id] == null) {
@@ -898,7 +753,7 @@ Future<void> _worker(
         streamedOutputSubscriptions.remove(id);
 
         sendRes(id: cmd.id);
-      case _WorkerCmdType.exportStores:
+      case _CmdType.exportStores:
         final storeNames = cmd.args['storeNames']! as List<String>;
         final outputPath = cmd.args['outputPath']! as String;
 
@@ -1024,7 +879,7 @@ Future<void> _worker(
             );
           },
         );
-      case _WorkerCmdType.importStores:
+      case _CmdType.importStores:
         final importPath = cmd.args['path']! as String;
         final strategy = cmd.args['strategy'] as ImportConflictStrategy;
         final storesToImport = cmd.args['stores'] as List<String>?;
@@ -1434,7 +1289,7 @@ Future<void> _worker(
                 });
           },
         );
-      case _WorkerCmdType.listImportableStores:
+      case _CmdType.listImportableStores:
         final importPath = cmd.args['path']! as String;
 
         final importDir = path.join(input.rootDirectory, 'import_tmp');

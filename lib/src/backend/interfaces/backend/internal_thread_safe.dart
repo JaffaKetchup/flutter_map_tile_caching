@@ -46,10 +46,8 @@ abstract interface class FMTCBackendInternalThreadSafe {
   /// Create or update a tile (given a [url] and its [bytes]) in the specified
   /// store
   ///
-  /// Logic is simpler than the respective [FMTCBackendInternal.writeTile]
-  /// method, and designed for high throughput: existing tiles will always be
-  /// overwritten (if they exist).
-  FutureOr<void> htWriteTile({
+  /// May share logic with [FMTCBackendInternal.writeTile].
+  FutureOr<void> writeTile({
     required String storeName,
     required String url,
     required Uint8List bytes,
@@ -58,9 +56,9 @@ abstract interface class FMTCBackendInternalThreadSafe {
   /// Create or update multiple tiles (given given their respective [urls] and
   /// [bytess]) in the specified store
   ///
-  /// Designed for high throughput: existing tiles will always be overwritten
-  /// (if they exist).
-  FutureOr<void> htWriteTiles({
+  /// Implementation should avoid iterating [writeTile], as this should be
+  /// targeted for high throughput and efficiency.
+  FutureOr<void> writeTiles({
     required String storeName,
     required List<String> urls,
     required List<Uint8List> bytess,
