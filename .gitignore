@@ -1,5 +1,6 @@
 # Custom
 local/
+test/lib/
 
 # Miscellaneous
 *.class

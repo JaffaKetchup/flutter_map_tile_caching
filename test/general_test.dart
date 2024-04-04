@@ -9,7 +9,10 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-// bash <(curl -s https://raw.githubusercontent.com/objectbox/objectbox-dart/main/install.sh)
+// To install ObjectBox dependencies:
+//  * use bash terminal
+//  * cd to test/
+//  * run `bash <(curl -s https://raw.githubusercontent.com/objectbox/objectbox-dart/main/install.sh) --quiet`
 
 void main() {
   setUpAll(() {

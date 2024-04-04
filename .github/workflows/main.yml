@@ -63,6 +63,8 @@ jobs:
               channel: "beta"
           - name: Get Dependencies
             run: flutter pub get
+          - name: Install ObjectBox Libs For Testing
+            run: cd test && bash <(curl -s https://raw.githubusercontent.com/objectbox/objectbox-dart/main/install.sh) --quiet
           - name: Run Tests
             run: flutter test -r expanded
 
