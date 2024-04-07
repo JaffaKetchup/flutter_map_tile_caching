@@ -11,6 +11,7 @@
 library flutter_map_tile_caching;
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math' as math;

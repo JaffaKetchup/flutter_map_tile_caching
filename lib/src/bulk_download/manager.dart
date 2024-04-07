@@ -18,15 +18,21 @@ Future<void> _downloadManager(
     FMTCBackendInternalThreadSafe backend,
   }) input,
 ) async {
-  // Precalculate shared inputs for all threads
+  // Precalculate how large the tile buffers should be for each thread
   final threadBufferLength =
       (input.maxBufferLength / input.parallelThreads).floor();
+
+  // Generate appropriate headers for network requests
+  final inputHeaders = input.region.options.tileProvider.headers;
   final headers = {
-    ...input.region.options.tileProvider.headers,
-    'User-Agent': input.region.options.tileProvider.headers['User-Agent'] ==
-            null
-        ? 'flutter_map_tile_caching for flutter_map (unknown)'
-        : 'flutter_map_tile_caching for ${input.region.options.tileProvider.headers['User-Agent']}',
+    ...inputHeaders,
+    'User-Agent': inputHeaders['User-Agent'] == null
+        ? 'flutter_map (unknown)'
+        : 'flutter_map + FMTC ${inputHeaders['User-Agent']!.replaceRange(
+            0,
+            inputHeaders['User-Agent']!.length.clamp(0, 12),
+            '',
+          )}',
   };
 
   // Count number of tiles

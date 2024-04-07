@@ -15,18 +15,18 @@ import '../../flutter_map_tile_caching.dart';
 import '../backend/export_internal.dart';
 import '../misc/obscure_query_params.dart';
 
-/// A specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
+/// A specialised [ImageProvider] that uses FMTC internals to enable browse
+/// caching
 class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
-  /// Create a specialised [ImageProvider] dedicated to 'flutter_map_tile_caching'
+  /// Create a specialised [ImageProvider] that uses FMTC internals to enable
+  /// browse caching
   FMTCImageProvider({
-    required this.storeName,
     required this.provider,
     required this.options,
     required this.coords,
+    required this.startedLoading,
+    required this.finishedLoadingBytes,
   });
-
-  /// The name of the store associated with this provider
-  final String storeName;
 
   /// An instance of the [FMTCTileProvider] in use
   final FMTCTileProvider provider;
@@ -36,6 +36,18 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
   /// The coordinates of the tile to be fetched
   final TileCoordinates coords;
+
+  /// Function invoked when the image starts loading (not from cache)
+  ///
+  /// Used with [finishedLoadingBytes] to safely dispose of the `httpClient` only
+  /// after all tiles have loaded.
+  final void Function() startedLoading;
+
+  /// Function invoked when the image completes loading bytes from the network
+  ///
+  /// Used with [finishedLoadingBytes] to safely dispose of the `httpClient` only
+  /// after all tiles have loaded.
+  final void Function() finishedLoadingBytes;
 
   @override
   ImageStreamCompleter loadImage(
@@ -49,7 +61,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       scale: 1,
       debugLabel: coords.toString(),
       informationCollector: () => [
-        DiagnosticsProperty('Store name', storeName),
+        DiagnosticsProperty('Store name', provider.storeName),
         DiagnosticsProperty('Tile coordinates', coords),
         DiagnosticsProperty('Current provider', key),
       ],
@@ -64,7 +76,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     Future<Never> finishWithError(FMTCBrowsingError err) async {
       scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
       unawaited(chunkEvents.close());
-      await evict();
+      finishedLoadingBytes();
 
       provider.settings.errorHandler?.call(err);
       throw err;
@@ -76,11 +88,11 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     }) async {
       scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
       unawaited(chunkEvents.close());
-      await evict();
+      finishedLoadingBytes();
 
       unawaited(
         FMTCBackendAccess.internal
-            .registerHitOrMiss(storeName: storeName, hit: cacheHit),
+            .registerHitOrMiss(storeName: provider.storeName, hit: cacheHit),
       );
       return decode(await ImmutableBuffer.fromUint8List(bytes));
     }
@@ -98,6 +110,8 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
       return null;
     }
 
+    startedLoading();
+
     final networkUrl = provider.getTileUrl(coords, options);
     final matcherUrl = obscureQueryParams(
       url: networkUrl,
@@ -106,7 +120,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
 
     final existingTile = await FMTCBackendAccess.internal.readTile(
       url: matcherUrl,
-      storeName: storeName,
+      storeName: provider.storeName,
     );
 
     final needsCreating = existingTile == null;
@@ -241,7 +255,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     // Cache the tile retrieved from the network response
     unawaited(
       FMTCBackendAccess.internal.writeTile(
-        storeName: storeName,
+        storeName: provider.storeName,
         url: matcherUrl,
         bytes: responseBytes,
       ),
@@ -251,7 +265,7 @@ class FMTCImageProvider extends ImageProvider<FMTCImageProvider> {
     if (needsCreating && provider.settings.maxStoreLength != 0) {
       unawaited(
         FMTCBackendAccess.internal.removeOldestTilesAboveLimit(
-          storeName: storeName,
+          storeName: provider.storeName,
           tilesLimit: provider.settings.maxStoreLength,
         ),
       );

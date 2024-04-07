@@ -57,8 +57,7 @@ class FMTCStore {
   /// background downloading functionality.
   DownloadManagement get download => DownloadManagement._(this);
 
-  /// Get the [TileProvider] suitable to connect the [TileLayer] to FMTC's
-  /// internals
+  /// Generate a [TileProvider] that connects to FMTC internals
   ///
   /// [settings] defaults to the current ambient
   /// [FMTCTileProviderSettings.instance], which defaults to the initial
@@ -68,12 +67,7 @@ class FMTCStore {
     Map<String, String>? headers,
     http.Client? httpClient,
   }) =>
-      FMTCTileProvider._(
-        this,
-        settings: settings,
-        headers: headers ?? {},
-        httpClient: httpClient,
-      );
+      FMTCTileProvider._(storeName, settings, headers, httpClient);
 
   @override
   bool operator ==(Object other) =>
