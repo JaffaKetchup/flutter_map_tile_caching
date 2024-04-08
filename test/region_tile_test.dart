@@ -92,7 +92,7 @@ void main() {
   group(
     'Circle Region',
     () {
-      final circleRegion = CircleRegion(const LatLng(0, 0), 200)
+      final circleRegion = const CircleRegion(LatLng(0, 0), 200)
           .toDownloadable(minZoom: 1, maxZoom: 15, options: TileLayer());
 
       test(
@@ -137,8 +137,8 @@ void main() {
   group(
     'Line Region',
     () {
-      final lineRegion = LineRegion(
-        [const LatLng(-1, -1), const LatLng(1, 1), const LatLng(1, -1)],
+      final lineRegion = const LineRegion(
+        [LatLng(-1, -1), LatLng(1, 1), LatLng(1, -1)],
         5000,
       ).toDownloadable(minZoom: 1, maxZoom: 15, options: TileLayer());
 
@@ -184,20 +184,20 @@ void main() {
   group(
     'Custom Polygon Region',
     () {
-      final customPolygonRegion1 = CustomPolygonRegion([
-        const LatLng(51.45818683312154, -0.9674646220840917),
-        const LatLng(51.55859639937614, -0.9185366064186982),
-        const LatLng(51.476641197796724, -0.7494743298246318),
-        const LatLng(51.56029831737391, -0.5322770067805148),
-        const LatLng(51.235701626195365, -0.5746290119276093),
-        const LatLng(51.38781341753136, -0.6779891095601829),
+      final customPolygonRegion1 = const CustomPolygonRegion([
+        LatLng(51.45818683312154, -0.9674646220840917),
+        LatLng(51.55859639937614, -0.9185366064186982),
+        LatLng(51.476641197796724, -0.7494743298246318),
+        LatLng(51.56029831737391, -0.5322770067805148),
+        LatLng(51.235701626195365, -0.5746290119276093),
+        LatLng(51.38781341753136, -0.6779891095601829),
       ]).toDownloadable(minZoom: 1, maxZoom: 17, options: TileLayer());
 
-      final customPolygonRegion2 = CustomPolygonRegion([
-        const LatLng(-1, -1),
-        const LatLng(1, -1),
-        const LatLng(1, 1),
-        const LatLng(-1, 1),
+      final customPolygonRegion2 = const CustomPolygonRegion([
+        LatLng(-1, -1),
+        LatLng(1, -1),
+        LatLng(1, 1),
+        LatLng(-1, 1),
       ]).toDownloadable(minZoom: 1, maxZoom: 17, options: TileLayer());
 
       test(

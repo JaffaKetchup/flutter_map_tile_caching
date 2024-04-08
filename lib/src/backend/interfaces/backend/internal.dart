@@ -180,12 +180,15 @@ abstract interface class FMTCBackendInternal
   /// Remove tiles in excess of the specified limit from the specified store,
   /// oldest first
   ///
-  /// May internally debounce, as this is a potentially expensive operation that
-  /// is likely to have no effect. When an invocation has been debounced, this
-  /// method will return `-1`.
+  /// Should internally debounce, as this is a repeatedly invoked & potentially
+  /// expensive operation, that will have no effect when the number of tiles in
+  /// the store is below the limit.
   ///
   /// Returns the number of tiles that were actually deleted (they were
-  /// orphaned). See [deleteTile] for more information about orphan tiles.
+  /// orphaned (see [deleteTile] for more info)).
+  ///
+  /// Throws [RootUnavailable] if the root is uninitialised whilst the
+  /// debouncing mechanism is running.
   Future<int> removeOldestTilesAboveLimit({
     required String storeName,
     required int tilesLimit,

@@ -16,7 +16,7 @@ class CircleRegion extends BaseRegion {
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
   ///  - [Widget] layer to be placed in a map: [toDrawable]
   ///  - list of [LatLng]s forming the outline: [toOutline]
-  CircleRegion(this.center, this.radius, {super.name}) : super();
+  const CircleRegion(this.center, this.radius);
 
   /// Center coordinate
   final LatLng center;
@@ -85,9 +85,8 @@ class CircleRegion extends BaseRegion {
       identical(this, other) ||
       (other is CircleRegion &&
           other.center == center &&
-          other.radius == radius &&
-          super == other);
+          other.radius == radius);
 
   @override
-  int get hashCode => Object.hash(center, radius, super.hashCode);
+  int get hashCode => Object.hash(center, radius);
 }

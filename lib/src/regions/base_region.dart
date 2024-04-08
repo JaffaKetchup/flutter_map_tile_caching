@@ -14,6 +14,8 @@ part of '../../flutter_map_tile_caching.dart';
 ///  - [RectangleRegion]
 ///  - [CircleRegion]
 ///  - [LineRegion]
+///  - [CustomPolygonRegion]
+@immutable
 sealed class BaseRegion {
   /// Create a geographical region that forms a particular shape
   ///
@@ -26,23 +28,8 @@ sealed class BaseRegion {
   ///  - [RectangleRegion]
   ///  - [CircleRegion]
   ///  - [LineRegion]
-  BaseRegion({required String? name})
-      : name = (name?.isEmpty ?? false)
-            ? throw ArgumentError.value(name, 'name', 'Must not be empty')
-            : name;
-
-  /// The user friendly name for the region
-  ///
-  /// This is used within the recovery system, as well as to delete a particular
-  /// downloaded region within a store.
-  ///
-  /// If `null`, this region will have no name. If specified, this must not be
-  /// empty.
-  ///
-  /// _This property is currently redundant, but usage is planned in future
-  /// versions._
-  @experimental
-  final String? name;
+  ///  - [CustomPolygonRegion]
+  const BaseRegion();
 
   /// Output a value of type [T] dependent on `this` and its type
   T when<T>({
@@ -84,13 +71,10 @@ sealed class BaseRegion {
   Iterable<LatLng> toOutline();
 
   @override
-  @mustCallSuper
   @mustBeOverridden
-  bool operator ==(Object other) =>
-      identical(this, other) || (other is BaseRegion && other.name == name);
+  bool operator ==(Object other);
 
   @override
-  @mustCallSuper
   @mustBeOverridden
-  int get hashCode => name.hashCode;
+  int get hashCode;
 }

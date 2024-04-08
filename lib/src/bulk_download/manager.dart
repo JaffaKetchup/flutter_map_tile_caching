@@ -72,7 +72,7 @@ Future<void> _downloadManager(
   }
 
   // Setup tile generator isolate
-  final tilereceivePort = ReceivePort();
+  final tileReceivePort = ReceivePort();
   final tileIsolate = await Isolate.spawn(
     input.region.when(
       rectangle: (_) => TileGenerators.rectangleTiles,
@@ -80,11 +80,11 @@ Future<void> _downloadManager(
       line: (_) => TileGenerators.lineTiles,
       customPolygon: (_) => TileGenerators.customPolygonTiles,
     ),
-    (sendPort: tilereceivePort.sendPort, region: input.region),
-    onExit: tilereceivePort.sendPort,
+    (sendPort: tileReceivePort.sendPort, region: input.region),
+    onExit: tileReceivePort.sendPort,
     debugName: '[FMTC] Tile Coords Generator Thread',
   );
-  final rawTileStream = tilereceivePort.skip(input.region.start).take(
+  final rawTileStream = tileReceivePort.skip(input.region.start).take(
         input.region.end == null
             ? largestInt
             : (input.region.end! - input.region.start),

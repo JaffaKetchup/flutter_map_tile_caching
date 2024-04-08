@@ -16,7 +16,7 @@ class CustomPolygonRegion extends BaseRegion {
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
   ///  - [Widget] layer to be placed in a map: [toDrawable]
   ///  - list of [LatLng]s forming the outline: [toOutline]
-  CustomPolygonRegion(this.outline, {super.name}) : super();
+  const CustomPolygonRegion(this.outline);
 
   /// The outline coordinates
   final List<LatLng> outline;
@@ -72,10 +72,8 @@ class CustomPolygonRegion extends BaseRegion {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CustomPolygonRegion &&
-          other.outline == outline &&
-          super == other);
+      (other is CustomPolygonRegion && listEquals(outline, other.outline));
 
   @override
-  int get hashCode => Object.hash(outline, super.hashCode);
+  int get hashCode => outline.hashCode;
 }

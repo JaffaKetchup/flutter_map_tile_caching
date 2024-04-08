@@ -18,7 +18,7 @@ class RectangleRegion extends BaseRegion {
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
   ///  - [Widget] layer to be placed in a map: [toDrawable]
   ///  - list of [LatLng]s forming the outline: [toOutline]
-  RectangleRegion(this.bounds, {super.name}) : super();
+  const RectangleRegion(this.bounds);
 
   /// The coordinate bounds
   final LatLngBounds bounds;
@@ -75,8 +75,8 @@ class RectangleRegion extends BaseRegion {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is RectangleRegion && other.bounds == bounds && super == other);
+      (other is RectangleRegion && other.bounds == bounds);
 
   @override
-  int get hashCode => Object.hash(bounds, super.hashCode);
+  int get hashCode => bounds.hashCode;
 }

@@ -16,7 +16,7 @@ class LineRegion extends BaseRegion {
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
   ///  - [Widget] layer to be placed in a map: [toDrawable]
   ///  - list of [LatLng]s forming the outline: [LineRegion.toOutlines]
-  LineRegion(this.line, this.radius, {super.name}) : super();
+  const LineRegion(this.line, this.radius);
 
   /// The center line defined by a list of coordinates
   final List<LatLng> line;
@@ -157,11 +157,9 @@ class LineRegion extends BaseRegion {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is LineRegion &&
-          other.line == line &&
-          listEquals(other.line, line) &&
           other.radius == radius &&
-          super == other);
+          listEquals(line, other.line));
 
   @override
-  int get hashCode => Object.hash(line, radius, super.hashCode);
+  int get hashCode => Object.hash(line, radius);
 }

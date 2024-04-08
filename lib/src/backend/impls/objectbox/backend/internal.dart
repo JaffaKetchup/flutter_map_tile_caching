@@ -35,6 +35,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
   Timer? _rotalDebouncer;
   String? _rotalStore;
+  Completer<int>? _rotalResultCompleter;
 
   // Define communicators
 
@@ -174,19 +175,20 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
           return;
         }
 
+        final isStreamedResult = evt.data?['expectStream'] == true;
+
         // Handle errors
-        final err = evt.data?['error'];
-        if (err != null) {
-          if (evt.data?['expectStream'] == true) {
-            _workerResStreamed[evt.id]?.addError(err, evt.data!['stackTrace']);
+        if (evt.data?['error'] case final err?) {
+          final stackTrace = evt.data!['stackTrace'];
+          if (isStreamedResult) {
+            _workerResStreamed[evt.id]?.addError(err, stackTrace);
           } else {
-            _workerResOneShot[evt.id]!
-                .completeError(err, evt.data!['stackTrace']);
+            _workerResOneShot[evt.id]!.completeError(err, stackTrace);
           }
           return;
         }
 
-        if (evt.data?['expectStream'] == true) {
+        if (isStreamedResult) {
           // May be `null` if cmd was streamed result, but has no way to prevent
           // future results even after the listener has stopped
           //
@@ -217,11 +219,10 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     final initResult = await workerInitialRes;
 
     // Check whether initialisation was successful
-    if (initResult.storeRef != null) {
+    if (initResult.storeRef case final storeRef?) {
       FMTCBackendAccess.internal = this;
-      FMTCBackendAccessThreadSafe.internal = _ObjectBoxBackendThreadSafeImpl._(
-        storeReference: initResult.storeRef!,
-      );
+      FMTCBackendAccessThreadSafe.internal =
+          _ObjectBoxBackendThreadSafeImpl._(storeReference: storeRef);
     } else {
       Error.throwWithStackTrace(initResult.err!, initResult.stackTrace!);
     }
@@ -266,6 +267,8 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     _rotalDebouncer?.cancel();
     _rotalDebouncer = null;
     _rotalStore = null;
+    _rotalResultCompleter?.completeError(RootUnavailable());
+    _rotalResultCompleter = null;
 
     FMTCBackendAccess.internal = null;
     FMTCBackendAccessThreadSafe.internal = null;
@@ -412,39 +415,39 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String storeName,
     required int tilesLimit,
   }) async {
-    const type = _CmdType.removeOldestTilesAboveLimit;
-    final args = {'storeName': storeName, 'tilesLimit': tilesLimit};
+    // By sharing a single completer, all invocations of this method during the
+    // debounce period will return the same result at the same time
+    if (_rotalResultCompleter?.isCompleted ?? true) {
+      _rotalResultCompleter = Completer<int>();
+    }
+    void sendCmdAndComplete() => _rotalResultCompleter!.complete(
+          _sendCmdOneShot(
+            type: _CmdType.removeOldestTilesAboveLimit,
+            args: {'storeName': storeName, 'tilesLimit': tilesLimit},
+          ).then((v) => v!['numOrphans']),
+        );
 
-    // Attempts to avoid flooding worker with requests to delete oldest tile,
-    // and 'batches' them instead
-
+    // If the store has changed, failing to reset the batch/queue will mean
+    // tiles are removed from the wrong store
     if (_rotalStore != storeName) {
-      // If the store has changed, failing to reset the batch/queue will mean
-      // tiles are removed from the wrong store
       _rotalStore = storeName;
       if (_rotalDebouncer?.isActive ?? false) {
         _rotalDebouncer!.cancel();
-        return (await _sendCmdOneShot(type: type, args: args))!['numOrphans'];
+        sendCmdAndComplete();
+        return _rotalResultCompleter!.future;
       }
     }
 
-    if (_rotalDebouncer?.isActive ?? false) {
-      _rotalDebouncer!.cancel();
-      _rotalDebouncer = Timer(
-        const Duration(milliseconds: 500),
-        () async =>
-            (await _sendCmdOneShot(type: type, args: args))!['numOrphans'],
-      );
-      return -1;
-    }
-
+    // If the timer is already running, debouncing is required: cancel the
+    // current timer, and start a new one with a shorter timeout
+    final isAlreadyActive = _rotalDebouncer?.isActive ?? false;
+    if (isAlreadyActive) _rotalDebouncer!.cancel();
     _rotalDebouncer = Timer(
-      const Duration(seconds: 1),
-      () async =>
-          (await _sendCmdOneShot(type: type, args: args))!['numOrphans'],
+      Duration(milliseconds: isAlreadyActive ? 500 : 1000),
+      sendCmdAndComplete,
     );
 
-    return -1;
+    return _rotalResultCompleter!.future;
   }
 
   @override
