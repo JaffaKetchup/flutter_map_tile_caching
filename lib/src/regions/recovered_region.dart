@@ -36,43 +36,36 @@ class RecoveredRegion {
   });
 
   /// A unique ID created for every bulk download operation
-  ///
-  /// Not actually used when converting to [DownloadableRegion].
   final int id;
 
-  /// The store name originally associated with this download.
-  ///
-  /// Not actually used when converting to [DownloadableRegion].
+  /// The store name originally associated with this download
   final String storeName;
 
   /// The time at which this recovery was started
-  ///
-  /// Not actually used when converting to [DownloadableRegion].
   final DateTime time;
 
-  /// The minimum zoom level to fetch tiles for
+  /// Corresponds to [DownloadableRegion.minZoom]
   final int minZoom;
 
-  /// The maximum zoom level to fetch tiles for
+  /// Corresponds to [DownloadableRegion.maxZoom]
   final int maxZoom;
 
-  /// Optionally skip past a number of tiles 'at the start' of a region
+  ///Corresponds to [DownloadableRegion.start]
   final int start;
 
-  /// Optionally skip a number of tiles 'at the end' of a region
+  /// Corresponds to [DownloadableRegion.end]
   final int? end;
 
-  /// The bounds for a rectangular region
+  /// Corresponds to [RectangleRegion.bounds]
   final LatLngBounds? bounds;
 
-  /// The line making a line-based region or the outline making a custom polygon
-  /// region
+  /// Corrresponds to [LineRegion.line] & [CustomPolygonRegion.outline]
   final List<LatLng>? line;
 
-  /// The center of a circular region
+  /// Corrresponds to [CircleRegion.center]
   final LatLng? center;
 
-  /// The radius of a circular region
+  /// Corrresponds to [LineRegion.radius] & [CircleRegion.radius]
   final double? radius;
 
   /// Convert this region into a [BaseRegion]

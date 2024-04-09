@@ -46,9 +46,9 @@ class _AppContainer extends StatelessWidget {
       textTheme: GoogleFonts.ubuntuTextTheme(ThemeData.dark().textTheme),
       colorSchemeSeed: Colors.red,
       switchTheme: SwitchThemeData(
-        thumbIcon: MaterialStateProperty.resolveWith(
+        thumbIcon: WidgetStateProperty.resolveWith(
           (states) => Icon(
-            states.contains(MaterialState.selected) ? Icons.check : Icons.close,
+            states.contains(WidgetState.selected) ? Icons.check : Icons.close,
           ),
         ),
       ),

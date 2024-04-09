@@ -90,8 +90,7 @@ class RegionShape extends StatelessWidget {
                 isFilled: true,
                 borderColor: Colors.black,
                 borderStrokeWidth: 2,
-                color:
-                    Theme.of(context).colorScheme.background.withOpacity(0.5),
+                color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
               ),
             ],
           );

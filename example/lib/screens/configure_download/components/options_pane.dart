@@ -25,7 +25,7 @@ class OptionsPane extends StatelessWidget {
           const SizedBox.square(dimension: 4),
           DecoratedBox(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Padding(

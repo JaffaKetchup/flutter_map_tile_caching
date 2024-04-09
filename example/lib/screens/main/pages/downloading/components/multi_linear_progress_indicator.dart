@@ -43,11 +43,11 @@ class _MulitLinearProgressIndicatorState
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.background,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: widget.radius ??
                             BorderRadius.circular(widget.height / 2),
                         border: Border.all(
-                          color: Theme.of(context).colorScheme.onBackground,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       padding: EdgeInsets.symmetric(

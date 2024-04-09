@@ -33,7 +33,7 @@ class DownloadProgressIndicator extends StatelessWidget {
               child: CustomPaint(
                 painter: BubbleArrowIndicator(
                   borderRadius: BorderRadius.circular(12),
-                  color: Theme.of(context).colorScheme.background,
+                  color: Theme.of(context).colorScheme.surface,
                 ),
                 child: child,
               ),
@@ -49,7 +49,7 @@ class DownloadProgressIndicator extends StatelessWidget {
                 painter: SideIndicatorPainter(
                   startRadius: const Radius.circular(8),
                   endRadius: const Radius.circular(25),
-                  color: Theme.of(context).colorScheme.background,
+                  color: Theme.of(context).colorScheme.surface,
                 ),
                 child: Padding(
                   padding: const EdgeInsets.only(left: 20),

@@ -51,7 +51,7 @@ class _PrimaryPane extends StatelessWidget {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.background,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(1028),
                 ),
                 padding: const EdgeInsets.all(12),
@@ -95,7 +95,7 @@ class _PrimaryPane extends StatelessWidget {
               const SizedBox.square(dimension: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.background,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(1028),
                 ),
                 padding: const EdgeInsets.all(12),
@@ -135,7 +135,7 @@ class _PrimaryPane extends StatelessWidget {
               const SizedBox.square(dimension: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.background,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(1028),
                 ),
                 padding: const EdgeInsets.all(12),

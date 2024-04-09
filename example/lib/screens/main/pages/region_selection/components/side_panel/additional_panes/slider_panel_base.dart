@@ -41,7 +41,7 @@ class _SliderPanelBase extends StatelessWidget {
                       ? constraints.maxHeight
                       : null,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.background,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(1028),
               ),
               padding: layoutDirection == Axis.vertical

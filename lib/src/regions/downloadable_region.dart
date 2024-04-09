@@ -18,7 +18,12 @@ class DownloadableRegion<R extends BaseRegion> {
   }) {
     if (minZoom > maxZoom) {
       throw ArgumentError(
-        '`minZoom` should be less than or equal to `maxZoom`',
+        '`minZoom` must be less than or equal to `maxZoom`',
+      );
+    }
+    if (start < 0 || start > (end ?? 0)) {
+      throw ArgumentError(
+        '`start` must be greater or equal to 0 and less than or equal to `end`',
       );
     }
   }

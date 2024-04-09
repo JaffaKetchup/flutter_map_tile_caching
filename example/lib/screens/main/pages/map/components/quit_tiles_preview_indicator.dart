@@ -46,7 +46,7 @@ class QuitTilesPreviewIndicator extends StatelessWidget {
           painter: SideIndicatorPainter(
             startRadius: const Radius.circular(8),
             endRadius: const Radius.circular(25),
-            color: Theme.of(context).colorScheme.background,
+            color: Theme.of(context).colorScheme.surface,
           ),
           child: Padding(
             padding: const EdgeInsets.only(left: 20),
