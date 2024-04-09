@@ -3,38 +3,39 @@
 
 part of '../../flutter_map_tile_caching.dart';
 
-/// Provides tools to manage bulk downloading to a specific [FMTCStore]
-///
-/// The 'fmtc_plus_background_downloading' module must be installed to add the
-/// background downloading functionality.
+/// Provides bulk downloading functionality for a specific [FMTCStore]
 ///
 /// ---
 ///
 /// {@template num_instances}
-/// By default, only one download per store at the same time is tolerated.
-/// Attempting to start more than one at the same time may cause poor
-/// performance or other poor behaviour.
+/// By default, only one download is allowed at any one time.
 ///
 /// However, if necessary, multiple can be started by setting methods'
 /// `instanceId` argument to a unique value on methods. Whatever object
 /// `instanceId` is, it must have a valid and useful equality and `hashCode`
 /// implementation, as it is used as the key in a `Map`. Note that this unique
 /// value must be known and remembered to control the state of the download.
+///
+/// > [!WARNING]
+/// > Starting multiple simultaneous downloads may lead to a noticeable
+/// > performance loss. Ensure you thoroughly test and profile your application.
 /// {@endtemplate}
 ///
 /// ---
 ///
 /// Does not keep state. State and download instances are held internally by
 /// [DownloadInstance].
-class DownloadManagement {
-  const DownloadManagement._(this._storeDirectory);
-  final FMTCStore _storeDirectory;
+@immutable
+class StoreDownload {
+  const StoreDownload._(this._storeName);
+  final String _storeName;
 
   /// Download a specified [DownloadableRegion] in the foreground, with a
   /// recovery session by default
   ///
-  /// To check the number of tiles that need to be downloaded before using this
-  /// function, use [check].
+  /// > [!TIP]
+  /// > To check the number of tiles in a region before starting a download, use
+  /// > [check].
   ///
   /// Streams a [DownloadProgress] object containing statistics and information
   /// about the download's progression status, once per tile and at intervals
@@ -50,21 +51,24 @@ class DownloadManagement {
   /// - [maxBufferLength] (defaults to 200 | 0 to disable): number of tiles to
   /// temporarily buffer before writing to the store (split evenly between
   /// [parallelThreads])
-  /// - [skipExistingTiles] (defaults to `true`): whether to skip downloading
+  /// - [skipExistingTiles] (defaults to `false`): whether to skip downloading
   /// tiles that are already cached
   /// - [skipSeaTiles] (defaults to `true`): whether to skip caching tiles that
   /// are entirely sea (based on a comparison to the tile at x0,y0,z17)
   ///
-  /// Using too many parallel threads may place significant strain on the tile
-  /// server, so check your tile server's ToS for more information.
+  /// > [!WARNING]
+  /// > Using too many parallel threads may place significant strain on the tile
+  /// > server, so check your tile server's ToS for more information.
   ///
-  /// Using buffering will mean that an unexpected forceful quit (such as an
-  /// app closure, [cancel] is safe) will result in losing the tiles that are
-  /// currently in the buffer. It will also increase the memory (RAM) required.
-  /// The output stream's statistics do not account for buffering.
+  /// > [!WARNING]
+  /// > Using buffering will mean that an unexpected forceful quit (such as an
+  /// > app closure, [cancel] is safe) will result in losing the tiles that are
+  /// > currently in the buffer. It will also increase the memory (RAM) required.
   ///
-  /// Note that skipping sea tiles will not reduce the number of downloads -
-  /// tiles must be downloaded to be compared against the sample sea tile.
+  /// > [!WARNING]
+  /// > Skipping sea tiles will not reduce the number of downloads - tiles must
+  /// > be downloaded to be compared against the sample sea tile. It is only
+  /// > designed to reduce the storage capacity consumed.
   ///
   /// ---
   ///
@@ -78,6 +82,24 @@ class DownloadManagement {
   /// To check whether the current [DownloadProgress.tilesPerSecond] statistic is
   /// currently limited by [rateLimit], check
   /// [DownloadProgress.isTPSArtificiallyCapped].
+  ///
+  /// ---
+  ///
+  /// A fresh [DownloadProgress] event will always be emitted every
+  /// [maxReportInterval] (if specified), which defaults to every 1 second,
+  /// regardless of whether any more tiles have been attempted/downloaded/failed.
+  /// This is to enable the [DownloadProgress.elapsedDuration] to be accurately
+  /// presented to the end user.
+  ///
+  /// {@macro fmtc.tileevent.extraConsiderations}
+  ///
+  /// ---
+  ///
+  /// When this download is started, assuming [disableRecovery] is `false` (as
+  /// default), the recovery system will register this download, to allow it to
+  /// be recovered if it unexpectedly fails.
+  ///
+  /// For more info, see [RootRecovery].
   ///
   /// ---
   ///
@@ -96,7 +118,7 @@ class DownloadManagement {
     required DownloadableRegion region,
     int parallelThreads = 5,
     int maxBufferLength = 200,
-    bool skipExistingTiles = true,
+    bool skipExistingTiles = false,
     bool skipSeaTiles = true,
     int? rateLimit,
     Duration? maxReportInterval = const Duration(seconds: 1),
@@ -112,14 +134,6 @@ class DownloadManagement {
       throw ArgumentError(
         "`.toDownloadable`'s `TileLayer` argument must specify an appropriate `urlTemplate` or `wmsOptions`",
         'region.options.urlTemplate',
-      );
-    }
-
-    if (region.options.tileProvider.headers['User-Agent'] ==
-        'flutter_map (unknown)') {
-      throw ArgumentError(
-        "`.toDownloadable`'s `TileLayer` argument must specify an appropriate `userAgentPackageName` or other `headers['User-Agent']`",
-        'region.options.userAgentPackageName',
       );
     }
 
@@ -151,8 +165,9 @@ class DownloadManagement {
     final instance = DownloadInstance.registerIfAvailable(instanceId);
     if (instance == null) {
       throw StateError(
-        "Download instance with ID $instanceId already exists\nIf you're sure "
-        'you want to start multiple downloads, use a unique `instanceId`.',
+        'A download instance with ID $instanceId already exists\nTo start '
+        'another download simultaneously, use a unique `instanceId`. Read the '
+        'documentation for additional considerations that should be taken.',
       );
     }
 
@@ -162,7 +177,7 @@ class DownloadManagement {
     if (!disableRecovery) {
       await FMTCRoot.recovery._start(
         id: recoveryId,
-        storeName: _storeDirectory.storeName,
+        storeName: _storeName,
         region: region,
       );
     }
@@ -174,7 +189,7 @@ class DownloadManagement {
       (
         sendPort: receivePort.sendPort,
         region: region,
-        storeName: _storeDirectory.storeName,
+        storeName: _storeName,
         parallelThreads: parallelThreads,
         maxBufferLength: maxBufferLength,
         skipExistingTiles: skipExistingTiles,
@@ -264,8 +279,6 @@ class DownloadManagement {
   /// {@macro num_instances}
   ///
   /// Does nothing (returns immediately) if there is no ongoing download.
-  ///
-  /// Do not use to interact with background downloads.
   Future<void> cancel({Object instanceId = 0}) async =>
       await DownloadInstance.get(instanceId)?.requestCancel?.call();
 
@@ -282,8 +295,6 @@ class DownloadManagement {
   ///
   /// Does nothing (returns immediately) if there is no ongoing download or the
   /// download is already paused.
-  ///
-  /// Do not use to interact with background downloads.
   Future<void> pause({Object instanceId = 0}) async =>
       await DownloadInstance.get(instanceId)?.requestPause?.call();
 
@@ -293,8 +304,6 @@ class DownloadManagement {
   ///
   /// Does nothing if there is no ongoing download or the download is already
   /// running.
-  ///
-  /// Do not use to interact with background downloads.
   void resume({Object instanceId = 0}) =>
       DownloadInstance.get(instanceId)?.requestResume?.call();
 
@@ -304,8 +313,6 @@ class DownloadManagement {
   /// {@macro num_instances}
   ///
   /// Also returns `false` if there is no ongoing download.
-  ///
-  /// Do not use to interact with background downloads.
   bool isPaused({Object instanceId = 0}) =>
       DownloadInstance.get(instanceId)?.isPaused ?? false;
 }

@@ -10,8 +10,7 @@ part of '../../flutter_map_tile_caching.dart';
 /// operation, then an error will be thrown ([StoreNotExists]). It is
 /// recommended to check [ready] when necessary.
 class StoreManagement {
-  StoreManagement._(FMTCStore store) : _storeName = store.storeName;
-
+  StoreManagement._(this._storeName);
   final String _storeName;
 
   /// {@macro fmtc.backend.storeExists}

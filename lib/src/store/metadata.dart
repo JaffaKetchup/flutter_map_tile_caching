@@ -9,8 +9,7 @@ part of '../../flutter_map_tile_caching.dart';
 /// advanced requirements should use another package, as this is a basic
 /// implementation.
 class StoreMetadata {
-  StoreMetadata._(FMTCStore store) : _storeName = store.storeName;
-
+  StoreMetadata._(this._storeName);
   final String _storeName;
 
   /// {@macro fmtc.backend.readMetadata}

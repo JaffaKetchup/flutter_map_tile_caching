@@ -63,6 +63,14 @@ enum TileEventResult {
 ///
 /// Does not contain information about the download as a whole, that is
 /// [DownloadProgress]' responsibility.
+///
+/// {@template fmtc.tileevent.extraConsiderations}
+/// > [!TIP]
+/// > When tracking [TileEvent]s across multiple [DownloadProgress] events,
+/// > extra considerations are necessary. See
+/// > [the documentation](https://fmtc.jaffaketchup.dev/bulk-downloading/start#keeping-track-across-events)
+/// > for more information.
+/// {@endtemplate}
 @immutable
 class TileEvent {
   const TileEvent._(
@@ -127,6 +135,8 @@ class TileEvent {
   /// Events will occasionally be repeated due to the `maxReportInterval`
   /// functionality. If using other members, such as [result], to keep count of
   /// important events, do not count an event where this is `true`.
+  ///
+  /// {@macro fmtc.tileevent.extraConsiderations}
   final bool isRepeat;
 
   final bool _wasBufferReset;

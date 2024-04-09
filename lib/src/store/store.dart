@@ -18,44 +18,37 @@ only. It will be removed in a future version.
 )
 typedef StoreDirectory = FMTCStore;
 
+/// {@template fmtc.fmtcStore}
 /// Provides access to management, statistics, metadata, bulk download,
 /// the tile provider (and the export functionality) on the store named
 /// [storeName]
 ///
-/// {@template fmtc.fmtcstore.sub.noautocreate}
-/// Note that constructing an instance of this class will not automatically
-/// create it, as this is an asynchronous operation. To create this store, use
-/// [manage] > [StoreManagement.create].
+/// > [!IMPORTANT]
+/// > Constructing an instance of this class will not automatically create it.
+/// > To create this store, use [manage] > [StoreManagement.create].
 /// {@endtemplate}
 class FMTCStore {
-  /// Provides access to management, statistics, metadata, bulk download,
-  /// the tile provider (and the export functionality) on the store named
-  /// [storeName]
-  ///
-  /// {@macro fmtc.fmtcstore.sub.noautocreate}
+  /// {@macro fmtc.fmtcStore}
   const FMTCStore(this.storeName);
 
   /// The user-friendly name of the store directory
   final String storeName;
 
   /// Manage this store's representation on the filesystem
-  StoreManagement get manage => StoreManagement._(this);
+  StoreManagement get manage => StoreManagement._(storeName);
 
   /// Get statistics about this store
-  StoreStats get stats => StoreStats._(this);
+  StoreStats get stats => StoreStats._(storeName);
 
   /// Manage custom miscellaneous information tied to this store
   ///
   /// Uses a key-value format where both key and value must be [String]. More
   /// advanced requirements should use another package, as this is a basic
   /// implementation.
-  StoreMetadata get metadata => StoreMetadata._(this);
+  StoreMetadata get metadata => StoreMetadata._(storeName);
 
-  /// Get tools to manage bulk downloading to this store
-  ///
-  /// The 'fmtc_plus_background_downloading' module must be installed to add the
-  /// background downloading functionality.
-  DownloadManagement get download => DownloadManagement._(this);
+  /// Provides bulk downloading functionality
+  StoreDownload get download => StoreDownload._(storeName);
 
   /// Generate a [TileProvider] that connects to FMTC internals
   ///

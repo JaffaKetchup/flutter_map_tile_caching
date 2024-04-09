@@ -79,8 +79,9 @@ abstract interface class FMTCBackendInternal
   /// {@template fmtc.backend.deleteStore}
   /// Delete the specified store
   ///
-  /// This operation cannot be undone! Ensure you confirm with the user that
-  /// this action is expected.
+  /// > [!WARNING]
+  /// > This operation cannot be undone! Ensure you confirm with the user that
+  /// > this action is expected.
   ///
   /// Does nothing if the store does not already exist.
   /// {@endtemplate}
@@ -94,8 +95,9 @@ abstract interface class FMTCBackendInternal
   /// Also resets the hits & misses stats. Does not reset any associated
   /// metadata.
   ///
-  /// This operation cannot be undone! Ensure you confirm with the user that
-  /// this action is expected.
+  /// > [!WARNING]
+  /// > This operation cannot be undone! Ensure you confirm with the user that
+  /// > this action is expected.
   ///
   /// Does nothing if the store does not already exist.
   /// {@endtemplate}
@@ -215,8 +217,8 @@ abstract interface class FMTCBackendInternal
   /// {@template fmtc.backend.setMetadata}
   /// Set a key-value pair in the metadata for the specified store
   ///
-  /// Note that this operation will overwrite any existing value for the
-  /// specified key.
+  /// > [!WARNING]
+  /// > Any existing value for the specified key will be overwritten.
   ///
   /// Prefer using [setBulkMetadata] when setting multiple keys. Only one backend
   /// operation is required to set them all at once, and so is more efficient.
