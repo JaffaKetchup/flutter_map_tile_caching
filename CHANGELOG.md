@@ -68,12 +68,14 @@ And without further ado, let's get the biggest changes out of the way first:
 
 With those out of the way, we can take a look at the smaller changes:
 
+* Improved recovery system to monitor which tiles can be skipped on re-downloading (via `DownloadableRegion.start`)
 * Improved error handling (especially in backends)
 * Added `StoreManagement.pruneTilesOlderThan` method
 * Added shortcut for getting multiple stats: `StoreStats.all`
 * Added secondary check to `FMTCImageProvider` to ensure responses are valid images
 * Replaced public facing `RegionType`/`type` with Dart 3 exhaustive switch statements through `BaseRegion/DownloadableRegion.when` & `RecoverableRegion.toRegion`
 * Removed HTTP/2 support
+* Fixed a whole bunch of bugs
 
 In addition, there's been more action in the surrounding enviroment:
 
