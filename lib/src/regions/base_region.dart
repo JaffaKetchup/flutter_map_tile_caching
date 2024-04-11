@@ -52,7 +52,7 @@ sealed class BaseRegion {
     required int minZoom,
     required int maxZoom,
     required TileLayer options,
-    int start = 0,
+    int start = 1,
     int? end,
     Crs crs = const Epsg3857(),
   });

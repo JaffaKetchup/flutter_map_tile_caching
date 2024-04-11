@@ -171,16 +171,10 @@ class StoreDownload {
       );
     }
 
-    // Start recovery system (unless disabled)
-    final recoveryId =
-        Object.hash(instanceId, DateTime.timestamp().millisecondsSinceEpoch);
-    if (!disableRecovery) {
-      await FMTCRoot.recovery._start(
-        id: recoveryId,
-        storeName: _storeName,
-        region: region,
-      );
-    }
+    // Generate recovery ID (unless disabled)
+    final recoveryId = disableRecovery
+        ? null
+        : Object.hash(instanceId, DateTime.timestamp().millisecondsSinceEpoch);
 
     // Start download thread
     final receivePort = ReceivePort();
@@ -197,8 +191,9 @@ class StoreDownload {
         maxReportInterval: maxReportInterval,
         rateLimit: rateLimit,
         obscuredQueryParams:
-            obscuredQueryParams?.map((e) => RegExp('$e=[^&]*')) ??
-                FMTCTileProviderSettings.instance.obscuredQueryParams,
+            obscuredQueryParams?.map((e) => RegExp('$e=[^&]*')).toList() ??
+                FMTCTileProviderSettings.instance.obscuredQueryParams.toList(),
+        recoveryId: recoveryId,
         backend: FMTCBackendAccessThreadSafe.internal,
       ),
       onExit: receivePort.sendPort,
@@ -216,12 +211,18 @@ class StoreDownload {
         continue;
       }
 
-      // Handle shutdown (both normal and cancellation)
-      if (evt == null) break;
-
       // Handle pause comms
       if (evt == 1) {
         pauseCompleter?.complete();
+        continue;
+      }
+
+      // Handle shutdown (both normal and cancellation)
+      if (evt == null) break;
+
+      // Handle recovery system startup (unless disabled)
+      if (evt == 2) {
+        FMTCRoot.recovery._downloadsOngoing.add(recoveryId!);
         continue;
       }
 
@@ -243,11 +244,13 @@ class StoreDownload {
           };
         continue;
       }
+
+      throw UnimplementedError('Unrecognised message');
     }
 
     // Handle shutdown (both normal and cancellation)
     receivePort.close();
-    await FMTCRoot.recovery.cancel(recoveryId);
+    if (recoveryId != null) await FMTCRoot.recovery.cancel(recoveryId);
     DownloadInstance.unregister(instanceId);
     cancelCompleter.complete();
   }

@@ -4,15 +4,16 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import '../../export_external.dart';
+import '../../../../flutter_map_tile_caching.dart';
 import '../../export_internal.dart';
 
 /// An abstract interface that FMTC will use to communicate with a storage
 /// 'backend' (usually one root), from an existing bulk downloading thread
 ///
 /// Should implement methods that operate in the same thread. Must be sendable
-/// between isolates, because it will be operated in another thread. Must be
-/// suitable for simultaneous [initialise]ation across multiple threads.
+/// between isolates when uninitialised, because it will be operated in another
+/// thread. Must be suitable for simultaneous [initialise]ation across multiple
+/// threads.
 ///
 /// Should be set-up ready for intialisation, and set in the
 /// [FMTCBackendAccessThreadSafe], from the initialisation of
@@ -33,6 +34,13 @@ abstract interface class FMTCBackendInternalThreadSafe {
 
   /// Stop this thread safe database operator
   FutureOr<void> uninitialise();
+
+  /// Create another instance of this internal thread that relies on the same
+  /// root
+  ///
+  /// This method makes another uninitialised instance which must be safe to
+  /// send through isolates, unlike an initialised instance.
+  FMTCBackendInternalThreadSafe duplicate();
 
   /// Retrieve a raw tile by the specified URL
   ///
@@ -55,12 +63,25 @@ abstract interface class FMTCBackendInternalThreadSafe {
 
   /// Create or update multiple tiles (given given their respective [urls] and
   /// [bytess]) in the specified store
-  ///
-  /// Implementation should avoid iterating [writeTile], as this should be
-  /// targeted for high throughput and efficiency.
   FutureOr<void> writeTiles({
     required String storeName,
     required List<String> urls,
     required List<Uint8List> bytess,
+  });
+
+  /// Create a recovery entity with a recoverable region from the specified
+  /// components
+  FutureOr<void> startRecovery({
+    required int id,
+    required String storeName,
+    required DownloadableRegion region,
+    required int endTile,
+  });
+
+  /// Update the specified recovery entity with the new [RecoveredRegion.start]
+  /// (equivalent)
+  FutureOr<void> updateRecovery({
+    required int id,
+    required int newStartTile,
   });
 }

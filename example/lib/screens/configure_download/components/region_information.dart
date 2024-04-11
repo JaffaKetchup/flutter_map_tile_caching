@@ -14,11 +14,15 @@ class RegionInformation extends StatefulWidget {
     required this.region,
     required this.minZoom,
     required this.maxZoom,
+    required this.startTile,
+    required this.endTile,
   });
 
   final BaseRegion region;
   final int minZoom;
   final int maxZoom;
+  final int startTile;
+  final int? endTile;
 
   @override
   State<RegionInformation> createState() => _RegionInformationState();
@@ -180,7 +184,7 @@ class _RegionInformationState extends State<RegionInformation> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('MIN/MAX ZOOM LEVELS'),
+                  const Text('ZOOM LEVELS'),
                   Text(
                     '${widget.minZoom} - ${widget.maxZoom}',
                     style: const TextStyle(
@@ -218,6 +222,24 @@ class _RegionInformationState extends State<RegionInformation> {
                             ),
                           ),
                   ),
+                  const SizedBox(height: 10),
+                  const Text('TILES RANGE'),
+                  if (widget.startTile == 1 && widget.endTile == null)
+                    const Text(
+                      '*',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
+                    )
+                  else
+                    Text(
+                      '${NumberFormat('###,###').format(widget.startTile)} - ${widget.endTile != null ? NumberFormat('###,###').format(widget.endTile) : '*'}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
+                    ),
                 ],
               ),
             ],

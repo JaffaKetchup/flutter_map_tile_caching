@@ -16,11 +16,15 @@ class ConfigureDownloadPopup extends StatelessWidget {
     required this.region,
     required this.minZoom,
     required this.maxZoom,
+    required this.startTile,
+    required this.endTile,
   });
 
   final BaseRegion region;
   final int minZoom;
   final int maxZoom;
+  final int startTile;
+  final int? endTile;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -29,6 +33,8 @@ class ConfigureDownloadPopup extends StatelessWidget {
           region: region,
           minZoom: minZoom,
           maxZoom: maxZoom,
+          startTile: startTile,
+          endTile: endTile,
         ),
         body: Stack(
           fit: StackFit.expand,
@@ -44,6 +50,8 @@ class ConfigureDownloadPopup extends StatelessWidget {
                       region: region,
                       minZoom: minZoom,
                       maxZoom: maxZoom,
+                      startTile: startTile,
+                      endTile: endTile,
                     ),
                     const Divider(thickness: 2, height: 8),
                     const OptionsPane(

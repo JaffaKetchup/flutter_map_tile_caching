@@ -24,6 +24,12 @@ part of 'shared.dart';
 /// automated tests.
 @internal
 class TileCounters {
+  /// Trim [numOfTiles] to between the [region]'s [DownloadableRegion.start] and
+  /// [DownloadableRegion.end]
+  static int _trimToRange(DownloadableRegion region, int numOfTiles) =>
+      min(region.end ?? largestInt, numOfTiles) -
+      min(region.start - 1, numOfTiles);
+
   /// Returns the number of tiles within a [DownloadableRegion] with generic type
   /// [RectangleRegion]
   @internal
@@ -50,7 +56,7 @@ class TileCounters {
           (sePoint.x - nwPoint.x + 1) * (sePoint.y - nwPoint.y + 1);
     }
 
-    return numberOfTiles;
+    return _trimToRange(region, numberOfTiles);
   }
 
   /// Returns the number of tiles within a [DownloadableRegion] with generic type
@@ -94,7 +100,7 @@ class TileCounters {
       }
     }
 
-    return numberOfTiles;
+    return _trimToRange(region, numberOfTiles);
   }
 
   /// Returns the number of tiles within a [DownloadableRegion] with generic type
@@ -236,7 +242,7 @@ class TileCounters {
       }
     }
 
-    return numberOfTiles;
+    return _trimToRange(region, numberOfTiles);
   }
 
   /// Returns the number of tiles within a [DownloadableRegion] with generic type
@@ -302,6 +308,6 @@ class TileCounters {
       numberOfTiles += allOutlineTiles.length;
     }
 
-    return numberOfTiles;
+    return _trimToRange(region, numberOfTiles);
   }
 }

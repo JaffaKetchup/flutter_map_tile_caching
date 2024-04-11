@@ -13,11 +13,15 @@ class StartDownloadButton extends StatelessWidget {
     required this.region,
     required this.minZoom,
     required this.maxZoom,
+    required this.startTile,
+    required this.endTile,
   });
 
   final BaseRegion region;
   final int minZoom;
   final int maxZoom;
+  final int startTile;
+  final int? endTile;
 
   @override
   Widget build(BuildContext context) =>
@@ -98,6 +102,8 @@ class StartDownloadButton extends StatelessWidget {
                           region: region.toDownloadable(
                             minZoom: minZoom,
                             maxZoom: maxZoom,
+                            start: startTile,
+                            end: endTile,
                             options: TileLayer(
                               urlTemplate: metadata['sourceURL'],
                               userAgentPackageName:

@@ -43,6 +43,7 @@ base class ObjectBoxRecovery {
     required this.refId,
     required this.storeName,
     required DownloadableRegion region,
+    required this.endTile,
   })  : creationTime = DateTime.timestamp(),
         typeId = region.when(
           rectangle: (_) => 0,
@@ -53,7 +54,6 @@ base class ObjectBoxRecovery {
         minZoom = region.minZoom,
         maxZoom = region.maxZoom,
         startTile = region.start,
-        endTile = region.end,
         rectNwLat = region.originalRegion is RectangleRegion
             ? (region.originalRegion as RectangleRegion)
                 .bounds
@@ -144,7 +144,7 @@ base class ObjectBoxRecovery {
   int startTile;
 
   /// Corresponds to [RecoveredRegion.end] & [DownloadableRegion.end]
-  int? endTile;
+  int endTile;
 
   /// Corresponds to the generic type of [DownloadableRegion]
   ///

@@ -20,7 +20,7 @@ class RecoveryList extends StatefulWidget {
 
 class _RecoveryListState extends State<RecoveryList> {
   @override
-  Widget build(BuildContext context) => ListView.builder(
+  Widget build(BuildContext context) => ListView.separated(
         itemCount: widget.all.length,
         itemBuilder: (context, index) {
           final result = widget.all.elementAt(index);
@@ -52,10 +52,10 @@ class _RecoveryListState extends State<RecoveryList> {
                 addressDetails: true,
               ),
               builder: (context, response) => Text(
-                'Started at ${region.time} (~${DateTime.timestamp().difference(region.time).inMinutes} minutes ago)\n${response.hasData ? 'Center near ${response.data!.address!['postcode']}, ${response.data!.address!['country']}' : response.hasError ? 'Unable To Reverse Geocode Location' : 'Please Wait...'}',
+                'Started at ${region.time} (~${DateTime.timestamp().difference(region.time).inMinutes} minutes ago)\nCompleted ${region.start - 1} of ${region.end}\n${response.hasData ? 'Center near ${response.data!.address!['postcode']}, ${response.data!.address!['country']}' : response.hasError ? 'Unable To Reverse Geocode Location' : 'Please Wait...'}',
               ),
             ),
-            onTap: () {},
+            isThreeLine: true,
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -80,5 +80,6 @@ class _RecoveryListState extends State<RecoveryList> {
             ),
           );
         },
+        separatorBuilder: (context, index) => const Divider(),
       );
 }

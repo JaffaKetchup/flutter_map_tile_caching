@@ -23,10 +23,13 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
 
   @override
   void uninitialise() {
-    expectInitialisedRoot;
-    _root!.close();
+    expectInitialisedRoot.close();
     _root = null;
   }
+
+  @override
+  _ObjectBoxBackendThreadSafeImpl duplicate() =>
+      _ObjectBoxBackendThreadSafeImpl._(storeReference: storeReference);
 
   @override
   Future<ObjectBoxTile?> readTile({
@@ -141,5 +144,47 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
 
     tilesQuery.close();
     storeQuery.close();
+  }
+
+  @override
+  void startRecovery({
+    required int id,
+    required String storeName,
+    required DownloadableRegion region,
+    required int endTile,
+  }) =>
+      expectInitialisedRoot.box<ObjectBoxRecovery>().put(
+            ObjectBoxRecovery.fromRegion(
+              refId: id,
+              storeName: storeName,
+              region: region,
+              endTile: endTile,
+            ),
+            mode: PutMode.insert,
+          );
+
+  @override
+  void updateRecovery({
+    required int id,
+    required int newStartTile,
+  }) {
+    expectInitialisedRoot;
+
+    final existingRecoveryQuery = _root!
+        .box<ObjectBoxRecovery>()
+        .query(ObjectBoxRecovery_.refId.equals(id))
+        .build();
+
+    _root!.runInTransaction(
+      TxMode.write,
+      () {
+        _root!.box<ObjectBoxRecovery>().put(
+              existingRecoveryQuery.findUnique()!..startTile = newStartTile,
+              mode: PutMode.update,
+            );
+      },
+    );
+
+    existingRecoveryQuery.close();
   }
 }

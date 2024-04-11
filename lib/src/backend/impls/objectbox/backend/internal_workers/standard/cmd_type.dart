@@ -31,7 +31,6 @@ enum _CmdType {
   resetMetadata,
   listRecoverableRegions,
   getRecoverableRegion,
-  startRecovery,
   cancelRecovery,
   watchRecovery(hasInternalStreamSub: true),
   watchStores(hasInternalStreamSub: true),

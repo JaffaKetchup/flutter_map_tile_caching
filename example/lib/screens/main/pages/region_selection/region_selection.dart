@@ -188,6 +188,8 @@ class _RegionSelectionPageState extends State<RegionSelectionPage> {
               region: provider.region!,
               minZoom: provider.minZoom,
               maxZoom: provider.maxZoom,
+              startTile: provider.startTile,
+              endTile: provider.endTile,
             ),
             fullscreenDialog: true,
           ),

@@ -14,7 +14,8 @@ Future<void> _downloadManager(
     bool skipSeaTiles,
     Duration? maxReportInterval,
     int? rateLimit,
-    Iterable<RegExp> obscuredQueryParams,
+    List<RegExp> obscuredQueryParams,
+    int? recoveryId,
     FMTCBackendInternalThreadSafe backend,
   }) input,
 ) async {
@@ -84,15 +85,10 @@ Future<void> _downloadManager(
     onExit: tileReceivePort.sendPort,
     debugName: '[FMTC] Tile Coords Generator Thread',
   );
-  final rawTileStream = tileReceivePort.skip(input.region.start).take(
-        input.region.end == null
-            ? largestInt
-            : (input.region.end! - input.region.start),
-      );
   final tileQueue = StreamQueue(
     input.rateLimit == null
-        ? rawTileStream
-        : rawTileStream.rateLimit(
+        ? tileReceivePort
+        : tileReceivePort.rateLimit(
             minimumSpacing: Duration(
               microseconds: ((1 / input.rateLimit!) * 1000000).ceil(),
             ),
@@ -176,6 +172,21 @@ Future<void> _downloadManager(
           },
         );
 
+  // Start recovery system (unless disabled)
+  if (input.recoveryId case final recoveryId?) {
+    await input.backend.initialise();
+    await input.backend.startRecovery(
+      id: recoveryId,
+      storeName: input.storeName,
+      region: input.region,
+      endTile: min(input.region.end ?? largestInt, maxTiles),
+    );
+    send(2);
+  }
+
+  // Duplicate the backend to make it safe to send through isolates
+  final threadBackend = input.backend.duplicate();
+
   // Now it's safe, start accepting communications from the root
   send(rootReceivePort.sendPort);
 
@@ -200,7 +211,7 @@ Future<void> _downloadManager(
             seaTileBytes: seaTileBytes,
             obscuredQueryParams: input.obscuredQueryParams,
             headers: headers,
-            backend: input.backend,
+            backend: threadBackend,
           ),
           onExit: downloadThreadReceivePort.sendPort,
           debugName: '[FMTC] Bulk Download Thread #$threadNo',
@@ -265,6 +276,16 @@ Future<void> _downloadManager(
                   ),
                 );
               }
+
+              if (input.recoveryId case final recoveryId?) {
+                input.backend.updateRecovery(
+                  id: recoveryId,
+                  newStartTile: 1 +
+                      (lastDownloadProgress.cachedTiles -
+                          lastDownloadProgress.bufferedTiles),
+                );
+              }
+
               return;
             }
 
@@ -329,6 +350,7 @@ Future<void> _downloadManager(
 
   // Cleanup resources and shutdown
   rootReceivePort.close();
+  if (input.recoveryId != null) await input.backend.uninitialise();
   tileIsolate.kill(priority: Isolate.immediate);
   await tileQueue.cancel(immediate: true);
   Isolate.exit();

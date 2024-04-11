@@ -361,7 +361,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           final startTileParam =
               const fb.Int64Reader().vTableGet(buffer, rootOffset, 16, 0);
           final endTileParam =
-              const fb.Int64Reader().vTableGetNullable(buffer, rootOffset, 18);
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0);
           final rectNwLatParam = const fb.Float64Reader()
               .vTableGetNullable(buffer, rootOffset, 22);
           final rectNwLngParam = const fb.Float64Reader()

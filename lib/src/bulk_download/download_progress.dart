@@ -105,6 +105,11 @@ class DownloadProgress {
 
   /// The total number of tiles available to be potentially downloaded and
   /// cached
+  ///
+  /// The difference between [DownloadableRegion.end] -
+  /// [DownloadableRegion.start] (assuming the maximum number of tiles actually
+  /// available in the region, as determined by [StoreDownload.check], if
+  /// [DownloadableRegion.end] is `null`).
   final int maxTiles;
 
   /// The current elapsed duration of the download

@@ -23,18 +23,17 @@ part of '../../flutter_map_tile_caching.dart';
 ///
 /// The recovery system then allows the original [BaseRegion] and
 /// [DownloadableRegion] to be recovered (via [RecoveredRegion]) from the failed
-/// download, and the download can be restarted as normal.
+/// download, and the download can be restarted.
+///
+/// During a download, the database recovery entity is updated every tile (or
+/// every batch) with the number of completed tiles: this allows the
+/// [DownloadableRegion.start] to have it's value set to skip tiles that have
+/// been successfully downloaded. Therefore, no unnecessary tiles are downloaded
+/// again.
 ///
 /// > [!NOTE]
 /// > Options set at download time, in [StoreDownload.startForeground], are not
 /// > included.
-///
-/// > [!IMPORTANT]
-/// > The recovery system does not keep track of the download, therefore it is
-/// > unknown where the download failed, and the download must be restarted from
-/// > the beginning.
-/// >
-/// > To workaround this limitation, set `skipExistingTiles` `true`.
 class RootRecovery {
   RootRecovery._() {
     _instance = this;
@@ -70,16 +69,6 @@ class RootRecovery {
         await FMTCBackendAccess.internal.getRecoverableRegion(id: id);
 
     return (isFailed: !_downloadsOngoing.contains(region.id), region: region);
-  }
-
-  Future<void> _start({
-    required int id,
-    required String storeName,
-    required DownloadableRegion region,
-  }) async {
-    _downloadsOngoing.add(id);
-    await FMTCBackendAccess.internal
-        .startRecovery(id: id, storeName: storeName, region: region);
   }
 
   /// {@macro fmtc.backend.cancelRecovery}

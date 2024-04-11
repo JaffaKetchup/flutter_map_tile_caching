@@ -39,6 +39,8 @@ class RecoveryStartButton extends StatelessWidget {
                       region: regionSelectionProvider.region!,
                       minZoom: result.region.minZoom,
                       maxZoom: result.region.maxZoom,
+                      startTile: result.region.start,
+                      endTile: result.region.end,
                     ),
                     fullscreenDialog: true,
                   ),

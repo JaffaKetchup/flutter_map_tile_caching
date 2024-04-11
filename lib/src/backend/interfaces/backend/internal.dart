@@ -275,14 +275,6 @@ abstract interface class FMTCBackendInternal
     required int id,
   });
 
-  /// Create a recovery store with a recoverable region from the specified
-  /// components
-  Future<void> startRecovery({
-    required int id,
-    required String storeName,
-    required DownloadableRegion region,
-  });
-
   /// {@template fmtc.backend.cancelRecovery}
   /// Safely cancel the specified recoverable region
   /// {@endtemplate}

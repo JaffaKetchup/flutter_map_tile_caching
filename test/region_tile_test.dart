@@ -56,11 +56,6 @@ void main() {
       );
 
       test(
-        'Count By Generator',
-        () async => expect(await countByGenerator(rectRegion), 179196),
-      );
-
-      test(
         'Counter Duration',
         () => print(
           '${List.generate(
@@ -77,16 +72,114 @@ void main() {
       );
 
       test(
-        'Generator Duration',
+        'Generator Duration & Count',
         () async {
           final clock = Stopwatch()..start();
-          await countByGenerator(rectRegion);
+          final tiles = await countByGenerator(rectRegion);
           clock.stop();
           print('${clock.elapsedMilliseconds / 1000} s');
+          expect(tiles, 179196);
         },
       );
     },
     timeout: const Timeout(Duration(minutes: 1)),
+  );
+
+  group(
+    'Ranged Region',
+    () {
+      test(
+        'Start Offset Count',
+        () {
+          final region = RectangleRegion(
+            LatLngBounds(const LatLng(-1, -1), const LatLng(1, 1)),
+          ).toDownloadable(
+            minZoom: 1,
+            maxZoom: 16,
+            options: TileLayer(),
+            start: 10,
+          );
+          expect(TileCounters.rectangleTiles(region), 179187);
+        },
+      );
+
+      test(
+        'End Offset Count',
+        () {
+          final region = RectangleRegion(
+            LatLngBounds(const LatLng(-1, -1), const LatLng(1, 1)),
+          ).toDownloadable(
+            minZoom: 1,
+            maxZoom: 16,
+            options: TileLayer(),
+            end: 100,
+          );
+          expect(TileCounters.rectangleTiles(region), 100);
+        },
+      );
+
+      test(
+        'Start & End Offset Count',
+        () {
+          final region = RectangleRegion(
+            LatLngBounds(const LatLng(-1, -1), const LatLng(1, 1)),
+          ).toDownloadable(
+            minZoom: 1,
+            maxZoom: 16,
+            options: TileLayer(),
+            start: 10,
+            end: 100,
+          );
+          expect(TileCounters.rectangleTiles(region), 91);
+        },
+      );
+
+      test(
+        'Start Offset Generate',
+        () async {
+          final region = RectangleRegion(
+            LatLngBounds(const LatLng(-1, -1), const LatLng(1, 1)),
+          ).toDownloadable(
+            minZoom: 1,
+            maxZoom: 16,
+            options: TileLayer(),
+            start: 10,
+          );
+          expect(await countByGenerator(region), 179187);
+        },
+      );
+
+      test(
+        'End Offset Generate',
+        () async {
+          final region = RectangleRegion(
+            LatLngBounds(const LatLng(-1, -1), const LatLng(1, 1)),
+          ).toDownloadable(
+            minZoom: 1,
+            maxZoom: 16,
+            options: TileLayer(),
+            end: 100,
+          );
+          expect(await countByGenerator(region), 100);
+        },
+      );
+
+      test(
+        'Start & End Offset Generate',
+        () async {
+          final region = RectangleRegion(
+            LatLngBounds(const LatLng(-1, -1), const LatLng(1, 1)),
+          ).toDownloadable(
+            minZoom: 1,
+            maxZoom: 16,
+            options: TileLayer(),
+            start: 10,
+            end: 100,
+          );
+          expect(await countByGenerator(region), 91);
+        },
+      );
+    },
   );
 
   group(

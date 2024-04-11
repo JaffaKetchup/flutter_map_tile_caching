@@ -50,11 +50,17 @@ class RecoveredRegion {
   /// Corresponds to [DownloadableRegion.maxZoom]
   final int maxZoom;
 
-  ///Corresponds to [DownloadableRegion.start]
+  /// Corresponds to [DownloadableRegion.start]
+  ///
+  /// May not match as originally created, may be the last successful tile. The
+  /// interval between [start] and [end] is the failed interval.
   final int start;
 
   /// Corresponds to [DownloadableRegion.end]
-  final int? end;
+  ///
+  /// If originally created as `null`, this will be the number of tiles in the
+  /// region, as determined by [StoreDownload.check].
+  final int end;
 
   /// Corresponds to [RectangleRegion.bounds]
   final LatLngBounds? bounds;

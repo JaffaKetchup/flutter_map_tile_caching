@@ -33,7 +33,7 @@ class PathPicker extends StatelessWidget {
                     );
                     if (picked != null) {
                       pathController.value = TextEditingValue(
-                        text: picked,
+                        text: '$picked.fmtc',
                         selection: TextSelection.collapsed(
                           offset: picked.length,
                         ),
@@ -88,7 +88,7 @@ class PathPicker extends StatelessWidget {
                   );
                   if (picked != null) {
                     pathController.value = TextEditingValue(
-                      text: picked,
+                      text: '$picked.fmtc',
                       selection: TextSelection.collapsed(
                         offset: picked.length,
                       ),

@@ -524,17 +524,6 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       ))!['recoverableRegion'];
 
   @override
-  Future<void> startRecovery({
-    required int id,
-    required String storeName,
-    required DownloadableRegion region,
-  }) =>
-      _sendCmdOneShot(
-        type: _CmdType.startRecovery,
-        args: {'id': id, 'storeName': storeName, 'region': region},
-      );
-
-  @override
   Future<void> cancelRecovery({
     required int id,
   }) =>

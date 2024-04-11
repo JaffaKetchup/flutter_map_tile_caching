@@ -37,6 +37,10 @@ class TileGenerators {
     input.sendPort.send(receivePort.sendPort);
     final requestQueue = StreamQueue(receivePort);
 
+    int tileCounter = -1;
+    final start = region.start - 1;
+    final end = (region.end ?? double.infinity) - 1;
+
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
         zoomLvl++) {
@@ -50,6 +54,8 @@ class TileGenerators {
 
       for (int x = nwPoint.x; x <= sePoint.x; x++) {
         for (int y = nwPoint.y; y <= sePoint.y; y++) {
+          tileCounter++;
+          if (tileCounter < start || tileCounter > end) continue;
           await requestQueue.next;
           input.sendPort.send((x, y, zoomLvl.toInt()));
         }
@@ -87,6 +93,10 @@ class TileGenerators {
     // Format: Map<z, Map<x, List<y>>>
     final Map<int, Map<int, List<int>>> outlineTileNums = {};
 
+    int tileCounter = -1;
+    final start = region.start - 1;
+    final end = (region.end ?? double.infinity) - 1;
+
     for (int zoomLvl = region.minZoom; zoomLvl <= region.maxZoom; zoomLvl++) {
       outlineTileNums[zoomLvl] = {};
 
@@ -112,6 +122,8 @@ class TileGenerators {
         for (int y = outlineTileNums[zoomLvl]![x]![0];
             y <= outlineTileNums[zoomLvl]![x]![1];
             y++) {
+          tileCounter++;
+          if (tileCounter < start || tileCounter > end) continue;
           await requestQueue.next;
           input.sendPort.send((x, y, zoomLvl));
         }
@@ -175,6 +187,10 @@ class TileGenerators {
     final receivePort = ReceivePort();
     input.sendPort.send(receivePort.sendPort);
     final requestQueue = StreamQueue(receivePort);
+
+    int tileCounter = -1;
+    final start = region.start - 1;
+    final end = (region.end ?? double.infinity) - 1;
 
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
@@ -242,6 +258,8 @@ class TileGenerators {
         for (int x = straightRectangleNW.x; x <= straightRectangleSE.x; x++) {
           bool foundOverlappingTile = false;
           for (int y = straightRectangleNW.y; y <= straightRectangleSE.y; y++) {
+            tileCounter++;
+            if (tileCounter < start || tileCounter > end) continue;
             final tile = _Polygon(
               Point(x, y),
               Point(x + 1, y),
@@ -285,6 +303,10 @@ class TileGenerators {
     final receivePort = ReceivePort();
     input.sendPort.send(receivePort.sendPort);
     final requestQueue = StreamQueue(receivePort);
+
+    int tileCounter = -1;
+    final start = region.start - 1;
+    final end = (region.end ?? double.infinity) - 1;
 
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
@@ -340,6 +362,8 @@ class TileGenerators {
       }
 
       for (final Point(:x, :y) in allOutlineTiles) {
+        tileCounter++;
+        if (tileCounter < start || tileCounter > end) continue;
         await requestQueue.next;
         input.sendPort.send((x, y, zoomLvl.toInt()));
       }

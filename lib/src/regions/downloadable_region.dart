@@ -21,9 +21,9 @@ class DownloadableRegion<R extends BaseRegion> {
         '`minZoom` must be less than or equal to `maxZoom`',
       );
     }
-    if (start < 0 || start > (end ?? 0)) {
+    if (start < 1 || start > (end ?? double.infinity)) {
       throw ArgumentError(
-        '`start` must be greater or equal to 0 and less than or equal to `end`',
+        '`start` must be greater or equal to 1 and less than or equal to `end`',
       );
     }
   }
@@ -43,15 +43,15 @@ class DownloadableRegion<R extends BaseRegion> {
   /// The options used to fetch tiles
   final TileLayer options;
 
-  /// Optionally skip past a number of tiles 'at the start' of a region
+  /// Optionally skip any tiles before this tile
   ///
   /// The order of the tiles in a region is directly chosen by the underlying
   /// tile generators, and so may not be stable between updates.
   ///
-  /// Set to 0 to skip none, which is the default.
+  /// Set to 1 to skip none, which is the default.
   final int start;
 
-  /// Optionally skip a number of tiles 'at the end' of a region
+  /// Optionally skip any tiles after this tile
   ///
   /// The order of the tiles in a region is directly chosen by the underlying
   /// tile generators, and so may not be stable between updates.
