@@ -6,13 +6,13 @@ class EmptyIndicator extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Center(
+  Widget build(BuildContext context) => const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(Icons.folder_off, size: 36),
             SizedBox(height: 10),
-            Text('No Stores Found'),
+            Text('Get started by creating a store!'),
           ],
         ),
       );

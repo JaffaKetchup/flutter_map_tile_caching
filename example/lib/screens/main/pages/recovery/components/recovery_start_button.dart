@@ -1,78 +1,52 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../../shared/state/download_provider.dart';
-import '../../../../download_region/download_region.dart';
+import '../../../../configure_download/configure_download.dart';
+import '../../region_selection/state/region_selection_provider.dart';
 
 class RecoveryStartButton extends StatelessWidget {
   const RecoveryStartButton({
     super.key,
     required this.moveToDownloadPage,
-    required this.region,
+    required this.result,
   });
 
   final void Function() moveToDownloadPage;
-  final RecoveredRegion region;
+  final ({bool isFailed, RecoveredRegion region}) result;
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<RecoveredRegion?>(
-        future: FMTC.instance.rootDirectory.recovery.getFailedRegion(region.id),
-        builder: (context, isFailed) => FutureBuilder<int>(
-          future: FMTC
-              .instance('')
-              .download
-              .check(region.toDownloadable(TileLayer())),
-          builder: (context, tiles) => tiles.hasData
-              ? IconButton(
-                  icon: Icon(
-                    Icons.download,
-                    color: isFailed.data != null ? Colors.green : null,
-                  ),
-                  onPressed: isFailed.data == null
-                      ? null
-                      : () async {
-                          final DownloadProvider downloadProvider =
-                              Provider.of<DownloadProvider>(
-                            context,
-                            listen: false,
-                          )
-                                ..region = region
-                                    .toDownloadable(TileLayer())
-                                    .originalRegion
-                                ..minZoom = region.minZoom
-                                ..maxZoom = region.maxZoom
-                                ..preventRedownload = region.preventRedownload
-                                ..seaTileRemoval = region.seaTileRemoval
-                                ..setSelectedStore(
-                                  FMTC.instance(region.storeName),
-                                )
-                                ..regionTiles = tiles.data;
-
-                          await Navigator.of(context).push(
-                            MaterialPageRoute<String>(
-                              builder: (BuildContext context) =>
-                                  DownloadRegionPopup(
-                                region: downloadProvider.region!,
-                              ),
-                              fullscreenDialog: true,
-                            ),
-                          );
-
-                          moveToDownloadPage();
-                        },
-                )
-              : const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                    ),
-                  ),
-                ),
+  Widget build(BuildContext context) => IconButton(
+        icon: Icon(
+          Icons.download,
+          color: result.isFailed ? Colors.green : null,
         ),
+        onPressed: !result.isFailed
+            ? null
+            : () async {
+                final regionSelectionProvider =
+                    Provider.of<RegionSelectionProvider>(context, listen: false)
+                      ..region = result.region.toRegion()
+                      ..minZoom = result.region.minZoom
+                      ..maxZoom = result.region.maxZoom
+                      ..setSelectedStore(
+                        FMTCStore(result.region.storeName),
+                      );
+
+                await Navigator.of(context).push(
+                  MaterialPageRoute<String>(
+                    builder: (context) => ConfigureDownloadPopup(
+                      region: regionSelectionProvider.region!,
+                      minZoom: result.region.minZoom,
+                      maxZoom: result.region.maxZoom,
+                      startTile: result.region.start,
+                      endTile: result.region.end,
+                    ),
+                    fullscreenDialog: true,
+                  ),
+                );
+
+                moveToDownloadPage();
+              },
       );
 }

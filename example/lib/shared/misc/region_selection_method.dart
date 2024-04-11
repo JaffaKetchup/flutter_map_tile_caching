@@ -1,0 +1,4 @@
+enum RegionSelectionMethod {
+  useMapCenter,
+  usePointer,
+}

@@ -1,119 +1,96 @@
-import 'dart:io';
-
 import 'package:badges/badges.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:fmtc_plus_background_downloading/fmtc_plus_background_downloading.dart';
 import 'package:provider/provider.dart';
 
-import '../../shared/state/download_provider.dart';
-import 'pages/downloader/downloader.dart';
 import 'pages/downloading/downloading.dart';
-import 'pages/map/map_view.dart';
+import 'pages/downloading/state/downloading_provider.dart';
+import 'pages/map/map_page.dart';
 import 'pages/recovery/recovery.dart';
-import 'pages/settingsAndAbout/settings_and_about.dart';
+import 'pages/region_selection/region_selection.dart';
 import 'pages/stores/stores.dart';
-import 'pages/update/update.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({
-    super.key,
-    required this.damagedDatabaseDeleted,
-  });
-
-  final String? damagedDatabaseDeleted;
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  //static const Color backgroundColor = Color(0xFFeaf6f5);
-  late final PageController _pageController;
+  late final _pageController = PageController(initialPage: _currentPageIndex);
   int _currentPageIndex = 0;
   bool extended = false;
 
   List<NavigationDestination> get _destinations => [
         const NavigationDestination(
-          icon: Icon(Icons.map),
           label: 'Map',
+          icon: Icon(Icons.map_outlined),
+          selectedIcon: Icon(Icons.map),
         ),
         const NavigationDestination(
-          icon: Icon(Icons.folder),
           label: 'Stores',
+          icon: Icon(Icons.folder_outlined),
+          selectedIcon: Icon(Icons.folder),
         ),
         const NavigationDestination(
-          icon: Icon(Icons.download),
           label: 'Download',
+          icon: Icon(Icons.download_outlined),
+          selectedIcon: Icon(Icons.download),
         ),
         NavigationDestination(
+          label: 'Recover',
           icon: StreamBuilder(
-            stream: FMTC.instance.rootDirectory.stats
-                .watchChanges()
-                .asBroadcastStream(),
-            builder: (context, _) => FutureBuilder<List<RecoveredRegion>>(
-              future: FMTC.instance.rootDirectory.recovery.failedRegions,
+            stream: FMTCRoot.stats.watchRecovery(),
+            builder: (context, _) => FutureBuilder(
+              future: FMTCRoot.recovery.recoverableRegions,
               builder: (context, snapshot) => Badge(
                 position: BadgePosition.topEnd(top: -5, end: -6),
                 badgeAnimation: const BadgeAnimation.size(
                   animationDuration: Duration(milliseconds: 100),
                 ),
                 showBadge: _currentPageIndex != 3 &&
-                    (snapshot.data?.isNotEmpty ?? false),
-                child: const Icon(Icons.running_with_errors),
+                    (snapshot.data?.failedOnly.isNotEmpty ?? false),
+                child: const Icon(Icons.support),
               ),
             ),
           ),
-          label: 'Recover',
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.settings),
-          label: 'Settings',
-        ),
-        if (Platform.isWindows || Platform.isAndroid)
-          const NavigationDestination(
-            icon: Icon(Icons.update),
-            label: 'Update',
-          ),
       ];
 
   List<Widget> get _pages => [
         const MapPage(),
         const StoresPage(),
-        Consumer<DownloadProvider>(
-          builder: (context, provider, _) => provider.downloadProgress == null
-              ? const DownloaderPage()
-              : const DownloadingPage(),
+        Selector<DownloadingProvider, Stream<DownloadProgress>?>(
+          selector: (context, provider) => provider.downloadProgress,
+          builder: (context, downloadProgress, _) => downloadProgress == null
+              ? const RegionSelectionPage()
+              : DownloadingPage(
+                  moveToMapPage: () =>
+                      _onDestinationSelected(0, cancelTilesPreview: false),
+                ),
         ),
         RecoveryPage(moveToDownloadPage: () => _onDestinationSelected(2)),
-        const SettingsAndAboutPage(),
-        if (Platform.isWindows || Platform.isAndroid) const UpdatePage(),
       ];
 
-  void _onDestinationSelected(int index) {
+  void _onDestinationSelected(int index, {bool cancelTilesPreview = true}) {
     setState(() => _currentPageIndex = index);
-    _pageController.animateToPage(
+    _pageController
+        .animateToPage(
       _currentPageIndex,
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
+    )
+        .then(
+      (_) {
+        if (cancelTilesPreview) {
+          final dp = context.read<DownloadingProvider>();
+          dp.tilesPreviewStreamSub
+              ?.cancel()
+              .then((_) => dp.tilesPreviewStreamSub = null);
+        }
+      },
     );
-  }
-
-  @override
-  void initState() {
-    _pageController = PageController(initialPage: _currentPageIndex);
-    if (widget.damagedDatabaseDeleted != null) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'At least one corrupted database has been deleted.\n${widget.damagedDatabaseDeleted}',
-            ),
-          ),
-        ),
-      );
-    }
-    super.initState();
   }
 
   @override
@@ -123,80 +100,57 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => FMTCBackgroundDownload(
-        child: Scaffold(
-          bottomNavigationBar: MediaQuery.of(context).size.width > 950
-              ? null
-              : NavigationBar(
-                  backgroundColor:
-                      Theme.of(context).navigationBarTheme.backgroundColor,
-                  onDestinationSelected: _onDestinationSelected,
-                  selectedIndex: _currentPageIndex,
-                  destinations: _destinations,
-                  labelBehavior: MediaQuery.of(context).size.width > 450
-                      ? null
-                      : NavigationDestinationLabelBehavior.alwaysHide,
-                  height: 70,
-                ),
-          body: Row(
-            children: [
-              if (MediaQuery.of(context).size.width > 950)
-                NavigationRail(
-                  onDestinationSelected: _onDestinationSelected,
-                  selectedIndex: _currentPageIndex,
-                  groupAlignment: 0,
-                  extended: extended,
-                  destinations: _destinations
-                      .map(
-                        (d) => NavigationRailDestination(
-                          icon: d.icon,
-                          label: Text(d.label),
-                          padding: const EdgeInsets.all(10),
+  Widget build(BuildContext context) => Scaffold(
+        bottomNavigationBar: MediaQuery.sizeOf(context).width > 950
+            ? null
+            : NavigationBar(
+                onDestinationSelected: _onDestinationSelected,
+                selectedIndex: _currentPageIndex,
+                destinations: _destinations,
+                labelBehavior:
+                    NavigationDestinationLabelBehavior.onlyShowSelected,
+                height: 70,
+              ),
+        body: Row(
+          children: [
+            if (MediaQuery.sizeOf(context).width > 950)
+              NavigationRail(
+                onDestinationSelected: _onDestinationSelected,
+                selectedIndex: _currentPageIndex,
+                labelType: NavigationRailLabelType.all,
+                groupAlignment: 0,
+                destinations: _destinations
+                    .map(
+                      (d) => NavigationRailDestination(
+                        label: Text(d.label),
+                        icon: d.icon,
+                        selectedIcon: d.selectedIcon,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 6,
+                          horizontal: 3,
                         ),
-                      )
-                      .toList(),
-                  leading: Row(
-                    children: [
-                      AnimatedContainer(
-                        width: extended ? 205 : 0,
-                        duration: kThemeAnimationDuration,
-                        curve: Curves.easeInOut,
                       ),
-                      IconButton(
-                        icon: AnimatedSwitcher(
-                          duration: kThemeAnimationDuration,
-                          switchInCurve: Curves.easeInOut,
-                          switchOutCurve: Curves.easeInOut,
-                          child: Icon(
-                            extended ? Icons.menu_open : Icons.menu,
-                            key: UniqueKey(),
-                          ),
-                        ),
-                        onPressed: () => setState(() => extended = !extended),
-                        tooltip: !extended ? 'Extend Menu' : 'Collapse Menu',
-                      ),
-                    ],
+                    )
+                    .toList(),
+              ),
+            Expanded(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: MediaQuery.sizeOf(context).width > 950
+                        ? BorderSide(color: Theme.of(context).dividerColor)
+                        : BorderSide.none,
                   ),
                 ),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topLeft: MediaQuery.of(context).size.width > 950
-                        ? const Radius.circular(16)
-                        : Radius.zero,
-                    bottomLeft: MediaQuery.of(context).size.width > 950
-                        ? const Radius.circular(16)
-                        : Radius.zero,
-                  ),
-                  child: PageView(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: _pages,
-                  ),
+                position: DecorationPosition.foreground,
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: _pages,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
 }

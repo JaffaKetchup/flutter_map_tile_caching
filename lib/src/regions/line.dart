@@ -1,7 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of flutter_map_tile_caching;
+part of '../../flutter_map_tile_caching.dart';
 
 /// A geographically line/locus region based off a list of coords and a [radius]
 ///
@@ -16,11 +16,7 @@ class LineRegion extends BaseRegion {
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
   ///  - [Widget] layer to be placed in a map: [toDrawable]
   ///  - list of [LatLng]s forming the outline: [LineRegion.toOutlines]
-  LineRegion(
-    this.line,
-    this.radius, {
-    super.name,
-  });
+  const LineRegion(this.line, this.radius);
 
   /// The center line defined by a list of coordinates
   final List<LatLng> line;
@@ -30,83 +26,69 @@ class LineRegion extends BaseRegion {
 
   /// Generate the list of rectangle segments formed from the locus of this line
   ///
-  /// Use the optional `overlap` argument to set the behaviour of the joints
+  /// Use the optional [overlap] argument to set the behaviour of the joints
   /// between segments:
   ///
   /// * -1: joined by closest corners (largest gap)
-  /// * 0 (default): joined by centers (equal gap and overlap)
+  /// * 0 (default): joined by centers
   /// * 1 (as downloaded): joined by further corners (largest overlap)
-  List<List<LatLng>> toOutlines([int overlap = 0]) {
+  Iterable<List<LatLng>> toOutlines([int overlap = 0]) sync* {
     if (overlap < -1 || overlap > 1) {
       throw ArgumentError('`overlap` must be between -1 and 1 inclusive');
     }
 
-    const Distance dist = Distance();
-    final int rad = (radius * math.pi / 4).round();
+    if (line.isEmpty) return;
 
-    return line.map((pos) {
-      if ((line.indexOf(pos) + 1) >= line.length) return [LatLng(0, 0)];
+    const dist = Distance();
+    final rad = radius * math.pi / 4;
 
-      final List<LatLng> section = [pos, line[line.indexOf(pos) + 1]];
+    for (int i = 0; i < line.length - 1; i++) {
+      final cp = line[i];
+      final np = line[i + 1];
 
-      final double bearing = dist.bearing(section[0], section[1]);
-      final double clockwiseRotation =
+      final bearing = dist.bearing(cp, np);
+      final clockwiseRotation =
           (90 + bearing) > 360 ? 360 - (90 + bearing) : (90 + bearing);
-      final double anticlockwiseRotation =
+      final anticlockwiseRotation =
           (bearing - 90) < 0 ? 360 + (bearing - 90) : (bearing - 90);
 
-      final LatLng offset1 =
-          dist.offset(section[0], rad, clockwiseRotation); // Top-right
-      final LatLng offset2 =
-          dist.offset(section[1], rad, clockwiseRotation); // Bottom-right
-      final LatLng offset3 =
-          dist.offset(section[1], rad, anticlockwiseRotation); // Bottom-left
-      final LatLng offset4 =
-          dist.offset(section[0], rad, anticlockwiseRotation); // Top-left
+      final tr = dist.offset(cp, rad, clockwiseRotation); // Top right
+      final br = dist.offset(np, rad, clockwiseRotation); // Bottom right
+      final bl = dist.offset(np, rad, anticlockwiseRotation); // Bottom left
+      final tl = dist.offset(cp, rad, anticlockwiseRotation); // Top left
 
-      if (overlap == 0) return [offset1, offset2, offset3, offset4];
+      if (overlap == 0) yield [tr, br, bl, tl];
 
-      final bool r = overlap == -1;
-      final bool os = line.indexOf(pos) == 0;
-      final bool oe = line.indexOf(pos) == line.length - 2;
+      final r = overlap == -1;
+      final os = i == 0;
+      final oe = i == line.length - 2;
 
-      return [
-        os ? offset1 : dist.offset(offset1, r ? rad : -rad, bearing),
-        oe ? offset2 : dist.offset(offset2, r ? -rad : rad, bearing),
-        oe ? offset3 : dist.offset(offset3, r ? -rad : rad, bearing),
-        os ? offset4 : dist.offset(offset4, r ? rad : -rad, bearing),
+      yield [
+        if (os) tr else dist.offset(tr, r ? rad : -rad, bearing),
+        if (oe) br else dist.offset(br, r ? -rad : rad, bearing),
+        if (oe) bl else dist.offset(bl, r ? -rad : rad, bearing),
+        if (os) tl else dist.offset(tl, r ? rad : -rad, bearing),
       ];
-    }).toList()
-      ..removeLast();
+    }
   }
 
   @override
-  DownloadableRegion toDownloadable(
-    int minZoom,
-    int maxZoom,
-    TileLayer options, {
-    int parallelThreads = 10,
-    bool preventRedownload = false,
-    bool seaTileRemoval = false,
-    int start = 0,
+  DownloadableRegion<LineRegion> toDownloadable({
+    required int minZoom,
+    required int maxZoom,
+    required TileLayer options,
+    int start = 1,
     int? end,
     Crs crs = const Epsg3857(),
-    void Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion._(
-        points: toOutline(),
+        this,
         minZoom: minZoom,
         maxZoom: maxZoom,
         options: options,
-        type: RegionType.line,
-        originalRegion: this,
-        parallelThreads: parallelThreads,
-        preventRedownload: preventRedownload,
-        seaTileRemoval: seaTileRemoval,
         start: start,
         end: end,
         crs: crs,
-        errorHandler: errorHandler,
       );
 
   @override
@@ -158,19 +140,26 @@ class LineRegion extends BaseRegion {
 
   /// Flattens the result of [toOutlines] - its documentation is quoted below
   ///
-  /// Prefer [toOutlines]. This method is likely to give a different result than
-  /// expected if used externally.
-  ///
   /// > Generate the list of rectangle segments formed from the locus of this
   /// > line
   /// >
-  /// > Use the optional `overlap` argument to set the behaviour of the joints
+  /// > Use the optional [overlap] argument to set the behaviour of the joints
   /// between segments:
   /// >
   /// > * -1: joined by closest corners (largest gap),
-  /// > * 0: joined by centers (equal gap and overlap)
-  /// > * 1 (default, as downloaded): joined by further corners (most overlap)
+  /// > * 0 (default): joined by centers
+  /// > * 1 (as downloaded): joined by further corners (most overlap)
   @override
-  List<LatLng> toOutline([int overlap = 1]) =>
-      toOutlines(overlap).expand((x) => x).toList();
+  Iterable<LatLng> toOutline([int overlap = 1]) =>
+      toOutlines(overlap).expand((x) => x);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LineRegion &&
+          other.radius == radius &&
+          listEquals(line, other.line));
+
+  @override
+  int get hashCode => Object.hash(line, radius);
 }

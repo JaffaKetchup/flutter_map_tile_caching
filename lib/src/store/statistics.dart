@@ -1,104 +1,112 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-// Not sure why the hell this triggers! It triggers on a documentation comment,
-// and doesn't go away no matter what I do.
 // ignore_for_file: use_late_for_private_fields_and_variables
 
-part of flutter_map_tile_caching;
+part of '../../flutter_map_tile_caching.dart';
 
-/// Provides statistics about a [StoreDirectory]
-class StoreStats extends _StoreDb {
-  const StoreStats._(super._store);
+/// Provides statistics about an [FMTCStore]
+///
+/// If the store is not in the expected state (of existence) when invoking an
+/// operation, then an error will be thrown ([StoreNotExists]). It is
+/// recommended to check [StoreManagement.ready] when necessary.
+class StoreStats {
+  StoreStats._(this._storeName);
+  final String _storeName;
 
-  /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
+  /// {@macro fmtc.backend.getStoreStats}
   ///
-  /// Prefer [storeSizeAsync] to avoid blocking the UI thread. Otherwise, this
-  /// has slightly better performance.
-  double get storeSize => _db.getSizeSync(includeIndexes: true) / 1024;
+  /// {@template fmtc.frontend.storestats.efficiency}
+  /// Prefer using [all] when multiple statistics are required instead of getting
+  /// them individually. Only one backend operation is required to get all the
+  /// stats, and so is more efficient.
+  /// {@endtemplate}
+  Future<({double size, int length, int hits, int misses})> get all =>
+      FMTCBackendAccess.internal.getStoreStats(storeName: _storeName);
 
-  /// Retrieve the total size of the stored tiles and metadata in kibibytes (KiB)
-  Future<double> get storeSizeAsync async =>
-      await _db.getSize(includeIndexes: true) / 1024;
-
-  /// Retrieve the number of stored tiles synchronously
+  /// Retrieve the total number of KiBs of all tiles' bytes (not 'real total'
+  /// size)
   ///
-  /// Prefer [storeLengthAsync] to avoid blocking the UI thread. Otherwise, this
-  /// has slightly better performance.
-  int get storeLength => _db.tiles.countSync();
+  /// {@macro fmtc.frontend.storestats.efficiency}
+  Future<double> get size => all.then((a) => a.size);
 
-  /// Retrieve the number of stored tiles asynchronously
-  Future<int> get storeLengthAsync => _db.tiles.count();
+  /// Retrieve the number of tiles belonging to this store
+  ///
+  /// {@macro fmtc.frontend.storestats.efficiency}
+  Future<int> get length => all.then((a) => a.length);
 
-  /// Retrieve the number of tiles that were successfully retrieved from the
-  /// store during browsing synchronously
+  /// Retrieve the number of successful tile retrievals when browsing
   ///
-  /// Prefer [cacheHitsAsync] to avoid blocking the UI thread. Otherwise, this
-  /// has slightly better performance.
-  int get cacheHits => _db.descriptorSync.hits;
+  /// {@macro fmtc.frontend.storestats.efficiency}
+  Future<int> get hits => all.then((a) => a.hits);
 
-  /// Retrieve the number of tiles that were successfully retrieved from the
-  /// store during browsing asynchronously
-  Future<int> get cacheHitsAsync async => (await _db.descriptor).hits;
+  /// Retrieve the number of unsuccessful tile retrievals when browsing
+  ///
+  /// {@macro fmtc.frontend.storestats.efficiency}
+  Future<int> get misses => all.then((a) => a.misses);
 
-  /// Retrieve the number of tiles that were unsuccessfully retrieved from the
-  /// store during browsing synchronously
-  ///
-  /// Prefer [cacheMissesAsync] to avoid blocking the UI thread. Otherwise, this
-  /// has slightly better performance.
-  int get cacheMisses => _db.descriptorSync.misses;
-
-  /// Retrieve the number of tiles that were unsuccessfully retrieved from the
-  /// store during browsing asynchronously
-  Future<int> get cacheMissesAsync async => (await _db.descriptor).misses;
-
-  /// Watch for changes in the current store
-  ///
-  /// Useful to update UI only when required, for example, in a `StreamBuilder`.
-  /// Whenever this has an event, it is likely the other statistics will have
-  /// changed.
-  ///
-  /// Control where changes are caught from using [storeParts]. See documentation
-  /// on those parts for their scope.
-  ///
-  /// Enable debouncing to prevent unnecessary events for small changes in detail
-  /// using [debounce]. Defaults to 200ms, or set to null to disable debouncing.
-  ///
-  /// Debouncing example (dash roughly represents [debounce]):
-  /// ```dart
-  /// input:  1-2-3---4---5-6-|
-  /// output: ------3---4-----6|
-  /// ```
+  /// {@macro fmtc.backend.watchStores}
   Stream<void> watchChanges({
-    Duration? debounce = const Duration(milliseconds: 200),
-    bool fireImmediately = false,
-    List<StoreParts> storeParts = const [
-      StoreParts.metadata,
-      StoreParts.tiles,
-      StoreParts.stats,
-    ],
-  }) =>
-      StreamGroup.merge([
-        if (storeParts.contains(StoreParts.metadata))
-          _db.metadata.watchLazy(fireImmediately: fireImmediately),
-        if (storeParts.contains(StoreParts.tiles))
-          _db.tiles.watchLazy(fireImmediately: fireImmediately),
-        if (storeParts.contains(StoreParts.stats))
-          _db.storeDescriptor
-              .watchObjectLazy(0, fireImmediately: fireImmediately),
-      ]).debounce(debounce ?? Duration.zero);
-}
+    bool triggerImmediately = false,
+  }) async* {
+    final stream = FMTCBackendAccess.internal.watchStores(
+      storeNames: [_storeName],
+      triggerImmediately: triggerImmediately,
+    );
+    yield* stream;
+  }
 
-/// Parts of a store which can be watched
-enum StoreParts {
-  /// Include changes to the store's metadata objects
-  metadata,
+  /// {@macro fmtc.backend.readLatestTile}
+  /// , then render the bytes to an [Image]
+  Future<Image?> tileImage({
+    double? size,
+    Key? key,
+    double scale = 1.0,
+    ImageFrameBuilder? frameBuilder,
+    ImageErrorWidgetBuilder? errorBuilder,
+    String? semanticLabel,
+    bool excludeFromSemantics = false,
+    Color? color,
+    Animation<double>? opacity,
+    BlendMode? colorBlendMode,
+    BoxFit? fit,
+    AlignmentGeometry alignment = Alignment.center,
+    ImageRepeat repeat = ImageRepeat.noRepeat,
+    Rect? centerSlice,
+    bool matchTextDirection = false,
+    bool gaplessPlayback = false,
+    bool isAntiAlias = false,
+    FilterQuality filterQuality = FilterQuality.low,
+    int? cacheWidth,
+    int? cacheHeight,
+  }) async {
+    final latestTile =
+        await FMTCBackendAccess.internal.readLatestTile(storeName: _storeName);
+    if (latestTile == null) return null;
 
-  /// Includes changes to the store's tile objects, including those which will
-  /// make some statistics change (eg. store size)
-  tiles,
-
-  /// Includes changes to the store's descriptor object, which will change with
-  /// the cache hit and miss statistics
-  stats,
+    return Image.memory(
+      Uint8List.fromList(latestTile.bytes),
+      key: key,
+      scale: scale,
+      frameBuilder: frameBuilder,
+      errorBuilder: errorBuilder,
+      semanticLabel: semanticLabel,
+      excludeFromSemantics: excludeFromSemantics,
+      width: size,
+      height: size,
+      color: color,
+      opacity: opacity,
+      colorBlendMode: colorBlendMode,
+      fit: fit,
+      alignment: alignment,
+      repeat: repeat,
+      centerSlice: centerSlice,
+      matchTextDirection: matchTextDirection,
+      gaplessPlayback: gaplessPlayback,
+      isAntiAlias: isAntiAlias,
+      filterQuality: filterQuality,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
+    );
+  }
 }

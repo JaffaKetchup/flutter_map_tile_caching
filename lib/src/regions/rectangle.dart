@@ -1,7 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of flutter_map_tile_caching;
+part of '../../flutter_map_tile_caching.dart';
 
 /// A geographically rectangular region based off coordinate bounds
 ///
@@ -18,41 +18,28 @@ class RectangleRegion extends BaseRegion {
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
   ///  - [Widget] layer to be placed in a map: [toDrawable]
   ///  - list of [LatLng]s forming the outline: [toOutline]
-  RectangleRegion(
-    this.bounds, {
-    super.name,
-  });
+  const RectangleRegion(this.bounds);
 
   /// The coordinate bounds
   final LatLngBounds bounds;
 
   @override
-  DownloadableRegion toDownloadable(
-    int minZoom,
-    int maxZoom,
-    TileLayer options, {
-    int parallelThreads = 10,
-    bool preventRedownload = false,
-    bool seaTileRemoval = false,
-    int start = 0,
+  DownloadableRegion<RectangleRegion> toDownloadable({
+    required int minZoom,
+    required int maxZoom,
+    required TileLayer options,
+    int start = 1,
     int? end,
     Crs crs = const Epsg3857(),
-    void Function(Object?)? errorHandler,
   }) =>
       DownloadableRegion._(
-        points: [bounds.northWest, bounds.southEast],
+        this,
         minZoom: minZoom,
         maxZoom: maxZoom,
         options: options,
-        type: RegionType.rectangle,
-        originalRegion: this,
-        parallelThreads: parallelThreads,
-        preventRedownload: preventRedownload,
-        seaTileRemoval: seaTileRemoval,
         start: start,
         end: end,
         crs: crs,
-        errorHandler: errorHandler,
       );
 
   @override
@@ -76,27 +63,20 @@ class RectangleRegion extends BaseRegion {
             label: label,
             labelStyle: labelStyle,
             labelPlacement: labelPlacement,
-            points: [
-              LatLng(
-                bounds.southEast.latitude,
-                bounds.northWest.longitude,
-              ),
-              bounds.southEast,
-              LatLng(
-                bounds.northWest.latitude,
-                bounds.southEast.longitude,
-              ),
-              bounds.northWest,
-            ],
-          )
+            points: toOutline(),
+          ),
         ],
       );
 
   @override
-  List<LatLng> toOutline() => [
-        LatLng(bounds.southEast.latitude, bounds.northWest.longitude),
-        bounds.southEast,
-        LatLng(bounds.northWest.latitude, bounds.southEast.longitude),
-        bounds.northWest,
-      ];
+  List<LatLng> toOutline() =>
+      [bounds.northEast, bounds.southEast, bounds.southWest, bounds.northWest];
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RectangleRegion && other.bounds == bounds);
+
+  @override
+  int get hashCode => bounds.hashCode;
 }

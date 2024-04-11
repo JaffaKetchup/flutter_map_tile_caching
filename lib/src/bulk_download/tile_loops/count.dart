@@ -3,118 +3,139 @@
 
 part of 'shared.dart';
 
-class TilesCounter {
+/// A set of methods for each type of [BaseRegion] that counts the number of
+/// tiles within the specified [DownloadableRegion]
+///
+/// Each method should handle a [DownloadableRegion] with a specific generic type
+/// [BaseRegion]. If a method is passed a non-compatible region, it is expected
+/// to throw a `CastError`.
+///
+/// These methods should be run within seperate isolates, as they do heavy,
+/// potentially lengthy computation. They do not perform multiple-communication,
+/// and so only require simple Isolate protocols such as [Isolate.run].
+///
+/// Where possible, these methods do not generate every coordinate for improved
+/// efficiency, as the number of tiles can be counted without looping through
+/// them all (in most cases). See [TileGenerators] for methods that actually
+/// generate the coordinates of each tile, but with added complexity.
+///
+/// The number of tiles returned by each method must match the number of tiles
+/// returned by the respective method in [TileGenerators]. This is enforced by
+/// automated tests.
+@internal
+class TileCounters {
+  /// Trim [numOfTiles] to between the [region]'s [DownloadableRegion.start] and
+  /// [DownloadableRegion.end]
+  static int _trimToRange(DownloadableRegion region, int numOfTiles) =>
+      min(region.end ?? largestInt, numOfTiles) -
+      min(region.start - 1, numOfTiles);
+
+  /// Returns the number of tiles within a [DownloadableRegion] with generic type
+  /// [RectangleRegion]
+  @internal
   static int rectangleTiles(DownloadableRegion region) {
-    final tileSize = _getTileSize(region);
-    final bounds = (region.originalRegion as RectangleRegion).bounds;
+    region as DownloadableRegion<RectangleRegion>;
 
-    int numberOfTiles = 0;
-    for (int zoomLvl = region.minZoom; zoomLvl <= region.maxZoom; zoomLvl++) {
-      final CustomPoint<num> nwCustomPoint = region.crs
-          .latLngToPoint(bounds.northWest, zoomLvl.toDouble())
-          .unscaleBy(tileSize)
+    final northWest = region.originalRegion.bounds.northWest;
+    final southEast = region.originalRegion.bounds.southEast;
+
+    var numberOfTiles = 0;
+
+    for (double zoomLvl = region.minZoom.toDouble();
+        zoomLvl <= region.maxZoom;
+        zoomLvl++) {
+      final nwPoint = (region.crs.latLngToPoint(northWest, zoomLvl) /
+              region.options.tileSize)
           .floor();
-      final CustomPoint<num> seCustomPoint = region.crs
-              .latLngToPoint(bounds.southEast, zoomLvl.toDouble())
-              .unscaleBy(tileSize)
+      final sePoint = (region.crs.latLngToPoint(southEast, zoomLvl) /
+                  region.options.tileSize)
               .ceil() -
-          const CustomPoint(1, 1);
+          const Point(1, 1);
 
-      numberOfTiles += (seCustomPoint.x - nwCustomPoint.x + 1).toInt() *
-          (seCustomPoint.y - nwCustomPoint.y + 1).toInt();
+      numberOfTiles +=
+          (sePoint.x - nwPoint.x + 1) * (sePoint.y - nwPoint.y + 1);
     }
-    return numberOfTiles;
+
+    return _trimToRange(region, numberOfTiles);
   }
 
+  /// Returns the number of tiles within a [DownloadableRegion] with generic type
+  /// [CircleRegion]
+  @internal
   static int circleTiles(DownloadableRegion region) {
-    // This took some time and is fairly complicated, so this is the overall explanation:
-    // 1. Given a `LatLng` for every x degrees on a circle's circumference, convert it into a tile number
-    // 2. Using a `Map` per zoom level, record all the X values in it without duplicates
-    // 3. Under the previous record, add all the Y values within the circle (ie. to opposite the X value)
-    // 4. Loop over these XY values and add them to the list
-    // Theoretically, this could have been done using the same method as `lineTiles`, but `lineTiles` was built after this algorithm and this makes more sense for a circle
+    region as DownloadableRegion<CircleRegion>;
 
-    final tileSize = _getTileSize(region);
     final circleOutline = region.originalRegion.toOutline();
 
     // Format: Map<z, Map<x, List<y>>>
-    final Map<int, Map<int, List<int>>> outlineTileNums = {};
+    final outlineTileNums = <int, Map<int, List<int>>>{};
 
     int numberOfTiles = 0;
 
     for (int zoomLvl = region.minZoom; zoomLvl <= region.maxZoom; zoomLvl++) {
-      outlineTileNums[zoomLvl] = <int, List<int>>{};
+      outlineTileNums[zoomLvl] = {};
 
-      for (final LatLng node in circleOutline) {
-        final CustomPoint<num> tile = region.crs
-            .latLngToPoint(node, zoomLvl.toDouble())
-            .unscaleBy(tileSize)
+      for (final node in circleOutline) {
+        final tile = (region.crs.latLngToPoint(node, zoomLvl.toDouble()) /
+                region.options.tileSize)
             .floor();
 
-        outlineTileNums[zoomLvl]![tile.x.toInt()] ??= [
-          9223372036854775807,
-          -9223372036854775808,
-        ];
-
-        outlineTileNums[zoomLvl]![tile.x.toInt()] = [
-          tile.y < outlineTileNums[zoomLvl]![tile.x.toInt()]![0]
-              ? tile.y.toInt()
-              : outlineTileNums[zoomLvl]![tile.x.toInt()]![0],
-          tile.y > outlineTileNums[zoomLvl]![tile.x.toInt()]![1]
-              ? tile.y.toInt()
-              : outlineTileNums[zoomLvl]![tile.x.toInt()]![1],
+        outlineTileNums[zoomLvl]![tile.x] ??= [largestInt, smallestInt];
+        outlineTileNums[zoomLvl]![tile.x] = [
+          if (tile.y < outlineTileNums[zoomLvl]![tile.x]![0])
+            tile.y
+          else
+            outlineTileNums[zoomLvl]![tile.x]![0],
+          if (tile.y > outlineTileNums[zoomLvl]![tile.x]![1])
+            tile.y
+          else
+            outlineTileNums[zoomLvl]![tile.x]![1],
         ];
       }
 
-      for (final int x in outlineTileNums[zoomLvl]!.keys) {
+      for (final x in outlineTileNums[zoomLvl]!.keys) {
         numberOfTiles += outlineTileNums[zoomLvl]![x]![1] -
             outlineTileNums[zoomLvl]![x]![0] +
             1;
       }
     }
 
-    return numberOfTiles;
+    return _trimToRange(region, numberOfTiles);
   }
 
+  /// Returns the number of tiles within a [DownloadableRegion] with generic type
+  /// [LineRegion]
+  @internal
   static int lineTiles(DownloadableRegion region) {
-    // This took some time and is fairly complicated, so this is the overall explanation:
-    // 1. Given 4 `LatLng` points, create a 'straight' rectangle around the 'rotated' rectangle, that can be defined with just 2 `LatLng` points
-    // 2. Convert the straight rectangle into tile numbers, and loop through the same as `rectangleTiles`
-    // 3. For every generated tile number (which represents top-left of the tile), generate the rest of the tile corners
-    // 4. Check whether the square tile overlaps the rotated rectangle from the start, add it to the list if it does
-    // 5. Keep track of the number of overlaps per row: if there was one overlap and now there isn't, skip the rest of the row because we can be sure there are no more tiles
+    region as DownloadableRegion<LineRegion>;
 
-    // Overlap algorithm originally in Python, available at https://stackoverflow.com/a/56962827/11846040
+    // Overlap algorithm originally in Python, available at
+    // https://stackoverflow.com/a/56962827/11846040
     bool overlap(_Polygon a, _Polygon b) {
       for (int x = 0; x < 2; x++) {
         final _Polygon polygon = x == 0 ? a : b;
 
         for (int i1 = 0; i1 < polygon.points.length; i1++) {
-          final int i2 = (i1 + 1) % polygon.points.length;
-          final CustomPoint<num> p1 = polygon.points[i1];
-          final CustomPoint<num> p2 = polygon.points[i2];
+          final i2 = (i1 + 1) % polygon.points.length;
+          final p1 = polygon.points[i1];
+          final p2 = polygon.points[i2];
 
-          final CustomPoint<num> normal =
-              CustomPoint<num>(p2.y - p1.y, p1.x - p2.x);
+          final normal = Point(p2.y - p1.y, p1.x - p2.x);
 
-          double minA = double.infinity;
-          double maxA = double.negativeInfinity;
-
-          for (final CustomPoint<num> p in a.points) {
-            final num projected = normal.x * p.x + normal.y * p.y;
-
-            if (projected < minA) minA = projected.toDouble();
-            if (projected > maxA) maxA = projected.toDouble();
+          var minA = largestInt;
+          var maxA = smallestInt;
+          for (final p in a.points) {
+            final projected = normal.x * p.x + normal.y * p.y;
+            if (projected < minA) minA = projected;
+            if (projected > maxA) maxA = projected;
           }
 
-          double minB = double.infinity;
-          double maxB = double.negativeInfinity;
-
-          for (final CustomPoint<num> p in b.points) {
-            final num projected = normal.x * p.x + normal.y * p.y;
-
-            if (projected < minB) minB = projected.toDouble();
-            if (projected > maxB) maxB = projected.toDouble();
+          var minB = largestInt;
+          var maxB = smallestInt;
+          for (final p in b.points) {
+            final projected = normal.x * p.x + normal.y * p.y;
+            if (projected < minB) minB = projected;
+            if (projected > maxB) maxB = projected;
           }
 
           if (maxA < minB || maxB < minA) return false;
@@ -124,85 +145,94 @@ class TilesCounter {
       return true;
     }
 
-    final tileSize = _getTileSize(region);
-    final lineOutline = (region.originalRegion as LineRegion).toOutlines(1);
+    final lineOutline = region.originalRegion.toOutlines(1);
 
     int numberOfTiles = 0;
 
-    for (int zoomLvl = region.minZoom; zoomLvl <= region.maxZoom; zoomLvl++) {
+    for (double zoomLvl = region.minZoom.toDouble();
+        zoomLvl <= region.maxZoom;
+        zoomLvl++) {
+      final generatedTiles = <int>[];
+
       for (final rect in lineOutline) {
-        final LatLng rrBottomLeft = rect[0];
-        final LatLng rrBottomRight = rect[1];
-        final LatLng rrTopRight = rect[2];
-        final LatLng rrTopLeft = rect[3];
+        final rotatedRectangle = (
+          bottomLeft: rect[0],
+          bottomRight: rect[1],
+          topRight: rect[2],
+          topLeft: rect[3],
+        );
 
-        final List<double> rrAllLat = [
-          rrTopLeft.latitude,
-          rrTopRight.latitude,
-          rrBottomLeft.latitude,
-          rrBottomRight.latitude,
+        final rotatedRectangleLats = [
+          rotatedRectangle.topLeft.latitude,
+          rotatedRectangle.topRight.latitude,
+          rotatedRectangle.bottomLeft.latitude,
+          rotatedRectangle.bottomRight.latitude,
         ];
-        final List<double> rrAllLon = [
-          rrTopLeft.longitude,
-          rrTopRight.longitude,
-          rrBottomLeft.longitude,
-          rrBottomRight.longitude,
+        final rotatedRectangleLngs = [
+          rotatedRectangle.topLeft.longitude,
+          rotatedRectangle.topRight.longitude,
+          rotatedRectangle.bottomLeft.longitude,
+          rotatedRectangle.bottomRight.longitude,
         ];
 
-        final CustomPoint<num> rrNorthWest = region.crs
-            .latLngToPoint(rrTopLeft, zoomLvl.toDouble())
-            .unscaleBy(tileSize)
-            .floor();
-        final CustomPoint<num> rrNorthEast = region.crs
-                .latLngToPoint(rrTopRight, zoomLvl.toDouble())
-                .unscaleBy(tileSize)
-                .ceil() -
-            const CustomPoint(1, 0);
-        final CustomPoint<num> rrSouthWest = region.crs
-                .latLngToPoint(rrBottomLeft, zoomLvl.toDouble())
-                .unscaleBy(tileSize)
-                .ceil() -
-            const CustomPoint(0, 1);
-        final CustomPoint<num> rrSouthEast = region.crs
-                .latLngToPoint(rrBottomRight, zoomLvl.toDouble())
-                .unscaleBy(tileSize)
-                .ceil() -
-            const CustomPoint(1, 1);
+        final rotatedRectangleNW =
+            (region.crs.latLngToPoint(rotatedRectangle.topLeft, zoomLvl) /
+                    region.options.tileSize)
+                .floor();
+        final rotatedRectangleNE =
+            (region.crs.latLngToPoint(rotatedRectangle.topRight, zoomLvl) /
+                        region.options.tileSize)
+                    .ceil() -
+                const Point(1, 0);
+        final rotatedRectangleSW =
+            (region.crs.latLngToPoint(rotatedRectangle.bottomLeft, zoomLvl) /
+                        region.options.tileSize)
+                    .ceil() -
+                const Point(0, 1);
+        final rotatedRectangleSE =
+            (region.crs.latLngToPoint(rotatedRectangle.bottomRight, zoomLvl) /
+                        region.options.tileSize)
+                    .ceil() -
+                const Point(1, 1);
 
-        final CustomPoint<num> srNorthWest = region.crs
-            .latLngToPoint(
-              LatLng(rrAllLat.max, rrAllLon.min),
-              zoomLvl.toDouble(),
-            )
-            .unscaleBy(tileSize)
+        final straightRectangleNW = (region.crs.latLngToPoint(
+                  LatLng(rotatedRectangleLats.max, rotatedRectangleLngs.min),
+                  zoomLvl,
+                ) /
+                region.options.tileSize)
             .floor();
-        final CustomPoint<num> srSouthEast = region.crs
-                .latLngToPoint(
-                  LatLng(rrAllLat.min, rrAllLon.max),
-                  zoomLvl.toDouble(),
-                )
-                .unscaleBy(tileSize)
+        final straightRectangleSE = (region.crs.latLngToPoint(
+                      LatLng(
+                        rotatedRectangleLats.min,
+                        rotatedRectangleLngs.max,
+                      ),
+                      zoomLvl,
+                    ) /
+                    region.options.tileSize)
                 .ceil() -
-            const CustomPoint(1, 1);
+            const Point(1, 1);
 
-        for (num x = srNorthWest.x; x <= srSouthEast.x; x++) {
+        for (int x = straightRectangleNW.x; x <= straightRectangleSE.x; x++) {
           bool foundOverlappingTile = false;
-          for (num y = srNorthWest.y; y <= srSouthEast.y; y++) {
+          for (int y = straightRectangleNW.y; y <= straightRectangleSE.y; y++) {
+            final tile = _Polygon(
+              Point(x, y),
+              Point(x + 1, y),
+              Point(x + 1, y + 1),
+              Point(x, y + 1),
+            );
+            if (generatedTiles.contains(tile.hashCode)) continue;
             if (overlap(
               _Polygon(
-                rrNorthWest,
-                rrNorthEast,
-                rrSouthEast,
-                rrSouthWest,
+                rotatedRectangleNW,
+                rotatedRectangleNE,
+                rotatedRectangleSE,
+                rotatedRectangleSW,
               ),
-              _Polygon(
-                CustomPoint(x, y),
-                CustomPoint(x + 1, y),
-                CustomPoint(x + 1, y + 1),
-                CustomPoint(x, y + 1),
-              ),
+              tile,
             )) {
               numberOfTiles++;
+              generatedTiles.add(tile.hashCode);
               foundOverlappingTile = true;
             } else if (foundOverlappingTile) {
               break;
@@ -212,6 +242,72 @@ class TilesCounter {
       }
     }
 
-    return numberOfTiles;
+    return _trimToRange(region, numberOfTiles);
+  }
+
+  /// Returns the number of tiles within a [DownloadableRegion] with generic type
+  /// [CustomPolygonRegion]
+  @internal
+  static int customPolygonTiles(DownloadableRegion region) {
+    region as DownloadableRegion<CustomPolygonRegion>;
+
+    final customPolygonOutline = region.originalRegion.outline;
+
+    int numberOfTiles = 0;
+
+    for (double zoomLvl = region.minZoom.toDouble();
+        zoomLvl <= region.maxZoom;
+        zoomLvl++) {
+      final allOutlineTiles = <Point<int>>{};
+
+      final pointsOutline = customPolygonOutline
+          .map((e) => region.crs.latLngToPoint(e, zoomLvl).floor());
+
+      for (final triangle in Earcut.triangulateFromPoints(
+        pointsOutline.map((e) => e.toDoublePoint()),
+      ).map(pointsOutline.elementAt).slices(3)) {
+        final outlineTiles = {
+          ..._bresenhamsLGA(
+            Point(triangle[0].x, triangle[0].y),
+            Point(triangle[1].x, triangle[1].y),
+            unscaleBy: region.options.tileSize,
+          ),
+          ..._bresenhamsLGA(
+            Point(triangle[1].x, triangle[1].y),
+            Point(triangle[2].x, triangle[2].y),
+            unscaleBy: region.options.tileSize,
+          ),
+          ..._bresenhamsLGA(
+            Point(triangle[2].x, triangle[2].y),
+            Point(triangle[0].x, triangle[0].y),
+            unscaleBy: region.options.tileSize,
+          ),
+        };
+        allOutlineTiles.addAll(outlineTiles);
+
+        final byY = <int, Set<int>>{};
+        for (final Point(:x, :y) in outlineTiles) {
+          (byY[y] ??= {}).add(x);
+        }
+
+        for (final xs in byY.values) {
+          final xsRawMin = xs.min;
+          int i = 0;
+          for (; xs.contains(xsRawMin + i); i++) {}
+          final xsMin = xsRawMin + i;
+
+          final xsRawMax = xs.max;
+          i = 0;
+          for (; xs.contains(xsRawMax - i); i++) {}
+          final xsMax = xsRawMax - i;
+
+          if (xsMin <= xsMax) numberOfTiles += (xsMax - xsMin) + 1;
+        }
+      }
+
+      numberOfTiles += allOutlineTiles.length;
+    }
+
+    return _trimToRange(region, numberOfTiles);
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../../shared/state/download_provider.dart';
+//import '../../../shared/state/download_provider.dart';
 import '../../../shared/state/general_provider.dart';
 import '../store_editor.dart';
 
@@ -41,45 +41,39 @@ AppBar buildHeader({
             if (formKey.currentState!.validate()) {
               formKey.currentState!.save();
 
-              final StoreDirectory? existingStore =
-                  widget.existingStoreName == null
-                      ? null
-                      : FMTC.instance(widget.existingStoreName!);
-              final StoreDirectory newStore = existingStore == null
-                  ? FMTC.instance(newValues['storeName']!)
+              final existingStore = widget.existingStoreName == null
+                  ? null
+                  : FMTCStore(widget.existingStoreName!);
+              final newStore = existingStore == null
+                  ? FMTCStore(newValues['storeName']!)
                   : await existingStore.manage.rename(newValues['storeName']!);
               if (!mounted) return;
 
-              final downloadProvider =
-                  Provider.of<DownloadProvider>(context, listen: false);
+              /*final downloadProvider =
+                  Provider.of<DownloaderProvider>(context, listen: false);
               if (existingStore != null &&
                   downloadProvider.selectedStore == existingStore) {
                 downloadProvider.setSelectedStore(newStore);
-              }
+              }*/
 
-              await newStore.manage.createAsync();
+              if (existingStore == null) await newStore.manage.create();
 
-              await newStore.metadata.addAsync(
+              // Designed to test both methods, even though only bulk would be
+              // more efficient
+              await newStore.metadata.set(
                 key: 'sourceURL',
                 value: newValues['sourceURL']!,
               );
-              await newStore.metadata.addAsync(
-                key: 'validDuration',
-                value: newValues['validDuration']!,
-              );
-              await newStore.metadata.addAsync(
-                key: 'maxLength',
-                value: newValues['maxLength']!,
+              await newStore.metadata.setBulk(
+                kvs: {
+                  'validDuration': newValues['validDuration']!,
+                  'maxLength': newValues['maxLength']!,
+                  if (widget.existingStoreName == null || useNewCacheModeValue)
+                    'behaviour': cacheModeValue ?? 'cacheFirst',
+                },
               );
 
-              if (widget.existingStoreName == null || useNewCacheModeValue) {
-                await newStore.metadata.addAsync(
-                  key: 'behaviour',
-                  value: cacheModeValue ?? 'cacheFirst',
-                );
-              }
-
-              if (!mounted) return;
+              if (!context.mounted) return;
               if (widget.isStoreInUse && widget.existingStoreName != null) {
                 Provider.of<GeneralProvider>(context, listen: false)
                     .currentStore = newValues['storeName'];
@@ -91,6 +85,7 @@ AppBar buildHeader({
                 const SnackBar(content: Text('Saved successfully')),
               );
             } else {
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -101,6 +96,6 @@ AppBar buildHeader({
               );
             }
           },
-        )
+        ),
       ],
     );

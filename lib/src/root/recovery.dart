@@ -1,168 +1,88 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of flutter_map_tile_caching;
+part of '../../flutter_map_tile_caching.dart';
 
-/// Manages the download recovery of all sub-stores of this [RootDirectory]
+/// Manages the download recovery of all sub-stores of this [FMTCRoot]
 ///
-/// Is a singleton to ensure functioning as expected.
+/// ---
+///
+/// When a download is started, a recovery region is stored in a non-volatile
+/// database, and the download ID is stored in volatile memory.
+///
+/// If the download finishes normally, both entries are removed, otherwise, the
+/// memory is cleared when the app is closed, but the database record is not
+/// removed.
+///
+/// {@template fmtc.rootRecovery.failedDefinition}
+/// A failed download is one that was found in the recovery database, but not
+/// in the application memory. It can therefore be assumed that the download
+/// is also no longer in memory, and was therefore stopped unexpectedly, for
+/// example after a fatal crash.
+/// {@endtemplate}
+///
+/// The recovery system then allows the original [BaseRegion] and
+/// [DownloadableRegion] to be recovered (via [RecoveredRegion]) from the failed
+/// download, and the download can be restarted.
+///
+/// During a download, the database recovery entity is updated every tile (or
+/// every batch) with the number of completed tiles: this allows the
+/// [DownloadableRegion.start] to have it's value set to skip tiles that have
+/// been successfully downloaded. Therefore, no unnecessary tiles are downloaded
+/// again.
+///
+/// > [!NOTE]
+/// > Options set at download time, in [StoreDownload.startForeground], are not
+/// > included.
 class RootRecovery {
   RootRecovery._() {
-    instance = this;
+    _instance = this;
   }
+  static RootRecovery? _instance;
 
-  Isar get _recovery => FMTCRegistry.instance.recoveryDatabase;
+  /// Determines which downloads are known to be on-going, and therefore
+  /// can be ignored when fetching [recoverableRegions]
+  final Set<int> _downloadsOngoing = {};
 
-  /// Manages the download recovery of all sub-stores of this [RootDirectory]
+  /// List all recoverable regions, and whether each one has failed
   ///
-  /// Is a singleton to ensure functioning as expected.
-  static RootRecovery? instance;
-
-  /// Keeps a list of downloads that are ongoing, so they are not recoverable
-  /// unnecessarily
-  final List<int> _downloadsOngoing = [];
-
-  /// Get a list of all recoverable regions
+  /// Result can be filtered to only include failed downloads using the
+  /// [FMTCRecoveryGetFailedExts.failedOnly] extension.
   ///
-  /// See [failedRegions] for regions that correspond to failed/stopped downloads.
-  Future<List<RecoveredRegion>> get recoverableRegions async =>
-      (await _recovery.recovery.where().findAll())
-          .map(
-            (r) => RecoveredRegion._(
-              id: r.id,
-              storeName: r.storeName,
-              time: r.time,
-              type: r.type,
-              bounds: r.type == RegionType.rectangle
-                  ? LatLngBounds(
-                      LatLng(r.nwLat!, r.nwLng!),
-                      LatLng(r.seLat!, r.seLng!),
-                    )
-                  : null,
-              center: r.type == RegionType.circle
-                  ? LatLng(r.centerLat!, r.centerLng!)
-                  : null,
-              line: r.type == RegionType.line
-                  ? List.generate(
-                      r.linePointsLat!.length,
-                      (i) => LatLng(
-                        r.linePointsLat![i],
-                        r.linePointsLng![i],
-                      ),
-                    )
-                  : null,
-              radius: r.type != RegionType.rectangle
-                  ? r.type == RegionType.circle
-                      ? r.circleRadius!
-                      : r.lineRadius!
-                  : null,
-              minZoom: r.minZoom,
-              maxZoom: r.maxZoom,
-              start: r.start,
-              end: r.end,
-              parallelThreads: r.parallelThreads,
-              preventRedownload: r.preventRedownload,
-              seaTileRemoval: r.seaTileRemoval,
-            ),
-          )
-          .toList();
-
-  /// Get a list of all recoverable regions that correspond to failed/stopped downloads
-  ///
-  /// See [recoverableRegions] for all regions.
-  Future<List<RecoveredRegion>> get failedRegions async =>
-      (await recoverableRegions)
-          .where((r) => !_downloadsOngoing.contains(r.id))
-          .toList();
+  /// {@macro fmtc.rootRecovery.failedDefinition}
+  Future<Iterable<({bool isFailed, RecoveredRegion region})>>
+      get recoverableRegions async =>
+          FMTCBackendAccess.internal.listRecoverableRegions().then(
+                (rs) => rs.map(
+                  (r) =>
+                      (isFailed: !_downloadsOngoing.contains(r.id), region: r),
+                ),
+              );
 
   /// Get a specific region, even if it doesn't need recovering
   ///
   /// Returns `Future<null>` if there was no region found
-  Future<RecoveredRegion?> getRecoverableRegion(int id) async =>
-      (await recoverableRegions).singleWhereOrNull((r) => r.id == id);
+  Future<({bool isFailed, RecoveredRegion region})?> getRecoverableRegion(
+    int id,
+  ) async {
+    final region =
+        await FMTCBackendAccess.internal.getRecoverableRegion(id: id);
 
-  /// Get a specific region, only if it needs recovering
-  ///
-  /// Returns `Future<null>` if there was no region found
-  Future<RecoveredRegion?> getFailedRegion(int id) async =>
-      (await failedRegions).singleWhereOrNull((r) => r.id == id);
-
-  Future<void> _start({
-    required int id,
-    required String storeName,
-    required DownloadableRegion region,
-  }) async {
-    _downloadsOngoing.add(id);
-    return _recovery.writeTxn(
-      () => _recovery.recovery.put(
-        DbRecoverableRegion(
-          id: id,
-          storeName: storeName,
-          time: DateTime.now(),
-          type: region.type,
-          minZoom: region.minZoom,
-          maxZoom: region.maxZoom,
-          start: region.start,
-          end: region.end,
-          parallelThreads: region.parallelThreads,
-          preventRedownload: region.preventRedownload,
-          seaTileRemoval: region.seaTileRemoval,
-          nwLat: region.type == RegionType.rectangle
-              ? (region.originalRegion as RectangleRegion)
-                  .bounds
-                  .northWest
-                  .latitude
-              : null,
-          nwLng: region.type == RegionType.rectangle
-              ? (region.originalRegion as RectangleRegion)
-                  .bounds
-                  .northWest
-                  .longitude
-              : null,
-          seLat: region.type == RegionType.rectangle
-              ? (region.originalRegion as RectangleRegion)
-                  .bounds
-                  .southEast
-                  .latitude
-              : null,
-          seLng: region.type == RegionType.rectangle
-              ? (region.originalRegion as RectangleRegion)
-                  .bounds
-                  .southEast
-                  .longitude
-              : null,
-          centerLat: region.type == RegionType.circle
-              ? (region.originalRegion as CircleRegion).center.latitude
-              : null,
-          centerLng: region.type == RegionType.circle
-              ? (region.originalRegion as CircleRegion).center.longitude
-              : null,
-          linePointsLat: region.type == RegionType.line
-              ? (region.originalRegion as LineRegion)
-                  .line
-                  .map((c) => c.latitude)
-                  .toList()
-              : null,
-          linePointsLng: region.type == RegionType.line
-              ? (region.originalRegion as LineRegion)
-                  .line
-                  .map((c) => c.longitude)
-                  .toList()
-              : null,
-          circleRadius: region.type == RegionType.circle
-              ? (region.originalRegion as CircleRegion).radius
-              : null,
-          lineRadius: region.type == RegionType.line
-              ? (region.originalRegion as LineRegion).radius
-              : null,
-        ),
-      ),
-    );
+    return (isFailed: !_downloadsOngoing.contains(region.id), region: region);
   }
 
-  /// Safely cancel a recoverable region
-  Future<void> cancel(int id) async {
-    _downloadsOngoing.remove(id);
-    return _recovery.writeTxn(() => _recovery.recovery.delete(id));
-  }
+  /// {@macro fmtc.backend.cancelRecovery}
+  Future<void> cancel(int id) async =>
+      FMTCBackendAccess.internal.cancelRecovery(id: id);
+}
+
+/// Contains [failedOnly] extension for [RootRecovery.recoverableRegions]
+///
+/// See documentation on those methods for more information.
+extension FMTCRecoveryGetFailedExts
+    on Iterable<({bool isFailed, RecoveredRegion region})> {
+  /// Filter the [RootRecovery.recoverableRegions] result to include only
+  /// failed downloads
+  Iterable<RecoveredRegion> get failedOnly =>
+      where((r) => r.isFailed).map((r) => r.region);
 }

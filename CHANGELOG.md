@@ -7,17 +7,89 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 * @huulbaek
 * @andrewames
 * @ozzy1873
-* @mohammedX6
+* @eidolonFIRE
 * @weishuhn
+* @mohammedX6
 * and 3 anonymous or private donors
 
 # Changelog
 
-## [8.0.1] - 2023/05/05
+## [9.0.0] - "Just Another Rewrite" - 2024/04/XX
+
+This update has essentially rewritten FMTC from the ground up, over hundreds of hours. It focuses on:
+
+* improving future maintainability by improving modularity and seperation of concerns
+* improving stability & performance across the board
+* supporting a many-to-many relationship between tiles and stores to reduce duplication
+
+I would hugely appricate any donations - please see the documentation site, GitHub repo, or pub.dev package.
+
+I would also like to thank all those who have been waiting and contributing their feedback throughout the process: it means a lot to me that FMTC is such a crucial component to your application.
+
+And without further ado, let's get the biggest changes out of the way first:
+
+* Added support for modular storage/root backends through `FMTCBackend`
+  * Removed Isar support  
+    Isar unfortunately caused too many stability issues, and is not as actively maintained as I would like (I can sympathise :D).
+  * Added ObjectBox as the default backend (`FMTCObjectBoxBackend`)  
+    ObjectBox uses the same underlying database technology as Isar (MBDX), but is more maintained, and I'm hoping, more stable. Note that ObjectBox declares it only supports 64-bit systems, whereas Isar was just 'mostly unstable' on 32-bit systems until recently (where is also became 64-bit only): it's time for the future!
+  * It is expected that backends support a many-to-many relationship between tiles and stores  
+    This has reduced duplication between stores and tiles massively, and now allows for smaller, fine-grained region control. The default backend supports this with as minimal hit to performance as possible, although of course, database operations are now considerably more complex than in previous versions, and so therefore will take slightly longer. In practise, there is no noticeable performance difference.
+  * It is expected that backends cache statistics instead of calculating them at get time  
+    This has decreased the time spent fetching basic statistics, and allowed for increased efficiency when getting multiple stats at once. Of course, there is some impact on performance at write time: it must all be accurately tracked, else it will be inaccacurate/out-of-sync.
+
+* Restructured top-level access APIs
+  * Deprecated `StoreDirectory` & `RootDirectory` in favour of `FMTCStore` and `FMTCRoot`  
+    The term 'directory' has been misleading for a couple of years now, as it hasn't been actual filesystem directories storing information since the introduction of v7.
+  * Removed the `FlutterMapTileCaching`/`FMTC` access object, in favour of `FMTCStore` and `FMTCRoot` direct constructors  
+    Much of the configuration and state management performed by this top-level object and it's close relatives were transferred to the backend, and as such, there is no longer a requirement for these objects.
+  * Removed support for synchronous operations (and renamed asynchronous operations to reflect this)  
+    These were incompatible with the new `Isolate`d `FMTCObjectBoxBackend`, and to keep scope reasonable, I decided to remove them, in favour of backends implementing their own `Isolate`ion as well.
+
+* Reimplemented bulk downloading
+  * Added `CustomPolygonRegion`, a `BaseRegion` that is formed of any* outline
+  * Added pause and resume functionality
+  * Added rate limiting functionality
+  * Added support for multiple simultaneous downloads
+  * Improved developer experience by refactoring `DownloadableRegion` and `startForeground`
+  * Improved download speed significantly
+  * Fixed instability and bugs when cancelling buffering downloads
+  * Fixed generation of `LineRegion` tiles by reducing number of redundant duplicate tiles
+  * Fixed usage of `obscuredQueryParams`
+  * Removed support for bulk download buffering by size capacity
+  * Removed support for custom `HttpClient`s
+
+* Deprecated plugins
+  * Transfered support for import/export operations to core (`RootExternal`)
+  * Deprecated support for background bulk downloading
+
+* Migrated to Flutter 3.19 and Dart 3.3
+* Migrated to flutter_map v6
+
+With those out of the way, we can take a look at the smaller changes:
+
+* Improved recovery system to monitor which tiles can be skipped on re-downloading (via `DownloadableRegion.start`)
+* Improved error handling (especially in backends)
+* Added `StoreManagement.pruneTilesOlderThan` method
+* Added shortcut for getting multiple stats: `StoreStats.all`
+* Added secondary check to `FMTCImageProvider` to ensure responses are valid images
+* Replaced public facing `RegionType`/`type` with Dart 3 exhaustive switch statements through `BaseRegion/DownloadableRegion.when` & `RecoverableRegion.toRegion`
+* Removed HTTP/2 support
+* Fixed a whole bunch of bugs
+
+In addition, there's been more action in the surrounding enviroment:
+
+* Created a miniature testing tile server
+* Created automated tests for tile generation
+* Improved & simplified example application
+  * Removed update mechanism
+  * Added tile-by-tile/live download following
+
+## [8.0.1] - 2023/07/29
 
 * Fixed bugs when generating tiles for `LineRegion`
 
-## [8.0.0] - 2023/XX/XX
+## [8.0.0] - 2023/05/05
 
 * Bulk downloading has been rewritten to use a new implementation that generates tile coordinates at the same time as downloading tiles
   * `check`ing the number of tiles in a region now uses a significantly faster and more efficient implementation
@@ -35,57 +107,60 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 * Added support for custom `HttpClient`s/`BaseClient`s
 * Added support for Isar v3.1 (bug fixes & stability improvements)
 
-## [7.2.0] - 2023/03/03
-
-* Stability improvements
-  * Starting multiple downloads no longer causes `LateInitializationErrors`
-  * Migrator storage and memory usage no longer spikes as significantly as previously, thanks to transaction batching
-  * Opening and processing of stores on initialisation is more robust and less error-prone to filename variations
-  * Root statistic watching now works on all platforms
-* Multiple minor bug fixes and documentation improvements
-* Added `maxStoreLength` config to example app
-
-## [7.1.2] - 2023/02/18
-
-* Minor bug fixes
-
-## [7.1.1] - 2023/02/16
-
-* Major bug fixes
-* Added debug mode
-
-## [7.1.0] - 2023/02/14
-
-* Added URL query params obscurer feature
-* Added `headers` and `httpClient` parameters to `getTileProvider`
-* Minor documentation improvements
-* Minor bug fixes
-
-## [7.0.2] - 2023/02/12
-
-* Minor changes to example application
-
-## [7.0.1] - 2023/02/11
-
-* Minor bug fixes
-* Minor improvements
-
-## [7.0.0] - 2023/02/04
-
-* Migrated to Isar database
-* Major performance improvements, thanks to Isar
-* Added buffering to bulk tile downloading
-* Added method to catch tile retrieval errors
-* Removed v4 -> v5 migrator & added v6 -> v7 migrator
-* Removed some synchronous methods from structure management
-* Removed 'fmtc_advanced' import file
-
-Plus the usual:
-
-* Minor performance improvements
-* Bug fixes
-* Dependency updates
-* Documentation improvements
+> **Version 7 was made unstable due to a non-semantic versioning compliant update of a dependency.**  
+> **This means the pub version resolver can never resolve FMTC v7 without introducing compilation errors.**
+>
+> ## [7.2.0] - 2023/03/03
+>
+> * Stability improvements
+>   * Starting multiple downloads no longer causes `LateInitializationErrors`
+>   * Migrator storage and memory usage no longer spikes as significantly as previously, thanks to transaction batching
+>   * Opening and processing of stores on initialisation is more robust and less error-prone to filename variations
+>   * Root statistic watching now works on all platforms
+> * Multiple minor bug fixes and documentation improvements
+> * Added `maxStoreLength` config to example app
+>
+> ## [7.1.2] - 2023/02/18
+>
+> * Minor bug fixes
+>
+> ## [7.1.1] - 2023/02/16
+>
+> * Major bug fixes
+> * Added debug mode
+>
+> ## [7.1.0] - 2023/02/14
+>
+> * Added URL query params obscurer feature
+> * Added `headers` and `httpClient` parameters to `getTileProvider`
+> * Minor documentation improvements
+> * Minor bug fixes
+>
+> ## [7.0.2] - 2023/02/12
+>
+> * Minor changes to example application
+>
+> ## [7.0.1] - 2023/02/11
+>
+> * Minor bug fixes
+> * Minor improvements
+>
+> ## [7.0.0] - 2023/02/04
+>
+> * Migrated to Isar database
+> * Major performance improvements, thanks to Isar
+> * Added buffering to bulk tile downloading
+> * Added method to catch tile retrieval errors
+> * Removed v4 -> v5 migrator & added v6 -> v7 migrator
+> * Removed some synchronous methods from structure management
+> * Removed 'fmtc_advanced' import file
+>
+> Plus the usual:
+>
+> * Minor performance improvements
+> * Bug fixes
+> * Dependency updates
+> * Documentation improvements
 
 ## [6.2.0] - 2022/10/25
 
