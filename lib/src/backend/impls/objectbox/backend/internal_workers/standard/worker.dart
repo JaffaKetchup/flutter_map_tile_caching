@@ -25,11 +25,31 @@ Future<void> _worker(
   // Open database, kill self if failed
   late final Store root;
   try {
-    root = await openStore(
-      directory: input.rootDirectory,
-      maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
-      macosApplicationGroup: input.macosApplicationGroup,
-    );
+    final prefs = await SharedPreferences.getInstance();
+    const referenceKey = 'store_reference';
+
+    if (Store.isOpen(input.rootDirectory)) {
+      // If the Store is already open, instantiate root from stored reference
+      final referenceAsStringList = prefs.getStringList(referenceKey) ?? [];
+      final referenceAsIntList = referenceAsStringList.map(int.parse).toList();
+      final referenceAsByteList = Uint8List.fromList(referenceAsIntList);
+
+      final storeReference = ByteData.view(referenceAsByteList.buffer);
+      root = Store.fromReference(getObjectBoxModel(), storeReference);
+    } else {
+      root = await openStore(
+        directory: input.rootDirectory,
+        maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
+        macosApplicationGroup: input.macosApplicationGroup,
+      );
+
+      // Store reference in shared preferences
+      final referenceAsByteList = root.reference.buffer.asUint8List();
+      final referenceAsStringList =
+          referenceAsByteList.map((e) => e.toString()).toList();
+
+      await prefs.setStringList(referenceKey, referenceAsStringList);
+    }
 
     // If the database is new, create the root statistics object
     final rootBox = root.box<ObjectBoxRoot>();
