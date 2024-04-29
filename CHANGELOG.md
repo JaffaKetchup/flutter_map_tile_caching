@@ -14,7 +14,11 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [9.0.0] - "Just Another Rewrite" - 2024/04/XX
+## [9.0.1] - 2024/04/29
+
+* Fixed bug on initialisation, where using multiple/background `FlutterEngine`s would attempt to re-open a single ObjectBox Store (aka. root) multiple times
+
+## [9.0.0] - "Just Another Rewrite" - 2024/04/11
 
 This update has essentially rewritten FMTC from the ground up, over hundreds of hours. It focuses on:
 
