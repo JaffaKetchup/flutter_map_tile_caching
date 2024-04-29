@@ -7,6 +7,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
@@ -44,12 +45,17 @@ final class FMTCObjectBoxBackend implements FMTCBackend {
   /// [the ObjectBox docs](https://docs.objectbox.io/getting-started) for
   /// details.
   ///
+  /// [rootIsolateToken] should only be used in exceptional circumstances where
+  /// this backend is being initialised in a seperate isolate (or background)
+  /// thread.
+  ///
   /// Avoid using [useInMemoryDatabase] outside of testing purposes.
   @override
   Future<void> initialise({
     String? rootDirectory,
     int maxDatabaseSize = 10000000,
     String? macosApplicationGroup,
+    RootIsolateToken? rootIsolateToken,
     @visibleForTesting bool useInMemoryDatabase = false,
   }) =>
       FMTCObjectBoxBackendInternal._instance.initialise(
@@ -57,6 +63,7 @@ final class FMTCObjectBoxBackend implements FMTCBackend {
         maxDatabaseSize: maxDatabaseSize,
         macosApplicationGroup: macosApplicationGroup,
         useInMemoryDatabase: useInMemoryDatabase,
+        rootIsolateToken: rootIsolateToken,
       );
 
   /// {@macro fmtc.backend.uninitialise}

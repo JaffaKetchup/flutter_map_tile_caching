@@ -118,9 +118,19 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required int maxDatabaseSize,
     required String? macosApplicationGroup,
     required bool useInMemoryDatabase,
+    required RootIsolateToken? rootIsolateToken,
   }) async {
     if (_sendPort != null) throw RootAlreadyInitialised();
 
+    // Obtain the `RootIsolateToken` to enable the worker isolate to use
+    // ObjectBox
+    rootIsolateToken ??= ServicesBinding.rootIsolateToken ??
+        (throw StateError(
+          'Unable to start FMTC in a background thread without access to a '
+          '`RootIsolateToken`',
+        ));
+
+    // Construct the root directory path
     if (useInMemoryDatabase) {
       this.rootDirectory = Store.inMemoryPrefix + (rootDirectory ?? 'fmtc');
     } else {
@@ -137,16 +147,11 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     _workerResOneShot[0] = Completer();
     final workerInitialRes = _workerResOneShot[0]!
         .future // Completed directly by handler below
-        .then<({ByteData? storeRef, Object? err, StackTrace? stackTrace})>(
+        .then<({Object err, StackTrace stackTrace})?>(
       (res) {
         _workerResOneShot.remove(0);
         _sendPort = res!['sendPort'];
-
-        return (
-          storeRef: res['storeReference'] as ByteData,
-          err: null,
-          stackTrace: null,
-        );
+        return null;
       },
       onError: (err, stackTrace) {
         _workerHandler.cancel();
@@ -156,7 +161,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         _workerResOneShot.clear();
         _workerResStreamed.clear();
 
-        return (storeRef: null, err: err, stackTrace: stackTrace);
+        return (err: err, stackTrace: stackTrace);
       },
     );
 
@@ -209,22 +214,19 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         rootDirectory: this.rootDirectory,
         maxDatabaseSize: maxDatabaseSize,
         macosApplicationGroup: macosApplicationGroup,
-        rootIsolateToken: ServicesBinding.rootIsolateToken!,
+        rootIsolateToken: rootIsolateToken,
       ),
       onExit: receivePort.sendPort,
       debugName: '[FMTC] ObjectBox Backend Worker',
     );
 
-    // Wait for initial response from isolate
-    final initResult = await workerInitialRes;
-
-    // Check whether initialisation was successful
-    if (initResult.storeRef case final storeRef?) {
+    // Check whether initialisation was successful after initial response
+    if (await workerInitialRes case (:final err, :final stackTrace)) {
+      Error.throwWithStackTrace(err, stackTrace);
+    } else {
       FMTCBackendAccess.internal = this;
       FMTCBackendAccessThreadSafe.internal =
-          _ObjectBoxBackendThreadSafeImpl._(storeReference: storeRef);
-    } else {
-      Error.throwWithStackTrace(initResult.err!, initResult.stackTrace!);
+          _ObjectBoxBackendThreadSafeImpl._(rootDirectory: this.rootDirectory);
     }
   }
 

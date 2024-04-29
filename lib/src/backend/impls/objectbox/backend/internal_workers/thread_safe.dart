@@ -5,20 +5,20 @@ part of '../backend.dart';
 
 class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
   _ObjectBoxBackendThreadSafeImpl._({
-    required this.storeReference,
+    required this.rootDirectory,
   });
 
   @override
   String get friendlyIdentifier => 'ObjectBox';
 
-  final ByteData storeReference;
+  final String rootDirectory;
   Store get expectInitialisedRoot => _root ?? (throw RootUnavailable());
   Store? _root;
 
   @override
   void initialise() {
     if (_root != null) throw RootAlreadyInitialised();
-    _root = Store.fromReference(getObjectBoxModel(), storeReference);
+    _root = Store.attach(getObjectBoxModel(), rootDirectory);
   }
 
   @override
@@ -29,7 +29,7 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
 
   @override
   _ObjectBoxBackendThreadSafeImpl duplicate() =>
-      _ObjectBoxBackendThreadSafeImpl._(storeReference: storeReference);
+      _ObjectBoxBackendThreadSafeImpl._(rootDirectory: rootDirectory);
 
   @override
   Future<ObjectBoxTile?> readTile({
