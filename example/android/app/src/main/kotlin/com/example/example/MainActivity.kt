@@ -1,4 +1,4 @@
-package com.example.example
+package dev.jaffaketchup.fmtc.demo
 
 import io.flutter.embedding.android.FlutterActivity
 
