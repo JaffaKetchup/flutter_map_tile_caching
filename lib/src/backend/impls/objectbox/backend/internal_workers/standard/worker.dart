@@ -25,11 +25,18 @@ Future<void> _worker(
   // Open database, kill self if failed
   late final Store root;
   try {
-    root = await openStore(
-      directory: input.rootDirectory,
-      maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
-      macosApplicationGroup: input.macosApplicationGroup,
-    );
+    // If already opened, attach existing instance
+    // This can occur when a background `FlutterEngine` is in use, keeping the
+    // database open
+    if (Store.isOpen(input.rootDirectory)) {
+      root = Store.attach(getObjectBoxModel(), input.rootDirectory);
+    } else {
+      root = await openStore(
+        directory: input.rootDirectory,
+        maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
+        macosApplicationGroup: input.macosApplicationGroup,
+      );
+    }
 
     // If the database is new, create the root statistics object
     final rootBox = root.box<ObjectBoxRoot>();
@@ -47,7 +54,7 @@ Future<void> _worker(
   // Respond with comms channel for future cmds
   sendRes(
     id: 0,
-    data: {'sendPort': receivePort.sendPort, 'storeReference': root.reference},
+    data: {'sendPort': receivePort.sendPort},
   );
 
   //! UTIL METHODS !//
@@ -58,8 +65,6 @@ Future<void> _worker(
   /// Should be run within a transaction.
   ///
   /// Specified values may be negative.
-  ///
-  /// Handles cases where there is no root statistics object yet.
   void updateRootStatistics({int deltaLength = 0, int deltaSize = 0}) =>
       root.box<ObjectBoxRoot>().put(
             root.box<ObjectBoxRoot>().get(1)!
@@ -836,8 +841,7 @@ Future<void> _worker(
               (numExportedTiles) {
                 if (numExportedTiles == 0) {
                   throw ArgumentError(
-                    'must include at least one tile in any of the specified '
-                        'stores',
+                    'Specified stores must include at least one tile total',
                     'storeNames',
                   );
                 }
