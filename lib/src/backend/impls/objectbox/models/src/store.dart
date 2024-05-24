@@ -15,6 +15,7 @@ class ObjectBoxStore {
   /// referenced by unique name, in ObjectBox
   ObjectBoxStore({
     required this.name,
+    required this.maxLength,
     required this.length,
     required this.size,
     required this.hits,
@@ -38,6 +39,12 @@ class ObjectBoxStore {
   @Backlink('stores')
   final tiles = ToMany<ObjectBoxTile>();
 
+  /// Maximum number of tiles allowable in this store
+  ///
+  /// This is enforced automatically when browse caching, but not when bulk
+  /// downloading.
+  int? maxLength;
+
   /// Number of tiles
   int length;
 
@@ -54,14 +61,4 @@ class ObjectBoxStore {
   ///
   /// Only supports string-string key-value pairs.
   String metadataJson;
-
-  /*@override
-  bool operator ==(Object other) =>
-      identical(this, other) || (other is ObjectBoxStore && name == other.name);
-
-  @override
-  int get hashCode => name.hashCode;
-
-  @override
-  String toString() => 'ObjectBoxStore(name: $name)';*/
 }

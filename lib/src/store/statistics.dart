@@ -37,10 +37,15 @@ class StoreStats {
 
   /// Retrieve the number of successful tile retrievals when browsing
   ///
+  /// A hit is only counted when an unexpired tile is retrieved from the store.
+  ///
   /// {@macro fmtc.frontend.storestats.efficiency}
   Future<int> get hits => all.then((a) => a.hits);
 
   /// Retrieve the number of unsuccessful tile retrievals when browsing
+  ///
+  /// A miss is counted whenever a tile is retrieved anywhere else but from this
+  /// store, or is retrieved from this store, but only as a fallback.
   ///
   /// {@macro fmtc.frontend.storestats.efficiency}
   Future<int> get misses => all.then((a) => a.misses);

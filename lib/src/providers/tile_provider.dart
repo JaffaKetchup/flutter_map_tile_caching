@@ -4,20 +4,29 @@
 part of '../../flutter_map_tile_caching.dart';
 
 /// Specialised [TileProvider] that uses a specialised [ImageProvider] to connect
-/// to FMTC internals
+/// to FMTC internals and enable advanced caching/retrieval logic
 ///
 /// An "FMTC" identifying mark is injected into the "User-Agent" header generated
 /// by flutter_map, except if specified in the constructor. For technical
 /// details, see [_CustomUserAgentCompatMap].
-///
-/// Create from the store directory chain, eg. [FMTCStore.getTileProvider].
 class FMTCTileProvider extends TileProvider {
-  FMTCTileProvider._(
-    this.storeName,
+  /// Create a specialised [TileProvider] that uses a specialised [ImageProvider]
+  /// to connect to FMTC internals and enable advanced caching/retrieval logic
+  ///
+  /// Supports multiple stores, by specifying each name in [storeNames]. If an
+  /// empty list is specified, tiles will be fetched from all stores, but no
+  /// tiles will be written to any stores. For more information, see
+  /// [storeNames].
+  /// Can be constructed alternatively with [FMTCStore.getTileProvider] to
+  /// support a single store.
+  ///
+  /// See other documentation for more information.
+  FMTCTileProvider({
+    required this.storeNames,
     FMTCTileProviderSettings? settings,
     Map<String, String>? headers,
     http.Client? httpClient,
-  )   : settings = settings ?? FMTCTileProviderSettings.instance,
+  })  : settings = settings ?? FMTCTileProviderSettings.instance,
         httpClient = httpClient ?? IOClient(HttpClient()..userAgent = null),
         super(
           headers: (headers?.containsKey('User-Agent') ?? false)
@@ -25,8 +34,36 @@ class FMTCTileProvider extends TileProvider {
               : _CustomUserAgentCompatMap(headers ?? {}),
         );
 
-  /// The store name of the [FMTCStore] used when generating this provider
-  final String storeName;
+  /// Create a specialised [TileProvider] that uses a specialised [ImageProvider]
+  /// to connect to FMTC internals and enable advanced caching/retrieval logic
+  ///
+  /// Redirects to [FMTCTileProvider] constructor, but supports [FMTCStore]
+  /// instead of [String].
+  FMTCTileProvider.fromStores({
+    required List<FMTCStore> stores,
+    FMTCTileProviderSettings? settings,
+    Map<String, String>? headers,
+    http.Client? httpClient,
+  }) : this(
+          storeNames: stores.map((s) => s.storeName).toList(),
+          settings: settings,
+          headers: headers,
+          httpClient: httpClient,
+        );
+
+  /// The store names from which to fetch tiles and update tiles
+  ///
+  /// If empty, tiles will be fetched from all stores, but no tiles will be
+  /// written to any stores (regardless of [FMTCTileProviderSettings.behavior]).
+  /// This may introduce notable performance reductions, especially if failures
+  /// occur often or the root is particularly large, as the tile queries will
+  /// have unbounded constraints.
+  ///
+  /// See also:
+  ///  - [FMTCTileProviderSettings.fallbackToAlternativeStore], which has a
+  ///    similar behaviour, but only does so when the tile cannot be found in
+  ///    these stores
+  final List<String>? storeNames;
 
   /// The tile provider settings to use
   ///
@@ -47,11 +84,11 @@ class FMTCTileProvider extends TileProvider {
   /// underway.
   ///
   /// Does not include tiles loaded from session cache.
-  final _tilesInProgress = HashMap<TileCoordinates, Completer<void>>();
+  final _tilesInProgress = HashMap<TileCoordinates, Completer<void>>.identity();
 
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>
-      FMTCImageProvider(
+      _FMTCImageProvider(
         provider: this,
         options: options,
         coords: coordinates,
@@ -71,6 +108,21 @@ class FMTCTileProvider extends TileProvider {
     super.dispose();
   }
 
+  /// {@macro fmtc.imageProvider.getBytes}
+  Future<Uint8List> getBytes({
+    required TileCoordinates coordinates,
+    required TileLayer options,
+    StreamController<ImageChunkEvent>? chunkEvents,
+    bool requireValidImage = true,
+  }) =>
+      _FMTCImageProvider.getBytes(
+        provider: this,
+        options: options,
+        coords: coordinates,
+        chunkEvents: chunkEvents,
+        requireValidImage: requireValidImage,
+      );
+
   /// Check whether a specified tile is cached in the current store
   @Deprecated('''
 Migrate to `checkTileCached`.
@@ -89,8 +141,8 @@ member will be removed in a future version.''')
     required TileCoordinates coords,
     required TileLayer options,
   }) =>
-      FMTCBackendAccess.internal.tileExistsInStore(
-        storeName: storeName,
+      FMTCBackendAccess.internal.tileExists(
+        storeNames: storeNames,
         url: obscureQueryParams(
           url: getTileUrl(coords, options),
           obscuredQueryParams: settings.obscuredQueryParams,
@@ -101,13 +153,13 @@ member will be removed in a future version.''')
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is FMTCTileProvider &&
-          other.storeName == storeName &&
+          other.storeNames == storeNames &&
           other.headers == headers &&
           other.settings == settings &&
           other.httpClient == httpClient);
 
   @override
-  int get hashCode => Object.hash(storeName, settings, headers, httpClient);
+  int get hashCode => Object.hash(storeNames, settings, headers, httpClient);
 }
 
 /// Custom override of [Map] that only overrides the [MapView.putIfAbsent]

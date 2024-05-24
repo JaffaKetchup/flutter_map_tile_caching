@@ -91,7 +91,6 @@ Future<void> _worker(
     bool hadTilesToUpdate = false;
     int rootDeltaSize = 0;
     final tilesToRemove = <int>[];
-    //final tileRelationsToUpdate = <ToMany<ObjectBoxStore>>[];
     final storesToUpdate = <String, ObjectBoxStore>{};
 
     final queriedStores = storesQuery.property(ObjectBoxStore_.name).find();
@@ -262,13 +261,54 @@ Future<void> _worker(
         );
 
         query.close();
+      case _CmdType.storeGetMaxLength:
+        final storeName = cmd.args['storeName']! as String;
+
+        final query = root
+            .box<ObjectBoxStore>()
+            .query(ObjectBoxStore_.name.equals(storeName))
+            .build();
+
+        sendRes(
+          id: cmd.id,
+          data: {
+            'maxLength': (query.findUnique() ??
+                    (throw StoreNotExists(storeName: storeName)))
+                .maxLength,
+          },
+        );
+
+        query.close();
+      case _CmdType.storeSetMaxLength:
+        final storeName = cmd.args['storeName']! as String;
+        final newMaxLength = cmd.args['newMaxLength'] as int?;
+
+        final stores = root.box<ObjectBoxStore>();
+
+        final query =
+            stores.query(ObjectBoxStore_.name.equals(storeName)).build();
+
+        root.runInTransaction(
+          TxMode.write,
+          () {
+            final store = query.findUnique() ??
+                (throw StoreNotExists(storeName: storeName));
+            query.close();
+
+            stores.put(store..maxLength = newMaxLength, mode: PutMode.update);
+          },
+        );
+
+        sendRes(id: cmd.id);
       case _CmdType.createStore:
         final storeName = cmd.args['storeName']! as String;
+        final maxLength = cmd.args['maxLength'] as int?;
 
         try {
           root.box<ObjectBoxStore>().put(
                 ObjectBoxStore(
                   name: storeName,
+                  maxLength: maxLength,
                   length: 0,
                   size: 0,
                   hits: 0,
@@ -360,15 +400,19 @@ Future<void> _worker(
           storesQuery.close();
           tilesQuery.close();
         });
-      case _CmdType.tileExistsInStore:
-        final storeName = cmd.args['storeName']! as String;
+      case _CmdType.tileExists:
         final url = cmd.args['url']! as String;
+        final storeNames = cmd.args['storeNames']! as List<String>?;
 
-        final query =
-            (root.box<ObjectBoxTile>().query(ObjectBoxTile_.url.equals(url))
+        final stores = root.box<ObjectBoxTile>();
+
+        final queryPart = stores.query(ObjectBoxTile_.url.equals(url));
+        final query = storeNames == null
+            ? queryPart.build()
+            : (queryPart
                   ..linkMany(
                     ObjectBoxTile_.stores,
-                    ObjectBoxStore_.name.equals(storeName),
+                    ObjectBoxStore_.name.oneOf(storeNames),
                   ))
                 .build();
 
@@ -377,23 +421,41 @@ Future<void> _worker(
         query.close();
       case _CmdType.readTile:
         final url = cmd.args['url']! as String;
-        final storeName = cmd.args['storeName'] as String?;
+        final storeNames = cmd.args['storeNames'] as List<String>?;
 
         final stores = root.box<ObjectBoxTile>();
 
         final queryPart = stores.query(ObjectBoxTile_.url.equals(url));
-        final query = storeName == null
+        final query = storeNames == null
             ? queryPart.build()
             : (queryPart
                   ..linkMany(
                     ObjectBoxTile_.stores,
-                    ObjectBoxStore_.name.equals(storeName),
+                    ObjectBoxStore_.name.oneOf(storeNames),
                   ))
                 .build();
 
-        sendRes(id: cmd.id, data: {'tile': query.findUnique()});
-
+        final tile = query.findUnique();
         query.close();
+
+        if (tile == null) {
+          sendRes(id: cmd.id, data: {'tile': null, 'stores': []});
+        } else {
+          final tileStores = tile.stores.map((s) => s.name);
+
+          sendRes(
+            id: cmd.id,
+            data: {
+              'tile': tile,
+              'stores': storeNames == null
+                  ? tileStores.toList(growable: false)
+                  : SplayTreeSet<String>.from(tileStores)
+                      .intersection(SplayTreeSet<String>.from(storeNames))
+                      .toList(growable: false),
+            },
+          );
+        }
+
       case _CmdType.readLatestTile:
         final storeName = cmd.args['storeName']! as String;
 
@@ -411,13 +473,13 @@ Future<void> _worker(
 
         query.close();
       case _CmdType.writeTile:
-        final storeName = cmd.args['storeName']! as String;
+        final storeNames = cmd.args['storeNames']! as List<String>;
         final url = cmd.args['url']! as String;
         final bytes = cmd.args['bytes']! as Uint8List;
 
         _sharedWriteSingleTile(
           root: root,
-          storeName: storeName,
+          storeNames: storeNames,
           url: url,
           bytes: bytes,
         );
@@ -447,33 +509,46 @@ Future<void> _worker(
           tilesQuery.close();
         });
       case _CmdType.registerHitOrMiss:
-        final storeName = cmd.args['storeName']! as String;
+        final storeNames = cmd.args['storeNames'] as List<String>?;
         final hit = cmd.args['hit']! as bool;
 
-        final stores = root.box<ObjectBoxStore>();
+        final storesBox = root.box<ObjectBoxStore>();
+        final specifiedStores = storeNames?.isNotEmpty ?? false;
 
-        final query =
-            stores.query(ObjectBoxStore_.name.equals(storeName)).build();
+        late final Query<ObjectBoxStore> query;
+        if (specifiedStores) {
+          query =
+              storesBox.query(ObjectBoxStore_.name.oneOf(storeNames!)).build();
+        }
 
         root.runInTransaction(
           TxMode.write,
           () {
-            final store = query.findUnique() ??
-                (throw StoreNotExists(storeName: storeName));
-            query.close();
+            final stores = specifiedStores ? query.find() : storesBox.getAll();
+            if (specifiedStores) {
+              if (stores.length != storeNames!.length) {
+                return StoreNotExists(
+                  storeName:
+                      storeNames.toSet().difference(stores.toSet()).join('; '),
+                );
+              }
 
-            stores.put(
-              store
-                ..hits += hit ? 1 : 0
-                ..misses += hit ? 0 : 1,
-            );
+              query.close();
+            }
+
+            for (final store in stores) {
+              storesBox.put(
+                store
+                  ..hits += hit ? 1 : 0
+                  ..misses += hit ? 0 : 1,
+              );
+            }
           },
         );
 
         sendRes(id: cmd.id);
       case _CmdType.removeOldestTilesAboveLimit:
-        final storeName = cmd.args['storeName']! as String;
-        final tilesLimit = cmd.args['tilesLimit']! as int;
+        final storeNames = cmd.args['storeNames']! as List<String>;
 
         final tilesQuery = (root
                 .box<ObjectBoxTile>()
@@ -481,39 +556,60 @@ Future<void> _worker(
                 .order(ObjectBoxTile_.lastModified)
               ..linkMany(
                 ObjectBoxTile_.stores,
-                ObjectBoxStore_.name.equals(storeName),
+                ObjectBoxStore_.name.equals(''),
               ))
             .build();
 
         final storeQuery = root
             .box<ObjectBoxStore>()
-            .query(ObjectBoxStore_.name.equals(storeName))
+            .query(
+              ObjectBoxStore_.name
+                  .equals('')
+                  .and(ObjectBoxStore_.maxLength.notNull()),
+            )
             .build();
 
-        final store = storeQuery.findUnique() ??
-            (throw StoreNotExists(storeName: storeName));
+        final numOrphans = Map.fromIterables(
+          storeNames,
+          List<int?>.filled(storeNames.length, null),
+        );
 
-        final numToRemove = store.length - tilesLimit;
+        Future.wait(
+          List.generate(
+            storeNames.length,
+            (i) async {
+              final storeName = storeNames[i];
 
-        if (numToRemove <= 0) {
-          sendRes(id: cmd.id, data: {'numOrphans': 0});
+              tilesQuery.param(ObjectBoxStore_.name).value = storeName;
+              storeQuery.param(ObjectBoxStore_.name).value = storeName;
+
+              final store = storeQuery.findUnique();
+              if (store == null) return;
+
+              final numToRemove = store.length - store.maxLength!;
+
+              if (numToRemove <= 0) {
+                numOrphans[storeName] = 0;
+                return;
+              }
+
+              tilesQuery.limit = numToRemove;
+
+              final orphans = await deleteTiles(
+                storesQuery: storeQuery,
+                tilesQuery: tilesQuery,
+              );
+              numOrphans[storeName] = orphans;
+              return;
+            },
+            growable: false,
+          ),
+        ).then((_) {
+          sendRes(id: cmd.id, data: {'numOrphans': numOrphans});
 
           storeQuery.close();
           tilesQuery.close();
-        } else {
-          tilesQuery.limit = numToRemove;
-
-          deleteTiles(storesQuery: storeQuery, tilesQuery: tilesQuery)
-              .then((orphans) {
-            sendRes(
-              id: cmd.id,
-              data: {'numOrphans': orphans},
-            );
-
-            storeQuery.close();
-            tilesQuery.close();
-          });
-        }
+        });
       case _CmdType.removeTilesOlderThan:
         final storeName = cmd.args['storeName']! as String;
         final expiry = cmd.args['expiry']! as DateTime;
@@ -793,6 +889,7 @@ Future<void> _worker(
                         storesObjectsForRelations[exportingStore.name] =
                             ObjectBoxStore(
                           name: exportingStore.name,
+                          maxLength: exportingStore.maxLength,
                           length: exportingStore.length,
                           size: exportingStore.size,
                           hits: exportingStore.hits,
@@ -942,6 +1039,7 @@ Future<void> _worker(
                   root.box<ObjectBoxStore>().put(
                         ObjectBoxStore(
                           name: name,
+                          maxLength: importingStore.maxLength,
                           length: importingStore.length,
                           size: importingStore.size,
                           hits: 0,
@@ -967,6 +1065,7 @@ Future<void> _worker(
                 root.box<ObjectBoxStore>().put(
                       ObjectBoxStore(
                         name: name,
+                        maxLength: importingStore.maxLength,
                         length: importingStore.length,
                         size: importingStore.size,
                         hits: 0,
@@ -986,6 +1085,7 @@ Future<void> _worker(
                 root.box<ObjectBoxStore>().put(
                       ObjectBoxStore(
                         name: newName,
+                        maxLength: importingStore.maxLength,
                         length: importingStore.length,
                         size: importingStore.size,
                         hits: 0,
@@ -1011,6 +1111,7 @@ Future<void> _worker(
                   root.box<ObjectBoxStore>().put(
                         ObjectBoxStore(
                           name: name,
+                          maxLength: importingStore.maxLength,
                           length: 0, // Will be set when writing tiles
                           size: 0, // Will be set when writing tiles
                           hits: 0,
@@ -1024,6 +1125,7 @@ Future<void> _worker(
                   if (strategy == ImportConflictStrategy.merge) {
                     root.box<ObjectBoxStore>().put(
                           existingStore
+                            ..maxLength = importingStore.maxLength
                             ..metadataJson = jsonEncode(
                               (jsonDecode(existingStore.metadataJson)
                                   as Map<String, dynamic>)
@@ -1128,6 +1230,7 @@ Future<void> _worker(
                       importingStores.length,
                       (i) => ObjectBoxStore(
                         name: importingStores[i].name,
+                        maxLength: importingStores[i].maxLength,
                         length: importingStores[i].length,
                         size: importingStores[i].size,
                         hits: importingStores[i].hits,

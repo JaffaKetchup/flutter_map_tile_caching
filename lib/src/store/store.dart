@@ -1,6 +1,8 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
+// ignore_for_file: use_late_for_private_fields_and_variables
+
 part of '../../flutter_map_tile_caching.dart';
 
 /// Equivalent to [FMTCStore], provided to ease migration only
@@ -60,7 +62,12 @@ class FMTCStore {
     Map<String, String>? headers,
     http.Client? httpClient,
   }) =>
-      FMTCTileProvider._(storeName, settings, headers, httpClient);
+      FMTCTileProvider(
+        storeNames: [storeName],
+        settings: settings,
+        headers: headers,
+        httpClient: httpClient,
+      );
 
   @override
   bool operator ==(Object other) =>

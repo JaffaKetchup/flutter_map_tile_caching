@@ -34,8 +34,8 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   // `removeOldestTilesAboveLimit` tracking & debouncing
 
   Timer? _rotalDebouncer;
-  String? _rotalStore;
-  Completer<int>? _rotalResultCompleter;
+  int? _rotalStoresHash;
+  Completer<Map<String, int>>? _rotalResultCompleter;
 
   // Define communicators
 
@@ -268,7 +268,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     _workerResStreamed.clear();
     _rotalDebouncer?.cancel();
     _rotalDebouncer = null;
-    _rotalStore = null;
+    _rotalStoresHash = null;
     _rotalResultCompleter?.completeError(RootUnavailable());
     _rotalResultCompleter = null;
 
@@ -295,6 +295,25 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       (await _sendCmdOneShot(type: _CmdType.listStores))!['stores'];
 
   @override
+  Future<int?> storeGetMaxLength({
+    required String storeName,
+  }) async =>
+      (await _sendCmdOneShot(
+        type: _CmdType.storeGetMaxLength,
+        args: {'storeName': storeName},
+      ))!['maxLength'];
+
+  @override
+  Future<void> storeSetMaxLength({
+    required String storeName,
+    required int? newMaxLength,
+  }) =>
+      _sendCmdOneShot(
+        type: _CmdType.storeSetMaxLength,
+        args: {'storeName': storeName, 'newMaxLength': newMaxLength},
+      );
+
+  @override
   Future<bool> storeExists({
     required String storeName,
   }) async =>
@@ -306,10 +325,11 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   @override
   Future<void> createStore({
     required String storeName,
+    required int? maxLength,
   }) =>
       _sendCmdOneShot(
         type: _CmdType.createStore,
-        args: {'storeName': storeName},
+        args: {'storeName': storeName, 'maxLength': maxLength},
       );
 
   @override
@@ -353,24 +373,40 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       ))!['stats'];
 
   @override
-  Future<bool> tileExistsInStore({
-    required String storeName,
+  Future<bool> tileExists({
     required String url,
+    List<String>? storeNames,
   }) async =>
       (await _sendCmdOneShot(
-        type: _CmdType.tileExistsInStore,
-        args: {'storeName': storeName, 'url': url},
+        type: _CmdType.tileExists,
+        args: {'url': url, 'storeNames': storeNames},
       ))!['exists'];
 
   @override
   Future<ObjectBoxTile?> readTile({
     required String url,
-    String? storeName,
+    List<String>? storeNames,
   }) async =>
       (await _sendCmdOneShot(
         type: _CmdType.readTile,
-        args: {'url': url, 'storeName': storeName},
+        args: {'url': url, 'storeNames': storeNames},
       ))!['tile'];
+
+  @override
+  Future<({BackendTile? tile, List<String> storeNames})>
+      readTileWithStoreNames({
+    required String url,
+    List<String>? storeNames,
+  }) async {
+    final res = (await _sendCmdOneShot(
+      type: _CmdType.readTile,
+      args: {'url': url, 'storeNames': storeNames},
+    ))!;
+    return (
+      tile: res['tile'] as BackendTile?,
+      storeNames: res['stores'] as List<String>,
+    );
+  }
 
   @override
   Future<ObjectBoxTile?> readLatestTile({
@@ -383,13 +419,13 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
   @override
   Future<void> writeTile({
-    required String storeName,
     required String url,
     required Uint8List bytes,
+    required List<String> storeNames,
   }) =>
       _sendCmdOneShot(
         type: _CmdType.writeTile,
-        args: {'storeName': storeName, 'url': url, 'bytes': bytes},
+        args: {'storeNames': storeNames, 'url': url, 'bytes': bytes},
       );
 
   @override
@@ -404,35 +440,34 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
   @override
   Future<void> registerHitOrMiss({
-    required String storeName,
+    required List<String>? storeNames,
     required bool hit,
   }) =>
       _sendCmdOneShot(
         type: _CmdType.registerHitOrMiss,
-        args: {'storeName': storeName, 'hit': hit},
+        args: {'storeNames': storeNames, 'hit': hit},
       );
 
   @override
-  Future<int> removeOldestTilesAboveLimit({
-    required String storeName,
-    required int tilesLimit,
+  Future<Map<String, int>> removeOldestTilesAboveLimit({
+    required List<String> storeNames,
   }) async {
     // By sharing a single completer, all invocations of this method during the
     // debounce period will return the same result at the same time
     if (_rotalResultCompleter?.isCompleted ?? true) {
-      _rotalResultCompleter = Completer<int>();
+      _rotalResultCompleter = Completer<Map<String, int>>();
     }
     void sendCmdAndComplete() => _rotalResultCompleter!.complete(
           _sendCmdOneShot(
             type: _CmdType.removeOldestTilesAboveLimit,
-            args: {'storeName': storeName, 'tilesLimit': tilesLimit},
+            args: {'storeNames': storeNames},
           ).then((v) => v!['numOrphans']),
         );
 
     // If the store has changed, failing to reset the batch/queue will mean
     // tiles are removed from the wrong store
-    if (_rotalStore != storeName) {
-      _rotalStore = storeName;
+    if (_rotalStoresHash != storeNames.hashCode) {
+      _rotalStoresHash = storeNames.hashCode;
       if (_rotalDebouncer?.isActive ?? false) {
         _rotalDebouncer!.cancel();
         sendCmdAndComplete();

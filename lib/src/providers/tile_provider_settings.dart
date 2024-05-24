@@ -8,35 +8,49 @@ typedef FMTCBrowsingErrorHandler = void Function(FMTCBrowsingError exception);
 
 /// Behaviours dictating how and when browse caching should occur
 ///
-/// An online only behaviour is not available: use a default [TileProvider] to
-/// achieve this.
+/// | `CacheBehavior`          | Preferred fetch method | Fallback fetch method | Update cache when network used |
+/// |--------------------------|------------------------|-----------------------|--------------------------------|
+/// | `cacheOnly`              | Cache                  | None                  |                                |
+/// | `cacheFirst`             | Cache                  | Network               | Yes                            |
+/// | `cacheFirstNoUpdate`     | Cache                  | Network               | No                             |
+/// | `onlineFirst`            | Network                | Cache                 | Yes                            |
+/// | `onlineFirstNoUpdate`    | Network                | Cache                 | No                             |
+/// | *Standard Tile Provider* | *Network*              | *None*                | *No*                           |
 enum CacheBehavior {
-  /// Only get tiles from the local cache
+  /// Only fetch tiles from the local cache
   ///
   /// Throws [FMTCBrowsingErrorType.missingInCacheOnlyMode] if a tile is
   /// unavailable.
   ///
-  /// If [FMTCTileProviderSettings.fallbackToAlternativeStore] is enabled, cached
-  /// tiles may also be taken from other stores.
+  /// See documentation on [CacheBehavior] for behavior comparison table.
   cacheOnly,
 
-  /// Retrieve tiles from the cache, only using the network to update the cached
-  /// tile if it has expired
+  /// Fetch tiles from the cache, falling back to the network to fetch and
+  /// create/update non-existent/expired tiles
   ///
-  /// Falls back to using cached tiles if the network is not available.
-  ///
-  /// If [FMTCTileProviderSettings.fallbackToAlternativeStore] is enabled, and
-  /// the network is unavailable, cached tiles may also be taken from other
-  /// stores.
+  /// See documentation on [CacheBehavior] for behavior comparison table.
   cacheFirst,
 
-  /// Get tiles from the network where possible, and update the cached tiles
+  /// Fetch tiles from the cache, falling back to the network to fetch
+  /// non-existent tiles
   ///
-  /// Falls back to using cached tiles if the network is unavailable.
+  /// Never updates the cache, even if the network is used to fetch the tile.
   ///
-  /// If [FMTCTileProviderSettings.fallbackToAlternativeStore] is enabled, cached
-  /// tiles may also be taken from other stores.
+  /// See documentation on [CacheBehavior] for behavior comparison table.
+  cacheFirstNoUpdate,
+
+  /// Fetch and create/update non-existent/expired tiles from the network,
+  /// falling back to the cache to fetch tiles
+  ///
+  /// See documentation on [CacheBehavior] for behavior comparison table.
   onlineFirst,
+
+  /// Fetch tiles from the network, falling back to the cache to fetch tiles
+  ///
+  /// Never updates the cache, even if the network is used to fetch the tile.
+  ///
+  /// See documentation on [CacheBehavior] for behavior comparison table.
+  onlineFirstNoUpdate,
 }
 
 /// Settings for an [FMTCTileProvider]
@@ -52,7 +66,7 @@ class FMTCTileProviderSettings {
     CacheBehavior behavior = CacheBehavior.cacheFirst,
     bool fallbackToAlternativeStore = true,
     Duration cachedValidDuration = const Duration(days: 16),
-    int maxStoreLength = 0,
+    bool trackHitsAndMisses = true,
     List<String> obscuredQueryParams = const [],
     FMTCBrowsingErrorHandler? errorHandler,
     bool setInstance = true,
@@ -60,8 +74,8 @@ class FMTCTileProviderSettings {
     final settings = FMTCTileProviderSettings._(
       behavior: behavior,
       fallbackToAlternativeStore: fallbackToAlternativeStore,
+      recordHitsAndMisses: trackHitsAndMisses,
       cachedValidDuration: cachedValidDuration,
-      maxStoreLength: maxStoreLength,
       obscuredQueryParams: obscuredQueryParams.map((e) => RegExp('$e=[^&]*')),
       errorHandler: errorHandler,
     );
@@ -74,7 +88,7 @@ class FMTCTileProviderSettings {
     required this.behavior,
     required this.cachedValidDuration,
     required this.fallbackToAlternativeStore,
-    required this.maxStoreLength,
+    required this.recordHitsAndMisses,
     required this.obscuredQueryParams,
     required this.errorHandler,
   });
@@ -92,10 +106,10 @@ class FMTCTileProviderSettings {
   /// Whether to retrieve a tile from another store if it exists, as a fallback,
   /// instead of throwing an error
   ///
-  /// Does not add tiles taken from other stores to the specified store.
+  /// Does not add tiles taken from other stores to the specified store(s).
   ///
   /// When tiles are retrieved from other stores, it is counted as a miss for the
-  /// specified store.
+  /// specified store(s).
   ///
   /// This may introduce notable performance reductions, especially if failures
   /// occur often or the root is particularly large, as an extra lookup with
@@ -107,23 +121,24 @@ class FMTCTileProviderSettings {
   /// Defaults to `true`.
   final bool fallbackToAlternativeStore;
 
+  /// Whether to keep track of the [StoreStats.hits] and [StoreStats.misses]
+  /// statistics
+  ///
+  /// When enabled, hits will be recorded for all stores that the tile belonged
+  /// to and were present in [FMTCTileProvider.storeNames], when necessary.
+  /// Misses will be recorded for all stores specified in the tile provided,
+  /// where necessary
+  ///
+  /// Disable to improve performance and/or if these statistics are never used.
+  ///
+  /// Defaults to `true`.
+  final bool recordHitsAndMisses;
+
   /// The duration until a tile expires and needs to be fetched again when
   /// browsing. Also called `validDuration`.
   ///
   /// Defaults to 16 days, set to [Duration.zero] to disable.
   final Duration cachedValidDuration;
-
-  /// The maximum number of tiles allowed in a cache store (only whilst
-  /// 'browsing' - see below) before the oldest tile gets deleted. Also called
-  /// `maxTiles`.
-  ///
-  /// Only applies to 'browse caching', ie. downloading regions will bypass this
-  /// limit.
-  ///
-  /// Note that the database maximum size may be set by the backend.
-  ///
-  /// Defaults to 0 disabled.
-  final int maxStoreLength;
 
   /// A list of regular expressions indicating key-value pairs to be remove from
   /// a URL's query parameter list
@@ -149,7 +164,8 @@ class FMTCTileProviderSettings {
       (other is FMTCTileProviderSettings &&
           other.behavior == behavior &&
           other.cachedValidDuration == cachedValidDuration &&
-          other.maxStoreLength == maxStoreLength &&
+          other.fallbackToAlternativeStore == fallbackToAlternativeStore &&
+          other.recordHitsAndMisses == recordHitsAndMisses &&
           other.errorHandler == errorHandler &&
           other.obscuredQueryParams == obscuredQueryParams);
 
@@ -157,7 +173,8 @@ class FMTCTileProviderSettings {
   int get hashCode => Object.hashAllUnordered([
         behavior,
         cachedValidDuration,
-        maxStoreLength,
+        fallbackToAlternativeStore,
+        recordHitsAndMisses,
         errorHandler,
         obscuredQueryParams,
       ]);

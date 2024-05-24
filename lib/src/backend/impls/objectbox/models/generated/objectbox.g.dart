@@ -141,7 +141,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
       id: const obx_int.IdUid(2, 632249766926720928),
       name: 'ObjectBoxStore',
-      lastPropertyId: const obx_int.IdUid(7, 7028109958959828879),
+      lastPropertyId: const obx_int.IdUid(8, 3489822621946254204),
       flags: 0,
       properties: <obx_int.ModelProperty>[
         obx_int.ModelProperty(
@@ -179,6 +179,11 @@ final _entities = <obx_int.ModelEntity>[
             id: const obx_int.IdUid(7, 7028109958959828879),
             name: 'metadataJson',
             type: 9,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(8, 3489822621946254204),
+            name: 'maxLength',
+            type: 6,
             flags: 0)
       ],
       relations: <obx_int.ModelRelation>[],
@@ -429,7 +434,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         objectToFB: (ObjectBoxStore object, fb.Builder fbb) {
           final nameOffset = fbb.writeString(object.name);
           final metadataJsonOffset = fbb.writeString(object.metadataJson);
-          fbb.startTable(8);
+          fbb.startTable(9);
           fbb.addInt64(0, object.id);
           fbb.addOffset(1, nameOffset);
           fbb.addInt64(2, object.length);
@@ -437,6 +442,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           fbb.addInt64(4, object.hits);
           fbb.addInt64(5, object.misses);
           fbb.addOffset(6, metadataJsonOffset);
+          fbb.addInt64(7, object.maxLength);
           fbb.finish(fbb.endTable());
           return object.id;
         },
@@ -445,6 +451,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
           final rootOffset = buffer.derefObject(0);
           final nameParam = const fb.StringReader(asciiOptimization: true)
               .vTableGet(buffer, rootOffset, 6, '');
+          final maxLengthParam =
+              const fb.Int64Reader().vTableGetNullable(buffer, rootOffset, 18);
           final lengthParam =
               const fb.Int64Reader().vTableGet(buffer, rootOffset, 8, 0);
           final sizeParam =
@@ -458,6 +466,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
                   .vTableGet(buffer, rootOffset, 16, '');
           final object = ObjectBoxStore(
               name: nameParam,
+              maxLength: maxLengthParam,
               length: lengthParam,
               size: sizeParam,
               hits: hitsParam,
@@ -658,6 +667,10 @@ class ObjectBoxStore_ {
   /// see [ObjectBoxStore.metadataJson]
   static final metadataJson =
       obx.QueryStringProperty<ObjectBoxStore>(_entities[1].properties[6]);
+
+  /// see [ObjectBoxStore.maxLength]
+  static final maxLength =
+      obx.QueryIntegerProperty<ObjectBoxStore>(_entities[1].properties[7]);
 }
 
 /// [ObjectBoxTile] entity fields to define ObjectBox queries.

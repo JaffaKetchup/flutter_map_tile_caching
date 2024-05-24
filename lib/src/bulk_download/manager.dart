@@ -179,7 +179,7 @@ Future<void> _downloadManager(
       id: recoveryId,
       storeName: input.storeName,
       region: input.region,
-      endTile: min(input.region.end ?? largestInt, maxTiles),
+      endTile: math.min(input.region.end ?? largestInt, maxTiles),
     );
     send(2);
   }

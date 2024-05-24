@@ -5,7 +5,6 @@ import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 
-import '../../../flutter_map_tile_caching.dart';
 import '../../misc/obscure_query_params.dart';
 
 /// Represents a tile (which is never directly exposed to the user)
@@ -22,7 +21,7 @@ abstract base class BackendTile {
   /// The time at which the [bytes] of this tile were last changed
   ///
   /// This must be kept up to date, otherwise unexpected behaviour may occur
-  /// when the [FMTCTileProviderSettings.maxStoreLength] is exceeded.
+  /// when the store's `maxLength` is exceeded.
   DateTime get lastModified;
 
   /// The raw bytes of the image of this tile

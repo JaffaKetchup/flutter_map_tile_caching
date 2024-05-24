@@ -2,6 +2,7 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
@@ -38,7 +39,8 @@ final class FMTCObjectBoxBackend implements FMTCBackend {
   /// ---
   ///
   /// [maxDatabaseSize] is the maximum size the database file can grow
-  /// to, in KB. Exceeding it throws [DbFullException]. Defaults to 10 GB.
+  /// to, in KB. Exceeding it throws [DbFullException] on write operations.
+  /// Defaults to 10 GB (10000000 KB).
   ///
   /// [macosApplicationGroup] should be set when creating a sandboxed macOS app,
   /// specify the application group (of less than 20 chars). See

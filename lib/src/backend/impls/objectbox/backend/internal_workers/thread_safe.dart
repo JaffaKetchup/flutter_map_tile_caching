@@ -62,7 +62,7 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
   }) =>
       _sharedWriteSingleTile(
         root: expectInitialisedRoot,
-        storeName: storeName,
+        storeNames: [storeName],
         url: url,
         bytes: bytes,
       );

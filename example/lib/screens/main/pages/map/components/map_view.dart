@@ -73,8 +73,8 @@ class MapView extends StatelessWidget {
                                         metadata.data!['validDuration']!,
                                       ),
                                     ),
-                              maxStoreLength:
-                                  int.parse(metadata.data!['maxLength']!),
+                              /*maxStoreLength:
+                                  int.parse(metadata.data!['maxLength']!),*/
                             ),
                           )
                         : NetworkTileProvider(),
