@@ -7,7 +7,6 @@ part of '../../flutter_map_tile_caching.dart';
 ///
 /// It can be converted to a:
 ///  - [DownloadableRegion] for downloading: [toDownloadable]
-///  - [Widget] layer to be placed in a map: [toDrawable]
 ///  - list of [LatLng]s forming the outline: [toOutline]
 ///
 /// Extended/implemented by:
@@ -21,7 +20,6 @@ sealed class BaseRegion {
   ///
   /// It can be converted to a:
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
-  ///  - [Widget] layer to be placed in a map: [toDrawable]
   ///  - list of [LatLng]s forming the outline: [toOutline]
   ///
   /// Extended/implemented by:
@@ -58,6 +56,22 @@ sealed class BaseRegion {
   });
 
   /// Generate a graphical layer to be placed in a [FlutterMap]
+  ///
+  /// **Deprecated.** Instead obtain the outline/line/points using other methods,
+  /// and render the layer manually. This method is being removed to reduce
+  /// dependency on flutter_map, and allow full usage of flutter_map
+  /// functionality without it needing to be semi-implemented here. This feature
+  /// was deprecated after v9.1.0, and will be removed in the next breaking/major
+  /// release.
+  @Deprecated(
+    'Instead obtain the outline/line/points using other methods, and render the '
+    'layer manually.  '
+    'This method is being removed to reduce dependency on flutter_map, and allow '
+    'full usage of flutter_map functionality without it needing to be '
+    'semi-implemented here. '
+    'This feature was deprecated after v9.1.0, and will be removed in the next '
+    'breaking/major release.',
+  )
   Widget toDrawable({
     Color? fillColor,
     Color borderColor = const Color(0x00000000),
