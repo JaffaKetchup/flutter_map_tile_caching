@@ -117,7 +117,7 @@ class _RegionSelectionPageState extends State<RegionSelectionPage> {
 
       if (provider.regionSelectionMethod ==
           RegionSelectionMethod.useMapCenter) {
-        provider.currentNewPointPos = position.center!;
+        provider.currentNewPointPos = position.center;
 
         if (provider.regionType == RegionType.customPolygon) {
           final coords = provider.coordinates;

@@ -3,7 +3,7 @@ description: The example application for 'flutter_map_tile_caching', showcasing
   it's functionality and use-cases.
 publish_to: "none"
 
-version: 9.0.1
+version: 9.1.0
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -18,8 +18,8 @@ dependencies:
   file_picker: ^8.0.3
   flutter:
     sdk: flutter
-  flutter_map: ^6.1.0
-  flutter_map_animations: ^0.6.0
+  flutter_map: ^7.0.0
+  flutter_map_animations: ^0.7.0
   flutter_map_tile_caching:
   google_fonts: ^6.2.1
   gpx: ^2.2.2
