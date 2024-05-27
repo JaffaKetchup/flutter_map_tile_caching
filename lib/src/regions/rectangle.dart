@@ -9,14 +9,12 @@ part of '../../flutter_map_tile_caching.dart';
 ///
 /// It can be converted to a:
 ///  - [DownloadableRegion] for downloading: [toDownloadable]
-///  - [Widget] layer to be placed in a map: [toDrawable]
 ///  - list of [LatLng]s forming the outline: [toOutline]
 class RectangleRegion extends BaseRegion {
   /// A geographically rectangular region based off coordinate bounds
   ///
   /// It can be converted to a:
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
-  ///  - [Widget] layer to be placed in a map: [toDrawable]
   ///  - list of [LatLng]s forming the outline: [toOutline]
   const RectangleRegion(this.bounds);
 
@@ -42,6 +40,21 @@ class RectangleRegion extends BaseRegion {
         crs: crs,
       );
 
+  /// **Deprecated.** Instead obtain the outline/line/points using other methods,
+  /// and render the layer manually. This method is being removed to reduce
+  /// dependency on flutter_map, and allow full usage of flutter_map
+  /// functionality without it needing to be semi-implemented here. This feature
+  /// was deprecated after v9.1.0, and will be removed in the next breaking/major
+  /// release.
+  @Deprecated(
+    'Instead obtain the outline/line/points using other methods, and render the '
+    'layer manually.  '
+    'This method is being removed to reduce dependency on flutter_map, and allow '
+    'full usage of flutter_map functionality without it needing to be '
+    'semi-implemented here. '
+    'This feature was deprecated after v9.1.0, and will be removed in the next '
+    'breaking/major release.',
+  )
   @override
   PolygonLayer toDrawable({
     Color? fillColor,
@@ -55,11 +68,12 @@ class RectangleRegion extends BaseRegion {
       PolygonLayer(
         polygons: [
           Polygon(
-            isFilled: fillColor != null,
-            color: fillColor ?? Colors.transparent,
+            color: fillColor,
             borderColor: borderColor,
             borderStrokeWidth: borderStrokeWidth,
-            isDotted: isDotted,
+            pattern: isDotted
+                ? const StrokePattern.dotted()
+                : const StrokePattern.solid(),
             label: label,
             labelStyle: labelStyle,
             labelPlacement: labelPlacement,

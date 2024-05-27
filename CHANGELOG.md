@@ -10,9 +10,18 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 * @eidolonFIRE
 * @weishuhn
 * @mohammedX6
-* and 3 anonymous or private donors
+* @quentinchaignaud
+* @Mayb3Nots
+* @T-moz
+* @micheljung
+* \+ more anonymous or private donors
 
 # Changelog
+
+## [9.1.0] - 2024/05/27
+
+* Upgraded to flutter_map v7 to support Flutter 3.22 (also upgraded other dependencies)
+* Deprecated `BaseRegion.toDrawable`, and all implementations
 
 ## [9.0.1] - 2024/04/29
 

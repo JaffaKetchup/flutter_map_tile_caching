@@ -87,7 +87,6 @@ class RegionShape extends StatelessWidget {
                   const LatLng(-90, -180),
                 ],
                 holePointsList: [holePoints],
-                isFilled: true,
                 borderColor: Colors.black,
                 borderStrokeWidth: 2,
                 color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
