@@ -5,21 +5,6 @@
 
 part of '../../flutter_map_tile_caching.dart';
 
-/// Equivalent to [FMTCStore], provided to ease migration only
-///
-/// The name refers to earlier versions of this library where the filesystem
-/// was used for storage, instead of a database.
-///
-/// This deprecation typedef will be removed in a future release: migrate to
-/// [FMTCStore].
-@Deprecated(
-  '''
-Migrate to `FMTCStore`. This deprecation typedef is provided to ease migration 
-only. It will be removed in a future version.
-''',
-)
-typedef StoreDirectory = FMTCStore;
-
 /// {@template fmtc.fmtcStore}
 /// Provides access to management, statistics, metadata, bulk download,
 /// the tile provider (and the export functionality) on the store named

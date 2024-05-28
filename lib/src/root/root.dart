@@ -3,21 +3,6 @@
 
 part of '../../flutter_map_tile_caching.dart';
 
-/// Equivalent to [FMTCRoot], provided to ease migration only
-///
-/// The name refers to earlier versions of this library where the filesystem
-/// was used for storage, instead of a database.
-///
-/// This deprecation typedef will be removed in a future release: migrate to
-/// [FMTCRoot].
-@Deprecated(
-  '''
-Migrate to `FMTCRoot`. This deprecation typedef is provided to ease migration 
-only. It will be removed in a future version.
-''',
-)
-typedef RootDirectory = FMTCRoot;
-
 /// Provides access to statistics, recovery, migration (and the import
 /// functionality) on the intitialised root.
 ///
