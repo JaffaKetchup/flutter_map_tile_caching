@@ -18,6 +18,22 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [10.0.0] - 2024/XX/XX
+
+This update builds on v9 to fully embrace the new many-to-many relationship between tiles and stores, which allows for more flexibility when constructing the `FMTCTileProvider`.  
+This allows a new paradigm to be used: stores may now be treated as bulk downloaded regions, and all the regions/stores can be used at once - no more switching between them. This allows huge amounts of flexibility and a better UX in a complex application.
+
+Additionally, vector tiles are now supported in theory, as the internal caching/retrieval logic of the specialised `ImageProvider` has been exposed, although it is out of scope to fully implement support for it.
+
+* Improvements to the browse caching logic and customizability
+  * Added support for using multiple stores simultaneously in the `FMTCTileProvider`, and exposed constructor directly
+  * Added more `CacheBehavior` options
+  * Added toggle for hit/miss stat recording, to improve performance where these statistics are never read
+  * Replaced `FMTCTileProviderSettings.maxStoreLength` with a `maxLength` property on each store individually
+  * Refactored and exposed tile provider logic into seperate `getBytes` method
+* Removed deprecated remnants from v9.*
+* Other generic improvements
+
 ## [9.1.0] - 2024/05/27
 
 * Upgraded to flutter_map v7 to support Flutter 3.22 (also upgraded other dependencies)

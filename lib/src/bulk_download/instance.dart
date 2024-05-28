@@ -15,9 +15,11 @@ class DownloadInstance {
 
   final Object id;
 
-  Future<void> Function()? requestCancel;
-
   bool isPaused = false;
+
+  // The following callbacks are defined by the `StoreDownload.startForeground`
+  // method, when a download is started, and are tied to that download operation
+  Future<void> Function()? requestCancel;
   Future<void> Function()? requestPause;
   void Function()? requestResume;
 

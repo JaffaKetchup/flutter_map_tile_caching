@@ -133,21 +133,23 @@ Future<void> _downloadManager(
   final cancelSignal = Completer<void>();
   var pauseResumeSignal = Completer<void>()..complete();
   rootReceivePort.listen(
-    (e) async {
-      if (e == null) {
+    (cmd) async {
+      if (cmd == _DownloadManagerControlCmd.cancel) {
         try {
           cancelSignal.complete();
           // ignore: avoid_catching_errors, empty_catches
         } on StateError {}
-      } else if (e == 1) {
+      } else if (cmd == _DownloadManagerControlCmd.pause) {
         pauseResumeSignal = Completer<void>();
         threadPausedStates.setAll(0, generateThreadPausedStates());
         await Future.wait(threadPausedStates.map((e) => e.future));
         downloadDuration.stop();
-        send(1);
-      } else if (e == 2) {
+        send(_DownloadManagerControlCmd.pause);
+      } else if (cmd == _DownloadManagerControlCmd.resume) {
         pauseResumeSignal.complete();
         downloadDuration.start();
+      } else {
+        throw UnimplementedError('Recieved unknown cmd: $cmd');
       }
     },
   );
@@ -181,7 +183,8 @@ Future<void> _downloadManager(
       region: input.region,
       endTile: math.min(input.region.end ?? largestInt, maxTiles),
     );
-    send(2);
+    // TODO: Remove once validated
+    // send(2);
   }
 
   // Duplicate the backend to make it safe to send through isolates
@@ -277,6 +280,7 @@ Future<void> _downloadManager(
                 );
               }
 
+              // TODO: Make updates batched to improve efficiency
               if (input.recoveryId case final recoveryId?) {
                 input.backend.updateRecovery(
                   id: recoveryId,

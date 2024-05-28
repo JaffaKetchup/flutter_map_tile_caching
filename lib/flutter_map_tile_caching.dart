@@ -41,6 +41,7 @@ import 'src/providers/browsing_errors.dart';
 export 'src/backend/export_external.dart';
 export 'src/providers/browsing_errors.dart';
 
+part 'src/bulk_download/control_cmds.dart';
 part 'src/bulk_download/download_progress.dart';
 part 'src/bulk_download/manager.dart';
 part 'src/bulk_download/thread.dart';
