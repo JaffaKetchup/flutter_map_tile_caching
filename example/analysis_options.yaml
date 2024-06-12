@@ -1,5 +1,9 @@
 include: ../analysis_options.yaml
 
+analyzer:
+  exclude:
+    - old_lib/
+
 linter:
   rules:
     public_member_api_docs: false

@@ -17,8 +17,7 @@ abstract class FMTCRoot {
   static RootStats get stats => const RootStats._();
 
   /// Manage the download recovery of all sub-stores
-  static RootRecovery get recovery =>
-      RootRecovery._instance ?? RootRecovery._();
+  static RootRecovery get recovery => RootRecovery._();
 
   /// Export & import 'archives' of selected stores and tiles, outside of the
   /// FMTC environment
