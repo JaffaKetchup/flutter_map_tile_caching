@@ -63,13 +63,12 @@ Future<void> _downloadManager(
   }
 
   // Setup thread buffer tracking
-  late final List<({double size, int tiles})> threadBuffers;
+  late final List<int> threadBuffersSize;
+  late final List<int> threadBuffersTiles;
   if (input.maxBufferLength != 0) {
-    threadBuffers = List.generate(
-      input.parallelThreads,
-      (_) => (tiles: 0, size: 0.0),
-      growable: false,
-    );
+    // TODO: Verify `filled`
+    threadBuffersSize = List.filled(input.parallelThreads, 0);
+    threadBuffersTiles = List.filled(input.parallelThreads, 0);
   }
 
   // Setup tile generator isolate
@@ -124,32 +123,32 @@ Future<void> _downloadManager(
   void send(Object? m) => input.sendPort.send(m);
 
   // Setup cancel, pause, and resume handling
-  List<Completer<void>> generateThreadPausedStates() => List.generate(
+  Iterable<Completer<void>> generateThreadPausedStates() => Iterable.generate(
         input.parallelThreads,
         (_) => Completer<void>(),
-        growable: false,
       );
-  final threadPausedStates = generateThreadPausedStates();
+  final threadPausedStates = generateThreadPausedStates().toList();
   final cancelSignal = Completer<void>();
   var pauseResumeSignal = Completer<void>()..complete();
   rootReceivePort.listen(
     (cmd) async {
-      if (cmd == _DownloadManagerControlCmd.cancel) {
-        try {
-          cancelSignal.complete();
-          // ignore: avoid_catching_errors, empty_catches
-        } on StateError {}
-      } else if (cmd == _DownloadManagerControlCmd.pause) {
-        pauseResumeSignal = Completer<void>();
-        threadPausedStates.setAll(0, generateThreadPausedStates());
-        await Future.wait(threadPausedStates.map((e) => e.future));
-        downloadDuration.stop();
-        send(_DownloadManagerControlCmd.pause);
-      } else if (cmd == _DownloadManagerControlCmd.resume) {
-        pauseResumeSignal.complete();
-        downloadDuration.start();
-      } else {
-        throw UnimplementedError('Recieved unknown cmd: $cmd');
+      switch (cmd) {
+        case _DownloadManagerControlCmd.cancel:
+          try {
+            cancelSignal.complete();
+            // ignore: avoid_catching_errors, empty_catches
+          } on StateError {}
+        case _DownloadManagerControlCmd.pause:
+          pauseResumeSignal = Completer<void>();
+          threadPausedStates.setAll(0, generateThreadPausedStates());
+          await Future.wait(threadPausedStates.map((e) => e.future));
+          downloadDuration.stop();
+          send(_DownloadManagerControlCmd.pause);
+        case _DownloadManagerControlCmd.resume:
+          pauseResumeSignal.complete();
+          downloadDuration.start();
+        default:
+          throw UnimplementedError('Recieved unknown control cmd: $cmd');
       }
     },
   );
@@ -185,6 +184,18 @@ Future<void> _downloadManager(
     );
     // TODO: Remove once validated
     // send(2);
+  }
+
+  // Create convienience method to update recovery system if enabled
+  void updateRecoveryIfNecessary() {
+    if (input.recoveryId case final recoveryId?) {
+      input.backend.updateRecovery(
+        id: recoveryId,
+        newStartTile: 1 +
+            (lastDownloadProgress.cachedTiles -
+                lastDownloadProgress.bufferedTiles),
+      );
+    }
   }
 
   // Duplicate the backend to make it safe to send through isolates
@@ -239,33 +250,37 @@ Future<void> _downloadManager(
             if (evt is TileEvent) {
               // If buffering is in use, send a progress update with buffer info
               if (input.maxBufferLength != 0) {
+                // Update correct thread buffer with new tile on success
                 if (evt.result == TileEventResult.success) {
-                  threadBuffers[threadNo] = (
-                    tiles: evt._wasBufferReset
-                        ? 0
-                        : threadBuffers[threadNo].tiles + 1,
-                    size: evt._wasBufferReset
-                        ? 0
-                        : threadBuffers[threadNo].size +
-                            (evt.tileImage!.lengthInBytes / 1024)
-                  );
+                  if (evt._wasBufferReset) {
+                    threadBuffersSize[threadNo] = 0;
+                    threadBuffersTiles[threadNo] = 0;
+                  } else {
+                    threadBuffersSize[threadNo] += evt.tileImage!.lengthInBytes;
+                    threadBuffersTiles[threadNo]++;
+                  }
                 }
 
                 send(
                   lastDownloadProgress =
                       lastDownloadProgress._updateProgressWithTile(
                     newTileEvent: evt,
-                    newBufferedTiles: threadBuffers
-                        .map((e) => e.tiles)
-                        .reduce((a, b) => a + b),
-                    newBufferedSize: threadBuffers
-                        .map((e) => e.size)
-                        .reduce((a, b) => a + b),
+                    newBufferedTiles:
+                        threadBuffersTiles.reduce((a, b) => a + b),
+                    newBufferedSize:
+                        threadBuffersSize.reduce((a, b) => a + b) / 1024,
                     newDuration: downloadDuration.elapsed,
                     tilesPerSecond: getCurrentTPS(registerNewTPS: true),
                     rateLimit: input.rateLimit,
                   ),
                 );
+
+                // For efficiency, only update recovery when the buffer is
+                // cleaned
+                // We don't want to update recovery to a tile that isn't cached
+                // (only buffered), because they'll be lost in the events
+                // recovery is designed to recover from
+                if (evt._wasBufferReset) updateRecoveryIfNecessary();
               } else {
                 send(
                   lastDownloadProgress =
@@ -278,16 +293,8 @@ Future<void> _downloadManager(
                     rateLimit: input.rateLimit,
                   ),
                 );
-              }
 
-              // TODO: Make updates batched to improve efficiency
-              if (input.recoveryId case final recoveryId?) {
-                input.backend.updateRecovery(
-                  id: recoveryId,
-                  newStartTile: 1 +
-                      (lastDownloadProgress.cachedTiles -
-                          lastDownloadProgress.bufferedTiles),
-                );
+                updateRecoveryIfNecessary();
               }
 
               return;

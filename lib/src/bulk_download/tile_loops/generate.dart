@@ -81,7 +81,7 @@ class TileGenerators {
     // 1. Calculate the radius in tiles using `Distance`
     // 2. Iterate through y, then x
     // 3. Use the circle formula x^2 + y^2 = r^2 to determine all points within the radius
-    // However, effectively scaling this proved to be difficult.
+    // However, effectively scaling this to 256x256 tiles proved to be difficult.
 
     final region = input.region as DownloadableRegion<CircleRegion>;
     final circleOutline = region.originalRegion.toOutline();
