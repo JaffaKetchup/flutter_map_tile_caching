@@ -1,22 +1,9 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../../flutter_map_tile_caching.dart';
+// ignore_for_file: use_late_for_private_fields_and_variables
 
-/// Equivalent to [FMTCStore], provided to ease migration only
-///
-/// The name refers to earlier versions of this library where the filesystem
-/// was used for storage, instead of a database.
-///
-/// This deprecation typedef will be removed in a future release: migrate to
-/// [FMTCStore].
-@Deprecated(
-  '''
-Migrate to `FMTCStore`. This deprecation typedef is provided to ease migration 
-only. It will be removed in a future version.
-''',
-)
-typedef StoreDirectory = FMTCStore;
+part of '../../flutter_map_tile_caching.dart';
 
 /// {@template fmtc.fmtcStore}
 /// Provides access to management, statistics, metadata, bulk download,
@@ -60,7 +47,12 @@ class FMTCStore {
     Map<String, String>? headers,
     http.Client? httpClient,
   }) =>
-      FMTCTileProvider._(storeName, settings, headers, httpClient);
+      FMTCTileProvider(
+        storeNames: [storeName],
+        settings: settings,
+        headers: headers,
+        httpClient: httpClient,
+      );
 
   @override
   bool operator ==(Object other) =>

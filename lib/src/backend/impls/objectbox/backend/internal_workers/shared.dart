@@ -5,34 +5,35 @@ part of '../backend.dart';
 
 void _sharedWriteSingleTile({
   required Store root,
-  required String storeName,
+  required List<String> storeNames,
   required String url,
   required Uint8List bytes,
 }) {
   final tiles = root.box<ObjectBoxTile>();
-  final stores = root.box<ObjectBoxStore>();
+  final storesBox = root.box<ObjectBoxStore>();
   final rootBox = root.box<ObjectBoxRoot>();
 
   final tilesQuery = tiles.query(ObjectBoxTile_.url.equals(url)).build();
   final storeQuery =
-      stores.query(ObjectBoxStore_.name.equals(storeName)).build();
+      storesBox.query(ObjectBoxStore_.name.oneOf(storeNames)).build();
 
   final storesToUpdate = <String, ObjectBoxStore>{};
-  // If tile exists in this store, just update size, otherwise
-  // length and size
-  // Also update size of all related stores
-  bool didContainAlready = false;
 
   root.runInTransaction(
     TxMode.write,
     () {
       final existingTile = tilesQuery.findUnique();
-      final store = storeQuery.findUnique() ??
-          (throw StoreNotExists(storeName: storeName));
+      final stores = storeQuery.find(); // Assumed not empty
 
       if (existingTile != null) {
+        // If tile exists in this store, just update size, otherwise
+        // length and size
+        // Also update size of all related stores
+        final didContainAlready = <String>{};
+
         for (final relatedStore in existingTile.stores) {
-          if (relatedStore.name == storeName) didContainAlready = true;
+          didContainAlready
+              .addAll(storeNames.where((s) => s == relatedStore.name));
 
           storesToUpdate[relatedStore.name] =
               (storesToUpdate[relatedStore.name] ?? relatedStore)
@@ -45,6 +46,17 @@ void _sharedWriteSingleTile({
             ..size += -existingTile.bytes.lengthInBytes + bytes.lengthInBytes,
           mode: PutMode.update,
         );
+
+        storesToUpdate.addEntries(
+          stores.whereNot((s) => didContainAlready.contains(s.name)).map(
+                (s) => MapEntry(
+                  s.name,
+                  s
+                    ..length += 1
+                    ..size += bytes.lengthInBytes,
+                ),
+              ),
+        );
       } else {
         rootBox.put(
           rootBox.get(1)!
@@ -52,12 +64,17 @@ void _sharedWriteSingleTile({
             ..size += bytes.lengthInBytes,
           mode: PutMode.update,
         );
-      }
 
-      if (!didContainAlready || existingTile == null) {
-        storesToUpdate[storeName] = store
-          ..length += 1
-          ..size += bytes.lengthInBytes;
+        storesToUpdate.addEntries(
+          stores.map(
+            (s) => MapEntry(
+              s.name,
+              s
+                ..length += 1
+                ..size += bytes.lengthInBytes,
+            ),
+          ),
+        );
       }
 
       tiles.put(
@@ -65,9 +82,9 @@ void _sharedWriteSingleTile({
           url: url,
           lastModified: DateTime.timestamp(),
           bytes: bytes,
-        )..stores.addAll({store, ...?existingTile?.stores}),
+        )..stores.addAll({...stores, ...?existingTile?.stores}),
       );
-      stores.putMany(storesToUpdate.values.toList(), mode: PutMode.update);
+      storesBox.putMany(storesToUpdate.values.toList(), mode: PutMode.update);
     },
   );
 

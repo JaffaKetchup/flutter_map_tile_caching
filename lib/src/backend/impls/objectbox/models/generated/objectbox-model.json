@@ -121,7 +121,7 @@
     },
     {
       "id": "2:632249766926720928",
-      "lastPropertyId": "7:7028109958959828879",
+      "lastPropertyId": "8:3489822621946254204",
       "name": "ObjectBoxStore",
       "properties": [
         {
@@ -161,6 +161,11 @@
           "id": "7:7028109958959828879",
           "name": "metadataJson",
           "type": 9
+        },
+        {
+          "id": "8:3489822621946254204",
+          "name": "maxLength",
+          "type": 6
         }
       ],
       "relations": []

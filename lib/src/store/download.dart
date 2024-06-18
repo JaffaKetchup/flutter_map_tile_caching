@@ -175,6 +175,7 @@ class StoreDownload {
     final recoveryId = disableRecovery
         ? null
         : Object.hash(instanceId, DateTime.timestamp().millisecondsSinceEpoch);
+    if (!disableRecovery) FMTCRoot.recovery._downloadsOngoing.add(recoveryId!);
 
     // Start download thread
     final receivePort = ReceivePort();
@@ -212,7 +213,7 @@ class StoreDownload {
       }
 
       // Handle pause comms
-      if (evt == 1) {
+      if (evt == _DownloadManagerControlCmd.pause) {
         pauseCompleter?.complete();
         continue;
       }
@@ -221,25 +222,27 @@ class StoreDownload {
       if (evt == null) break;
 
       // Handle recovery system startup (unless disabled)
-      if (evt == 2) {
+      // TODO: Remove once validated
+      /*if (evt == 2) {
         FMTCRoot.recovery._downloadsOngoing.add(recoveryId!);
         continue;
-      }
+      }*/
 
       // Setup control mechanisms (senders)
       if (evt is SendPort) {
         instance
           ..requestCancel = () {
-            evt.send(null);
+            evt.send(_DownloadManagerControlCmd.cancel);
             return cancelCompleter.future;
           }
           ..requestPause = () {
-            evt.send(1);
+            evt.send(_DownloadManagerControlCmd.pause);
+            // Completed by handler above
             return (pauseCompleter = Completer()).future
               ..then((_) => instance.isPaused = true);
           }
           ..requestResume = () {
-            evt.send(2);
+            evt.send(_DownloadManagerControlCmd.resume);
             instance.isPaused = false;
           };
         continue;
@@ -250,7 +253,7 @@ class StoreDownload {
 
     // Handle shutdown (both normal and cancellation)
     receivePort.close();
-    if (recoveryId != null) await FMTCRoot.recovery.cancel(recoveryId);
+    if (!disableRecovery) await FMTCRoot.recovery.cancel(recoveryId!);
     DownloadInstance.unregister(instanceId);
     cancelCompleter.complete();
   }

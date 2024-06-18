@@ -13,13 +13,27 @@ class StoreManagement {
   StoreManagement._(this._storeName);
   final String _storeName;
 
+  /// {@macro fmtc.backend.storeGetMaxLength}
+  Future<int?> get maxLength =>
+      FMTCBackendAccess.internal.storeGetMaxLength(storeName: _storeName);
+
+  /// {@macro fmtc.backend.storeSetMaxLength}
+  Future<void> setMaxLength(int? newMaxLength) =>
+      FMTCBackendAccess.internal.storeSetMaxLength(
+        storeName: _storeName,
+        newMaxLength: newMaxLength,
+      );
+
   /// {@macro fmtc.backend.storeExists}
   Future<bool> get ready =>
       FMTCBackendAccess.internal.storeExists(storeName: _storeName);
 
   /// {@macro fmtc.backend.createStore}
-  Future<void> create() =>
-      FMTCBackendAccess.internal.createStore(storeName: _storeName);
+  Future<void> create({int? maxLength}) =>
+      FMTCBackendAccess.internal.createStore(
+        storeName: _storeName,
+        maxLength: maxLength,
+      );
 
   /// {@macro fmtc.backend.deleteStore}
   Future<void> delete() =>
