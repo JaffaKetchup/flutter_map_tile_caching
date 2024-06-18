@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../../../../shared/components/delayed_frame_attached_dependent_builder.dart';
-import '../../../components/scrollable_provider.dart';
+import '../../../../../../shared/components/delayed_frame_attached_dependent_builder.dart';
+import 'scrollable_provider.dart';
 
 class TabHeader extends StatelessWidget {
   const TabHeader({
@@ -57,8 +57,8 @@ class TabHeader extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeInOut,
                 color: innerScrollController.offset != 0
-                    ? Theme.of(context).colorScheme.surfaceContainerLowest
-                    : Theme.of(context).colorScheme.surfaceContainerLow,
+                    ? Theme.of(context).colorScheme.surfaceContainer
+                    : Theme.of(context).colorScheme.surface,
                 child: child,
               ),
               child: Padding(

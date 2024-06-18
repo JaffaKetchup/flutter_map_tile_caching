@@ -6,6 +6,11 @@ part of '../../flutter_map_tile_caching.dart';
 /// Callback type that takes an [FMTCBrowsingError] exception
 typedef FMTCBrowsingErrorHandler = void Function(FMTCBrowsingError exception);
 
+/// Alias of [CacheBehavior]
+///
+/// ... with the correct spelling :D
+typedef CacheBehaviour = CacheBehavior;
+
 /// Behaviours dictating how and when browse caching should occur
 ///
 /// | `CacheBehavior`          | Preferred fetch method | Fallback fetch method | Update cache when network used |

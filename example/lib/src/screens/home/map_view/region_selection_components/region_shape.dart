@@ -61,8 +61,6 @@ class RegionShape extends StatelessWidget {
                       ) /
                       1000,
                 ).toOutline().toList();
-              case RegionType.line:
-                throw Error();
               case RegionType.customPolygon:
                 holePoints = provider.isCustomPolygonComplete
                     ? provider.coordinates
@@ -73,10 +71,13 @@ class RegionShape extends StatelessWidget {
                         else
                           provider.currentNewPointPos,
                       ];
+              case RegionType.line:
+                throw UnsupportedError('Unreachable.');
             }
           }
 
           return PolygonLayer(
+            key: UniqueKey(),
             polygons: [
               Polygon(
                 points: [
@@ -85,7 +86,14 @@ class RegionShape extends StatelessWidget {
                   const LatLng(90, -180),
                   const LatLng(-90, -180),
                 ],
-                holePointsList: [holePoints],
+                holePointsList: holePoints.length < 3
+                    ? null
+                    : [
+                        if (Polygon.isClockwise(holePoints))
+                          holePoints
+                        else
+                          holePoints.reversed.toList(),
+                      ],
                 borderColor: Colors.black,
                 borderStrokeWidth: 2,
                 color: Theme.of(context).colorScheme.surface.withOpacity(0.5),

@@ -117,10 +117,8 @@ class _MapViewState extends State<MapView>
         sharedPrefs.getDouble(SharedPrefsKeys.mapLocationLat.name) ?? 51.5216,
         sharedPrefs.getDouble(SharedPrefsKeys.mapLocationLng.name) ?? -0.6780,
       ),
-      initialZoom: sharedPrefs.getDouble(
-            SharedPrefsKeys.mapLocationZoom.name,
-          ) ??
-          12,
+      initialZoom:
+          sharedPrefs.getDouble(SharedPrefsKeys.mapLocationZoom.name) ?? 12,
       interactionOptions: const InteractionOptions(
         flags: InteractiveFlag.all &
             ~InteractiveFlag.rotate &
@@ -247,118 +245,120 @@ class _MapViewState extends State<MapView>
 
     return Selector<GeneralProvider, Set<String>>(
       selector: (context, provider) => provider.currentStores,
-      builder: (context, currentStores, _) =>
-          FutureBuilder<Map<String, String>?>(
-        future: currentStores.isEmpty
-            ? Future.sync(() => {})
-            : FMTCStore(currentStores.first).metadata.read,
-        builder: (context, metadata) {
-          if (!metadata.hasData ||
-              metadata.data == null ||
-              (currentStores.isNotEmpty && metadata.data!.isEmpty)) {
-            return const LoadingIndicator('Preparing map');
-          }
+      builder: (context, currentStores, _) {
+        final map = FlutterMap(
+          mapController: mapController.mapController,
+          options: mapOptions,
+          children: [
+            FutureBuilder<Map<String, String>?>(
+              future: currentStores.isEmpty
+                  ? Future.sync(() => {})
+                  : FMTCStore(currentStores.first).metadata.read,
+              builder: (context, metadata) {
+                if (!metadata.hasData ||
+                    metadata.data == null ||
+                    (currentStores.isNotEmpty && metadata.data!.isEmpty)) {
+                  return const AbsorbPointer(
+                    child: LoadingIndicator('Preparing map'),
+                  );
+                }
 
-          final urlTemplate = currentStores.isNotEmpty && metadata.data != null
-              ? metadata.data!['sourceURL']!
-              : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+                final urlTemplate =
+                    currentStores.isNotEmpty && metadata.data != null
+                        ? metadata.data!['sourceURL']!
+                        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
-          final map = FlutterMap(
-            mapController: mapController.mapController,
-            options: mapOptions,
-            children: [
-              TileLayer(
-                urlTemplate: urlTemplate,
-                userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
-                maxNativeZoom: 20,
-                tileProvider: currentStores.isNotEmpty
-                    ? FMTCStore(currentStores.first).getTileProvider(
-                        settings: FMTCTileProviderSettings(
-                          behavior: CacheBehavior.values
-                              .byName(metadata.data!['behaviour']!),
-                          cachedValidDuration: int.parse(
-                                    metadata.data!['validDuration']!,
-                                  ) ==
-                                  0
-                              ? Duration.zero
-                              : Duration(
-                                  days: int.parse(
-                                    metadata.data!['validDuration']!,
+                return TileLayer(
+                  urlTemplate: urlTemplate,
+                  userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
+                  maxNativeZoom: 20,
+                  tileProvider: currentStores.isNotEmpty
+                      ? FMTCStore(currentStores.first).getTileProvider(
+                          settings: FMTCTileProviderSettings(
+                            behavior: CacheBehavior.values
+                                .byName(metadata.data!['behaviour']!),
+                            cachedValidDuration: int.parse(
+                                      metadata.data!['validDuration']!,
+                                    ) ==
+                                    0
+                                ? Duration.zero
+                                : Duration(
+                                    days: int.parse(
+                                      metadata.data!['validDuration']!,
+                                    ),
                                   ),
-                                ),
-                          /*maxStoreLength:
-                               int.parse(metadata.data!['maxLength']!),*/
-                        ),
-                      )
-                    : NetworkTileProvider(),
-              ),
-              if (widget.mode == MapViewMode.regionSelect) ...[
-                const RegionShape(),
-                const CustomPolygonSnappingIndicator(),
-              ],
-              if (widget.bottomPaddingWrapperBuilder != null)
-                Builder(
-                  builder: (context) => widget.bottomPaddingWrapperBuilder!(
-                    context,
-                    _attributionLayer,
-                  ),
-                )
-              else
-                _attributionLayer,
+                            /*maxStoreLength:
+                                     int.parse(metadata.data!['maxLength']!),*/
+                          ),
+                        )
+                      : NetworkTileProvider(),
+                );
+              },
+            ),
+            if (widget.mode == MapViewMode.regionSelect) ...[
+              const RegionShape(),
+              const CustomPolygonSnappingIndicator(),
             ],
-          );
+            if (widget.bottomPaddingWrapperBuilder != null)
+              Builder(
+                builder: (context) => widget.bottomPaddingWrapperBuilder!(
+                  context,
+                  _attributionLayer,
+                ),
+              )
+            else
+              _attributionLayer,
+          ],
+        );
 
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final double sidePanelLeft =
-                  switch ((widget.layoutDirection, widget.mode)) {
-                (Axis.vertical, _) => 0,
-                (Axis.horizontal, MapViewMode.standard) => -70,
-                (Axis.horizontal, MapViewMode.regionSelect) => 12,
-              };
-              final double sidePanelBottom =
-                  switch ((widget.layoutDirection, widget.mode)) {
-                (Axis.horizontal, _) => 0,
-                (Axis.vertical, MapViewMode.standard) => -70,
-                (Axis.vertical, MapViewMode.regionSelect) => 12,
-              };
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final double sidePanelLeft =
+                switch ((widget.layoutDirection, widget.mode)) {
+              (Axis.vertical, _) => 0,
+              (Axis.horizontal, MapViewMode.regionSelect) => 0,
+              (Axis.horizontal, MapViewMode.standard) => -85,
+            };
+            final double sidePanelBottom =
+                switch ((widget.layoutDirection, widget.mode)) {
+              (Axis.horizontal, _) => 0,
+              (Axis.vertical, MapViewMode.regionSelect) => 0,
+              (Axis.vertical, MapViewMode.standard) => -85,
+            };
 
-              return Stack(
-                fit: StackFit.expand,
-                children: [
-                  MouseRegion(
-                    opaque: false,
-                    cursor: widget.mode == MapViewMode.standard ||
-                            context.select<RegionSelectionProvider,
-                                    RegionSelectionMethod>(
-                                  (p) => p.regionSelectionMethod,
-                                ) ==
-                                RegionSelectionMethod.useMapCenter
-                        ? MouseCursor.defer
-                        : context.select<RegionSelectionProvider, bool>(
-                            (p) => p.customPolygonSnap,
-                          )
-                            ? SystemMouseCursors.none
-                            : SystemMouseCursors.precise,
-                    child: map,
-                  ),
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    left: sidePanelLeft,
-                    bottom: sidePanelBottom,
-
-                    // top:   widget.layoutDirection == Axis.horizontal ? 12 : null,
-                    // bottom: 12,
-                    //start: widget.layoutDirection == Axis.horizontal ? 24 : 12,
-                    //end: widget.layoutDirection == Axis.horizontal ? null : 12,
-                    child: SizedBox(
-                      height: widget.layoutDirection == Axis.horizontal
-                          ? constraints.maxHeight
-                          : null,
-                      width: widget.layoutDirection == Axis.horizontal
-                          ? null
-                          : constraints.maxWidth,
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                MouseRegion(
+                  opaque: false,
+                  cursor: widget.mode == MapViewMode.standard ||
+                          context.select<RegionSelectionProvider,
+                                  RegionSelectionMethod>(
+                                (p) => p.regionSelectionMethod,
+                              ) ==
+                              RegionSelectionMethod.useMapCenter
+                      ? MouseCursor.defer
+                      : context.select<RegionSelectionProvider, bool>(
+                          (p) => p.customPolygonSnap,
+                        )
+                          ? SystemMouseCursors.none
+                          : SystemMouseCursors.precise,
+                  child: map,
+                ),
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  left: sidePanelLeft,
+                  bottom: sidePanelBottom,
+                  child: SizedBox(
+                    height: widget.layoutDirection == Axis.horizontal
+                        ? constraints.maxHeight
+                        : null,
+                    width: widget.layoutDirection == Axis.horizontal
+                        ? null
+                        : constraints.maxWidth,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
                       child: RegionSelectionSidePanel(
                         layoutDirection: widget.layoutDirection,
                         bottomPaddingWrapperBuilder:
@@ -366,25 +366,22 @@ class _MapViewState extends State<MapView>
                       ),
                     ),
                   ),
-                  if (widget.mode == MapViewMode.regionSelect &&
-                      context.select<RegionSelectionProvider,
-                              RegionSelectionMethod>(
-                            (p) => p.regionSelectionMethod,
-                          ) ==
-                          RegionSelectionMethod.useMapCenter &&
-                      !context.select<RegionSelectionProvider, bool>(
-                        (p) => p.customPolygonSnap,
-                      ))
-                    const Center(child: Crosshairs()),
-                  /*UsageInstructions(
-                  layoutDirection: widget.layoutDirection,
-                ),*/
-                ],
-              );
-            },
-          );
-        },
-      ),
+                ),
+                if (widget.mode == MapViewMode.regionSelect &&
+                    context.select<RegionSelectionProvider,
+                            RegionSelectionMethod>(
+                          (p) => p.regionSelectionMethod,
+                        ) ==
+                        RegionSelectionMethod.useMapCenter &&
+                    !context.select<RegionSelectionProvider, bool>(
+                      (p) => p.customPolygonSnap,
+                    ))
+                  const Center(child: Crosshairs()),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

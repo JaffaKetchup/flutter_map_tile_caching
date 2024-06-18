@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart' hide BottomSheet;
+import 'package:flutter/material.dart';
 
-import 'config_panel/wrappers/bottom_sheet/bottom_sheet.dart';
-import 'config_panel/wrappers/bottom_sheet/tabs/stores/stores.dart';
-import 'config_panel/wrappers/side_panel/side_panel.dart';
+import 'config_view/forms/bottom_sheet/bottom_sheet.dart';
+import 'config_view/forms/side/side.dart';
 import 'map_view/bottom_sheet_wrapper.dart';
 import 'map_view/map_view.dart';
 
@@ -17,28 +16,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final bottomSheetOuterController = DraggableScrollableController();
-
-  /*late final bottomSheetTabs = [
-    StoresAndConfigureTab(
-      bottomSheetOuterController: bottomSheetOuterController,
-    ),
-    StatefulBuilder(
-      builder: (context, _) {
-        return CustomScrollView(
-          controller:
-              BottomSheetScrollableProvider.innerScrollControllerOf(context),
-        );
-      },
-    ),
-    StatefulBuilder(
-      builder: (context, _) {
-        return CustomScrollView(
-          controller:
-              BottomSheetScrollableProvider.innerScrollControllerOf(context),
-        );
-      },
-    ),
-  ];*/
 
   int selectedTab = 0;
 
@@ -62,15 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
               mode: mapMode,
               layoutDirection: layoutDirection,
             ),
-            bottomSheet: BottomSheet(
-              controller: bottomSheetOuterController,
-              child: SizedBox(
-                width: double.infinity,
-                child: StoresAndConfigureTab(
-                  bottomSheetOuterController: bottomSheetOuterController,
-                ),
-              ),
-            ),
+            bottomSheet:
+                ConfigViewBottomSheet(controller: bottomSheetOuterController),
             bottomNavigationBar: NavigationBar(
               selectedIndex: selectedTab,
               destinations: const [
@@ -132,10 +102,21 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
 
-        return Scaffold(
-          body: Row(
+        return TweenAnimationBuilder(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          tween: Tween<double>(begin: 0, end: selectedTab == 0 ? 0 : 1),
+          builder: (context, colorAnimation, child) => Scaffold(
+            backgroundColor: ColorTween(
+              begin: Theme.of(context).colorScheme.surfaceContainer,
+              end: Theme.of(context).scaffoldBackgroundColor,
+            ).lerp(colorAnimation),
+            body: child,
+          ),
+          child: Row(
             children: [
               NavigationRail(
+                backgroundColor: Colors.transparent,
                 destinations: const [
                   NavigationRailDestination(
                     icon: Icon(Icons.map_outlined),
@@ -169,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 onDestinationSelected: (i) => setState(() => selectedTab = i),
               ),
-              MapConfigSidePanel(selectedTab: selectedTab),
+              ConfigViewSide(selectedTab: selectedTab),
               Expanded(
                 child: ClipRRect(
                   borderRadius: const BorderRadius.only(

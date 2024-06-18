@@ -47,6 +47,8 @@ class CircleRegion extends BaseRegion {
 
     final radius = this.radius * 1000;
 
+    if (radius == 0) return; // Otherwise, 360 points of the same one coord
+
     for (int angle = -180; angle <= 180; angle++) {
       yield dist.offset(center, radius, angle);
     }

@@ -10,6 +10,7 @@ environment:
   flutter: ">=3.19.0"
 
 dependencies:
+  async: ^2.11.0
   auto_size_text: ^3.0.0
   badges: ^3.1.2
   better_open_file: ^3.6.5
@@ -38,6 +39,8 @@ dependencies:
 dependency_overrides:
   flutter_map_tile_caching:
     path: ../
+  flutter_map:
+    path: D:/flutter_map
 
 flutter:
   uses-material-design: true

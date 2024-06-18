@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' hide BottomSheet;
+import 'package:flutter/material.dart';
 
 import '../bottom_sheet.dart';
 
@@ -21,7 +21,7 @@ class BottomSheetToolbar extends StatelessWidget {
           AnimatedBuilder(
             animation: bottomSheetOuterController,
             builder: (context, child) => SizedBox(
-              height: BottomSheet.topPadding -
+              height: ConfigViewBottomSheet.topPadding -
                   _calcVisibility(bottomSheetOuterController.size, 16),
             ),
           ),

@@ -22,16 +22,20 @@ class CustomPolygonSnappingIndicator extends StatelessWidget {
               (p) => p.customPolygonSnap,
             ))
           Marker(
-            height: 25,
-            width: 25,
+            height: 32,
+            width: 32,
             point: coords.first,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(1028),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(width: 2),
               ),
               child: const Center(
-                child: Icon(Icons.auto_awesome, size: 15),
+                child: Icon(
+                  Icons.auto_fix_normal,
+                  size: 18,
+                ),
               ),
             ),
           ),

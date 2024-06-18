@@ -1,13 +1,7 @@
-import 'package:flutter/material.dart' hide BottomSheet;
+part of '../bottom_sheet.dart';
 
-import '../../../../../../../shared/components/delayed_frame_attached_dependent_builder.dart';
-import '../../../../map_config.dart';
-import '../../bottom_sheet.dart';
-import '../../components/scrollable_provider.dart';
-import 'components/tab_header.dart';
-
-class StoresAndConfigureTab extends StatefulWidget {
-  const StoresAndConfigureTab({
+class _ContentPanels extends StatefulWidget {
+  const _ContentPanels({
     super.key,
     required this.bottomSheetOuterController,
   });
@@ -15,23 +9,19 @@ class StoresAndConfigureTab extends StatefulWidget {
   final DraggableScrollableController bottomSheetOuterController;
 
   @override
-  State<StoresAndConfigureTab> createState() => _StoresAndConfigureTabState();
+  State<_ContentPanels> createState() => _ContentPanelsState();
 }
 
-class _StoresAndConfigureTabState extends State<StoresAndConfigureTab> {
-  final urlTextController = TextEditingController(
-    text: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  );
-
+class _ContentPanelsState extends State<_ContentPanels> {
   @override
   Widget build(BuildContext context) {
     final screenTopPadding =
         MediaQueryData.fromView(View.of(context)).padding.top;
 
-    return MapConfig(
+    return CustomScrollView(
       controller:
           BottomSheetScrollableProvider.innerScrollControllerOf(context),
-      leading: [
+      slivers: [
         SliverToBoxAdapter(
           child: DelayedControllerAttachmentBuilder(
             listenable: widget.bottomSheetOuterController,
@@ -48,13 +38,13 @@ class _StoresAndConfigureTabState extends State<StoresAndConfigureTab> {
               final oldMin = maxHeight - screenTopPadding;
 
               const maxTopPadding = 0.0;
-              const minTopPadding = BottomSheet.topPadding - 8;
+              const minTopPadding = ConfigViewBottomSheet.topPadding - 8;
 
               final double topPaddingHeight =
                   ((((oldValue - oldMin) * (maxTopPadding - minTopPadding)) /
                               (oldMax - oldMin)) +
                           minTopPadding)
-                      .clamp(0.0, BottomSheet.topPadding - 8);
+                      .clamp(0.0, ConfigViewBottomSheet.topPadding - 8);
 
               return SizedBox(height: topPaddingHeight);
             },
@@ -63,6 +53,18 @@ class _StoresAndConfigureTabState extends State<StoresAndConfigureTab> {
         TabHeader(
           bottomSheetOuterController: widget.bottomSheetOuterController,
         ),
+        const SliverToBoxAdapter(child: SizedBox(height: 6)),
+        const SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverToBoxAdapter(child: ConfigPanelBehaviour()),
+        ),
+        const SliverToBoxAdapter(child: Divider()),
+        const SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverToBoxAdapter(child: ConfigPanelMap()),
+        ),
+        const SliverToBoxAdapter(child: Divider()),
+        const ConfigPanelStoresSliver(),
       ],
     );
   }

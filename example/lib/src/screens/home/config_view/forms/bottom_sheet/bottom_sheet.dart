@@ -1,25 +1,29 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../shared/components/delayed_frame_attached_dependent_builder.dart';
+import '../../panels/behaviour/behaviour.dart';
+import '../../panels/map/map.dart';
+import '../../panels/stores/stores.dart';
 import 'components/scrollable_provider.dart';
+import 'components/tab_header.dart';
 
-class BottomSheet extends StatefulWidget {
-  const BottomSheet({
+part 'components/contents.dart';
+
+class ConfigViewBottomSheet extends StatefulWidget {
+  const ConfigViewBottomSheet({
     super.key,
     required this.controller,
-    required this.child,
   });
 
   final DraggableScrollableController controller;
-  final Widget child;
 
   static const topPadding = kMinInteractiveDimension / 1.5;
 
   @override
-  State<BottomSheet> createState() => _BottomSheetState();
+  State<ConfigViewBottomSheet> createState() => _ConfigViewBottomSheetState();
 }
 
-class _BottomSheetState extends State<BottomSheet> {
+class _ConfigViewBottomSheetState extends State<ConfigViewBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final screenTopPadding =
@@ -75,16 +79,14 @@ class _BottomSheetState extends State<BottomSheet> {
                         curve: Curves.easeInOut,
                         color: innerController.hasClients &&
                                 innerController.offset != 0
-                            ? Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerLowest
-                            : Theme.of(context).colorScheme.surfaceContainerLow,
+                            ? Theme.of(context).colorScheme.surfaceContainer
+                            : Theme.of(context).colorScheme.surface,
                       ),
                     ),
                   ),
                   Expanded(
                     child: ColoredBox(
-                      color: Theme.of(context).colorScheme.surfaceContainerLow,
+                      color: Theme.of(context).colorScheme.surface,
                       child: child,
                     ),
                   ),
@@ -94,9 +96,16 @@ class _BottomSheetState extends State<BottomSheet> {
           },
           child: Stack(
             children: [
+              // Future proofing if child is moved out: avoid dependency
+              // injection, as that may not be possible in future
               BottomSheetScrollableProvider(
                 innerScrollController: innerController,
-                child: widget.child,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: _ContentPanels(
+                    bottomSheetOuterController: widget.controller,
+                  ),
+                ),
               ),
               IgnorePointer(
                 child: DelayedControllerAttachmentBuilder(
@@ -106,13 +115,14 @@ class _BottomSheetState extends State<BottomSheet> {
                       return const SizedBox.shrink();
                     }
 
-                    final calcHeight = BottomSheet.topPadding -
+                    final calcHeight = ConfigViewBottomSheet.topPadding -
                         (screenTopPadding -
                             constraints.maxHeight +
                             widget.controller.pixels);
 
                     return SizedBox(
-                      height: calcHeight.clamp(0, BottomSheet.topPadding),
+                      height:
+                          calcHeight.clamp(0, ConfigViewBottomSheet.topPadding),
                       width: constraints.maxWidth,
                       child: Semantics(
                         label: MaterialLocalizations.of(context)
