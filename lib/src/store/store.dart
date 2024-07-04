@@ -42,13 +42,20 @@ class FMTCStore {
   /// [settings] defaults to the current ambient
   /// [FMTCTileProviderSettings.instance], which defaults to the initial
   /// configuration if no other instance has been set.
+  ///
+  /// See other available [FMTCTileProvider] contructors to use multiple stores
+  /// at once.
   FMTCTileProvider getTileProvider({
+    StoreReadWriteBehavior readWriteBehavior =
+        StoreReadWriteBehavior.readUpdateCreate,
+    StoreReadWriteBehavior? otherStoresBehavior,
     FMTCTileProviderSettings? settings,
     Map<String, String>? headers,
     http.Client? httpClient,
   }) =>
-      FMTCTileProvider(
-        storeNames: [storeName],
+      FMTCTileProvider.multipleStores(
+        storeNames: {storeName: readWriteBehavior},
+        otherStoresBehavior: otherStoresBehavior,
         settings: settings,
         headers: headers,
         httpClient: httpClient,

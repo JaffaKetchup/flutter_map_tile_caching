@@ -162,19 +162,24 @@ abstract interface class FMTCBackendInternal
     List<String>? storeNames,
   });
 
-  /// Retrieve a raw tile by the specified URL
+  /// Retrieve a raw `tile` from any of the specified [storeNames] (or all store
+  /// names if `null` or empty) by the specified URL
   ///
-  /// If [storeNames] is specified, the tile will be limited to the specified
-  /// stores - if it exists in another store, it will not be returned.
-  Future<BackendTile?> readTile({
-    required String url,
-    List<String>? storeNames,
-  });
-
-  /// Same as [readTile], but also returns the list of store names which this
-  /// tile belongs to and were present in [storeNames] (if specified)
-  Future<({BackendTile? tile, List<String> storeNames})>
-      readTileWithStoreNames({
+  /// Returns the list of store names the tile belongs to - `allStoreNames` -
+  /// and were present in [storeNames] if specified - `intersectedStoreNames`.
+  ///
+  /// If [storeNames] is `null` or empty, tiles may be retrieved from any store
+  /// (which may be slower depending on the size of the root, as queries may
+  /// be unconstrained).
+  ///
+  /// `intersectedStoreNames` & `allStoreNames` will be empty if `tile` is
+  /// `null`.
+  Future<
+      ({
+        BackendTile? tile,
+        List<String> intersectedStoreNames,
+        List<String> allStoreNames,
+      })> readTile({
     required String url,
     List<String>? storeNames,
   });
@@ -189,10 +194,13 @@ abstract interface class FMTCBackendInternal
 
   /// Create or update a tile (given a [url] and its [bytes]) in the specified
   /// store
-  Future<void> writeTile({
+  ///
+  /// Returns the stores that the tile was created in (not already existing).
+  Future<List<String>> writeTile({
     required String url,
     required Uint8List bytes,
     required List<String> storeNames,
+    required List<String>? writeAllNotIn,
   });
 
   /// Remove the tile from the specified store, deleting it if was orphaned

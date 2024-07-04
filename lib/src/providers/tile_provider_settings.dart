@@ -4,7 +4,9 @@
 part of '../../flutter_map_tile_caching.dart';
 
 /// Callback type that takes an [FMTCBrowsingError] exception
-typedef FMTCBrowsingErrorHandler = void Function(FMTCBrowsingError exception);
+typedef FMTCBrowsingErrorHandler = ImmutableBuffer? Function(
+  FMTCBrowsingError exception,
+);
 
 /// Alias of [CacheBehavior]
 ///
@@ -13,16 +15,16 @@ typedef CacheBehaviour = CacheBehavior;
 
 /// Behaviours dictating how and when browse caching should occur
 ///
-/// | `CacheBehavior`          | Preferred fetch method | Fallback fetch method | Update cache when network used |
-/// |--------------------------|------------------------|-----------------------|--------------------------------|
-/// | `cacheOnly`              | Cache                  | None                  |                                |
-/// | `cacheFirst`             | Cache                  | Network               | Yes                            |
-/// | `cacheFirstNoUpdate`     | Cache                  | Network               | No                             |
-/// | `onlineFirst`            | Network                | Cache                 | Yes                            |
-/// | `onlineFirstNoUpdate`    | Network                | Cache                 | No                             |
-/// | *Standard Tile Provider* | *Network*              | *None*                | *No*                           |
+/// | `CacheBehavior`          | Preferred fetch method | Fallback fetch method |
+/// |--------------------------|------------------------|-----------------------|
+/// | `cacheOnly`              | Cache                  | None                  |
+/// | `cacheFirst`             | Cache                  | Network               |
+/// | `onlineFirst`            | Network                | Cache                 |
+/// | *Standard Tile Provider* | *Network*              | *None*                |
 enum CacheBehavior {
   /// Only fetch tiles from the local cache
+  ///
+  /// In this mode, [StoreReadWriteBehavior] is irrelevant.
   ///
   /// Throws [FMTCBrowsingErrorType.missingInCacheOnlyMode] if a tile is
   /// unavailable.
@@ -31,31 +33,40 @@ enum CacheBehavior {
   cacheOnly,
 
   /// Fetch tiles from the cache, falling back to the network to fetch and
-  /// create/update non-existent/expired tiles
+  /// create/update non-existent/expired tiles, dependent on the selected
+  /// [StoreReadWriteBehavior]
   ///
   /// See documentation on [CacheBehavior] for behavior comparison table.
   cacheFirst,
 
-  /// Fetch tiles from the cache, falling back to the network to fetch
-  /// non-existent tiles
-  ///
-  /// Never updates the cache, even if the network is used to fetch the tile.
-  ///
-  /// See documentation on [CacheBehavior] for behavior comparison table.
-  cacheFirstNoUpdate,
-
   /// Fetch and create/update non-existent/expired tiles from the network,
-  /// falling back to the cache to fetch tiles
+  /// falling back to the cache to fetch tiles, dependent on the selected
+  /// [StoreReadWriteBehavior]
   ///
   /// See documentation on [CacheBehavior] for behavior comparison table.
   onlineFirst,
+}
 
-  /// Fetch tiles from the network, falling back to the cache to fetch tiles
+/// Alias of [StoreReadWriteBehavior]
+///
+/// ... with the correct spelling :D
+typedef StoreReadWriteBehaviour = StoreReadWriteBehavior;
+
+/// Determines the read/update/create tile behaviour of a store
+enum StoreReadWriteBehavior {
+  /// Only read tiles
+  read,
+
+  /// Read tiles, and also update existing tiles
   ///
-  /// Never updates the cache, even if the network is used to fetch the tile.
+  /// Unlike 'create', if (an older version of) a tile does not already exist in
+  /// the store, it will not be written.
+  readUpdate,
+
+  /// Read, update, and create tiles
   ///
-  /// See documentation on [CacheBehavior] for behavior comparison table.
-  onlineFirstNoUpdate,
+  /// See [readUpdate] for a definition of 'update'.
+  readUpdateCreate,
 }
 
 /// Settings for an [FMTCTileProvider]
@@ -69,8 +80,8 @@ class FMTCTileProviderSettings {
   /// To access the existing settings, if any, get [instance].
   factory FMTCTileProviderSettings({
     CacheBehavior behavior = CacheBehavior.cacheFirst,
-    bool fallbackToAlternativeStore = true,
     Duration cachedValidDuration = const Duration(days: 16),
+    bool useUnspecifiedAsLastResort = false,
     bool trackHitsAndMisses = true,
     List<String> obscuredQueryParams = const [],
     FMTCBrowsingErrorHandler? errorHandler,
@@ -78,9 +89,9 @@ class FMTCTileProviderSettings {
   }) {
     final settings = FMTCTileProviderSettings._(
       behavior: behavior,
-      fallbackToAlternativeStore: fallbackToAlternativeStore,
-      recordHitsAndMisses: trackHitsAndMisses,
       cachedValidDuration: cachedValidDuration,
+      useOtherStoresAsFallbackOnly: useUnspecifiedAsLastResort,
+      recordHitsAndMisses: trackHitsAndMisses,
       obscuredQueryParams: obscuredQueryParams.map((e) => RegExp('$e=[^&]*')),
       errorHandler: errorHandler,
     );
@@ -92,7 +103,7 @@ class FMTCTileProviderSettings {
   FMTCTileProviderSettings._({
     required this.behavior,
     required this.cachedValidDuration,
-    required this.fallbackToAlternativeStore,
+    required this.useOtherStoresAsFallbackOnly,
     required this.recordHitsAndMisses,
     required this.obscuredQueryParams,
     required this.errorHandler,
@@ -108,10 +119,9 @@ class FMTCTileProviderSettings {
   /// Defaults to [CacheBehavior.cacheFirst].
   final CacheBehavior behavior;
 
-  /// Whether to retrieve a tile from another store if it exists, as a fallback,
-  /// instead of throwing an error
-  ///
-  /// Does not add tiles taken from other stores to the specified store(s).
+  /// Whether to only use tiles retrieved by
+  /// [FMTCTileProvider.otherStoresBehavior] after all specified stores have
+  /// been exhausted (where the tile was not present)
   ///
   /// When tiles are retrieved from other stores, it is counted as a miss for the
   /// specified store(s).
@@ -120,11 +130,8 @@ class FMTCTileProviderSettings {
   /// occur often or the root is particularly large, as an extra lookup with
   /// unbounded constraints is required for each tile.
   ///
-  /// See details on [CacheBehavior] for information. Fallback to an alternative
-  /// store is always the last-resort option before throwing an error.
-  ///
-  /// Defaults to `true`.
-  final bool fallbackToAlternativeStore;
+  /// Defaults to `false`.
+  final bool useOtherStoresAsFallbackOnly;
 
   /// Whether to keep track of the [StoreStats.hits] and [StoreStats.misses]
   /// statistics
@@ -160,8 +167,10 @@ class FMTCTileProviderSettings {
 
   /// A custom callback that will be called when an [FMTCBrowsingError] is raised
   ///
-  /// Even if this is defined, the error will still be (re)thrown.
-  void Function(FMTCBrowsingError exception)? errorHandler;
+  /// If no value is returned, the error will be (re)thrown as normal. However,
+  /// if an [ImmutableBuffer] representing an image is returned, that will be
+  /// displayed instead.
+  final FMTCBrowsingErrorHandler? errorHandler;
 
   @override
   bool operator ==(Object other) =>
@@ -169,7 +178,7 @@ class FMTCTileProviderSettings {
       (other is FMTCTileProviderSettings &&
           other.behavior == behavior &&
           other.cachedValidDuration == cachedValidDuration &&
-          other.fallbackToAlternativeStore == fallbackToAlternativeStore &&
+          // other.fallbackToAlternativeStore == fallbackToAlternativeStore &&
           other.recordHitsAndMisses == recordHitsAndMisses &&
           other.errorHandler == errorHandler &&
           other.obscuredQueryParams == obscuredQueryParams);
@@ -178,7 +187,7 @@ class FMTCTileProviderSettings {
   int get hashCode => Object.hashAllUnordered([
         behavior,
         cachedValidDuration,
-        fallbackToAlternativeStore,
+        // fallbackToAlternativeStore,
         recordHitsAndMisses,
         errorHandler,
         obscuredQueryParams,

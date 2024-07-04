@@ -3,21 +3,33 @@
 
 part of '../backend.dart';
 
-void _sharedWriteSingleTile({
+List<String> _sharedWriteSingleTile({
   required Store root,
   required List<String> storeNames,
   required String url,
   required Uint8List bytes,
+  List<String>? writeAllNotIn,
 }) {
   final tiles = root.box<ObjectBoxTile>();
   final storesBox = root.box<ObjectBoxStore>();
   final rootBox = root.box<ObjectBoxRoot>();
+
+  if (writeAllNotIn != null) {
+    storeNames.addAll(
+      storesBox
+          .getAll()
+          .map((e) => e.name)
+          .where((e) => !writeAllNotIn.contains(e) && !storeNames.contains(e)),
+    );
+  }
 
   final tilesQuery = tiles.query(ObjectBoxTile_.url.equals(url)).build();
   final storeQuery =
       storesBox.query(ObjectBoxStore_.name.oneOf(storeNames)).build();
 
   final storesToUpdate = <String, ObjectBoxStore>{};
+
+  final createdIn = <String>{};
 
   root.runInTransaction(
     TxMode.write,
@@ -49,13 +61,16 @@ void _sharedWriteSingleTile({
 
         storesToUpdate.addEntries(
           stores.whereNot((s) => didContainAlready.contains(s.name)).map(
-                (s) => MapEntry(
-                  s.name,
-                  s
-                    ..length += 1
-                    ..size += bytes.lengthInBytes,
-                ),
-              ),
+            (s) {
+              createdIn.add(s.name);
+              return MapEntry(
+                s.name,
+                s
+                  ..length += 1
+                  ..size += bytes.lengthInBytes,
+              );
+            },
+          ),
         );
       } else {
         rootBox.put(
@@ -67,12 +82,15 @@ void _sharedWriteSingleTile({
 
         storesToUpdate.addEntries(
           stores.map(
-            (s) => MapEntry(
-              s.name,
-              s
-                ..length += 1
-                ..size += bytes.lengthInBytes,
-            ),
+            (s) {
+              createdIn.add(s.name);
+              return MapEntry(
+                s.name,
+                s
+                  ..length += 1
+                  ..size += bytes.lengthInBytes,
+              );
+            },
           ),
         );
       }
@@ -90,4 +108,6 @@ void _sharedWriteSingleTile({
 
   tilesQuery.close();
   storeQuery.close();
+
+  return createdIn.toList(growable: false);
 }

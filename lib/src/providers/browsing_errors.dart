@@ -76,8 +76,9 @@ class FMTCBrowsingError implements Exception {
   /// request
   ///
   /// Will be available if [type] is
-  /// [FMTCBrowsingErrorType.noConnectionDuringFetch] or
-  /// [FMTCBrowsingErrorType.unknownFetchException].
+  /// [FMTCBrowsingErrorType.noConnectionDuringFetch],
+  /// [FMTCBrowsingErrorType.unknownFetchException], or
+  /// [FMTCBrowsingErrorType.invalidImageData].
   final Object? originalError;
 
   @override

@@ -5,6 +5,9 @@ part of '../../flutter_map_tile_caching.dart';
 
 /// A specialised [ImageProvider] that uses FMTC internals to enable browse
 /// caching
+///
+/// TODO: Improve hits and misses
+/// TODO: Debug tile output
 class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
   /// Create a specialised [ImageProvider] that uses FMTC internals to enable
   /// browse caching
@@ -79,7 +82,12 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
       );
     } catch (err, stackTrace) {
       close();
-      if (err is FMTCBrowsingError) provider.settings.errorHandler?.call(err);
+      if (err is FMTCBrowsingError) {
+        final handlerResult = provider.settings.errorHandler?.call(err);
+        if (handlerResult != null) {
+          return instantiateImageCodecFromBuffer(handlerResult);
+        }
+      }
       Error.throwWithStackTrace(err, stackTrace);
     }
 
@@ -130,20 +138,11 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
 
     void registerMiss() {
       if (provider.settings.recordHitsAndMisses) {
-        FMTCBackendAccess.internal
-            .registerHitOrMiss(storeNames: provider.storeNames, hit: false);
+        FMTCBackendAccess.internal.registerHitOrMiss(
+          storeNames: provider._getSpecifiedStoresOrNull(), // TODO: Verify
+          hit: false,
+        );
       }
-    }
-
-    Future<Uint8List?> attemptFinishViaAltStore(String matcherUrl) async {
-      if (provider.settings.fallbackToAlternativeStore) {
-        final existingTileAltStore =
-            await FMTCBackendAccess.internal.readTile(url: matcherUrl);
-        if (existingTileAltStore == null) return null;
-        registerMiss();
-        return existingTileAltStore.bytes;
-      }
-      return null;
     }
 
     final networkUrl = provider.getTileUrl(coords, options);
@@ -152,45 +151,57 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
       obscuredQueryParams: provider.settings.obscuredQueryParams,
     );
 
-    final (tile: existingTile, storeNames: existingStores) =
-        await FMTCBackendAccess.internal.readTileWithStoreNames(
+    final (
+      tile: existingTile,
+      intersectedStoreNames: intersectedExistingStores,
+      allStoreNames: allExistingStores,
+    ) = await FMTCBackendAccess.internal.readTile(
       url: matcherUrl,
-      storeNames: provider.storeNames,
+      storeNames: provider._getSpecifiedStoresOrNull(),
     );
 
-    final needsCreating = existingTile == null;
-    final needsUpdating = !needsCreating &&
-        (provider.settings.behavior == CacheBehavior.onlineFirst ||
-            // Tile will not be written if *NoUpdate, regardless of this value
-            provider.settings.behavior == CacheBehavior.onlineFirstNoUpdate ||
-            (provider.settings.cachedValidDuration != Duration.zero &&
-                DateTime.timestamp().millisecondsSinceEpoch -
-                        existingTile.lastModified.millisecondsSinceEpoch >
-                    provider.settings.cachedValidDuration.inMilliseconds));
+    const useUnspecifiedAsLastResort = true;
+
+    final tileExistsInUnspecifiedStoresOnly = existingTile != null &&
+        useUnspecifiedAsLastResort &&
+        provider.storeNames.keys
+            .toSet()
+            .union(allExistingStores.toSet())
+            .isEmpty;
 
     // Prepare a list of image bytes and prefill if there's already a cached
     // tile available
     Uint8List? bytes;
-    if (!needsCreating) bytes = existingTile.bytes;
+    if (existingTile != null) bytes = existingTile.bytes;
 
     // If there is a cached tile that's in date available, use it
-    if (!needsCreating && !needsUpdating) {
-      registerHit(existingStores);
+    final needsUpdating = existingTile != null &&
+        (provider.settings.behavior == CacheBehavior.onlineFirst ||
+            (provider.settings.cachedValidDuration != Duration.zero &&
+                DateTime.timestamp().millisecondsSinceEpoch -
+                        existingTile.lastModified.millisecondsSinceEpoch >
+                    provider.settings.cachedValidDuration.inMilliseconds));
+    if (existingTile != null &&
+        !needsUpdating &&
+        !tileExistsInUnspecifiedStoresOnly) {
+      registerHit(intersectedExistingStores);
       return bytes!;
     }
 
     // If a tile is not available and cache only mode is in use, just fail
     // before attempting a network call
-    if (provider.settings.behavior == CacheBehavior.cacheOnly &&
-        needsCreating) {
-      final altBytes = await attemptFinishViaAltStore(matcherUrl);
-      if (altBytes != null) return altBytes;
-
-      throw FMTCBrowsingError(
-        type: FMTCBrowsingErrorType.missingInCacheOnlyMode,
-        networkUrl: networkUrl,
-        matcherUrl: matcherUrl,
-      );
+    if (provider.settings.behavior == CacheBehavior.cacheOnly) {
+      if (tileExistsInUnspecifiedStoresOnly) {
+        registerMiss();
+        return bytes!;
+      }
+      if (existingTile == null) {
+        throw FMTCBrowsingError(
+          type: FMTCBrowsingErrorType.missingInCacheOnlyMode,
+          networkUrl: networkUrl,
+          matcherUrl: matcherUrl,
+        );
+      }
     }
 
     // Setup a network request for the tile & handle network exceptions
@@ -200,13 +211,10 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
     try {
       response = await provider.httpClient.send(request);
     } catch (e) {
-      if (!needsCreating) {
+      if (existingTile != null) {
         registerMiss();
         return bytes!;
       }
-
-      final altBytes = await attemptFinishViaAltStore(matcherUrl);
-      if (altBytes != null) return altBytes;
 
       throw FMTCBrowsingError(
         type: e is SocketException
@@ -221,13 +229,10 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
 
     // Check whether the network response is not 200 OK
     if (response.statusCode != 200) {
-      if (!needsCreating) {
+      if (existingTile != null) {
         registerMiss();
         return bytes!;
       }
-
-      final altBytes = await attemptFinishViaAltStore(matcherUrl);
-      if (altBytes != null) return altBytes;
 
       throw FMTCBrowsingError(
         type: FMTCBrowsingErrorType.negativeFetchResponse,
@@ -253,63 +258,88 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
 
     // Perform a secondary check to ensure that the bytes recieved actually
     // encode a valid image
-    late final bool isValidImageData;
-    try {
-      isValidImageData = (await (await instantiateImageCodec(
-            responseBytes,
-            targetWidth: 8,
-            targetHeight: 8,
-          ))
-                  .getNextFrame())
-              .image
-              .width >
-          0;
-    } catch (e) {
-      isValidImageData = false;
-    }
-    if (!isValidImageData) {
-      if (!needsCreating) {
-        registerMiss();
-        return bytes!;
+    if (requireValidImage) {
+      late final Object? isValidImageData;
+
+      try {
+        isValidImageData = (await (await instantiateImageCodec(
+                  responseBytes,
+                  targetWidth: 8,
+                  targetHeight: 8,
+                ))
+                        .getNextFrame())
+                    .image
+                    .width >
+                0
+            ? null
+            : Exception('Image was decodable, but had a width of 0');
+      } catch (e) {
+        isValidImageData = e;
       }
 
-      final altBytes = await attemptFinishViaAltStore(matcherUrl);
-      if (altBytes != null) return altBytes;
+      if (isValidImageData != null) {
+        if (existingTile != null) {
+          registerMiss();
+          return bytes!;
+        }
 
-      if (requireValidImage) {
         throw FMTCBrowsingError(
           type: FMTCBrowsingErrorType.invalidImageData,
           networkUrl: networkUrl,
           matcherUrl: matcherUrl,
           request: request,
           response: response,
+          originalError: isValidImageData,
         );
-      } else {
-        registerMiss();
-        return responseBytes;
       }
     }
 
-    // Cache the tile retrieved from the network response, if behaviour allows
-    if (provider.settings.behavior != CacheBehavior.cacheFirstNoUpdate &&
-        provider.settings.behavior != CacheBehavior.onlineFirstNoUpdate &&
-        (provider.storeNames?.isNotEmpty ?? false)) {
+    // Find the stores that need to have this tile written to, depending on
+    // their read/write settings
+    // At this point, we've downloaded the tile anyway, so we might as well
+    // write the stores that allow it, even if the existing tile hasn't expired
+    final writeTileToSpecified = provider.storeNames.entries
+        .where(
+          (e) => switch (e.value) {
+            StoreReadWriteBehavior.read => false,
+            StoreReadWriteBehavior.readUpdate =>
+              intersectedExistingStores.contains(e.key),
+            StoreReadWriteBehavior.readUpdateCreate => true,
+          },
+        )
+        .map((e) => e.key);
+    final writeTileToIntermediate =
+        provider.otherStoresBehavior == StoreReadWriteBehavior.readUpdate &&
+                existingTile != null
+            ? writeTileToSpecified.followedBy(
+                intersectedExistingStores
+                    .whereNot((e) => provider.storeNames.containsKey(e)),
+              )
+            : writeTileToSpecified;
+
+    // Cache tile to necessary stores
+    if (writeTileToIntermediate.isNotEmpty ||
+        provider.otherStoresBehavior ==
+            StoreReadWriteBehavior.readUpdateCreate) {
       unawaited(
-        FMTCBackendAccess.internal.writeTile(
-          storeNames: provider.storeNames!,
+        FMTCBackendAccess.internal
+            .writeTile(
+          storeNames: writeTileToIntermediate.toSet().toList(growable: false),
+          writeAllNotIn: provider.otherStoresBehavior ==
+                  StoreReadWriteBehavior.readUpdateCreate
+              ? provider.storeNames.keys.toList(growable: false)
+              : null,
           url: matcherUrl,
           bytes: responseBytes,
-        ),
+        )
+            .then((createdIn) {
+          // Clear out old tiles if the maximum store length has been exceeded
+          // We only need to even attempt this if the number of tiles has changed
+          if (createdIn.isEmpty) return;
+          FMTCBackendAccess.internal
+              .removeOldestTilesAboveLimit(storeNames: createdIn);
+        }),
       );
-
-      // Clear out old tiles if the maximum store length has been exceeded
-      if (needsCreating) {
-        unawaited(
-          FMTCBackendAccess.internal.removeOldestTilesAboveLimit(
-            storeNames: provider.storeNames!,
-          ),
-        );
-      }
     }
 
     registerMiss();

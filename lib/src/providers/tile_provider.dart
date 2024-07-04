@@ -6,64 +6,74 @@ part of '../../flutter_map_tile_caching.dart';
 /// Specialised [TileProvider] that uses a specialised [ImageProvider] to connect
 /// to FMTC internals and enable advanced caching/retrieval logic
 ///
+/// To use a single store, use [FMTCStore.getTileProvider].
+///
+/// To use multiple stores, use the [FMTCTileProvider.multipleStores]
+/// constructor. See documentation on [storeNames] and [otherStoresBehavior]
+/// for information on usage.
+///
+/// To use all stores, use the [FMTCTileProvider.allStores] constructor. See
+/// documentation on [otherStoresBehavior] for information on usage.
+///
 /// An "FMTC" identifying mark is injected into the "User-Agent" header generated
 /// by flutter_map, except if specified in the constructor. For technical
 /// details, see [_CustomUserAgentCompatMap].
+///
+/// Can be constructed alternatively with [FMTCStore.getTileProvider] to
+/// support a single store.
 class FMTCTileProvider extends TileProvider {
-  /// Create a specialised [TileProvider] that uses a specialised [ImageProvider]
-  /// to connect to FMTC internals and enable advanced caching/retrieval logic
-  ///
-  /// Supports multiple stores, by specifying each name in [storeNames]. If an
-  /// empty list is specified, tiles will be fetched from all stores, but no
-  /// tiles will be written to any stores. For more information, see
-  /// [storeNames].
-  /// Can be constructed alternatively with [FMTCStore.getTileProvider] to
-  /// support a single store.
-  ///
-  /// See other documentation for more information.
-  FMTCTileProvider({
+  FMTCTileProvider.multipleStores({
     required this.storeNames,
+    this.otherStoresBehavior,
     FMTCTileProviderSettings? settings,
     Map<String, String>? headers,
     http.Client? httpClient,
   })  : settings = settings ?? FMTCTileProviderSettings.instance,
         httpClient = httpClient ?? IOClient(HttpClient()..userAgent = null),
+        assert(
+          storeNames.isNotEmpty || otherStoresBehavior != null,
+          '`storeNames` cannot be empty if `allStoresConfiguration` is `null`',
+        ),
         super(
           headers: (headers?.containsKey('User-Agent') ?? false)
               ? headers
               : _CustomUserAgentCompatMap(headers ?? {}),
         );
 
-  /// Create a specialised [TileProvider] that uses a specialised [ImageProvider]
-  /// to connect to FMTC internals and enable advanced caching/retrieval logic
-  ///
-  /// Redirects to [FMTCTileProvider] constructor, but supports [FMTCStore]
-  /// instead of [String].
-  FMTCTileProvider.fromStores({
-    required List<FMTCStore> stores,
+  FMTCTileProvider.allStores({
+    required StoreReadWriteBehavior allStoresConfiguration,
     FMTCTileProviderSettings? settings,
     Map<String, String>? headers,
     http.Client? httpClient,
-  }) : this(
-          storeNames: stores.map((s) => s.storeName).toList(),
+  }) : this.multipleStores(
+          storeNames: const {},
+          otherStoresBehavior: allStoresConfiguration,
           settings: settings,
           headers: headers,
           httpClient: httpClient,
         );
 
-  /// The store names from which to fetch tiles and update tiles
+  /// The store names from which to (possibly) read/update/create tiles from/in
   ///
-  /// If empty, tiles will be fetched from all stores, but no tiles will be
-  /// written to any stores (regardless of [FMTCTileProviderSettings.behavior]).
-  /// This may introduce notable performance reductions, especially if failures
-  /// occur often or the root is particularly large, as the tile queries will
-  /// have unbounded constraints.
+  /// Keys represent store names, and the associated [StoreReadWriteBehavior]
+  /// represents how that store should be used.
   ///
-  /// See also:
-  ///  - [FMTCTileProviderSettings.fallbackToAlternativeStore], which has a
-  ///    similar behaviour, but only does so when the tile cannot be found in
-  ///    these stores
-  final List<String>? storeNames;
+  /// Stores not included will not be used by default. However,
+  /// [otherStoresBehavior] determines whether & how all other unspecified
+  /// stores should be used.
+  final Map<String, StoreReadWriteBehavior> storeNames;
+
+  /// The behaviour of all other stores not specified in [storeNames]
+  ///
+  /// `null` means that all other stores will not be used.
+  ///
+  /// Setting a non-`null` value may reduce performance, as internal queries
+  /// will have fewer constraints and therefore be less efficient.
+  ///
+  /// Also see [FMTCTileProviderSettings.useOtherStoresAsFallbackOnly] for
+  /// whether these unspecified stores should only be used as a last resort or
+  /// in addition to the specified stores as normal.
+  final StoreReadWriteBehavior? otherStoresBehavior;
 
   /// The tile provider settings to use
   ///
@@ -123,18 +133,27 @@ class FMTCTileProvider extends TileProvider {
         requireValidImage: requireValidImage,
       );
 
-  /// Check whether a specified tile is cached in the current store
+  /// Check whether a specified tile is cached in any of the current stores
+  ///
+  /// If [storeNames] contains `null` (for example if
+  /// [FMTCTileProvider.allStores]) has been used, then the check is for if the
+  /// tile has been cached at all.
   Future<bool> checkTileCached({
     required TileCoordinates coords,
     required TileLayer options,
   }) =>
       FMTCBackendAccess.internal.tileExists(
-        storeNames: storeNames,
+        storeNames: _getSpecifiedStoresOrNull(),
         url: obscureQueryParams(
           url: getTileUrl(coords, options),
           obscuredQueryParams: settings.obscuredQueryParams,
         ),
       );
+
+  /// If [storeNames] contains `null`, returns `null`, otherwise returns all
+  /// non-null names (which cannot be empty)
+  List<String>? _getSpecifiedStoresOrNull() =>
+      otherStoresBehavior != null ? null : storeNames.keys.toList();
 
   @override
   bool operator ==(Object other) =>

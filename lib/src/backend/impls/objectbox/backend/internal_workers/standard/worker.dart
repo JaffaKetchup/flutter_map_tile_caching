@@ -424,14 +424,15 @@ Future<void> _worker(
         final storeNames = cmd.args['storeNames'] as List<String>?;
 
         final stores = root.box<ObjectBoxTile>();
+        final specifiedStores = storeNames?.isNotEmpty ?? false;
 
         final queryPart = stores.query(ObjectBoxTile_.url.equals(url));
-        final query = storeNames == null
+        final query = !specifiedStores
             ? queryPart.build()
             : (queryPart
                   ..linkMany(
                     ObjectBoxTile_.stores,
-                    ObjectBoxStore_.name.oneOf(storeNames),
+                    ObjectBoxStore_.name.oneOf(storeNames!),
                   ))
                 .build();
 
@@ -439,23 +440,31 @@ Future<void> _worker(
         query.close();
 
         if (tile == null) {
-          sendRes(id: cmd.id, data: {'tile': null, 'stores': []});
+          sendRes(
+            id: cmd.id,
+            data: {
+              'tile': null,
+              'allStoreNames': const [],
+              'intersectedStoreNames': const [],
+            },
+          );
         } else {
           final tileStores = tile.stores.map((s) => s.name);
+          final listTileStores = tileStores.toList(growable: false);
 
           sendRes(
             id: cmd.id,
             data: {
               'tile': tile,
-              'stores': storeNames == null
-                  ? tileStores.toList(growable: false)
+              'allStoreNames': listTileStores,
+              'intersectedStoreNames': !specifiedStores
+                  ? listTileStores
                   : SplayTreeSet<String>.from(tileStores)
-                      .intersection(SplayTreeSet<String>.from(storeNames))
+                      .intersection(SplayTreeSet<String>.from(storeNames!))
                       .toList(growable: false),
             },
           );
         }
-
       case _CmdType.readLatestTile:
         final storeName = cmd.args['storeName']! as String;
 
@@ -474,17 +483,19 @@ Future<void> _worker(
         query.close();
       case _CmdType.writeTile:
         final storeNames = cmd.args['storeNames']! as List<String>;
+        final writeAllNotIn = cmd.args['writeAllNotIn'] as List<String>?;
         final url = cmd.args['url']! as String;
         final bytes = cmd.args['bytes']! as Uint8List;
 
-        _sharedWriteSingleTile(
+        final result = _sharedWriteSingleTile(
           root: root,
           storeNames: storeNames,
+          writeAllNotIn: writeAllNotIn,
           url: url,
           bytes: bytes,
         );
 
-        sendRes(id: cmd.id);
+        sendRes(id: cmd.id, data: {'newStores': result});
       case _CmdType.deleteTile:
         final storeName = cmd.args['storeName']! as String;
         final url = cmd.args['url']! as String;
