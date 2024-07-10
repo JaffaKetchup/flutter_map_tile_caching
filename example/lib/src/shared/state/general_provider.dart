@@ -28,28 +28,19 @@ class GeneralProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  CacheBehavior get behaviour =>
-      switch ((_behaviourPrimary, _behaviourUpdateFromNetwork)) {
-        (null, _) => CacheBehavior.cacheOnly,
-        (false, false) => CacheBehavior.cacheFirstNoUpdate,
-        (false, true) => CacheBehavior.cacheFirst,
-        (true, false) => CacheBehavior.onlineFirstNoUpdate,
-        (true, true) => CacheBehavior.onlineFirst,
-      };
-
-  bool? _behaviourPrimary = false;
-  bool? get behaviourPrimary => _behaviourPrimary;
-  set behaviourPrimary(bool? newBehaviourPrimary) {
-    _behaviourPrimary = newBehaviourPrimary;
+  CacheBehavior _cacheBehavior = CacheBehavior.onlineFirst;
+  CacheBehavior get cacheBehavior => _cacheBehavior;
+  set cacheBehavior(CacheBehavior newCacheBehavior) {
+    _cacheBehavior = newCacheBehavior;
     notifyListeners();
   }
 
-  bool _behaviourUpdateFromNetwork = true;
+  /*bool _behaviourUpdateFromNetwork = true;
   bool get behaviourUpdateFromNetwork => _behaviourUpdateFromNetwork;
   set behaviourUpdateFromNetwork(bool newBehaviourUpdateFromNetwork) {
     _behaviourUpdateFromNetwork = newBehaviourUpdateFromNetwork;
     notifyListeners();
-  }
+  }*/
 
   bool _displayDebugOverlay = true;
   bool get displayDebugOverlay => _displayDebugOverlay;

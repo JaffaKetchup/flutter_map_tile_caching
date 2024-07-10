@@ -3,6 +3,16 @@
 
 part of '../../flutter_map_tile_caching.dart';
 
+class DebugNotifierInfo {
+  DebugNotifierInfo._();
+
+  /// Indicates whether the tile completed loading successfully
+  ///
+  /// * `true`:  completed
+  /// * `false`: errored
+  late final bool didComplete;
+}
+
 /// A specialised [ImageProvider] that uses FMTC internals to enable browse
 /// caching
 ///
@@ -45,9 +55,21 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
     _FMTCImageProvider key,
     ImageDecoderCallback decode,
   ) {
+    // Closed by `getBytes`
+    // ignore: close_sinks
     final chunkEvents = StreamController<ImageChunkEvent>();
+
     return MultiFrameImageStreamCompleter(
-      codec: _loadAsync(key, chunkEvents, decode),
+      codec: getBytes(
+        coords: coords,
+        options: options,
+        provider: provider,
+        key: key,
+        chunkEvents: chunkEvents,
+        finishedLoadingBytes: finishedLoadingBytes,
+        startedLoading: startedLoading,
+        requireValidImage: true,
+      ).then(ImmutableBuffer.fromUint8List).then((v) => decode(v)),
       chunkEvents: chunkEvents.stream,
       scale: 1,
       debugLabel: coords.toString(),
@@ -59,291 +81,98 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
     );
   }
 
-  Future<Codec> _loadAsync(
-    _FMTCImageProvider key,
-    StreamController<ImageChunkEvent> chunkEvents,
-    ImageDecoderCallback decode,
-  ) async {
-    void close() {
-      scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
-      unawaited(chunkEvents.close());
-      finishedLoadingBytes();
-    }
-
-    startedLoading();
-
-    final Uint8List bytes;
-    try {
-      bytes = await getBytes(
-        coords: coords,
-        options: options,
-        provider: provider,
-        chunkEvents: chunkEvents,
-      );
-    } catch (err, stackTrace) {
-      close();
-      if (err is FMTCBrowsingError) {
-        final handlerResult = provider.settings.errorHandler?.call(err);
-        if (handlerResult != null) {
-          return instantiateImageCodecFromBuffer(handlerResult);
-        }
-      }
-      Error.throwWithStackTrace(err, stackTrace);
-    }
-
-    close();
-    return decode(await ImmutableBuffer.fromUint8List(bytes));
-  }
-
   /// {@template fmtc.imageProvider.getBytes}
   /// Use FMTC's caching logic to get the bytes of the specific tile (at
   /// [coords]) with the specified [TileLayer] options and [FMTCTileProvider]
   /// provider
   ///
-  /// Used internally by [_FMTCImageProvider._loadAsync].
+  /// Used internally by [_FMTCImageProvider.loadImage]. [loadImage] provides
+  /// a decoding wrapper, but is only suitable for codecs Flutter can render.
   ///
-  /// However, can also be used externally to integrate FMTC caching into a 3rd
-  /// party [TileProvider], other than [FMTCTileProvider]. For example, this
-  /// enables partial compatibility with `VectorTileProvider`s. For more details
-  /// about compatibility with vector tiles, check the online documentation.
+  /// Therefore, this method does not make any assumptions about the format
+  /// of the bytes, and it is up to the user to decode/render appropriately.
+  /// For example, this could be incorporated into another [ImageProvider] (via
+  /// a [TileProvider]) to integrate FMTC caching for vector tiles.
   ///
   /// ---
   ///
-  /// [requireValidImage] should be left `true` as default when the bytes will
-  /// form a valid image that Flutter can decode. Set it `false` when the bytes
-  /// are not decodable by Flutter - for example with vector tiles. Invalid
-  /// images are never written to the cache. If this is `true`, and the image is
-  /// invalid, an [FMTCBrowsingError] with sub-category
+  /// [key] is used to control the [ImageCache], and should be set when in a
+  /// context where [ImageProvider.obtainKey] is available.
+  ///
+  /// [chunkEvents] is used to improve the quality of an [ImageProvider], and
+  /// should be set when [MultiFrameImageStreamCompleter] is in use inside an
+  /// [ImageProvider.loadImage]. Note that it will be closed by this method.
+  ///
+  /// [startedLoading] & [finishedLoadingBytes] are used to indicate to
+  /// flutter_map when it is safe to dispose a [TileProvider], and should be set
+  /// when used inside a [TileProvider]'s context (such as directly or within
+  /// a dedicated [ImageProvider]).
+  ///
+  /// [requireValidImage] is `false` by default, but should be `true` when
+  /// only Flutter decodable data is being used (ie. most raster tiles) (and is
+  /// set `true` when used by [loadImage] internally). This provides an extra
+  /// layer of protection by preventing invalid data from being stored inside
+  /// the cache, which could cause further issues at a later point. However, this
+  /// may be set `false` intentionally, for example to allow for vector tiles
+  /// to be stored. If this is `true`, and the image is invalid, an
+  /// [FMTCBrowsingError] with sub-category
   /// [FMTCBrowsingErrorType.invalidImageData] will be thrown - if `false`, then
   /// FMTC will not throw an error, but Flutter will if the bytes are attempted
-  /// to be decoded.
-  ///
-  /// [chunkEvents] is intended to be passed when this is being used inside
-  /// another [ImageProvider]. Chunk events will be added to it as bytes load.
-  /// It will not be closed by this method.
+  /// to be decoded (now or at a later time).
   /// {@endtemplate}
   static Future<Uint8List> getBytes({
     required TileCoordinates coords,
     required TileLayer options,
     required FMTCTileProvider provider,
+    Object? key,
     StreamController<ImageChunkEvent>? chunkEvents,
-    bool requireValidImage = true,
+    void Function()? startedLoading,
+    void Function()? finishedLoadingBytes,
+    bool requireValidImage = false,
   }) async {
-    void registerHit(List<String> storeNames) {
-      if (provider.settings.recordHitsAndMisses) {
-        FMTCBackendAccess.internal
-            .registerHitOrMiss(storeNames: storeNames, hit: true);
+    final currentTileDebugNotifierInfo = DebugNotifierInfo._();
+
+    void close({required bool didComplete}) {
+      finishedLoadingBytes?.call();
+
+      if (key != null) {
+        scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
       }
+      if (chunkEvents != null) {
+        unawaited(chunkEvents.close());
+      }
+
+      provider._internalTileLoadingDebugger
+        ?..value[coords] =
+            (currentTileDebugNotifierInfo..didComplete = didComplete)
+        ..notifyListeners();
     }
 
-    void registerMiss() {
-      if (provider.settings.recordHitsAndMisses) {
-        FMTCBackendAccess.internal.registerHitOrMiss(
-          storeNames: provider._getSpecifiedStoresOrNull(), // TODO: Verify
-          hit: false,
-        );
-      }
-    }
+    startedLoading?.call();
 
-    final networkUrl = provider.getTileUrl(coords, options);
-    final matcherUrl = obscureQueryParams(
-      url: networkUrl,
-      obscuredQueryParams: provider.settings.obscuredQueryParams,
-    );
-
-    final (
-      tile: existingTile,
-      intersectedStoreNames: intersectedExistingStores,
-      allStoreNames: allExistingStores,
-    ) = await FMTCBackendAccess.internal.readTile(
-      url: matcherUrl,
-      storeNames: provider._getSpecifiedStoresOrNull(),
-    );
-
-    const useUnspecifiedAsLastResort = true;
-
-    final tileExistsInUnspecifiedStoresOnly = existingTile != null &&
-        useUnspecifiedAsLastResort &&
-        provider.storeNames.keys
-            .toSet()
-            .union(allExistingStores.toSet())
-            .isEmpty;
-
-    // Prepare a list of image bytes and prefill if there's already a cached
-    // tile available
-    Uint8List? bytes;
-    if (existingTile != null) bytes = existingTile.bytes;
-
-    // If there is a cached tile that's in date available, use it
-    final needsUpdating = existingTile != null &&
-        (provider.settings.behavior == CacheBehavior.onlineFirst ||
-            (provider.settings.cachedValidDuration != Duration.zero &&
-                DateTime.timestamp().millisecondsSinceEpoch -
-                        existingTile.lastModified.millisecondsSinceEpoch >
-                    provider.settings.cachedValidDuration.inMilliseconds));
-    if (existingTile != null &&
-        !needsUpdating &&
-        !tileExistsInUnspecifiedStoresOnly) {
-      registerHit(intersectedExistingStores);
-      return bytes!;
-    }
-
-    // If a tile is not available and cache only mode is in use, just fail
-    // before attempting a network call
-    if (provider.settings.behavior == CacheBehavior.cacheOnly) {
-      if (tileExistsInUnspecifiedStoresOnly) {
-        registerMiss();
-        return bytes!;
-      }
-      if (existingTile == null) {
-        throw FMTCBrowsingError(
-          type: FMTCBrowsingErrorType.missingInCacheOnlyMode,
-          networkUrl: networkUrl,
-          matcherUrl: matcherUrl,
-        );
-      }
-    }
-
-    // Setup a network request for the tile & handle network exceptions
-    final request = http.Request('GET', Uri.parse(networkUrl))
-      ..headers.addAll(provider.headers);
-    final http.StreamedResponse response;
+    final Uint8List bytes;
     try {
-      response = await provider.httpClient.send(request);
-    } catch (e) {
-      if (existingTile != null) {
-        registerMiss();
-        return bytes!;
+      bytes = await _internalGetBytes(
+        coords: coords,
+        options: options,
+        provider: provider,
+        chunkEvents: chunkEvents,
+        requireValidImage: requireValidImage,
+        currentTileDebugNotifierInfo: currentTileDebugNotifierInfo,
+      );
+    } catch (err, stackTrace) {
+      close(didComplete: false);
+
+      if (err is FMTCBrowsingError) {
+        final handlerResult = provider.settings.errorHandler?.call(err);
+        if (handlerResult != null) return handlerResult;
       }
 
-      throw FMTCBrowsingError(
-        type: e is SocketException
-            ? FMTCBrowsingErrorType.noConnectionDuringFetch
-            : FMTCBrowsingErrorType.unknownFetchException,
-        networkUrl: networkUrl,
-        matcherUrl: matcherUrl,
-        request: request,
-        originalError: e,
-      );
+      Error.throwWithStackTrace(err, stackTrace);
     }
 
-    // Check whether the network response is not 200 OK
-    if (response.statusCode != 200) {
-      if (existingTile != null) {
-        registerMiss();
-        return bytes!;
-      }
-
-      throw FMTCBrowsingError(
-        type: FMTCBrowsingErrorType.negativeFetchResponse,
-        networkUrl: networkUrl,
-        matcherUrl: matcherUrl,
-        request: request,
-        response: response,
-      );
-    }
-
-    // Extract the image bytes from the streamed network response
-    final bytesBuilder = BytesBuilder(copy: false);
-    await for (final byte in response.stream) {
-      bytesBuilder.add(byte);
-      chunkEvents?.add(
-        ImageChunkEvent(
-          cumulativeBytesLoaded: bytesBuilder.length,
-          expectedTotalBytes: response.contentLength,
-        ),
-      );
-    }
-    final responseBytes = bytesBuilder.takeBytes();
-
-    // Perform a secondary check to ensure that the bytes recieved actually
-    // encode a valid image
-    if (requireValidImage) {
-      late final Object? isValidImageData;
-
-      try {
-        isValidImageData = (await (await instantiateImageCodec(
-                  responseBytes,
-                  targetWidth: 8,
-                  targetHeight: 8,
-                ))
-                        .getNextFrame())
-                    .image
-                    .width >
-                0
-            ? null
-            : Exception('Image was decodable, but had a width of 0');
-      } catch (e) {
-        isValidImageData = e;
-      }
-
-      if (isValidImageData != null) {
-        if (existingTile != null) {
-          registerMiss();
-          return bytes!;
-        }
-
-        throw FMTCBrowsingError(
-          type: FMTCBrowsingErrorType.invalidImageData,
-          networkUrl: networkUrl,
-          matcherUrl: matcherUrl,
-          request: request,
-          response: response,
-          originalError: isValidImageData,
-        );
-      }
-    }
-
-    // Find the stores that need to have this tile written to, depending on
-    // their read/write settings
-    // At this point, we've downloaded the tile anyway, so we might as well
-    // write the stores that allow it, even if the existing tile hasn't expired
-    final writeTileToSpecified = provider.storeNames.entries
-        .where(
-          (e) => switch (e.value) {
-            StoreReadWriteBehavior.read => false,
-            StoreReadWriteBehavior.readUpdate =>
-              intersectedExistingStores.contains(e.key),
-            StoreReadWriteBehavior.readUpdateCreate => true,
-          },
-        )
-        .map((e) => e.key);
-    final writeTileToIntermediate =
-        provider.otherStoresBehavior == StoreReadWriteBehavior.readUpdate &&
-                existingTile != null
-            ? writeTileToSpecified.followedBy(
-                intersectedExistingStores
-                    .whereNot((e) => provider.storeNames.containsKey(e)),
-              )
-            : writeTileToSpecified;
-
-    // Cache tile to necessary stores
-    if (writeTileToIntermediate.isNotEmpty ||
-        provider.otherStoresBehavior ==
-            StoreReadWriteBehavior.readUpdateCreate) {
-      unawaited(
-        FMTCBackendAccess.internal
-            .writeTile(
-          storeNames: writeTileToIntermediate.toSet().toList(growable: false),
-          writeAllNotIn: provider.otherStoresBehavior ==
-                  StoreReadWriteBehavior.readUpdateCreate
-              ? provider.storeNames.keys.toList(growable: false)
-              : null,
-          url: matcherUrl,
-          bytes: responseBytes,
-        )
-            .then((createdIn) {
-          // Clear out old tiles if the maximum store length has been exceeded
-          // We only need to even attempt this if the number of tiles has changed
-          if (createdIn.isEmpty) return;
-          FMTCBackendAccess.internal
-              .removeOldestTilesAboveLimit(storeNames: createdIn);
-        }),
-      );
-    }
-
-    registerMiss();
-    return responseBytes;
+    close(didComplete: true);
+    return bytes;
   }
 
   @override
@@ -354,7 +183,6 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is _FMTCImageProvider &&
-          other.runtimeType == runtimeType &&
           other.coords == coords &&
           other.provider == provider &&
           other.options == options);

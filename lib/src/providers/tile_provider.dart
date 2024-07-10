@@ -26,6 +26,7 @@ class FMTCTileProvider extends TileProvider {
     required this.storeNames,
     this.otherStoresBehavior,
     FMTCTileProviderSettings? settings,
+    this.tileLoadingDebugger,
     Map<String, String>? headers,
     http.Client? httpClient,
   })  : settings = settings ?? FMTCTileProviderSettings.instance,
@@ -43,12 +44,14 @@ class FMTCTileProvider extends TileProvider {
   FMTCTileProvider.allStores({
     required StoreReadWriteBehavior allStoresConfiguration,
     FMTCTileProviderSettings? settings,
+    ValueNotifier<Map<TileCoordinates, DebugNotifierInfo>>? tileLoadingDebugger,
     Map<String, String>? headers,
     http.Client? httpClient,
   }) : this.multipleStores(
           storeNames: const {},
           otherStoresBehavior: allStoresConfiguration,
           settings: settings,
+          tileLoadingDebugger: tileLoadingDebugger,
           headers: headers,
           httpClient: httpClient,
         );
@@ -94,7 +97,15 @@ class FMTCTileProvider extends TileProvider {
   /// underway.
   ///
   /// Does not include tiles loaded from session cache.
-  final _tilesInProgress = HashMap<TileCoordinates, Completer<void>>.identity();
+  final _tilesInProgress = HashMap<TileCoordinates, Completer<void>>();
+
+  final ValueNotifier<Map<TileCoordinates, DebugNotifierInfo>>?
+      tileLoadingDebugger;
+
+  _AllowedNotifyValueNotifier<Map<TileCoordinates, DebugNotifierInfo>>?
+      get _internalTileLoadingDebugger =>
+          tileLoadingDebugger as _AllowedNotifyValueNotifier<
+              Map<TileCoordinates, DebugNotifierInfo>>?;
 
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>
@@ -144,10 +155,7 @@ class FMTCTileProvider extends TileProvider {
   }) =>
       FMTCBackendAccess.internal.tileExists(
         storeNames: _getSpecifiedStoresOrNull(),
-        url: obscureQueryParams(
-          url: getTileUrl(coords, options),
-          obscuredQueryParams: settings.obscuredQueryParams,
-        ),
+        url: settings.urlTransformer(getTileUrl(coords, options)),
       );
 
   /// If [storeNames] contains `null`, returns `null`, otherwise returns all

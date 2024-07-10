@@ -50,6 +50,7 @@ class FMTCStore {
         StoreReadWriteBehavior.readUpdateCreate,
     StoreReadWriteBehavior? otherStoresBehavior,
     FMTCTileProviderSettings? settings,
+    ValueNotifier<Map<TileCoordinates, DebugNotifierInfo>>? tileLoadingDebugger,
     Map<String, String>? headers,
     http.Client? httpClient,
   }) =>
@@ -57,6 +58,7 @@ class FMTCStore {
         storeNames: {storeName: readWriteBehavior},
         otherStoresBehavior: otherStoresBehavior,
         settings: settings,
+        tileLoadingDebugger: tileLoadingDebugger,
         headers: headers,
         httpClient: httpClient,
       );

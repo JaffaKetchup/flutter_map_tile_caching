@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../shared/state/general_provider.dart';
@@ -9,9 +10,10 @@ class ConfigPanelBehaviour extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Selector<GeneralProvider, bool?>(
-        selector: (context, provider) => provider.behaviourPrimary,
-        builder: (context, behaviourPrimary, _) => Column(
+  Widget build(BuildContext context) =>
+      Selector<GeneralProvider, CacheBehavior>(
+        selector: (context, provider) => provider.cacheBehavior,
+        builder: (context, cacheBehavior, _) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
@@ -19,32 +21,32 @@ class ConfigPanelBehaviour extends StatelessWidget {
               child: SegmentedButton(
                 segments: const [
                   ButtonSegment(
-                    value: null,
+                    value: CacheBehavior.cacheOnly,
                     icon: Icon(Icons.download_for_offline_outlined),
                     label: Text('Cache Only'),
                   ),
                   ButtonSegment(
-                    value: false,
+                    value: CacheBehavior.cacheFirst,
                     icon: Icon(Icons.storage_rounded),
                     label: Text('Cache'),
                   ),
                   ButtonSegment(
-                    value: true,
+                    value: CacheBehavior.onlineFirst,
                     icon: Icon(Icons.public_rounded),
                     label: Text('Network'),
                   ),
                 ],
-                selected: {behaviourPrimary},
+                selected: {cacheBehavior},
                 onSelectionChanged: (value) => context
                     .read<GeneralProvider>()
-                    .behaviourPrimary = value.single,
+                    .cacheBehavior = value.single,
                 style: const ButtonStyle(
                   visualDensity: VisualDensity.comfortable,
                 ),
               ),
             ),
             const SizedBox(height: 6),
-            Selector<GeneralProvider, bool>(
+            /*Selector<GeneralProvider, bool>(
               selector: (context, provider) =>
                   provider.behaviourUpdateFromNetwork,
               builder: (context, behaviourUpdateFromNetwork, _) => Row(
@@ -53,9 +55,8 @@ class ConfigPanelBehaviour extends StatelessWidget {
                   const Text('Update cache when network used'),
                   const Spacer(),
                   Switch.adaptive(
-                    value:
-                        behaviourPrimary != null && behaviourUpdateFromNetwork,
-                    onChanged: behaviourPrimary == null
+                    value: cacheBehavior != null && behaviourUpdateFromNetwork,
+                    onChanged: cacheBehavior == null
                         ? null
                         : (value) => context
                             .read<GeneralProvider>()
@@ -69,7 +70,7 @@ class ConfigPanelBehaviour extends StatelessWidget {
                   const SizedBox(width: 8),
                 ],
               ),
-            ),
+            ),*/
           ],
         ),
       );

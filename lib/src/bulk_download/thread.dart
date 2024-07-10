@@ -11,7 +11,7 @@ Future<void> _singleDownloadThread(
     int maxBufferLength,
     bool skipExistingTiles,
     Uint8List? seaTileBytes,
-    Iterable<RegExp> obscuredQueryParams,
+    String Function(String) urlTransformer,
     Map<String, String> headers,
     FMTCBackendInternalThreadSafe backend,
   }) input,
@@ -65,10 +65,7 @@ Future<void> _singleDownloadThread(
     // Get new tile URL & any existing tile
     final networkUrl =
         input.options.tileProvider.getTileUrl(coordinates, input.options);
-    final matcherUrl = obscureQueryParams(
-      url: networkUrl,
-      obscuredQueryParams: input.obscuredQueryParams,
-    );
+    final matcherUrl = input.urlTransformer(networkUrl);
 
     final existingTile = await input.backend.readTile(
       url: matcherUrl,
