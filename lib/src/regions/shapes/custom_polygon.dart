@@ -1,28 +1,26 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../../flutter_map_tile_caching.dart';
+part of '../../../flutter_map_tile_caching.dart';
 
-/// A geographically rectangular region based off coordinate bounds
-///
-/// Rectangles do not support skewing into parallelograms.
+/// A geographical region who's outline is defined by a list of coordinates
 ///
 /// It can be converted to a:
 ///  - [DownloadableRegion] for downloading: [toDownloadable]
 ///  - list of [LatLng]s forming the outline: [toOutline]
-class RectangleRegion extends BaseRegion {
-  /// A geographically rectangular region based off coordinate bounds
+class CustomPolygonRegion extends BaseRegion {
+  /// A geographical region who's outline is defined by a list of coordinates
   ///
   /// It can be converted to a:
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
   ///  - list of [LatLng]s forming the outline: [toOutline]
-  const RectangleRegion(this.bounds);
+  const CustomPolygonRegion(this.outline);
 
-  /// The coordinate bounds
-  final LatLngBounds bounds;
+  /// The outline coordinates
+  final List<LatLng> outline;
 
   @override
-  DownloadableRegion<RectangleRegion> toDownloadable({
+  DownloadableRegion<CustomPolygonRegion> toDownloadable({
     required int minZoom,
     required int maxZoom,
     required TileLayer options,
@@ -41,14 +39,13 @@ class RectangleRegion extends BaseRegion {
       );
 
   @override
-  List<LatLng> toOutline() =>
-      [bounds.northEast, bounds.southEast, bounds.southWest, bounds.northWest];
+  List<LatLng> toOutline() => outline;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is RectangleRegion && other.bounds == bounds);
+      (other is CustomPolygonRegion && listEquals(outline, other.outline));
 
   @override
-  int get hashCode => bounds.hashCode;
+  int get hashCode => outline.hashCode;
 }
