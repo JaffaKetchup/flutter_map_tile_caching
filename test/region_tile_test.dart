@@ -8,7 +8,7 @@ import 'dart:isolate';
 import 'package:collection/collection.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:flutter_map_tile_caching/src/bulk_download/tile_loops/shared.dart';
+import 'package:flutter_map_tile_caching/src/bulk_download/internal/tile_loops/shared.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:test/test.dart';
 

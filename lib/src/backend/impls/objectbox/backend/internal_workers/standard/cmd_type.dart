@@ -3,6 +3,8 @@
 
 part of '../../backend.dart';
 
+typedef _IncomingCmd = ({int id, _CmdType type, Map<String, dynamic> args});
+
 enum _CmdType {
   initialise_, // Only valid as a request
   destroy,

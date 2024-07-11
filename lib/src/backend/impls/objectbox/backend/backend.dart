@@ -26,7 +26,6 @@ import '../models/src/tile.dart';
 export 'package:objectbox/objectbox.dart' show StorageException;
 
 part 'internal_workers/standard/cmd_type.dart';
-part 'internal_workers/standard/incoming_cmd.dart';
 part 'internal_workers/standard/worker.dart';
 part 'internal_workers/shared.dart';
 part 'internal_workers/thread_safe.dart';

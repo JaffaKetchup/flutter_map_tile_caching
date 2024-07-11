@@ -31,20 +31,20 @@ import 'package:meta/meta.dart';
 
 import 'src/backend/export_external.dart';
 import 'src/backend/export_internal.dart';
-import 'src/bulk_download/instance.dart';
-import 'src/bulk_download/rate_limited_stream.dart';
-import 'src/bulk_download/tile_loops/shared.dart';
+import 'src/bulk_download/internal/instance.dart';
+import 'src/bulk_download/internal/rate_limited_stream.dart';
+import 'src/bulk_download/internal/tile_loops/shared.dart';
 import 'src/misc/int_extremes.dart';
 import 'src/providers/image_provider/browsing_errors.dart';
 
 export 'src/backend/export_external.dart';
 export 'src/providers/image_provider/browsing_errors.dart';
 
-part 'src/bulk_download/control_cmds.dart';
-part 'src/bulk_download/download_progress.dart';
-part 'src/bulk_download/manager.dart';
-part 'src/bulk_download/thread.dart';
-part 'src/bulk_download/tile_event.dart';
+part 'src/bulk_download/external/download_progress.dart';
+part 'src/bulk_download/external/tile_event.dart';
+part 'src/bulk_download/internal/control_cmds.dart';
+part 'src/bulk_download/internal/manager.dart';
+part 'src/bulk_download/internal/thread.dart';
 part 'src/providers/debugger/allowed_notify_value_notifier.dart';
 part 'src/providers/debugger/debugger.dart';
 part 'src/providers/image_provider/image_provider.dart';
