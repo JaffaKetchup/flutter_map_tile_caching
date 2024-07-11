@@ -1,7 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../../flutter_map_tile_caching.dart';
+part of '../../../flutter_map_tile_caching.dart';
 
 Future<Uint8List> _internalGetBytes({
   required TileCoordinates coords,
@@ -9,7 +9,7 @@ Future<Uint8List> _internalGetBytes({
   required FMTCTileProvider provider,
   required StreamController<ImageChunkEvent>? chunkEvents,
   required bool requireValidImage,
-  required DebugNotifierInfo currentTileDebugNotifierInfo, // TODO
+  required TileLoadingDebugInfo currentTileDebugNotifierInfo, // TODO
 }) async {
   void registerHit(List<String> storeNames) {
     if (provider.settings.recordHitsAndMisses) {

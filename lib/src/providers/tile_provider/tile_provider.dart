@@ -1,7 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../../flutter_map_tile_caching.dart';
+part of '../../../flutter_map_tile_caching.dart';
 
 /// Specialised [TileProvider] that uses a specialised [ImageProvider] to connect
 /// to FMTC internals and enable advanced caching/retrieval logic
@@ -44,7 +44,8 @@ class FMTCTileProvider extends TileProvider {
   FMTCTileProvider.allStores({
     required StoreReadWriteBehavior allStoresConfiguration,
     FMTCTileProviderSettings? settings,
-    ValueNotifier<Map<TileCoordinates, DebugNotifierInfo>>? tileLoadingDebugger,
+    ValueNotifier<Map<TileCoordinates, TileLoadingDebugInfo>>?
+        tileLoadingDebugger,
     Map<String, String>? headers,
     http.Client? httpClient,
   }) : this.multipleStores(
@@ -90,6 +91,9 @@ class FMTCTileProvider extends TileProvider {
   /// Defaults to a standard [IOClient]/[HttpClient].
   final http.Client httpClient;
 
+  final ValueNotifier<Map<TileCoordinates, TileLoadingDebugInfo>>?
+      tileLoadingDebugger;
+
   /// Each [Completer] is completed once the corresponding tile has finished
   /// loading
   ///
@@ -99,13 +103,9 @@ class FMTCTileProvider extends TileProvider {
   /// Does not include tiles loaded from session cache.
   final _tilesInProgress = HashMap<TileCoordinates, Completer<void>>();
 
-  final ValueNotifier<Map<TileCoordinates, DebugNotifierInfo>>?
-      tileLoadingDebugger;
-
-  _AllowedNotifyValueNotifier<Map<TileCoordinates, DebugNotifierInfo>>?
-      get _internalTileLoadingDebugger =>
-          tileLoadingDebugger as _AllowedNotifyValueNotifier<
-              Map<TileCoordinates, DebugNotifierInfo>>?;
+  _AllowedNotifyValueNotifier<TileLoadingDebugMap>?
+      get _internalTileLoadingDebugger => tileLoadingDebugger
+          as _AllowedNotifyValueNotifier<TileLoadingDebugMap>?;
 
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>

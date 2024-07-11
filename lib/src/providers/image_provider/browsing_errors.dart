@@ -6,7 +6,7 @@ import 'package:http/http.dart';
 import 'package:http/io_client.dart';
 import 'package:meta/meta.dart';
 
-import '../../flutter_map_tile_caching.dart';
+import '../../../flutter_map_tile_caching.dart';
 
 /// An [Exception] indicating that there was an error retrieving tiles to be
 /// displayed on the map

@@ -1,17 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-part of '../../flutter_map_tile_caching.dart';
-
-class DebugNotifierInfo {
-  DebugNotifierInfo._();
-
-  /// Indicates whether the tile completed loading successfully
-  ///
-  /// * `true`:  completed
-  /// * `false`: errored
-  late final bool didComplete;
-}
+part of '../../../flutter_map_tile_caching.dart';
 
 /// A specialised [ImageProvider] that uses FMTC internals to enable browse
 /// caching
@@ -130,7 +120,7 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
     void Function()? finishedLoadingBytes,
     bool requireValidImage = false,
   }) async {
-    final currentTileDebugNotifierInfo = DebugNotifierInfo._();
+    final currentTileDebugNotifierInfo = TileLoadingDebugInfo._();
 
     void close({required bool didComplete}) {
       finishedLoadingBytes?.call();
