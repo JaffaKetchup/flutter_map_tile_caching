@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -10,11 +9,13 @@ import 'package:provider/provider.dart';
 
 import '../../../shared/components/loading_indicator.dart';
 import '../../../shared/misc/shared_preferences.dart';
+import '../../../shared/misc/store_metadata_keys.dart';
 import '../../../shared/state/general_provider.dart';
-import 'region_selection_components/crosshairs.dart';
-import 'region_selection_components/custom_polygon_snapping_indicator.dart';
-import 'region_selection_components/region_shape.dart';
-import 'region_selection_components/side_panel/parent.dart';
+import 'components/debugging_tile_builder.dart';
+import 'components/region_selection/crosshairs.dart';
+import 'components/region_selection/custom_polygon_snapping_indicator.dart';
+import 'components/region_selection/region_shape.dart';
+import 'components/region_selection/side_panel/parent.dart';
 import 'state/region_selection_provider.dart';
 
 enum MapViewMode {
@@ -50,6 +51,8 @@ class _MapViewState extends State<MapView>
     // ignore: avoid_redundant_argument_values
     duration: MapView.animationDuration,
   );
+
+  final tileLoadingDebugger = ValueNotifier<TileLoadingDebugMap>({});
 
   @override
   void initState() {
@@ -251,9 +254,10 @@ class _MapViewState extends State<MapView>
           options: mapOptions,
           children: [
             FutureBuilder<Map<String, String>?>(
-              future: currentStores.isEmpty
+              future: /*currentStores.isEmpty
                   ? Future.sync(() => {})
-                  : FMTCStore(currentStores.first).metadata.read,
+                  : FMTCStore(currentStores.first).metadata.read*/
+                  const FMTCStore('Test Store').metadata.read,
               builder: (context, metadata) {
                 if (!metadata.hasData ||
                     metadata.data == null ||
@@ -265,14 +269,22 @@ class _MapViewState extends State<MapView>
 
                 final urlTemplate =
                     currentStores.isNotEmpty && metadata.data != null
-                        ? metadata.data!['sourceURL']!
+                        ? metadata.data![StoreMetadataKeys.urlTemplate.key]!
                         : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
                 return TileLayer(
                   urlTemplate: urlTemplate,
                   userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
                   maxNativeZoom: 20,
-                  tileProvider: currentStores.isNotEmpty
+                  tileProvider: const FMTCStore('Test Store').getTileProvider(
+                    settings: FMTCTileProviderSettings(
+                      behavior: CacheBehavior.values.byName(
+                        metadata.data![StoreMetadataKeys.behaviour.key]!,
+                      ),
+                    ),
+                    tileLoadingDebugger: tileLoadingDebugger,
+                  ),
+                  /*currentStores.isNotEmpty
                       ? FMTCStore(currentStores.first).getTileProvider(
                           settings: FMTCTileProviderSettings(
                             behavior: CacheBehavior.values
@@ -290,8 +302,15 @@ class _MapViewState extends State<MapView>
                             /*maxStoreLength:
                                      int.parse(metadata.data!['maxLength']!),*/
                           ),
+                          tileLoadingDebugger: tileLoadingDebugger,
                         )
-                      : NetworkTileProvider(),
+                      : NetworkTileProvider(),*/
+                  tileBuilder: (context, tileWidget, tile) =>
+                      DebuggingTileBuilder(
+                    tileLoadingDebugger: tileLoadingDebugger,
+                    tileWidget: tileWidget,
+                    tile: tile,
+                  ),
                 );
               },
             ),

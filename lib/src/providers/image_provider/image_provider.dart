@@ -7,7 +7,6 @@ part of '../../../flutter_map_tile_caching.dart';
 /// caching
 ///
 /// TODO: Improve hits and misses
-/// TODO: Debug tile output
 class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
   /// Create a specialised [ImageProvider] that uses FMTC internals to enable
   /// browse caching
@@ -120,22 +119,28 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
     void Function()? finishedLoadingBytes,
     bool requireValidImage = false,
   }) async {
-    final currentTileDebugNotifierInfo = TileLoadingDebugInfo._();
+    final currentTileDebugNotifierInfo =
+        provider.tileLoadingDebugger != null ? TileLoadingDebugInfo._() : null;
 
-    void close({required bool didComplete}) {
+    void close([Object? error]) {
       finishedLoadingBytes?.call();
 
-      if (key != null) {
+      if (key != null && error != null) {
         scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
       }
       if (chunkEvents != null) {
         unawaited(chunkEvents.close());
       }
 
-      provider._internalTileLoadingDebugger
-        ?..value[coords] =
-            (currentTileDebugNotifierInfo..didComplete = didComplete)
-        ..notifyListeners();
+      if (currentTileDebugNotifierInfo != null) {
+        currentTileDebugNotifierInfo.error = error;
+        if (error != null) currentTileDebugNotifierInfo.result = null;
+
+        provider.tileLoadingDebugger!
+          ..value[coords] = currentTileDebugNotifierInfo
+          // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+          ..notifyListeners();
+      }
     }
 
     startedLoading?.call();
@@ -148,10 +153,10 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
         provider: provider,
         chunkEvents: chunkEvents,
         requireValidImage: requireValidImage,
-        currentTileDebugNotifierInfo: currentTileDebugNotifierInfo,
+        currentTLDI: currentTileDebugNotifierInfo,
       );
     } catch (err, stackTrace) {
-      close(didComplete: false);
+      close(err);
 
       if (err is FMTCBrowsingError) {
         final handlerResult = provider.settings.errorHandler?.call(err);
@@ -161,7 +166,7 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
       Error.throwWithStackTrace(err, stackTrace);
     }
 
-    close(didComplete: true);
+    close();
     return bytes;
   }
 

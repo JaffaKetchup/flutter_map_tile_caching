@@ -4,7 +4,7 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
-import '../state/region_selection_provider.dart';
+import '../../state/region_selection_provider.dart';
 
 class RegionShape extends StatelessWidget {
   const RegionShape({

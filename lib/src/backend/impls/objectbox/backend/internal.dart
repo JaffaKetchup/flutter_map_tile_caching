@@ -415,7 +415,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       ))!['tile'];
 
   @override
-  Future<List<String>> writeTile({
+  Future<Map<String, bool>> writeTile({
     required String url,
     required Uint8List bytes,
     required List<String> storeNames,
@@ -429,7 +429,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
           'url': url,
           'bytes': bytes,
         },
-      ))!['newStores'];
+      ))!['result'];
 
   @override
   Future<bool?> deleteTile({

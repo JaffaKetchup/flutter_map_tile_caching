@@ -7,8 +7,8 @@ import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../../shared/misc/exts/interleave.dart';
-import '../../state/region_selection_provider.dart';
+import '../../../../../../shared/misc/exts/interleave.dart';
+import '../../../state/region_selection_provider.dart';
 
 part 'additional_panes/additional_pane.dart';
 part 'additional_panes/adjust_zoom_lvls_pane.dart';

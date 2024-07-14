@@ -3,14 +3,8 @@
 
 part of '../../../flutter_map_tile_caching.dart';
 
+/// Mapping of [TileCoordinates] to [TileLoadingDebugInfo]
+///
+/// Used within [ValueNotifier]s, which are manually updated when a tile
+/// completes loading.
 typedef TileLoadingDebugMap = Map<TileCoordinates, TileLoadingDebugInfo>;
-
-class TileLoadingDebugInfo {
-  TileLoadingDebugInfo._();
-
-  /// Indicates whether the tile completed loading successfully
-  ///
-  /// * `true`:  completed
-  /// * `false`: errored
-  late final bool didComplete;
-}

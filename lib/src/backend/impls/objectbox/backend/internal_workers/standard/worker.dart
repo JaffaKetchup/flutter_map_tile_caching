@@ -444,8 +444,8 @@ Future<void> _worker(
             id: cmd.id,
             data: {
               'tile': null,
-              'allStoreNames': const [],
-              'intersectedStoreNames': const [],
+              'allStoreNames': const <String>[],
+              'intersectedStoreNames': const <String>[],
             },
           );
         } else {
@@ -495,7 +495,7 @@ Future<void> _worker(
           bytes: bytes,
         );
 
-        sendRes(id: cmd.id, data: {'newStores': result});
+        sendRes(id: cmd.id, data: {'result': result});
       case _CmdType.deleteTile:
         final storeName = cmd.args['storeName']! as String;
         final url = cmd.args['url']! as String;
@@ -580,47 +580,37 @@ Future<void> _worker(
             )
             .build();
 
-        final numOrphans = Map.fromIterables(
-          storeNames,
-          List<int?>.filled(storeNames.length, null),
-        );
-
         Future.wait(
-          List.generate(
-            storeNames.length,
-            (i) async {
-              final storeName = storeNames[i];
-
+          storeNames.map(
+            (storeName) async {
               tilesQuery.param(ObjectBoxStore_.name).value = storeName;
               storeQuery.param(ObjectBoxStore_.name).value = storeName;
 
               final store = storeQuery.findUnique();
-              if (store == null) return;
+              if (store == null) return 0;
 
               final numToRemove = store.length - store.maxLength!;
-
-              if (numToRemove <= 0) {
-                numOrphans[storeName] = 0;
-                return;
-              }
+              if (numToRemove <= 0) return 0;
 
               tilesQuery.limit = numToRemove;
 
-              final orphans = await deleteTiles(
+              return deleteTiles(
                 storesQuery: storeQuery,
                 tilesQuery: tilesQuery,
               );
-              numOrphans[storeName] = orphans;
-              return;
             },
-            growable: false,
           ),
-        ).then((_) {
-          sendRes(id: cmd.id, data: {'numOrphans': numOrphans});
+        ).then(
+          (numOrphans) {
+            sendRes(
+              id: cmd.id,
+              data: {'numOrphans': Map.fromIterables(storeNames, numOrphans)},
+            );
 
-          storeQuery.close();
-          tilesQuery.close();
-        });
+            storeQuery.close();
+            tilesQuery.close();
+          },
+        );
       case _CmdType.removeTilesOlderThan:
         final storeName = cmd.args['storeName']! as String;
         final expiry = cmd.args['expiry']! as DateTime;

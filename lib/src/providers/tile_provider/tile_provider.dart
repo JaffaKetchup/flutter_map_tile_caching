@@ -22,6 +22,7 @@ part of '../../../flutter_map_tile_caching.dart';
 /// Can be constructed alternatively with [FMTCStore.getTileProvider] to
 /// support a single store.
 class FMTCTileProvider extends TileProvider {
+  /// See [FMTCTileProvider] for information
   FMTCTileProvider.multipleStores({
     required this.storeNames,
     this.otherStoresBehavior,
@@ -41,11 +42,11 @@ class FMTCTileProvider extends TileProvider {
               : _CustomUserAgentCompatMap(headers ?? {}),
         );
 
+  /// See [FMTCTileProvider] for information
   FMTCTileProvider.allStores({
     required StoreReadWriteBehavior allStoresConfiguration,
     FMTCTileProviderSettings? settings,
-    ValueNotifier<Map<TileCoordinates, TileLoadingDebugInfo>>?
-        tileLoadingDebugger,
+    ValueNotifier<TileLoadingDebugMap>? tileLoadingDebugger,
     Map<String, String>? headers,
     http.Client? httpClient,
   }) : this.multipleStores(
@@ -91,8 +92,25 @@ class FMTCTileProvider extends TileProvider {
   /// Defaults to a standard [IOClient]/[HttpClient].
   final http.Client httpClient;
 
-  final ValueNotifier<Map<TileCoordinates, TileLoadingDebugInfo>>?
-      tileLoadingDebugger;
+  /// Allows debugging and advanced logging of internal tile loading mechanisms
+  ///
+  /// To use, first initialise a [ValueNotifier], like so, then pass it to this
+  /// parameter:
+  ///
+  /// ```dart
+  /// final tileLoadingDebugger = ValueNotifier<TileLoadingDebugMap>({});
+  /// // Do not use `const {}`
+  /// ```
+  ///
+  /// This notifier will be notified, and the `value` updated, every time a tile
+  /// completes loading (successfully or unsuccessfully). The `value` maps
+  /// [TileCoordinates] to [TileLoadingDebugInfo]s.
+  ///
+  /// For example, this could be used to debug why tiles aren't loading as
+  /// expected (perhaps when used with [TileLayer.tileBuilder] &
+  /// [ValueListenableBuilder]), or to perform more advanced monitoring and
+  /// logging than the hit & miss statistics provide.
+  final ValueNotifier<TileLoadingDebugMap>? tileLoadingDebugger;
 
   /// Each [Completer] is completed once the corresponding tile has finished
   /// loading
@@ -102,10 +120,6 @@ class FMTCTileProvider extends TileProvider {
   ///
   /// Does not include tiles loaded from session cache.
   final _tilesInProgress = HashMap<TileCoordinates, Completer<void>>();
-
-  _AllowedNotifyValueNotifier<TileLoadingDebugMap>?
-      get _internalTileLoadingDebugger => tileLoadingDebugger
-          as _AllowedNotifyValueNotifier<TileLoadingDebugMap>?;
 
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>

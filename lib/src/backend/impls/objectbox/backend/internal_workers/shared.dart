@@ -3,7 +3,7 @@
 
 part of '../backend.dart';
 
-List<String> _sharedWriteSingleTile({
+Map<String, bool> _sharedWriteSingleTile({
   required Store root,
   required List<String> storeNames,
   required String url,
@@ -29,7 +29,7 @@ List<String> _sharedWriteSingleTile({
 
   final storesToUpdate = <String, ObjectBoxStore>{};
 
-  final createdIn = <String>{};
+  final result = {for (final storeName in storeNames) storeName: false};
 
   root.runInTransaction(
     TxMode.write,
@@ -62,7 +62,7 @@ List<String> _sharedWriteSingleTile({
         storesToUpdate.addEntries(
           stores.whereNot((s) => didContainAlready.contains(s.name)).map(
             (s) {
-              createdIn.add(s.name);
+              result[s.name] = true;
               return MapEntry(
                 s.name,
                 s
@@ -83,7 +83,7 @@ List<String> _sharedWriteSingleTile({
         storesToUpdate.addEntries(
           stores.map(
             (s) {
-              createdIn.add(s.name);
+              result[s.name] = true;
               return MapEntry(
                 s.name,
                 s
@@ -109,5 +109,5 @@ List<String> _sharedWriteSingleTile({
   tilesQuery.close();
   storeQuery.close();
 
-  return createdIn.toList(growable: false);
+  return result;
 }

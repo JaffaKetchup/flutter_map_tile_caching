@@ -195,8 +195,9 @@ abstract interface class FMTCBackendInternal
   /// Create or update a tile (given a [url] and its [bytes]) in the specified
   /// store
   ///
-  /// Returns the stores that the tile was created in (not already existing).
-  Future<List<String>> writeTile({
+  /// Returns all the stores that were written to, along with whether that tile
+  /// was new to that store (not updated).
+  Future<Map<String, bool>> writeTile({
     required String url,
     required Uint8List bytes,
     required List<String> storeNames,

@@ -9,9 +9,10 @@ Future<Uint8List> _internalGetBytes({
   required FMTCTileProvider provider,
   required StreamController<ImageChunkEvent>? chunkEvents,
   required bool requireValidImage,
-  required TileLoadingDebugInfo currentTileDebugNotifierInfo, // TODO
+  required TileLoadingDebugInfo? currentTLDI, // TODO
 }) async {
   void registerHit(List<String> storeNames) {
+    currentTLDI?.hitOrMiss = true;
     if (provider.settings.recordHitsAndMisses) {
       FMTCBackendAccess.internal
           .registerHitOrMiss(storeNames: storeNames, hit: true);
@@ -19,6 +20,7 @@ Future<Uint8List> _internalGetBytes({
   }
 
   void registerMiss() {
+    currentTLDI?.hitOrMiss = false;
     if (provider.settings.recordHitsAndMisses) {
       FMTCBackendAccess.internal.registerHitOrMiss(
         storeNames: provider._getSpecifiedStoresOrNull(), // TODO: Verify
@@ -30,6 +32,9 @@ Future<Uint8List> _internalGetBytes({
   final networkUrl = provider.getTileUrl(coords, options);
   final matcherUrl = provider.settings.urlTransformer(networkUrl);
 
+  currentTLDI?.networkUrl = networkUrl;
+  currentTLDI?.storageSuitableUID = matcherUrl;
+
   final (
     tile: existingTile,
     intersectedStoreNames: intersectedExistingStores,
@@ -39,6 +44,9 @@ Future<Uint8List> _internalGetBytes({
     storeNames: provider._getSpecifiedStoresOrNull(),
   );
 
+  currentTLDI?.existingStores =
+      allExistingStores.isEmpty ? null : allExistingStores;
+
   final tileExistsInUnspecifiedStoresOnly = existingTile != null &&
       provider.settings.useOtherStoresAsFallbackOnly &&
       provider.storeNames.keys
@@ -47,6 +55,9 @@ Future<Uint8List> _internalGetBytes({
             allExistingStores.toSet(),
           ) // TODO: Verify (intersect? simplify?)
           .isEmpty;
+
+  currentTLDI?.tileExistsInUnspecifiedStoresOnly =
+      tileExistsInUnspecifiedStoresOnly;
 
   // Prepare a list of image bytes and prefill if there's already a cached
   // tile available
@@ -60,9 +71,15 @@ Future<Uint8List> _internalGetBytes({
               DateTime.timestamp().millisecondsSinceEpoch -
                       existingTile.lastModified.millisecondsSinceEpoch >
                   provider.settings.cachedValidDuration.inMilliseconds));
+
+  currentTLDI?.needsUpdating = needsUpdating;
+
   if (existingTile != null &&
       !needsUpdating &&
       !tileExistsInUnspecifiedStoresOnly) {
+    currentTLDI?.result = TileLoadingDebugResultPath.perfectFromStores;
+    currentTLDI?.writeResult = null;
+
     registerHit(intersectedExistingStores);
     return bytes!;
   }
@@ -70,7 +87,21 @@ Future<Uint8List> _internalGetBytes({
   // If a tile is not available and cache only mode is in use, just fail
   // before attempting a network call
   if (provider.settings.behavior == CacheBehavior.cacheOnly) {
-    if (tileExistsInUnspecifiedStoresOnly) {
+    if (existingTile != null) {
+      currentTLDI?.result = TileLoadingDebugResultPath.cacheOnlyFromOtherStores;
+      currentTLDI?.writeResult = null;
+
+      registerMiss();
+      return bytes!;
+    }
+
+    throw FMTCBrowsingError(
+      type: FMTCBrowsingErrorType.missingInCacheOnlyMode,
+      networkUrl: networkUrl,
+      matcherUrl: matcherUrl,
+    );
+
+    /*if (tileExistsInUnspecifiedStoresOnly) {
       registerMiss();
       return bytes!;
     }
@@ -80,7 +111,7 @@ Future<Uint8List> _internalGetBytes({
         networkUrl: networkUrl,
         matcherUrl: matcherUrl,
       );
-    }
+    }*/
   }
 
   // Setup a network request for the tile & handle network exceptions
@@ -91,6 +122,9 @@ Future<Uint8List> _internalGetBytes({
     response = await provider.httpClient.send(request);
   } catch (e) {
     if (existingTile != null) {
+      currentTLDI?.result = TileLoadingDebugResultPath.noFetch;
+      currentTLDI?.writeResult = null;
+
       registerMiss();
       return bytes!;
     }
@@ -109,6 +143,9 @@ Future<Uint8List> _internalGetBytes({
   // Check whether the network response is not 200 OK
   if (response.statusCode != 200) {
     if (existingTile != null) {
+      currentTLDI?.result = TileLoadingDebugResultPath.noFetch;
+      currentTLDI?.writeResult = null;
+
       registerMiss();
       return bytes!;
     }
@@ -158,6 +195,9 @@ Future<Uint8List> _internalGetBytes({
 
     if (isValidImageData != null) {
       if (existingTile != null) {
+        currentTLDI?.result = TileLoadingDebugResultPath.noFetch;
+        currentTLDI?.writeResult = null;
+
         registerMiss();
         return bytes!;
       }
@@ -189,37 +229,48 @@ Future<Uint8List> _internalGetBytes({
       .map((e) => e.key);
 
   final writeTileToIntermediate =
-      provider.otherStoresBehavior == StoreReadWriteBehavior.readUpdate &&
-              existingTile != null
-          ? writeTileToSpecified.followedBy(
-              intersectedExistingStores
-                  .whereNot((e) => provider.storeNames.containsKey(e)),
-            )
-          : writeTileToSpecified;
+      (provider.otherStoresBehavior == StoreReadWriteBehavior.readUpdate &&
+                  existingTile != null
+              ? writeTileToSpecified.followedBy(
+                  intersectedExistingStores
+                      .whereNot((e) => provider.storeNames.containsKey(e)),
+                )
+              : writeTileToSpecified)
+          .toSet()
+          .toList(growable: false);
 
   // Cache tile to necessary stores
   if (writeTileToIntermediate.isNotEmpty ||
       provider.otherStoresBehavior == StoreReadWriteBehavior.readUpdateCreate) {
-    unawaited(
-      FMTCBackendAccess.internal
-          .writeTile(
-        storeNames: writeTileToIntermediate.toSet().toList(growable: false),
-        writeAllNotIn: provider.otherStoresBehavior ==
-                StoreReadWriteBehavior.readUpdateCreate
-            ? provider.storeNames.keys.toList(growable: false)
-            : null,
-        url: matcherUrl,
-        bytes: responseBytes,
-      )
-          .then((createdIn) {
+    currentTLDI?.writeResult = FMTCBackendAccess.internal.writeTile(
+      storeNames: writeTileToIntermediate,
+      writeAllNotIn: provider.otherStoresBehavior ==
+              StoreReadWriteBehavior.readUpdateCreate
+          ? provider.storeNames.keys.toList(growable: false)
+          : null,
+      url: matcherUrl,
+      bytes: responseBytes,
+      // ignore: unawaited_futures
+    )..then((result) {
+        final createdIn = result.entries
+            .where((e) => e.value)
+            .map((e) => e.key)
+            .toList(growable: false);
+
         // Clear out old tiles if the maximum store length has been exceeded
         // We only need to even attempt this if the number of tiles has changed
         if (createdIn.isEmpty) return;
-        FMTCBackendAccess.internal
-            .removeOldestTilesAboveLimit(storeNames: createdIn);
-      }),
-    );
+
+        unawaited(
+          FMTCBackendAccess.internal
+              .removeOldestTilesAboveLimit(storeNames: createdIn),
+        );
+      });
+  } else {
+    currentTLDI?.writeResult = null;
   }
+
+  currentTLDI?.result = TileLoadingDebugResultPath.fetched;
 
   registerMiss();
   return responseBytes;

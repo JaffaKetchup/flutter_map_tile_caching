@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
@@ -21,18 +19,14 @@ class _StoresListState extends State<StoresList> {
       FMTCRoot.stats.watchStores(triggerImmediately: true).asyncMap(
     (_) async {
       final stores = await FMTCRoot.stats.storesAvailable;
-      return HashMap.fromEntries(
-        stores.map(
-          (store) => MapEntry(
-            store,
-            (
-              stats: store.stats.all,
-              metadata: store.metadata.read,
-              tileImage: store.stats.tileImage(size: 56),
-            ),
+      return {
+        for (final store in stores)
+          store: (
+            stats: store.stats.all,
+            metadata: store.metadata.read,
+            tileImage: store.stats.tileImage(size: 56),
           ),
-        ),
-      );
+      };
     },
   );
 
