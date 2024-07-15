@@ -16,7 +16,7 @@ class FMTCTileProviderSettings {
     CacheBehavior behavior = CacheBehavior.cacheFirst,
     Duration cachedValidDuration = const Duration(days: 16),
     bool useUnspecifiedAsLastResort = false,
-    bool trackHitsAndMisses = true,
+    bool recordHitsAndMisses = true,
     String Function(String)? urlTransformer,
     @Deprecated(
       '`obscuredQueryParams` has been deprecated in favour of `urlTransformer`, '
@@ -35,7 +35,7 @@ class FMTCTileProviderSettings {
       behavior: behavior,
       cachedValidDuration: cachedValidDuration,
       useOtherStoresAsFallbackOnly: useUnspecifiedAsLastResort,
-      recordHitsAndMisses: trackHitsAndMisses,
+      recordHitsAndMisses: recordHitsAndMisses,
       urlTransformer: urlTransformer ??
           (obscuredQueryParams.isNotEmpty
               ? (url) {
@@ -88,8 +88,7 @@ class FMTCTileProviderSettings {
   /// Defaults to `false`.
   final bool useOtherStoresAsFallbackOnly;
 
-  /// Whether to keep track of the [StoreStats.hits] and [StoreStats.misses]
-  /// statistics
+  /// Whether to record the [StoreStats.hits] and [StoreStats.misses] statistics
   ///
   /// When enabled, hits will be recorded for all stores that the tile belonged
   /// to and were present in [FMTCTileProvider.storeNames], when necessary.
