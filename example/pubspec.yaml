@@ -14,7 +14,7 @@ dependencies:
   auto_size_text: ^3.0.0
   badges: ^3.1.2
   better_open_file: ^3.6.5
-  collection: ^1.19.0
+  collection: ^1.18.0
   dart_earcut: ^1.1.0
   file_picker: ^8.0.6
   flutter:
