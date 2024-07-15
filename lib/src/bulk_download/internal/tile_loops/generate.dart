@@ -55,7 +55,9 @@ class TileGenerators {
       for (int x = nwPoint.x; x <= sePoint.x; x++) {
         for (int y = nwPoint.y; y <= sePoint.y; y++) {
           tileCounter++;
-          if (tileCounter < start || tileCounter > end) continue;
+          if (tileCounter < start) continue;
+          if (tileCounter > end) Isolate.exit();
+
           await requestQueue.next;
           input.sendPort.send((x, y, zoomLvl.toInt()));
         }
@@ -71,63 +73,105 @@ class TileGenerators {
   static Future<void> circleTiles(
     ({SendPort sendPort, DownloadableRegion region}) input,
   ) async {
-    // This took some time and is fairly complicated, so this is the overall explanation:
-    // 1. Given a `LatLng` for every x degrees on a circle's circumference, convert it into a tile number
-    // 2. Using a `Map` per zoom level, record all the X values in it without duplicates
-    // 3. Under the previous record, add all the Y values within the circle (ie. to opposite the X value)
-    // 4. Loop over these XY values and add them to the list
-    // Theoretically, this could have been done using the same method as `lineTiles`, but `lineTiles` was built after this algorithm and this makes more sense for a circle
-    // Could also implement with the simpler method:
-    // 1. Calculate the radius in tiles using `Distance`
-    // 2. Iterate through y, then x
-    // 3. Use the circle formula x^2 + y^2 = r^2 to determine all points within the radius
-    // However, effectively scaling this to 256x256 tiles proved to be difficult.
-
     final region = input.region as DownloadableRegion<CircleRegion>;
-    final circleOutline = region.originalRegion.toOutline();
 
     final receivePort = ReceivePort();
     input.sendPort.send(receivePort.sendPort);
     final requestQueue = StreamQueue(receivePort);
 
-    // Format: Map<z, Map<x, List<y>>>
-    final Map<int, Map<int, List<int>>> outlineTileNums = {};
-
     int tileCounter = -1;
     final start = region.start - 1;
     final end = (region.end ?? double.infinity) - 1;
 
+    Future<void> sendResults(Map<(int x, int y, int z), int> results) async {
+      for (final MapEntry(key: coord, value: occurences) in results.entries) {
+        if (occurences < 2) continue;
+        await requestQueue.next;
+        input.sendPort.send(coord);
+      }
+    }
+
+    final edgeTile = const Distance(roundResult: false).offset(
+      region.originalRegion.center,
+      region.originalRegion.radius * 1000,
+      0,
+    );
+
     for (int zoomLvl = region.minZoom; zoomLvl <= region.maxZoom; zoomLvl++) {
-      outlineTileNums[zoomLvl] = {};
+      final centerTile = (region.crs.latLngToPoint(
+                region.originalRegion.center,
+                zoomLvl.toDouble(),
+              ) /
+              region.options.tileSize)
+          .floor();
 
-      for (final node in circleOutline) {
-        final tile = (region.crs.latLngToPoint(node, zoomLvl.toDouble()) /
-                region.options.tileSize)
-            .floor();
+      final radius = centerTile.y -
+          (region.crs.latLngToPoint(edgeTile, zoomLvl.toDouble()) /
+                  region.options.tileSize)
+              .floor()
+              .y;
 
-        outlineTileNums[zoomLvl]![tile.x] ??= [largestInt, smallestInt];
-        outlineTileNums[zoomLvl]![tile.x] = [
-          if (tile.y < outlineTileNums[zoomLvl]![tile.x]![0])
-            tile.y
-          else
-            outlineTileNums[zoomLvl]![tile.x]![0],
-          if (tile.y > outlineTileNums[zoomLvl]![tile.x]![1])
-            tile.y
-          else
-            outlineTileNums[zoomLvl]![tile.x]![1],
-        ];
+      final radiusSquared = radius * radius;
+
+      if (radius == 0) {
+        tileCounter++;
+        if (tileCounter < start || tileCounter > end) continue;
+
+        await requestQueue.next;
+        input.sendPort.send((centerTile.x, centerTile.y, zoomLvl));
+
+        continue;
       }
 
-      for (final x in outlineTileNums[zoomLvl]!.keys) {
-        for (int y = outlineTileNums[zoomLvl]![x]![0];
-            y <= outlineTileNums[zoomLvl]![x]![1];
-            y++) {
-          tileCounter++;
-          if (tileCounter < start || tileCounter > end) continue;
-          await requestQueue.next;
-          input.sendPort.send((x, y, zoomLvl));
+      if (radius == 1) {
+        tileCounter++;
+        if (tileCounter < start || tileCounter > end) continue;
+
+        await requestQueue.next;
+        input.sendPort.send((centerTile.x, centerTile.y, zoomLvl));
+        input.sendPort.send((centerTile.x, centerTile.y - 1, zoomLvl));
+        input.sendPort.send((centerTile.x - 1, centerTile.y, zoomLvl));
+        input.sendPort.send((centerTile.x - 1, centerTile.y - 1, zoomLvl));
+
+        continue;
+      }
+
+      // Unfortunately this appears to be necessary - we only output tiles that
+      // have been counted more than once, otherwise they are just border tiles
+      // that expand the circle (although in some cases, these appear to be
+      // actually useful), and we have to count tiles more than once because we
+      // have to count 4 for each 1
+      final generatedTiles = HashMap<(int x, int y, int z), int>();
+
+      for (var y = -radius; y <= radius; y++) {
+        bool foundTileOnAxis = false;
+        for (var x = -radius; x <= radius; x++) {
+          if ((x * x) + (y * y) <= radiusSquared) {
+            tileCounter++;
+
+            if (tileCounter < start) continue;
+            if (tileCounter > end) {
+              await sendResults(generatedTiles);
+              Isolate.exit();
+            }
+
+            final a = (x + centerTile.x, y + centerTile.y, zoomLvl);
+            generatedTiles[a] = (generatedTiles[a] ?? 0) + 1;
+            final b = (x + centerTile.x, y + centerTile.y - 1, zoomLvl);
+            generatedTiles[b] = (generatedTiles[b] ?? 0) + 1;
+            final c = (x + centerTile.x - 1, y + centerTile.y, zoomLvl);
+            generatedTiles[c] = (generatedTiles[c] ?? 0) + 1;
+            final d = (x + centerTile.x - 1, y + centerTile.y - 1, zoomLvl);
+            generatedTiles[d] = (generatedTiles[d] ?? 0) + 1;
+
+            foundTileOnAxis = true;
+          } else if (foundTileOnAxis) {
+            break;
+          }
         }
       }
+
+      await sendResults(generatedTiles);
     }
 
     Isolate.exit();
@@ -259,7 +303,9 @@ class TileGenerators {
           bool foundOverlappingTile = false;
           for (int y = straightRectangleNW.y; y <= straightRectangleSE.y; y++) {
             tileCounter++;
-            if (tileCounter < start || tileCounter > end) continue;
+            if (tileCounter < start) continue;
+            if (tileCounter > end) Isolate.exit();
+
             final tile = _Polygon(
               Point(x, y),
               Point(x + 1, y),
@@ -267,6 +313,7 @@ class TileGenerators {
               Point(x, y + 1),
             );
             if (generatedTiles.contains(tile.hashCode)) continue;
+
             if (overlap(
               _Polygon(
                 rotatedRectangleNW,
@@ -363,7 +410,9 @@ class TileGenerators {
 
       for (final Point(:x, :y) in allOutlineTiles) {
         tileCounter++;
-        if (tileCounter < start || tileCounter > end) continue;
+        if (tileCounter < start) continue;
+        if (tileCounter > end) Isolate.exit();
+
         await requestQueue.next;
         input.sendPort.send((x, y, zoomLvl.toInt()));
       }

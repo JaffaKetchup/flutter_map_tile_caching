@@ -65,39 +65,63 @@ class TileCounters {
   static int circleTiles(DownloadableRegion region) {
     region as DownloadableRegion<CircleRegion>;
 
-    final circleOutline = region.originalRegion.toOutline();
-
-    // Format: Map<z, Map<x, List<y>>>
-    final outlineTileNums = <int, Map<int, List<int>>>{};
-
     int numberOfTiles = 0;
 
+    final edgeTile = const Distance(roundResult: false).offset(
+      region.originalRegion.center,
+      region.originalRegion.radius * 1000,
+      0,
+    );
+
     for (int zoomLvl = region.minZoom; zoomLvl <= region.maxZoom; zoomLvl++) {
-      outlineTileNums[zoomLvl] = {};
+      final centerTile = (region.crs.latLngToPoint(
+                region.originalRegion.center,
+                zoomLvl.toDouble(),
+              ) /
+              region.options.tileSize)
+          .floor();
 
-      for (final node in circleOutline) {
-        final tile = (region.crs.latLngToPoint(node, zoomLvl.toDouble()) /
-                region.options.tileSize)
-            .floor();
+      final radius = centerTile.y -
+          (region.crs.latLngToPoint(edgeTile, zoomLvl.toDouble()) /
+                  region.options.tileSize)
+              .floor()
+              .y;
 
-        outlineTileNums[zoomLvl]![tile.x] ??= [largestInt, smallestInt];
-        outlineTileNums[zoomLvl]![tile.x] = [
-          if (tile.y < outlineTileNums[zoomLvl]![tile.x]![0])
-            tile.y
-          else
-            outlineTileNums[zoomLvl]![tile.x]![0],
-          if (tile.y > outlineTileNums[zoomLvl]![tile.x]![1])
-            tile.y
-          else
-            outlineTileNums[zoomLvl]![tile.x]![1],
-        ];
+      final radiusSquared = radius * radius;
+
+      if (radius == 0) {
+        numberOfTiles++;
+        continue;
       }
 
-      for (final x in outlineTileNums[zoomLvl]!.keys) {
-        numberOfTiles += outlineTileNums[zoomLvl]![x]![1] -
-            outlineTileNums[zoomLvl]![x]![0] +
-            1;
+      if (radius == 1) {
+        numberOfTiles += 4;
+        continue;
       }
+
+      final generatedTiles = HashMap<(int x, int y, int z), int>();
+
+      for (var y = -radius; y <= radius; y++) {
+        bool foundTileOnAxis = false;
+        for (var x = -radius; x <= radius; x++) {
+          if ((x * x) + (y * y) <= radiusSquared) {
+            final a = (x + centerTile.x, y + centerTile.y, zoomLvl);
+            generatedTiles[a] = (generatedTiles[a] ?? 0) + 1;
+            final b = (x + centerTile.x, y + centerTile.y - 1, zoomLvl);
+            generatedTiles[b] = (generatedTiles[b] ?? 0) + 1;
+            final c = (x + centerTile.x - 1, y + centerTile.y, zoomLvl);
+            generatedTiles[c] = (generatedTiles[c] ?? 0) + 1;
+            final d = (x + centerTile.x - 1, y + centerTile.y - 1, zoomLvl);
+            generatedTiles[d] = (generatedTiles[d] ?? 0) + 1;
+
+            foundTileOnAxis = true;
+          } else if (foundTileOnAxis) {
+            break;
+          }
+        }
+      }
+
+      numberOfTiles += generatedTiles.entries.where((e) => e.value > 1).length;
     }
 
     return _trimToRange(region, numberOfTiles);

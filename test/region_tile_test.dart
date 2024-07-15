@@ -14,7 +14,7 @@ import 'package:test/test.dart';
 
 void main() {
   Future<int> countByGenerator(DownloadableRegion<BaseRegion> region) async {
-    final tilereceivePort = ReceivePort();
+    final tileReceivePort = ReceivePort();
     final tileIsolate = await Isolate.spawn(
       region.when(
         rectangle: (_) => TileGenerators.rectangleTiles,
@@ -22,15 +22,15 @@ void main() {
         line: (_) => TileGenerators.lineTiles,
         customPolygon: (_) => TileGenerators.customPolygonTiles,
       ),
-      (sendPort: tilereceivePort.sendPort, region: region),
-      onExit: tilereceivePort.sendPort,
+      (sendPort: tileReceivePort.sendPort, region: region),
+      onExit: tileReceivePort.sendPort,
       debugName: '[FMTC] Tile Coords Generator Thread',
     );
     late final SendPort requestTilePort;
 
     int evts = -1;
 
-    await for (final evt in tilereceivePort) {
+    await for (final evt in tileReceivePort) {
       if (evt == null) break;
       if (evt is SendPort) requestTilePort = evt;
       requestTilePort.send(null);
@@ -38,7 +38,7 @@ void main() {
     }
 
     tileIsolate.kill(priority: Isolate.immediate);
-    tilereceivePort.close();
+    tileReceivePort.close();
 
     return evts;
   }
@@ -190,19 +190,35 @@ void main() {
 
       test(
         'Count By Counter',
-        () => expect(TileCounters.circleTiles(circleRegion), 61564),
+        () => expect(TileCounters.circleTiles(circleRegion), 115116),
       );
 
       test(
         'Count By Generator',
-        () async => expect(await countByGenerator(circleRegion), 61564),
+        () async => expect(await countByGenerator(circleRegion), 115116),
+      );
+
+      test(
+        'Count By Counter (Compare to Rectangle Region)',
+        () => expect(
+          TileCounters.rectangleTiles(
+            RectangleRegion(
+              // Bbox of circle
+              LatLngBounds(
+                const LatLng(1.807837, -1.79752),
+                const LatLng(-1.807837, 1.79752),
+              ),
+            ).toDownloadable(minZoom: 1, maxZoom: 15, options: TileLayer()),
+          ),
+          greaterThan(115116),
+        ),
       );
 
       test(
         'Counter Duration',
         () => print(
           '${List.generate(
-            500,
+            300,
             (index) {
               final clock = Stopwatch()..start();
               TileCounters.circleTiles(circleRegion);
@@ -315,16 +331,10 @@ void main() {
       );
 
       test(
-        'Count By Generator (Compare to Rectangle Region)',
-        () async =>
-            expect(await countByGenerator(customPolygonRegion2), 712096),
-      );
-
-      test(
         'Counter Duration',
         () => print(
           '${List.generate(
-            500,
+            300,
             (index) {
               final clock = Stopwatch()..start();
               TileCounters.customPolygonTiles(customPolygonRegion1);
@@ -349,40 +359,3 @@ void main() {
     timeout: const Timeout(Duration(minutes: 1)),
   );
 }
-
-/*
- Future<Set<(int, int, int)>> listGenerator(
-        DownloadableRegion<BaseRegion> region,
-      ) async {
-        final tilereceivePort = ReceivePort();
-        final tileIsolate = await Isolate.spawn(
-          region.when(
-            rectangle: (_) => TilesGenerator.rectangleTiles,
-            circle: (_) => TilesGenerator.circleTiles,
-            line: (_) => TilesGenerator.lineTiles,
-            customPolygon: (_) => TilesGenerator.customPolygonTiles,
-          ),
-          (sendPort: tilereceivePort.sendPort, region: region),
-          onExit: tilereceivePort.sendPort,
-          debugName: '[FMTC] Tile Coords Generator Thread',
-        );
-        late final SendPort requestTilePort;
-
-        final Set<(int, int, int)> evts = {};
-
-        await for (final evt in tilereceivePort) {
-          if (evt == null) break;
-          if (evt is SendPort) {
-            requestTilePort = evt..send(null);
-            continue;
-          }
-          requestTilePort.send(null);
-          evts.add(evt);
-        }
-
-        tileIsolate.kill(priority: Isolate.immediate);
-        tilereceivePort.close();
-
-        return evts;
-      }
-*/

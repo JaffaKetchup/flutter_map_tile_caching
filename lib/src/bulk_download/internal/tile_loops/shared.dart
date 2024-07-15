@@ -1,6 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
+import 'dart:collection';
 import 'dart:isolate';
 import 'dart:math';
 
