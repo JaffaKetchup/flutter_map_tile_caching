@@ -240,13 +240,6 @@ class StoreDownload {
       // Handle shutdown (both normal and cancellation)
       if (evt == null) break;
 
-      // Handle recovery system startup (unless disabled)
-      // TODO: Remove once validated
-      /*if (evt == 2) {
-        FMTCRoot.recovery._downloadsOngoing.add(recoveryId!);
-        continue;
-      }*/
-
       // Setup control mechanisms (senders)
       if (evt is SendPort) {
         instance

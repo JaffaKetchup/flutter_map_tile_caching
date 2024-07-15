@@ -9,7 +9,7 @@ Future<Uint8List> _internalGetBytes({
   required FMTCTileProvider provider,
   required StreamController<ImageChunkEvent>? chunkEvents,
   required bool requireValidImage,
-  required TileLoadingDebugInfo? currentTLDI, // TODO
+  required TileLoadingDebugInfo? currentTLDI,
 }) async {
   void registerHit(List<String> storeNames) {
     currentTLDI?.hitOrMiss = true;

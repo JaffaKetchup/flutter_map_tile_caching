@@ -5,8 +5,6 @@ part of '../../../flutter_map_tile_caching.dart';
 
 /// A specialised [ImageProvider] that uses FMTC internals to enable browse
 /// caching
-///
-/// TODO: Improve hits and misses
 class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
   /// Create a specialised [ImageProvider] that uses FMTC internals to enable
   /// browse caching

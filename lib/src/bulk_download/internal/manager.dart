@@ -182,8 +182,6 @@ Future<void> _downloadManager(
       region: input.region,
       endTile: math.min(input.region.end ?? largestInt, maxTiles),
     );
-    // TODO: Remove once validated
-    // send(2);
   }
 
   // Create convienience method to update recovery system if enabled

@@ -30,7 +30,7 @@ dependencies:
   async: ^2.11.0
   collection: ^1.18.0
   dart_earcut: ^1.1.0
-  flat_buffers: ^23.5.26
+  #flat_buffers: ^23.5.26
   flutter:
     sdk: flutter
   flutter_map: ^7.0.0
