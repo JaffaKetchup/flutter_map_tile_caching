@@ -27,10 +27,12 @@ Additionally, vector tiles are now supported in theory, as the internal caching/
 
 * Improvements to the browse caching logic and customizability
   * Added support for using multiple stores simultaneously in the `FMTCTileProvider`, and exposed constructor directly
-  * Added more `CacheBehavior` options
+  * Added `StoreReadWriteBehavior` for increased control over caching behaviour
   * Added toggle for hit/miss stat recording, to improve performance where these statistics are never read
+  * Added Tile Loading Debug system (`FMTCTileProvider.tileLoadingDebugger`) to provide a method to debug internal tile loading mechanisms and perform advanced custom logging
   * Replaced `FMTCTileProviderSettings.maxStoreLength` with a `maxLength` property on each store individually
   * Refactored and exposed tile provider logic into seperate `getBytes` method
+* Replaced `obscureQueryParams` with more flexible `urlTransformer` (and static `urlTransformerOmitKeyValues` utility method to provide old behaviour)
 * Removed deprecated remnants from v9.*
 * Other generic improvements
 

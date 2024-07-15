@@ -312,6 +312,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store1'],
+            writeAllNotIn: null,
             url: tileA64.url,
             bytes: tileA64.bytes,
           );
@@ -335,6 +336,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store1'],
+            writeAllNotIn: null,
             url: tileA64.url,
             bytes: tileA64.bytes,
           );
@@ -358,6 +360,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store1'],
+            writeAllNotIn: null,
             url: tileA128.url,
             bytes: tileA128.bytes,
           );
@@ -381,6 +384,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store1'],
+            writeAllNotIn: null,
             url: tileB64.url,
             bytes: tileB64.bytes,
           );
@@ -404,6 +408,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store1'],
+            writeAllNotIn: null,
             url: tileB128.url,
             bytes: tileB128.bytes,
           );
@@ -427,6 +432,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store1'],
+            writeAllNotIn: null,
             url: tileB64.url,
             bytes: tileB64.bytes,
           );
@@ -472,6 +478,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store2'],
+            writeAllNotIn: null,
             url: tileA64.url,
             bytes: tileA64.bytes,
           );
@@ -505,6 +512,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store2'],
+            writeAllNotIn: null,
             url: tileA128.url,
             bytes: tileA128.bytes,
           );
@@ -565,6 +573,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store2'],
+            writeAllNotIn: null,
             url: tileB64.url,
             bytes: tileB64.bytes,
           );
@@ -598,6 +607,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store2'],
+            writeAllNotIn: null,
             url: tileA64.url,
             bytes: tileA64.bytes,
           );
@@ -651,6 +661,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store1', 'store2'],
+            writeAllNotIn: null,
             url: tileA64.url,
             bytes: tileA64.bytes,
           );
@@ -684,6 +695,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store1', 'store2'],
+            writeAllNotIn: null,
             url: tileA128.url,
             bytes: tileA128.bytes,
           );
@@ -717,6 +729,7 @@ void main() {
         () async {
           await FMTCBackendAccess.internal.writeTile(
             storeNames: ['store1', 'store2'],
+            writeAllNotIn: null,
             url: tileB128.url,
             bytes: tileB128.bytes,
           );

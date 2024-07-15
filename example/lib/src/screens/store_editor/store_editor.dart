@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:validators/validators.dart' as validators;
 
-import '../../shared/components/loading_indicator.dart';
+import '../../shared/components/url_selector.dart';
 import '../../shared/misc/store_metadata_keys.dart';
 import '../../shared/state/general_provider.dart';
-import '../../shared/components/url_selector.dart';
 
 class StoreEditorPopup extends StatefulWidget {
   const StoreEditorPopup({super.key});

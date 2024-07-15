@@ -33,7 +33,7 @@ class FMTCBrowsingError implements Exception {
   FMTCBrowsingError({
     required this.type,
     required this.networkUrl,
-    required this.matcherUrl,
+    required this.storageSuitableUID,
     this.request,
     this.response,
     this.originalError,
@@ -52,12 +52,12 @@ class FMTCBrowsingError implements Exception {
   /// [FMTCBrowsingErrorType.explanation] & [FMTCBrowsingErrorType.resolution].
   final String message;
 
-  /// Generated network URL at which the tile was requested from
+  /// The requested URL of the tile (based on the [TileLayer.urlTemplate])
   final String networkUrl;
 
-  /// Generated URL that was used to find potential existing cached tiles,
-  /// taking into account [FMTCTileProviderSettings.obscuredQueryParams].
-  final String matcherUrl;
+  /// The storage-suitable UID of the tile: the result of
+  /// [FMTCTileProviderSettings.urlTransformer] on [networkUrl]
+  final String storageSuitableUID;
 
   /// If available, the attempted HTTP request
   ///

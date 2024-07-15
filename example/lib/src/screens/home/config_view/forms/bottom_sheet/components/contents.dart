@@ -1,10 +1,7 @@
 part of '../bottom_sheet.dart';
 
 class _ContentPanels extends StatefulWidget {
-  const _ContentPanels({
-    super.key,
-    required this.bottomSheetOuterController,
-  });
+  const _ContentPanels({required this.bottomSheetOuterController});
 
   final DraggableScrollableController bottomSheetOuterController;
 

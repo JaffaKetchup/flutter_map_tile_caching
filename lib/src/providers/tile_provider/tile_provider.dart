@@ -145,16 +145,22 @@ class FMTCTileProvider extends TileProvider {
 
   /// {@macro fmtc.imageProvider.getBytes}
   Future<Uint8List> getBytes({
-    required TileCoordinates coordinates,
+    required TileCoordinates coords,
     required TileLayer options,
+    Object? key,
     StreamController<ImageChunkEvent>? chunkEvents,
-    bool requireValidImage = true,
+    void Function()? startedLoading,
+    void Function()? finishedLoadingBytes,
+    bool requireValidImage = false,
   }) =>
       _FMTCImageProvider.getBytes(
-        provider: this,
+        coords: coords,
         options: options,
-        coords: coordinates,
+        provider: this,
+        key: key,
         chunkEvents: chunkEvents,
+        startedLoading: startedLoading,
+        finishedLoadingBytes: finishedLoadingBytes,
         requireValidImage: requireValidImage,
       );
 

@@ -98,7 +98,7 @@ Future<Uint8List> _internalGetBytes({
     throw FMTCBrowsingError(
       type: FMTCBrowsingErrorType.missingInCacheOnlyMode,
       networkUrl: networkUrl,
-      matcherUrl: matcherUrl,
+      storageSuitableUID: matcherUrl,
     );
 
     /*if (tileExistsInUnspecifiedStoresOnly) {
@@ -134,7 +134,7 @@ Future<Uint8List> _internalGetBytes({
           ? FMTCBrowsingErrorType.noConnectionDuringFetch
           : FMTCBrowsingErrorType.unknownFetchException,
       networkUrl: networkUrl,
-      matcherUrl: matcherUrl,
+      storageSuitableUID: matcherUrl,
       request: request,
       originalError: e,
     );
@@ -153,7 +153,7 @@ Future<Uint8List> _internalGetBytes({
     throw FMTCBrowsingError(
       type: FMTCBrowsingErrorType.negativeFetchResponse,
       networkUrl: networkUrl,
-      matcherUrl: matcherUrl,
+      storageSuitableUID: matcherUrl,
       request: request,
       response: response,
     );
@@ -205,7 +205,7 @@ Future<Uint8List> _internalGetBytes({
       throw FMTCBrowsingError(
         type: FMTCBrowsingErrorType.invalidImageData,
         networkUrl: networkUrl,
-        matcherUrl: matcherUrl,
+        storageSuitableUID: matcherUrl,
         request: request,
         response: response,
         originalError: isValidImageData,
