@@ -83,14 +83,6 @@ class TileGenerators {
     final start = region.start - 1;
     final end = (region.end ?? double.infinity) - 1;
 
-    Future<void> sendResults(Map<(int x, int y, int z), int> results) async {
-      for (final MapEntry(key: coord, value: occurences) in results.entries) {
-        if (occurences < 2) continue;
-        await requestQueue.next;
-        input.sendPort.send(coord);
-      }
-    }
-
     final edgeTile = const Distance(roundResult: false).offset(
       region.originalRegion.center,
       region.originalRegion.radius * 1000,
@@ -115,7 +107,8 @@ class TileGenerators {
 
       if (radius == 0) {
         tileCounter++;
-        if (tileCounter < start || tileCounter > end) continue;
+        if (tileCounter < start) continue;
+        if (tileCounter > end) Isolate.exit();
 
         await requestQueue.next;
         input.sendPort.send((centerTile.x, centerTile.y, zoomLvl));
@@ -125,53 +118,49 @@ class TileGenerators {
 
       if (radius == 1) {
         tileCounter++;
-        if (tileCounter < start || tileCounter > end) continue;
-
+        if (tileCounter < start) continue;
+        if (tileCounter > end) Isolate.exit();
         await requestQueue.next;
         input.sendPort.send((centerTile.x, centerTile.y, zoomLvl));
+
+        tileCounter++;
+        if (tileCounter < start) continue;
+        if (tileCounter > end) Isolate.exit();
+        await requestQueue.next;
         input.sendPort.send((centerTile.x, centerTile.y - 1, zoomLvl));
+
+        tileCounter++;
+        if (tileCounter < start) continue;
+        if (tileCounter > end) Isolate.exit();
+        await requestQueue.next;
         input.sendPort.send((centerTile.x - 1, centerTile.y, zoomLvl));
+
+        tileCounter++;
+        if (tileCounter < start) continue;
+        if (tileCounter > end) Isolate.exit();
+        await requestQueue.next;
         input.sendPort.send((centerTile.x - 1, centerTile.y - 1, zoomLvl));
 
         continue;
       }
 
-      // Unfortunately this appears to be necessary - we only output tiles that
-      // have been counted more than once, otherwise they are just border tiles
-      // that expand the circle (although in some cases, these appear to be
-      // actually useful), and we have to count tiles more than once because we
-      // have to count 4 for each 1
-      final generatedTiles = HashMap<(int x, int y, int z), int>();
+      for (int dy = 0; dy < radius; dy++) {
+        final mdx = sqrt(radiusSquared - dy * dy).floor();
+        for (int dx = -mdx - 1; dx <= mdx; dx++) {
+          tileCounter++;
+          if (tileCounter < start) continue;
+          if (tileCounter > end) Isolate.exit();
+          await requestQueue.next;
+          input.sendPort.send((dx + centerTile.x, dy + centerTile.y, zoomLvl));
 
-      for (var y = -radius; y <= radius; y++) {
-        bool foundTileOnAxis = false;
-        for (var x = -radius; x <= radius; x++) {
-          if ((x * x) + (y * y) <= radiusSquared) {
-            tileCounter++;
-
-            if (tileCounter < start) continue;
-            if (tileCounter > end) {
-              await sendResults(generatedTiles);
-              Isolate.exit();
-            }
-
-            final a = (x + centerTile.x, y + centerTile.y, zoomLvl);
-            generatedTiles[a] = (generatedTiles[a] ?? 0) + 1;
-            final b = (x + centerTile.x, y + centerTile.y - 1, zoomLvl);
-            generatedTiles[b] = (generatedTiles[b] ?? 0) + 1;
-            final c = (x + centerTile.x - 1, y + centerTile.y, zoomLvl);
-            generatedTiles[c] = (generatedTiles[c] ?? 0) + 1;
-            final d = (x + centerTile.x - 1, y + centerTile.y - 1, zoomLvl);
-            generatedTiles[d] = (generatedTiles[d] ?? 0) + 1;
-
-            foundTileOnAxis = true;
-          } else if (foundTileOnAxis) {
-            break;
-          }
+          tileCounter++;
+          if (tileCounter < start) continue;
+          if (tileCounter > end) Isolate.exit();
+          await requestQueue.next;
+          input.sendPort
+              .send((dx + centerTile.x, -dy - 1 + centerTile.y, zoomLvl));
         }
       }
-
-      await sendResults(generatedTiles);
     }
 
     Isolate.exit();

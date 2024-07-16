@@ -99,29 +99,9 @@ class TileCounters {
         continue;
       }
 
-      final generatedTiles = HashMap<(int x, int y, int z), int>();
-
-      for (var y = -radius; y <= radius; y++) {
-        bool foundTileOnAxis = false;
-        for (var x = -radius; x <= radius; x++) {
-          if ((x * x) + (y * y) <= radiusSquared) {
-            final a = (x + centerTile.x, y + centerTile.y, zoomLvl);
-            generatedTiles[a] = (generatedTiles[a] ?? 0) + 1;
-            final b = (x + centerTile.x, y + centerTile.y - 1, zoomLvl);
-            generatedTiles[b] = (generatedTiles[b] ?? 0) + 1;
-            final c = (x + centerTile.x - 1, y + centerTile.y, zoomLvl);
-            generatedTiles[c] = (generatedTiles[c] ?? 0) + 1;
-            final d = (x + centerTile.x - 1, y + centerTile.y - 1, zoomLvl);
-            generatedTiles[d] = (generatedTiles[d] ?? 0) + 1;
-
-            foundTileOnAxis = true;
-          } else if (foundTileOnAxis) {
-            break;
-          }
-        }
+      for (int dy = 0; dy < radius; dy++) {
+        numberOfTiles += (4 * sqrt(radiusSquared - dy * dy).floor()) + 4;
       }
-
-      numberOfTiles += generatedTiles.entries.where((e) => e.value > 1).length;
     }
 
     return _trimToRange(region, numberOfTiles);

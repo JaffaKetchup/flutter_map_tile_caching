@@ -190,12 +190,12 @@ void main() {
 
       test(
         'Count By Counter',
-        () => expect(TileCounters.circleTiles(circleRegion), 115116),
+        () => expect(TileCounters.circleTiles(circleRegion), 115912),
       );
 
       test(
         'Count By Generator',
-        () async => expect(await countByGenerator(circleRegion), 115116),
+        () async => expect(await countByGenerator(circleRegion), 115912),
       );
 
       test(
