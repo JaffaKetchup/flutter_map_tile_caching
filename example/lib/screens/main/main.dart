@@ -84,6 +84,7 @@ class _MainScreenState extends State<MainScreen> {
         .then(
       (_) {
         if (cancelTilesPreview) {
+          if (!mounted) return;
           final dp = context.read<DownloadingProvider>();
           dp.tilesPreviewStreamSub
               ?.cancel()

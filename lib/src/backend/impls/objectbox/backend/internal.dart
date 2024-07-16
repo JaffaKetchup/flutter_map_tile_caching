@@ -601,6 +601,14 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
           listener.cancel();
         }
       },
+      onError: (err, stackTrace) {
+        if (!storesToStates.isCompleted) {
+          storesToStates.completeError(err, stackTrace);
+        }
+        if (!complete.isCompleted) {
+          complete.completeError(err, stackTrace);
+        }
+      },
       cancelOnError: true,
     );
 
