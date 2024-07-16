@@ -36,6 +36,11 @@ Additionally, vector tiles are now supported in theory, as the internal caching/
 * Removed deprecated remnants from v9.*
 * Other generic improvements
 
+## [9.1.1] - 2024/07/16
+
+* Fixed bug where errors within the import functionality would not be catchable by the original invoker
+* Minor other improvements
+
 ## [9.1.0] - 2024/05/27
 
 * Upgraded to flutter_map v7 to support Flutter 3.22 (also upgraded other dependencies)
