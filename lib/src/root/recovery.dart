@@ -37,7 +37,8 @@ part of '../../flutter_map_tile_caching.dart';
 /// > Options set at download time, in [StoreDownload.startForeground], are not
 /// > included.
 class RootRecovery {
-  factory RootRecovery._() => _instance ??= const RootRecovery._uninstanced({});
+  // ignore: prefer_const_constructors
+  factory RootRecovery._() => _instance ??= RootRecovery._uninstanced({});
   const RootRecovery._uninstanced(Set<int> downloadsOngoing)
       : _downloadsOngoing = downloadsOngoing;
   static RootRecovery? _instance;
