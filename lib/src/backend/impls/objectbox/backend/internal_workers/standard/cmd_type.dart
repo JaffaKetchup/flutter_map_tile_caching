@@ -29,7 +29,6 @@ enum _CmdType {
   removeOldestTilesAboveLimit,
   removeTilesOlderThan,
   readMetadata,
-  setMetadata,
   setBulkMetadata,
   removeMetadata,
   resetMetadata,

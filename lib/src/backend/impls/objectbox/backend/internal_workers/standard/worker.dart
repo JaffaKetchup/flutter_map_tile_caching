@@ -659,35 +659,6 @@ Future<void> _worker(
         );
 
         query.close();
-      case _CmdType.setMetadata:
-        final storeName = cmd.args['storeName']! as String;
-        final key = cmd.args['key']! as String;
-        final value = cmd.args['value']! as String;
-
-        final stores = root.box<ObjectBoxStore>();
-
-        final query =
-            stores.query(ObjectBoxStore_.name.equals(storeName)).build();
-
-        root.runInTransaction(
-          TxMode.write,
-          () {
-            final store = query.findUnique() ??
-                (throw StoreNotExists(storeName: storeName));
-            query.close();
-
-            stores.put(
-              store
-                ..metadataJson = jsonEncode(
-                  (jsonDecode(store.metadataJson) as Map<String, dynamic>)
-                    ..[key] = value,
-                ),
-              mode: PutMode.update,
-            );
-          },
-        );
-
-        sendRes(id: cmd.id);
       case _CmdType.setBulkMetadata:
         final storeName = cmd.args['storeName']! as String;
         final kvs = cmd.args['kvs']! as Map<String, String>;

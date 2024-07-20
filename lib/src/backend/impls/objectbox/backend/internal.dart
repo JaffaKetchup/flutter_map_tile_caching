@@ -516,8 +516,11 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String value,
   }) =>
       _sendCmdOneShot(
-        type: _CmdType.setMetadata,
-        args: {'storeName': storeName, 'key': key, 'value': value},
+        type: _CmdType.setBulkMetadata,
+        args: {
+          'storeName': storeName,
+          'kvs': {key: value},
+        },
       );
 
   @override
