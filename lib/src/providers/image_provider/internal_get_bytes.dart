@@ -252,18 +252,15 @@ Future<Uint8List> _internalGetBytes({
       bytes: responseBytes,
       // ignore: unawaited_futures
     )..then((result) {
-        final createdIn = result.entries
-            .where((e) => e.value)
-            .map((e) => e.key)
-            .toList(growable: false);
+        final createdIn =
+            result.entries.where((e) => e.value).map((e) => e.key);
 
         // Clear out old tiles if the maximum store length has been exceeded
         // We only need to even attempt this if the number of tiles has changed
         if (createdIn.isEmpty) return;
 
-        unawaited(
-          FMTCBackendAccess.internal
-              .removeOldestTilesAboveLimit(storeNames: createdIn),
+        FMTCBackendAccess.internal.removeOldestTilesAboveLimit(
+          storeNames: createdIn.toList(growable: false), // TODO: Verify
         );
       });
   } else {

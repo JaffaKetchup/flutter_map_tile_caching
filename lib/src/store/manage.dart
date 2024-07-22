@@ -13,6 +13,10 @@ class StoreManagement {
   StoreManagement._(this._storeName);
   final String _storeName;
 
+  /// {@macro fmtc.backend.storeExists}
+  Future<bool> get ready =>
+      FMTCBackendAccess.internal.storeExists(storeName: _storeName);
+
   /// {@macro fmtc.backend.storeGetMaxLength}
   Future<int?> get maxLength =>
       FMTCBackendAccess.internal.storeGetMaxLength(storeName: _storeName);
@@ -23,10 +27,6 @@ class StoreManagement {
         storeName: _storeName,
         newMaxLength: newMaxLength,
       );
-
-  /// {@macro fmtc.backend.storeExists}
-  Future<bool> get ready =>
-      FMTCBackendAccess.internal.storeExists(storeName: _storeName);
 
   /// {@macro fmtc.backend.createStore}
   Future<void> create({int? maxLength}) =>
@@ -45,9 +45,10 @@ class StoreManagement {
 
   /// {@macro fmtc.backend.renameStore}
   ///
-  /// The old [FMTCStore] will still retain it's link to the old store, so
-  /// always use the new returned value instead: returns a new [FMTCStore]
-  /// after a successful renaming operation.
+  /// > [!IMPORTANT]
+  /// > The old [FMTCStore] will still retain it's link to the old store, so
+  /// > always use the new returned value instead: returns a new [FMTCStore]
+  /// > after a successful renaming operation.
   Future<FMTCStore> rename(String newStoreName) async {
     await FMTCBackendAccess.internal.renameStore(
       currentStoreName: _storeName,

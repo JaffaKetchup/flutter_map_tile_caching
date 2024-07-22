@@ -65,7 +65,7 @@ enum TileEventResult {
 /// [DownloadProgress]' responsibility.
 ///
 /// {@template fmtc.tileevent.extraConsiderations}
-/// > [!TIP]
+/// > [!IMPORTANT]
 /// > When tracking [TileEvent]s across multiple [DownloadProgress] events,
 /// > extra considerations are necessary. See
 /// > [the documentation](https://fmtc.jaffaketchup.dev/bulk-downloading/start#keeping-track-across-events)
