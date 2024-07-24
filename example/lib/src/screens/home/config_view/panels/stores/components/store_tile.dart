@@ -125,7 +125,7 @@ class _StoreTileState extends State<StoreTile> {
                           Container(
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             padding: const EdgeInsets.all(4),
                             child: StoreReadWriteBehaviourSelector(
@@ -146,7 +146,7 @@ class _StoreTileState extends State<StoreTile> {
                                         .colorScheme
                                         .error
                                         .withOpacity(0.75),
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Row(
                                     mainAxisAlignment:
@@ -178,7 +178,7 @@ class _StoreTileState extends State<StoreTile> {
                                     color: Theme.of(context)
                                         .colorScheme
                                         .surfaceDim,
-                                    borderRadius: BorderRadius.circular(24),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
                                     mainAxisAlignment:
