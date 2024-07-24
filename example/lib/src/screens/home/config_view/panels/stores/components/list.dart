@@ -24,7 +24,7 @@ class _StoresListState extends State<StoresList> {
           store: (
             stats: store.stats.all,
             metadata: store.metadata.read,
-            tileImage: store.stats.tileImage(size: 56),
+            tileImage: store.stats.tileImage(size: 51.2, fit: BoxFit.cover),
           ),
       };
     },
@@ -47,15 +47,15 @@ class _StoresListState extends State<StoresList> {
 
           if (stores.isEmpty) return const NoStores();
 
-          return SliverList.builder(
+          return SliverList.separated(
             itemCount: stores.length + 1,
             itemBuilder: (context, index) {
-              if (index == 0) return const NewStoreButton();
+              if (index == stores.length) return const NewStoreButton();
 
-              final store = stores.keys.elementAt(index - 1);
-              final stats = stores.values.elementAt(index - 1).stats;
-              final metadata = stores.values.elementAt(index - 1).metadata;
-              final tileImage = stores.values.elementAt(index - 1).tileImage;
+              final store = stores.keys.elementAt(index);
+              final stats = stores.values.elementAt(index).stats;
+              final metadata = stores.values.elementAt(index).metadata;
+              final tileImage = stores.values.elementAt(index).tileImage;
 
               return StoreTile(
                 store: store,
@@ -64,6 +64,9 @@ class _StoresListState extends State<StoresList> {
                 tileImage: tileImage,
               );
             },
+            separatorBuilder: (context, index) => index == stores.length - 1
+                ? const Divider()
+                : const SizedBox.shrink(),
           );
         },
       );

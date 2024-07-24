@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
@@ -43,74 +44,27 @@ class MapView extends StatefulWidget {
   State<MapView> createState() => _MapViewState();
 }
 
-class _MapViewState extends State<MapView>
-    with TickerProviderStateMixin, WidgetsBindingObserver {
-  late final mapController = AnimatedMapController(
+class _MapViewState extends State<MapView> with TickerProviderStateMixin {
+  late final _mapController = AnimatedMapController(
     vsync: this,
     curve: MapView.animationCurve,
     // ignore: avoid_redundant_argument_values
     duration: MapView.animationDuration,
   );
 
-  final tileLoadingDebugger = ValueNotifier<TileLoadingDebugMap>({});
+  final _tileLoadingDebugger = ValueNotifier<TileLoadingDebugMap>({});
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
+  late final _storesStream =
+      FMTCRoot.stats.watchStores(triggerImmediately: true).asyncMap(
+    (_) async {
+      final stores = await FMTCRoot.stats.storesAvailable;
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _setMapLocationCache();
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      _setMapLocationCache();
-    }
-  }
-
-  void _setMapLocationCache() {
-    sharedPrefs
-      ..setDouble(
-        SharedPrefsKeys.mapLocationLat.name,
-        mapController.mapController.camera.center.latitude,
-      )
-      ..setDouble(
-        SharedPrefsKeys.mapLocationLng.name,
-        mapController.mapController.camera.center.longitude,
-      )
-      ..setDouble(
-        SharedPrefsKeys.mapLocationZoom.name,
-        mapController.mapController.camera.zoom,
-      );
-  }
-
-  final _attributionLayer = RichAttributionWidget(
-    alignment: AttributionAlignment.bottomLeft,
-    popupInitialDisplayDuration: const Duration(seconds: 3),
-    popupBorderRadius: BorderRadius.circular(12),
-    attributions: [
-      //TextSourceAttribution(Uri.parse(urlTemplate).host),
-      const TextSourceAttribution(
-        'For demonstration purposes only',
-        prependCopyright: false,
-        textStyle: TextStyle(fontWeight: FontWeight.bold),
-      ),
-      const TextSourceAttribution(
-        'Offline mapping made with FMTC',
-        prependCopyright: false,
-        textStyle: TextStyle(fontStyle: FontStyle.italic),
-      ),
-      LogoSourceAttribution(
-        Image.asset('assets/icons/ProjectIcon.png'),
-        tooltip: 'flutter_map_tile_caching',
-      ),
-    ],
+      return {
+        for (final store in stores)
+          store.storeName: await store.metadata.read
+              .then((e) => e[StoreMetadataKeys.urlTemplate.key]),
+      };
+    },
   );
 
   @override
@@ -198,7 +152,7 @@ class _MapViewState extends State<MapView>
           if (provider.regionType == RegionType.customPolygon) {
             final coords = provider.coordinates;
             if (coords.length > 1) {
-              final newPointPos = mapController.mapController.camera
+              final newPointPos = _mapController.mapController.camera
                   .latLngToScreenPoint(coords.first)
                   .toOffset();
               provider.customPolygonSnap = coords.first != coords.last &&
@@ -223,10 +177,10 @@ class _MapViewState extends State<MapView>
           if (provider.regionType == RegionType.customPolygon) {
             final coords = provider.coordinates;
             if (coords.length > 1) {
-              final newPointPos = mapController.mapController.camera
+              final newPointPos = _mapController.mapController.camera
                   .latLngToScreenPoint(coords.first)
                   .toOffset();
-              final centerPos = mapController.mapController.camera
+              final centerPos = _mapController.mapController.camera
                   .latLngToScreenPoint(provider.currentNewPointPos)
                   .toOffset();
               provider.customPolygonSnap = coords.first != coords.last &&
@@ -239,164 +193,193 @@ class _MapViewState extends State<MapView>
           }
         }
       },
-      onMapReady: () {
-        /*context.read<MapProvider>()
-          ..mapController = mapController.mapController
-          ..animateTo = mapController.animateTo;*/
+      onMapEvent: (event) {
+        if (event is MapEventFlingAnimationNotStarted ||
+            event is MapEventMoveEnd ||
+            event is MapEventFlingAnimationEnd ||
+            event is MapEventScrollWheelZoom) {
+          sharedPrefs
+            ..setDouble(
+              SharedPrefsKeys.mapLocationLat.name,
+              _mapController.mapController.camera.center.latitude,
+            )
+            ..setDouble(
+              SharedPrefsKeys.mapLocationLng.name,
+              _mapController.mapController.camera.center.longitude,
+            )
+            ..setDouble(
+              SharedPrefsKeys.mapLocationZoom.name,
+              _mapController.mapController.camera.zoom,
+            );
+        }
       },
     );
 
-    return Selector<GeneralProvider, Set<String>>(
-      selector: (context, provider) => provider.currentStores,
-      builder: (context, currentStores, _) {
-        final map = FlutterMap(
-          mapController: mapController.mapController,
-          options: mapOptions,
-          children: [
-            FutureBuilder<Map<String, String>?>(
-              future: /*currentStores.isEmpty
-                  ? Future.sync(() => {})
-                  : FMTCStore(currentStores.first).metadata.read*/
-                  const FMTCStore('Test Store').metadata.read,
-              builder: (context, metadata) {
-                if (!metadata.hasData ||
-                    metadata.data == null ||
-                    (currentStores.isNotEmpty && metadata.data!.isEmpty)) {
-                  return const AbsorbPointer(
-                    child: LoadingIndicator('Preparing map'),
-                  );
-                }
+    return StreamBuilder(
+      stream: _storesStream,
+      builder: (context, snapshot) {
+        if (snapshot.data == null) {
+          return const AbsorbPointer(child: LoadingIndicator('Preparing map'));
+        }
 
-                final urlTemplate =
-                    currentStores.isNotEmpty && metadata.data != null
-                        ? metadata.data![StoreMetadataKeys.urlTemplate.key]!
-                        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+        final stores = snapshot.data!;
 
-                return TileLayer(
+        return Consumer<GeneralProvider>(
+          builder: (context, provider, _) {
+            final urlTemplate = provider.urlTemplate;
+
+            final compiledStoreNames = Map.fromEntries(
+              stores.entries
+                  .where((e) => e.value == urlTemplate)
+                  .map((e) => e.key)
+                  .map((e) {
+                final internalBehaviour = provider.currentStores[e];
+                final behaviour = internalBehaviour == null
+                    ? provider.inheritableStoreReadWriteBehaviour
+                    : internalBehaviour.toStoreReadWriteBehavior(
+                        provider.inheritableStoreReadWriteBehaviour,
+                      );
+                if (behaviour == null) return null;
+                return MapEntry(e, behaviour);
+              }).whereNotNull(),
+            );
+            print(compiledStoreNames);
+
+            final attribution = RichAttributionWidget(
+              alignment: AttributionAlignment.bottomLeft,
+              popupInitialDisplayDuration: const Duration(seconds: 3),
+              popupBorderRadius: BorderRadius.circular(12),
+              attributions: [
+                TextSourceAttribution(Uri.parse(urlTemplate).host),
+                const TextSourceAttribution(
+                  'For demonstration purposes only',
+                  prependCopyright: false,
+                  textStyle: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const TextSourceAttribution(
+                  'Offline mapping made with FMTC',
+                  prependCopyright: false,
+                  textStyle: TextStyle(fontStyle: FontStyle.italic),
+                ),
+                LogoSourceAttribution(
+                  Image.asset('assets/icons/ProjectIcon.png'),
+                  tooltip: 'flutter_map_tile_caching',
+                ),
+              ],
+            );
+
+            final map = FlutterMap(
+              mapController: _mapController.mapController,
+              options: mapOptions,
+              children: [
+                TileLayer(
                   urlTemplate: urlTemplate,
                   userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
                   maxNativeZoom: 20,
-                  tileProvider: const FMTCStore('Test Store').getTileProvider(
-                    settings: FMTCTileProviderSettings(
-                      behavior: CacheBehavior.values.byName(
-                        metadata.data![StoreMetadataKeys.behaviour.key]!,
+                  tileProvider: compiledStoreNames.isEmpty
+                      ? NetworkTileProvider()
+                      : FMTCTileProvider.multipleStores(
+                          storeNames: compiledStoreNames,
+                          settings: FMTCTileProviderSettings(
+                            behavior: provider.cacheBehavior,
+                            recordHitsAndMisses: false,
+                          ),
+                          tileLoadingDebugger: _tileLoadingDebugger,
+                        ),
+                  tileBuilder: !provider.displayDebugOverlay
+                      ? null
+                      : (context, tileWidget, tile) => DebuggingTileBuilder(
+                            tileLoadingDebugger: _tileLoadingDebugger,
+                            tileWidget: tileWidget,
+                            tile: tile,
+                            usingFMTC: compiledStoreNames.isNotEmpty,
+                          ),
+                ),
+                if (widget.mode == MapViewMode.regionSelect) ...[
+                  const RegionShape(),
+                  const CustomPolygonSnappingIndicator(),
+                ],
+                if (widget.bottomPaddingWrapperBuilder != null)
+                  Builder(
+                    builder: (context) => widget.bottomPaddingWrapperBuilder!(
+                      context,
+                      attribution,
+                    ),
+                  )
+                else
+                  attribution,
+              ],
+            );
+
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final double sidePanelLeft =
+                    switch ((widget.layoutDirection, widget.mode)) {
+                  (Axis.vertical, _) => 0,
+                  (Axis.horizontal, MapViewMode.regionSelect) => 0,
+                  (Axis.horizontal, MapViewMode.standard) => -85,
+                };
+                final double sidePanelBottom =
+                    switch ((widget.layoutDirection, widget.mode)) {
+                  (Axis.horizontal, _) => 0,
+                  (Axis.vertical, MapViewMode.regionSelect) => 0,
+                  (Axis.vertical, MapViewMode.standard) => -85,
+                };
+
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    MouseRegion(
+                      opaque: false,
+                      cursor: widget.mode == MapViewMode.standard ||
+                              context.select<RegionSelectionProvider,
+                                      RegionSelectionMethod>(
+                                    (p) => p.regionSelectionMethod,
+                                  ) ==
+                                  RegionSelectionMethod.useMapCenter
+                          ? MouseCursor.defer
+                          : context.select<RegionSelectionProvider, bool>(
+                              (p) => p.customPolygonSnap,
+                            )
+                              ? SystemMouseCursors.none
+                              : SystemMouseCursors.precise,
+                      child: map,
+                    ),
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                      left: sidePanelLeft,
+                      bottom: sidePanelBottom,
+                      child: SizedBox(
+                        height: widget.layoutDirection == Axis.horizontal
+                            ? constraints.maxHeight
+                            : null,
+                        width: widget.layoutDirection == Axis.horizontal
+                            ? null
+                            : constraints.maxWidth,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: RegionSelectionSidePanel(
+                            layoutDirection: widget.layoutDirection,
+                            bottomPaddingWrapperBuilder:
+                                widget.bottomPaddingWrapperBuilder,
+                          ),
+                        ),
                       ),
                     ),
-                    tileLoadingDebugger: tileLoadingDebugger,
-                  ),
-                  /*currentStores.isNotEmpty
-                      ? FMTCStore(currentStores.first).getTileProvider(
-                          settings: FMTCTileProviderSettings(
-                            behavior: CacheBehavior.values
-                                .byName(metadata.data!['behaviour']!),
-                            cachedValidDuration: int.parse(
-                                      metadata.data!['validDuration']!,
-                                    ) ==
-                                    0
-                                ? Duration.zero
-                                : Duration(
-                                    days: int.parse(
-                                      metadata.data!['validDuration']!,
-                                    ),
-                                  ),
-                            /*maxStoreLength:
-                                     int.parse(metadata.data!['maxLength']!),*/
-                          ),
-                          tileLoadingDebugger: tileLoadingDebugger,
-                        )
-                      : NetworkTileProvider(),*/
-                  tileBuilder: (context, tileWidget, tile) =>
-                      DebuggingTileBuilder(
-                    tileLoadingDebugger: tileLoadingDebugger,
-                    tileWidget: tileWidget,
-                    tile: tile,
-                  ),
+                    if (widget.mode == MapViewMode.regionSelect &&
+                        context.select<RegionSelectionProvider,
+                                RegionSelectionMethod>(
+                              (p) => p.regionSelectionMethod,
+                            ) ==
+                            RegionSelectionMethod.useMapCenter &&
+                        !context.select<RegionSelectionProvider, bool>(
+                          (p) => p.customPolygonSnap,
+                        ))
+                      const Center(child: Crosshairs()),
+                  ],
                 );
               },
-            ),
-            if (widget.mode == MapViewMode.regionSelect) ...[
-              const RegionShape(),
-              const CustomPolygonSnappingIndicator(),
-            ],
-            if (widget.bottomPaddingWrapperBuilder != null)
-              Builder(
-                builder: (context) => widget.bottomPaddingWrapperBuilder!(
-                  context,
-                  _attributionLayer,
-                ),
-              )
-            else
-              _attributionLayer,
-          ],
-        );
-
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final double sidePanelLeft =
-                switch ((widget.layoutDirection, widget.mode)) {
-              (Axis.vertical, _) => 0,
-              (Axis.horizontal, MapViewMode.regionSelect) => 0,
-              (Axis.horizontal, MapViewMode.standard) => -85,
-            };
-            final double sidePanelBottom =
-                switch ((widget.layoutDirection, widget.mode)) {
-              (Axis.horizontal, _) => 0,
-              (Axis.vertical, MapViewMode.regionSelect) => 0,
-              (Axis.vertical, MapViewMode.standard) => -85,
-            };
-
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                MouseRegion(
-                  opaque: false,
-                  cursor: widget.mode == MapViewMode.standard ||
-                          context.select<RegionSelectionProvider,
-                                  RegionSelectionMethod>(
-                                (p) => p.regionSelectionMethod,
-                              ) ==
-                              RegionSelectionMethod.useMapCenter
-                      ? MouseCursor.defer
-                      : context.select<RegionSelectionProvider, bool>(
-                          (p) => p.customPolygonSnap,
-                        )
-                          ? SystemMouseCursors.none
-                          : SystemMouseCursors.precise,
-                  child: map,
-                ),
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeInOut,
-                  left: sidePanelLeft,
-                  bottom: sidePanelBottom,
-                  child: SizedBox(
-                    height: widget.layoutDirection == Axis.horizontal
-                        ? constraints.maxHeight
-                        : null,
-                    width: widget.layoutDirection == Axis.horizontal
-                        ? null
-                        : constraints.maxWidth,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: RegionSelectionSidePanel(
-                        layoutDirection: widget.layoutDirection,
-                        bottomPaddingWrapperBuilder:
-                            widget.bottomPaddingWrapperBuilder,
-                      ),
-                    ),
-                  ),
-                ),
-                if (widget.mode == MapViewMode.regionSelect &&
-                    context.select<RegionSelectionProvider,
-                            RegionSelectionMethod>(
-                          (p) => p.regionSelectionMethod,
-                        ) ==
-                        RegionSelectionMethod.useMapCenter &&
-                    !context.select<RegionSelectionProvider, bool>(
-                      (p) => p.customPolygonSnap,
-                    ))
-                  const Center(child: Crosshairs()),
-              ],
             );
           },
         );

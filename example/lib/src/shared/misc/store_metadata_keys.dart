@@ -1,6 +1,5 @@
 enum StoreMetadataKeys {
-  urlTemplate('sourceURL'),
-  behaviour('behaviour');
+  urlTemplate('sourceURL');
 
   const StoreMetadataKeys(this.key);
   final String key;

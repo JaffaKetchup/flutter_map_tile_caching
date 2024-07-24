@@ -14,11 +14,15 @@ class URLSelector extends StatefulWidget {
     this.initialValue,
     this.onSelected,
     this.helperText,
+    this.onFocus,
+    this.onUnfocus,
   });
 
   final String? initialValue;
   final void Function(String)? onSelected;
   final String? helperText;
+  final void Function()? onFocus;
+  final void Function()? onUnfocus;
 
   @override
   State<URLSelector> createState() => _URLSelectorState();
@@ -46,17 +50,31 @@ class _URLSelectorState extends State<URLSelector> {
   Map<String, List<String>> enableButtonEvaluatorMap = {};
   final enableAddUrlButton = ValueNotifier<bool>(false);
 
+  late final dropdownMenuFocusNode =
+      widget.onFocus != null || widget.onUnfocus != null ? FocusNode() : null;
+
   @override
   void initState() {
     super.initState();
     urlTextController.addListener(_urlTextControllerListener);
+    dropdownMenuFocusNode?.addListener(_dropdownMenuFocusListener);
   }
 
   @override
   void dispose() {
     urlTextController.removeListener(_urlTextControllerListener);
+    dropdownMenuFocusNode?.removeListener(_dropdownMenuFocusListener);
     selectableEntriesManualRefreshStream.close();
     super.dispose();
+  }
+
+  void _dropdownMenuFocusListener() {
+    if (widget.onFocus != null && dropdownMenuFocusNode!.hasFocus) {
+      widget.onFocus!();
+    }
+    if (widget.onUnfocus != null && !dropdownMenuFocusNode!.hasFocus) {
+      widget.onUnfocus!();
+    }
   }
 
   void _urlTextControllerListener() {
@@ -103,6 +121,7 @@ class _URLSelectorState extends State<URLSelector> {
                       onSelected: _onSelected,
                       helperText: 'Use standard placeholders & include protocol'
                           '${widget.helperText != null ? '\n${widget.helperText}' : ''}',
+                      focusNode: dropdownMenuFocusNode,
                     ),
                   ),
                   Padding(
@@ -136,6 +155,7 @@ class _URLSelectorState extends State<URLSelector> {
     }
 
     widget.onSelected!(v ?? urlTextController.text);
+    dropdownMenuFocusNode?.unfocus();
   }
 
   Future<Map<String, List<String>>> _constructTemplatesToStoresStream(

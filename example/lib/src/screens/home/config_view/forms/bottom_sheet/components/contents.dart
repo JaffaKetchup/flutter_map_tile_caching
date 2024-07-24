@@ -51,16 +51,16 @@ class _ContentPanelsState extends State<_ContentPanels> {
           bottomSheetOuterController: widget.bottomSheetOuterController,
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 6)),
-        const SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          sliver: SliverToBoxAdapter(child: ConfigPanelBehaviour()),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverToBoxAdapter(
+            child: ConfigPanelMap(
+              bottomSheetOuterController: widget.bottomSheetOuterController,
+            ),
+          ),
         ),
-        const SliverToBoxAdapter(child: Divider()),
-        const SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          sliver: SliverToBoxAdapter(child: ConfigPanelMap()),
-        ),
-        const SliverToBoxAdapter(child: Divider()),
+        const SliverToBoxAdapter(child: Divider(height: 24)),
+        const SliverToBoxAdapter(child: SizedBox(height: 6)),
         const ConfigPanelStoresSliver(),
       ],
     );

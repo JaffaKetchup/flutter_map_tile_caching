@@ -8,11 +8,13 @@ class DebuggingTileBuilder extends StatelessWidget {
     required this.tileWidget,
     required this.tile,
     required this.tileLoadingDebugger,
+    required this.usingFMTC,
   });
 
   final Widget tileWidget;
   final TileImage tile;
   final ValueNotifier<TileLoadingDebugMap> tileLoadingDebugger;
+  final bool usingFMTC;
 
   @override
   Widget build(BuildContext context) => Stack(
@@ -30,92 +32,108 @@ class DebuggingTileBuilder extends StatelessWidget {
             position: DecorationPosition.foreground,
             child: tileWidget,
           ),
-          ValueListenableBuilder(
-            valueListenable: tileLoadingDebugger,
-            builder: (context, value, _) {
-              final info = value[tile.coordinates];
+          if (!usingFMTC)
+            const OverflowBox(
+              child: Padding(
+                padding: EdgeInsets.all(6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.disabled_by_default_rounded,
+                      size: 32,
+                    ),
+                    SizedBox(height: 6),
+                    Text('FMTC not in use'),
+                  ],
+                ),
+              ),
+            )
+          else
+            ValueListenableBuilder(
+              valueListenable: tileLoadingDebugger,
+              builder: (context, value, _) {
+                final info = value[tile.coordinates];
 
-              if (info == null) {
-                return const Center(
-                  child: CircularProgressIndicator.adaptive(),
-                );
-              }
+                if (info == null) {
+                  return const Center(
+                    child: CircularProgressIndicator.adaptive(),
+                  );
+                }
 
-              return OverflowBox(
-                child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'x${tile.coordinates.x} y${tile.coordinates.y} '
-                        'z${tile.coordinates.z}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      if (info.error case final error?)
+                return OverflowBox(
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
                         Text(
-                          error is FMTCBrowsingError
-                              ? error.type.name
-                              : 'Unknown error',
+                          'x${tile.coordinates.x} y${tile.coordinates.y} '
+                          'z${tile.coordinates.z}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                           textAlign: TextAlign.center,
                         ),
-                      if (info.result case final result?) ...[
-                        Text(
-                          "'${result.name}' in "
-                          '${tile.loadFinishedAt == null || tile.loadStarted == null ? 'Loading...' : '${tile.loadFinishedAt!.difference(tile.loadStarted!).inMilliseconds} ms'}\n',
-                          textAlign: TextAlign.center,
-                        ),
-                        if (info.existingStores case final existingStores?)
+                        if (info.error case final error?)
                           Text(
-                            "Existed in: '${existingStores.join("', '")}'",
-                            textAlign: TextAlign.center,
-                          )
-                        else
-                          const Text(
-                            'New tile',
+                            error is FMTCBrowsingError
+                                ? error.type.name
+                                : 'Unknown error',
                             textAlign: TextAlign.center,
                           ),
-                        if (info.writeResult case final writeResult?)
-                          FutureBuilder(
-                            future: writeResult,
-                            builder: (context, snapshot) {
-                              if (snapshot.data == null) {
-                                return const Text('Caching tile...');
-                              }
-                              return TextButton(
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 2,
-                                  ),
-                                  visualDensity: VisualDensity.compact,
-                                  minimumSize: Size.zero,
-                                ),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) =>
-                                        _TileWriteResultsDialog(
-                                      results: snapshot.data!,
+                        if (info.result case final result?) ...[
+                          Text(
+                            "'${result.name}' in "
+                            '${tile.loadFinishedAt == null || tile.loadStarted == null ? 'Loading...' : '${tile.loadFinishedAt!.difference(tile.loadStarted!).inMilliseconds} ms'}\n',
+                            textAlign: TextAlign.center,
+                          ),
+                          if (info.existingStores case final existingStores?)
+                            Text(
+                              "Existed in: '${existingStores.join("', '")}'",
+                              textAlign: TextAlign.center,
+                            )
+                          else
+                            const Text(
+                              'New tile',
+                              textAlign: TextAlign.center,
+                            ),
+                          if (info.writeResult case final writeResult?)
+                            FutureBuilder(
+                              future: writeResult,
+                              builder: (context, snapshot) {
+                                if (snapshot.data == null) {
+                                  return const Text('Caching tile...');
+                                }
+                                return TextButton(
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 2,
                                     ),
-                                  );
-                                },
-                                child: const Text('View write result'),
-                              );
-                            },
-                          )
-                        else
-                          const Text('No write necessary'),
+                                    visualDensity: VisualDensity.compact,
+                                    minimumSize: Size.zero,
+                                  ),
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) =>
+                                          _TileWriteResultsDialog(
+                                        results: snapshot.data!,
+                                      ),
+                                    );
+                                  },
+                                  child: const Text('View write result'),
+                                );
+                              },
+                            )
+                          else
+                            const Text('No write necessary'),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
+                );
+              },
+            ),
         ],
       );
 }

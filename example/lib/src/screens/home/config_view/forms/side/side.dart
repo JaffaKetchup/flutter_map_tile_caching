@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../panels/behaviour/behaviour.dart';
 import '../../panels/map/map.dart';
 import '../../panels/stores/stores.dart';
 
@@ -62,16 +61,6 @@ class _ContentPanels extends StatelessWidget {
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: Theme.of(context).colorScheme.surface,
-                ),
-                padding: const EdgeInsets.all(16),
-                width: double.infinity,
-                child: const ConfigPanelBehaviour(),
               ),
               const SizedBox(height: 16),
               Container(

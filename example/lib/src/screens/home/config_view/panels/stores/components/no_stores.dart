@@ -30,6 +30,7 @@ class NoStores extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
+                  height: 42,
                   width: double.infinity,
                   child: FilledButton.icon(
                     onPressed: () =>
@@ -40,12 +41,23 @@ class NoStores extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 SizedBox(
+                  height: 42,
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () {},
                     icon: const Icon(Icons.file_open),
                     label: const Text('Import a store'),
                   ),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Within the example app, for simplicity, each store contains '
+                  'tiles from a single URL template. This is not a limitation '
+                  'with FMTC.\nAdditionally, FMTC supports changing the '
+                  'read/write behaviour for all unspecified stores, but this '
+                  'is not represented wihtin this app.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelSmall,
                 ),
               ],
             ),

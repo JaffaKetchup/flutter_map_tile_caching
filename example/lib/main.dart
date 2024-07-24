@@ -29,7 +29,6 @@ void main() async {
     kvs: {
       StoreMetadataKeys.urlTemplate.key:
           'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      StoreMetadataKeys.behaviour.key: CacheBehavior.cacheFirst.name,
     },
   );
 

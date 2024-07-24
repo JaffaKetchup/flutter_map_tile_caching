@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
@@ -6,8 +8,9 @@ import '../../../../../../shared/misc/exts/size_formatter.dart';
 import '../../../../../../shared/misc/store_metadata_keys.dart';
 import '../../../../../../shared/state/general_provider.dart';
 import '../../../../../store_editor/store_editor.dart';
+import 'store_read_write_behaviour_selector.dart';
 
-class StoreTile extends StatelessWidget {
+class StoreTile extends StatefulWidget {
   const StoreTile({
     super.key,
     required this.store,
@@ -22,128 +25,212 @@ class StoreTile extends StatelessWidget {
   final Future<Image?> tileImage;
 
   @override
+  State<StoreTile> createState() => _StoreTileState();
+}
+
+class _StoreTileState extends State<StoreTile> {
+  bool _toolsVisible = false;
+  bool _toolsEmptyLoading = false;
+  bool _toolsDeleteLoading = false;
+  Timer? _toolsAutoHiderTimer;
+
+  @override
   Widget build(BuildContext context) => Material(
         color: Colors.transparent,
         child: Consumer<GeneralProvider>(
-          builder: (context, provider, _) {
-            final isSelected =
-                provider.currentStores.contains(store.storeName) &&
-                    provider.storesSelectionMode == false;
+          builder: (context, provider, _) => FutureBuilder(
+            future: widget.metadata,
+            builder: (context, metadataSnapshot) {
+              final matchesUrl = metadataSnapshot.data != null &&
+                  provider.urlTemplate ==
+                      metadataSnapshot.data![StoreMetadataKeys.urlTemplate.key];
 
-            return FutureBuilder(
-              future: metadata,
-              builder: (context, metadataSnapshot) {
-                final matchesUrl = metadataSnapshot.data == null
-                    ? null
-                    : provider.urlTemplate ==
-                        metadataSnapshot
-                            .data![StoreMetadataKeys.urlTemplate.key];
-
-                final inUse = provider.storesSelectionMode != null &&
-                    (matchesUrl ?? false) &&
-                    (provider.storesSelectionMode! || isSelected);
-
-                return ListTile(
-                  title: Text(store.storeName),
-                  enabled: (provider.storesSelectionMode ?? true) ||
-                      (matchesUrl ?? false),
-                  subtitle: FutureBuilder(
-                    future: stats,
-                    builder: (context, statsSnapshot) {
-                      if (statsSnapshot.data case final stats?) {
-                        final statsPart =
-                            '${stats.size.asReadableSize} | ${stats.length} tiles';
-
-                        final usagePart = provider.storesSelectionMode == null
-                            ? ''
-                            : (matchesUrl ?? false)
-                                ? (provider.storesSelectionMode ?? true) ||
-                                        isSelected
-                                    ? '\nIn use'
-                                    : '\nNot in use'
-                                : '\nSource mismatch';
-
-                        return Text(statsPart + usagePart);
-                      }
-
-                      return const Text('Loading stats...\nLoading usage...');
-                    },
-                  ),
-                  leading: SizedBox.square(
-                    dimension: 56,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      alignment: Alignment.center,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: FutureBuilder(
-                            future: tileImage,
-                            builder: (context, snapshot) {
-                              if (snapshot.data case final data?) return data;
-                              return const Icon(Icons.filter_none);
-                            },
+              final toolsChildren = _toolsDeleteLoading
+                  ? [
+                      const Center(
+                        child: SizedBox.square(
+                          dimension: 25,
+                          child: Center(
+                            child: CircularProgressIndicator.adaptive(),
                           ),
                         ),
-                        Center(
+                      ),
+                    ]
+                  : [
+                      IconButton(
+                        onPressed: _editStore,
+                        icon: const Icon(Icons.edit),
+                      ),
+                      if (_toolsEmptyLoading)
+                        const Center(
                           child: SizedBox.square(
-                            dimension: 24,
-                            child: AnimatedOpacity(
-                              opacity: inUse ? 1 : 0,
-                              duration: const Duration(milliseconds: 100),
-                              curve: inUse ? Curves.easeIn : Curves.easeOut,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(99),
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 20,
+                            dimension: 25,
+                            child: Center(
+                              child: CircularProgressIndicator.adaptive(),
+                            ),
+                          ),
+                        )
+                      else
+                        IconButton(
+                          onPressed: _emptyStore,
+                          icon: const Icon(Icons.delete),
+                        ),
+                      IconButton(
+                        onPressed: _deleteStore,
+                        icon: const Icon(
+                          Icons.delete_forever,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ];
+
+              return InkWell(
+                onSecondaryTap: _showTools,
+                child: ListTile(
+                  title: Text(
+                    widget.store.storeName,
+                    maxLines: 1,
+                    overflow: TextOverflow.fade,
+                    softWrap: false,
+                  ),
+                  subtitle: FutureBuilder(
+                    future: widget.stats,
+                    builder: (context, statsSnapshot) {
+                      if (statsSnapshot.data case final stats?) {
+                        return Text(
+                          '${(stats.size * 1024).asReadableSize} | '
+                          '${stats.length} tiles',
+                        );
+                      }
+                      return const Text('Loading stats...');
+                    },
+                  ),
+                  leading: AspectRatio(
+                    aspectRatio: 1,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: FutureBuilder(
+                        future: widget.tileImage,
+                        builder: (context, snapshot) {
+                          if (snapshot.data case final data?) return data;
+                          return const Icon(Icons.filter_none);
+                        },
+                      ),
+                    ),
+                  ),
+                  trailing: IntrinsicWidth(
+                    child: IntrinsicHeight(
+                      child: Stack(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            child: StoreReadWriteBehaviourSelector(
+                              storeName: widget.store.storeName,
+                              enabled: matchesUrl,
+                            ),
+                          ),
+                          AnimatedOpacity(
+                            opacity: matchesUrl ? 0 : 1,
+                            duration: const Duration(milliseconds: 100),
+                            curve: Curves.easeInOut,
+                            child: IgnorePointer(
+                              ignoring: matchesUrl,
+                              child: SizedBox.expand(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .error
+                                        .withOpacity(0.75),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      Icon(Icons.link_off, color: Colors.white),
+                                      Text(
+                                        'URL mismatch',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                          AnimatedOpacity(
+                            opacity: _toolsVisible ? 1 : 0,
+                            duration: const Duration(milliseconds: 100),
+                            curve: Curves.easeInOut,
+                            child: IgnorePointer(
+                              ignoring: !_toolsVisible,
+                              child: SizedBox.expand(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceDim,
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: toolsChildren,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () {},
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => Navigator.of(context).pushNamed(
-                          StoreEditorPopup.route,
-                          arguments: store.storeName,
-                        ),
-                      ),
-                    ],
-                  ),
-                  onTap: provider.storesSelectionMode == false
-                      ? () {
-                          if (isSelected) {
-                            context
-                                .read<GeneralProvider>()
-                                .removeStore(store.storeName);
-                          } else {
-                            context
-                                .read<GeneralProvider>()
-                                .addStore(store.storeName);
-                          }
-                        }
-                      : null,
-                );
-              },
-            );
-          },
+                  onLongPress: _showTools,
+                  onTap: _hideTools,
+                ),
+              );
+            },
+          ),
         ),
       );
+
+  Future<void> _editStore() async {
+    await Navigator.of(context).pushNamed(
+      StoreEditorPopup.route,
+      arguments: widget.store.storeName,
+    );
+    await _hideTools();
+  }
+
+  Future<void> _emptyStore() async {
+    _toolsAutoHiderTimer?.cancel();
+    setState(() => _toolsEmptyLoading = true);
+    await widget.store.manage.reset();
+    await _hideTools();
+    setState(() => _toolsEmptyLoading = false);
+  }
+
+  Future<void> _deleteStore() async {
+    _toolsAutoHiderTimer?.cancel();
+    setState(() => _toolsDeleteLoading = true);
+    await widget.store.manage.delete();
+  }
+
+  Future<void> _hideTools() async {
+    setState(() => _toolsVisible = false);
+    return Future.delayed(const Duration(milliseconds: 110));
+  }
+
+  void _showTools() {
+    setState(() => _toolsVisible = true);
+    _toolsAutoHiderTimer = Timer(const Duration(seconds: 5), _hideTools);
+  }
 }

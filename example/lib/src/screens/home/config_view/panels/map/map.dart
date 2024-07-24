@@ -3,22 +3,76 @@ import 'package:provider/provider.dart';
 
 import '../../../../../shared/components/url_selector.dart';
 import '../../../../../shared/state/general_provider.dart';
+import '../../forms/bottom_sheet/components/scrollable_provider.dart';
+import '../behaviour/behaviour.dart';
 
-class ConfigPanelMap extends StatelessWidget {
+class ConfigPanelMap extends StatefulWidget {
   const ConfigPanelMap({
     super.key,
+    this.bottomSheetOuterController,
   });
+
+  final DraggableScrollableController? bottomSheetOuterController;
+
+  @override
+  State<ConfigPanelMap> createState() => _ConfigPanelMapState();
+}
+
+class _ConfigPanelMapState extends State<ConfigPanelMap> {
+  double? _previousBottomSheetOuterHeight;
+  double? _previousBottomSheetInnerHeight;
 
   @override
   Widget build(BuildContext context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          const ConfigPanelBehaviour(),
+          const SizedBox(height: 8),
           URLSelector(
             initialValue: context.select<GeneralProvider, String>(
               (provider) => provider.urlTemplate,
             ),
             onSelected: (urlTemplate) =>
                 context.read<GeneralProvider>().urlTemplate = urlTemplate,
+            onFocus: widget.bottomSheetOuterController != null
+                ? () {
+                    _previousBottomSheetOuterHeight =
+                        widget.bottomSheetOuterController!.size;
+                    _previousBottomSheetInnerHeight =
+                        BottomSheetScrollableProvider.innerScrollControllerOf(
+                      context,
+                    ).offset;
+
+                    widget.bottomSheetOuterController!.animateTo(
+                      1,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                    );
+                    BottomSheetScrollableProvider.innerScrollControllerOf(
+                      context,
+                    ).animateTo(
+                      1,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                : null,
+            onUnfocus: widget.bottomSheetOuterController != null
+                ? () {
+                    widget.bottomSheetOuterController!.animateTo(
+                      _previousBottomSheetOuterHeight ?? 0.3,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                    );
+                    BottomSheetScrollableProvider.innerScrollControllerOf(
+                      context,
+                    ).animateTo(
+                      _previousBottomSheetInnerHeight ?? 0,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                : null,
           ),
           const SizedBox(height: 6),
           Selector<GeneralProvider, bool>(

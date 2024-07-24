@@ -1,15 +1,22 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
+import '../misc/internal_store_read_write_behaviour.dart';
+
 class GeneralProvider extends ChangeNotifier {
-  Set<String> _currentStores = {};
-  Set<String> get currentStores => _currentStores;
-  set currentStores(Set<String> newStores) {
-    _currentStores = newStores;
+  StoreReadWriteBehaviour? _inheritableStoreReadWriteBehaviour =
+      StoreReadWriteBehaviour.readUpdateCreate;
+  StoreReadWriteBehaviour? get inheritableStoreReadWriteBehaviour =>
+      _inheritableStoreReadWriteBehaviour;
+  set inheritableStoreReadWriteBehaviour(
+    StoreReadWriteBehaviour? newBehaviour,
+  ) {
+    _inheritableStoreReadWriteBehaviour = newBehaviour;
     notifyListeners();
   }
+
+  final Map<String, InternalStoreReadWriteBehaviour> currentStores = {};
+  void changedCurrentStores() => notifyListeners();
 
   String _urlTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   String get urlTemplate => _urlTemplate;
@@ -18,29 +25,12 @@ class GeneralProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void removeStore(String store) {
-    _currentStores.remove(store);
-    notifyListeners();
-  }
-
-  void addStore(String store) {
-    _currentStores.add(store);
-    notifyListeners();
-  }
-
-  CacheBehavior _cacheBehavior = CacheBehavior.onlineFirst;
+  CacheBehavior _cacheBehavior = CacheBehavior.cacheFirst;
   CacheBehavior get cacheBehavior => _cacheBehavior;
   set cacheBehavior(CacheBehavior newCacheBehavior) {
     _cacheBehavior = newCacheBehavior;
     notifyListeners();
   }
-
-  /*bool _behaviourUpdateFromNetwork = true;
-  bool get behaviourUpdateFromNetwork => _behaviourUpdateFromNetwork;
-  set behaviourUpdateFromNetwork(bool newBehaviourUpdateFromNetwork) {
-    _behaviourUpdateFromNetwork = newBehaviourUpdateFromNetwork;
-    notifyListeners();
-  }*/
 
   bool _displayDebugOverlay = true;
   bool get displayDebugOverlay => _displayDebugOverlay;
@@ -48,14 +38,4 @@ class GeneralProvider extends ChangeNotifier {
     _displayDebugOverlay = newDisplayDebugOverlay;
     notifyListeners();
   }
-
-  bool? _storesSelectionMode = true;
-  bool? get storesSelectionMode => _storesSelectionMode;
-  set storesSelectionMode(bool? newSelectionMode) {
-    _storesSelectionMode = newSelectionMode;
-    notifyListeners();
-  }
-
-  final StreamController<void> resetController = StreamController.broadcast();
-  void resetMap() => resetController.add(null);
 }
