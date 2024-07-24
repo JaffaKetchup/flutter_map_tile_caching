@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
 import '../../shared/components/url_selector.dart';
+import '../../shared/misc/shared_preferences.dart';
 import '../../shared/misc/store_metadata_keys.dart';
 import '../../shared/state/general_provider.dart';
 
@@ -20,8 +22,12 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
 
   late final String? existingStoreName;
   late final Future<Map<String, String>>? existingMetadata;
-
+  late final Future<int?>? existingMaxLength;
   late final Future<Iterable<String>> existingStores;
+
+  String? newName;
+  String? newUrlTemplate;
+  int? newMaxLength;
 
   @override
   void didChangeDependencies() {
@@ -31,6 +37,9 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
     existingMetadata = existingStoreName == null
         ? null
         : FMTCStore(existingStoreName!).metadata.read;
+    existingMaxLength = existingStoreName == null
+        ? null
+        : FMTCStore(existingStoreName!).manage.maxLength;
 
     existingStores =
         FMTCRoot.stats.storesAvailable.then((l) => l.map((s) => s.storeName));
@@ -71,7 +80,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                                 : input == '(default)' || input == '(custom)'
                                     ? 'Name reserved (in example app)'
                                     : null,
-                        //onSaved: (input) => _newValues['storeName'] = input!,
+                        onSaved: (input) => newName = input,
                         maxLength: 64,
                         autovalidateMode: AutovalidateMode.onUserInteraction,
                         initialValue: existingStoreName,
@@ -89,7 +98,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                         }
 
                         return URLSelector(
-                          onSelected: (_) {},
+                          onSelected: (input) => newUrlTemplate = input,
                           initialValue: snapshot
                                   .data?[StoreMetadataKeys.urlTemplate.key] ??
                               context.select<GeneralProvider, String>(
@@ -100,11 +109,88 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                         );
                       },
                     ),
+                    const SizedBox(height: 6),
+                    FutureBuilder(
+                      future: existingMaxLength,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState != ConnectionState.done &&
+                            existingStoreName != null) {
+                          return const CircularProgressIndicator.adaptive();
+                        }
+
+                        return TextFormField(
+                          decoration: const InputDecoration(
+                            labelText: 'Maximum Length',
+                            helperText: 'Leave empty to disable limit',
+                            suffixText: 'tiles',
+                            prefixIcon: Icon(Icons.disc_full),
+                            hintText: '∞',
+                            filled: true,
+                          ),
+                          validator: (input) {
+                            if ((input?.isNotEmpty ?? false) &&
+                                (int.tryParse(input!) ?? -1) < 0) {
+                              return 'Must be empty, or greater than or equal to 0';
+                            }
+                            return null;
+                          },
+                          onSaved: (input) => newMaxLength =
+                              input == null ? null : int.tryParse(input),
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          initialValue: snapshot.data?.toString(),
+                          textInputAction: TextInputAction.done,
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
             ),
           ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            if (!formKey.currentState!.validate()) return;
+            formKey.currentState!.save();
+
+            if (existingStoreName case final existingStoreName?) {
+              await FMTCStore(existingStoreName).manage.rename(newName!);
+              await FMTCStore(newName!).manage.setMaxLength(newMaxLength);
+              if (newUrlTemplate case final newUrlTemplate?) {
+                await FMTCStore(newName!).metadata.set(
+                      key: StoreMetadataKeys.urlTemplate.key,
+                      value: newUrlTemplate,
+                    );
+              }
+            } else {
+              final urlTemplate =
+                  newUrlTemplate ?? context.read<GeneralProvider>().urlTemplate;
+
+              await FMTCStore(newName!).manage.create(maxLength: newMaxLength);
+              await FMTCStore(newName!).metadata.set(
+                    key: StoreMetadataKeys.urlTemplate.key,
+                    value: urlTemplate,
+                  );
+
+              const sharedPrefsNonStoreUrlsKey = 'customNonStoreUrls';
+              await sharedPrefs.setStringList(
+                sharedPrefsNonStoreUrlsKey,
+                (sharedPrefs.getStringList(sharedPrefsNonStoreUrlsKey) ??
+                    <String>[])
+                  ..remove(urlTemplate),
+              );
+            }
+
+            if (!context.mounted) return;
+            Navigator.of(context).pop();
+          },
+          child: existingStoreName == null
+              ? const Icon(Icons.save)
+              : const Icon(Icons.save_as),
         ),
         /*body: Consumer<GeneralProvider>(
         builder: (context, provider, _) => Padding(

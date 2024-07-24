@@ -45,6 +45,7 @@ class StoreReadWriteBehaviourSelector extends StatelessWidget {
                       }
                     : null,
                 materialTapTargetSize: MaterialTapTargetSize.padded,
+                visualDensity: VisualDensity.comfortable,
               ),
               const VerticalDivider(width: 2),
               ...StoreReadWriteBehavior.values.map(
@@ -116,5 +117,6 @@ class _StoreReadWriteBehaviourSelectorCheckbox extends StatelessWidget {
             : null,
         tristate: true,
         materialTapTargetSize: MaterialTapTargetSize.padded,
+        visualDensity: VisualDensity.comfortable,
       );
 }

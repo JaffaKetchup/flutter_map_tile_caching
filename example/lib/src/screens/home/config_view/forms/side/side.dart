@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../panels/map/map.dart';
-import '../../panels/stores/stores.dart';
+import '../../panels/stores/stores_list.dart';
 
 class ConfigViewSide extends StatelessWidget {
   const ConfigViewSide({
@@ -34,7 +34,7 @@ class _ContentPanels extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(right: 16, top: 16),
         child: SizedBox(
-          width: 450,
+          width: 500,
           child: Column(
             children: [
               DecoratedBox(
@@ -86,8 +86,9 @@ class _ContentPanels extends StatelessWidget {
                     slivers: [
                       SliverPadding(
                         padding: EdgeInsets.only(top: 16),
-                        sliver: ConfigPanelStoresSliver(),
+                        sliver: StoresList(),
                       ),
+                      SliverToBoxAdapter(child: SizedBox(height: 16)),
                     ],
                   ),
                 ),

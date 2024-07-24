@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
-import 'new_store_button.dart';
-import 'no_stores.dart';
-import 'store_tile.dart';
+import 'components/column_headers_and_inheritable_settings.dart';
+import 'components/new_store_button.dart';
+import 'components/no_stores.dart';
+import 'components/store_tile.dart';
 
 class StoresList extends StatefulWidget {
   const StoresList({
@@ -48,14 +49,19 @@ class _StoresListState extends State<StoresList> {
           if (stores.isEmpty) return const NoStores();
 
           return SliverList.separated(
-            itemCount: stores.length + 1,
+            itemCount: stores.length + 2,
             itemBuilder: (context, index) {
-              if (index == stores.length) return const NewStoreButton();
+              if (index == 0) {
+                return const ColumnHeadersAndInheritableSettings();
+              }
+              if (index - 1 == stores.length) {
+                return const NewStoreButton();
+              }
 
-              final store = stores.keys.elementAt(index);
-              final stats = stores.values.elementAt(index).stats;
-              final metadata = stores.values.elementAt(index).metadata;
-              final tileImage = stores.values.elementAt(index).tileImage;
+              final store = stores.keys.elementAt(index - 1);
+              final stats = stores.values.elementAt(index - 1).stats;
+              final metadata = stores.values.elementAt(index - 1).metadata;
+              final tileImage = stores.values.elementAt(index - 1).tileImage;
 
               return StoreTile(
                 store: store,
@@ -64,7 +70,7 @@ class _StoresListState extends State<StoresList> {
                 tileImage: tileImage,
               );
             },
-            separatorBuilder: (context, index) => index == stores.length - 1
+            separatorBuilder: (context, index) => index - 1 == stores.length - 1
                 ? const Divider()
                 : const SizedBox.shrink(),
           );

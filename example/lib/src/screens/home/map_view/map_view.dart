@@ -243,7 +243,6 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                 return MapEntry(e, behaviour);
               }).whereNotNull(),
             );
-            print(compiledStoreNames);
 
             final attribution = RichAttributionWidget(
               alignment: AttributionAlignment.bottomLeft,

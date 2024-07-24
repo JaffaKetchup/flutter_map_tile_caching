@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../shared/components/delayed_frame_attached_dependent_builder.dart';
 import '../../panels/map/map.dart';
-import '../../panels/stores/stores.dart';
+import '../../panels/stores/stores_list.dart';
 import 'components/scrollable_provider.dart';
 import 'components/tab_header.dart';
 

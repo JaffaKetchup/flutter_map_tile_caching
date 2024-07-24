@@ -135,7 +135,7 @@ class _StoreTileState extends State<StoreTile> {
                           ),
                           AnimatedOpacity(
                             opacity: matchesUrl ? 0 : 1,
-                            duration: const Duration(milliseconds: 100),
+                            duration: const Duration(milliseconds: 150),
                             curve: Curves.easeInOut,
                             child: IgnorePointer(
                               ignoring: matchesUrl,
@@ -168,7 +168,7 @@ class _StoreTileState extends State<StoreTile> {
                           ),
                           AnimatedOpacity(
                             opacity: _toolsVisible ? 1 : 0,
-                            duration: const Duration(milliseconds: 100),
+                            duration: const Duration(milliseconds: 150),
                             curve: Curves.easeInOut,
                             child: IgnorePointer(
                               ignoring: !_toolsVisible,
@@ -226,7 +226,8 @@ class _StoreTileState extends State<StoreTile> {
 
   Future<void> _hideTools() async {
     setState(() => _toolsVisible = false);
-    return Future.delayed(const Duration(milliseconds: 110));
+    _toolsAutoHiderTimer?.cancel();
+    return Future.delayed(const Duration(milliseconds: 150));
   }
 
   void _showTools() {
