@@ -7,9 +7,11 @@ class ConfigViewSide extends StatelessWidget {
   const ConfigViewSide({
     super.key,
     required this.selectedTab,
+    required this.constraints,
   });
 
   final int selectedTab;
+  final BoxConstraints constraints;
 
   @override
   Widget build(BuildContext context) => AnimatedSwitcher(
@@ -22,19 +24,22 @@ class ConfigViewSide extends StatelessWidget {
           sizeFactor: animation,
           child: child,
         ),
-        child:
-            selectedTab == 0 ? const _ContentPanels() : const SizedBox.shrink(),
+        child: selectedTab == 0
+            ? _ContentPanels(constraints)
+            : const SizedBox.shrink(),
       );
 }
 
 class _ContentPanels extends StatelessWidget {
-  const _ContentPanels();
+  const _ContentPanels(this.constraints);
+
+  final BoxConstraints constraints;
 
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(right: 16, top: 16),
         child: SizedBox(
-          width: 500,
+          width: (constraints.maxWidth / 3).clamp(430, 530),
           child: Column(
             children: [
               DecoratedBox(

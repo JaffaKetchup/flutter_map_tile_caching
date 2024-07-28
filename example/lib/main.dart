@@ -9,7 +9,6 @@ import 'src/screens/home/map_view/state/region_selection_provider.dart';
 import 'src/screens/initialisation_error/initialisation_error.dart';
 import 'src/screens/store_editor/store_editor.dart';
 import 'src/shared/misc/shared_preferences.dart';
-import 'src/shared/misc/store_metadata_keys.dart';
 import 'src/shared/state/general_provider.dart';
 
 void main() async {
@@ -23,14 +22,6 @@ void main() async {
   } catch (err) {
     initErr = err;
   }
-
-  await const FMTCStore('Test Store').manage.create();
-  await const FMTCStore('Test Store').metadata.setBulk(
-    kvs: {
-      StoreMetadataKeys.urlTemplate.key:
-          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    },
-  );
 
   runApp(_AppContainer(initialisationError: initErr));
 }
@@ -59,14 +50,7 @@ class _AppContainer extends StatelessWidget {
             fullscreenDialog: true,
           ),
     ),
-    /*ManageOfflineScreen.route: (
-      std: (BuildContext context) => ManageOfflineScreen(),
-      custom: null,
-    ),
-    RegionSelectionScreen.route: (
-      std: (BuildContext context) => const RegionSelectionScreen(),
-      custom: null,
-    ),
+    /*
     ProfileScreen.route: (
       std: (BuildContext context) => const ProfileScreen(),
       custom: ({

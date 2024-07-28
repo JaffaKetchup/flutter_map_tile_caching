@@ -113,57 +113,62 @@ class _HomeScreenState extends State<HomeScreen> {
             ).lerp(colorAnimation),
             body: child,
           ),
-          child: Row(
-            children: [
-              NavigationRail(
-                backgroundColor: Colors.transparent,
-                destinations: const [
-                  NavigationRailDestination(
-                    icon: Icon(Icons.map_outlined),
-                    selectedIcon: Icon(Icons.map),
-                    label: Text('Map'),
+          child: LayoutBuilder(
+            builder: (context, constraints) => Row(
+              children: [
+                NavigationRail(
+                  backgroundColor: Colors.transparent,
+                  destinations: const [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.map_outlined),
+                      selectedIcon: Icon(Icons.map),
+                      label: Text('Map'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.download_outlined),
+                      selectedIcon: Icon(Icons.download),
+                      label: Text('Download'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.support_outlined),
+                      selectedIcon: Icon(Icons.support),
+                      label: Text('Recovery'),
+                    ),
+                  ],
+                  selectedIndex: selectedTab,
+                  labelType: NavigationRailLabelType.all,
+                  leading: Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 16),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        'assets/icons/ProjectIcon.png',
+                        width: 54,
+                        height: 54,
+                        filterQuality: FilterQuality.high,
+                      ),
+                    ),
                   ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.download_outlined),
-                    selectedIcon: Icon(Icons.download),
-                    label: Text('Download'),
-                  ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.support_outlined),
-                    selectedIcon: Icon(Icons.support),
-                    label: Text('Recovery'),
-                  ),
-                ],
-                selectedIndex: selectedTab,
-                labelType: NavigationRailLabelType.all,
-                leading: Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 16),
+                  onDestinationSelected: (i) => setState(() => selectedTab = i),
+                ),
+                ConfigViewSide(
+                  selectedTab: selectedTab,
+                  constraints: constraints,
+                ),
+                Expanded(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      'assets/icons/ProjectIcon.png',
-                      width: 54,
-                      height: 54,
-                      filterQuality: FilterQuality.high,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
+                    ),
+                    child: MapView(
+                      mode: mapMode,
+                      layoutDirection: layoutDirection,
                     ),
                   ),
                 ),
-                onDestinationSelected: (i) => setState(() => selectedTab = i),
-              ),
-              ConfigViewSide(selectedTab: selectedTab),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
-                  child: MapView(
-                    mode: mapMode,
-                    layoutDirection: layoutDirection,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
