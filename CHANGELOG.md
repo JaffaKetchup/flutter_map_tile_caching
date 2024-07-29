@@ -21,24 +21,26 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 ## [10.0.0] - 2024/XX/XX
 
 This update builds on v9 to fully embrace the new many-to-many relationship between tiles and stores, which allows for more flexibility when constructing the `FMTCTileProvider`.  
-This allows a new paradigm to be used: stores may now be treated as bulk downloaded regions, and all the regions/stores can be used at once - no more switching between them. This allows huge amounts of flexibility and a better UX in a complex application.
+This allows a new paradigm to be used: stores may now be treated as bulk downloaded regions, and all the regions/stores can be used at once - no more switching between them. This allows huge amounts of flexibility and a better UX in a complex application. Additionally, each store may now have its own `StoreReadWriteBehavior` when browsing, which allows more flexibility: for example, stores may now contain more than one URL template/source, but control is retained.
 
 Additionally, vector tiles are now supported in theory, as the internal caching/retrieval logic of the specialised `ImageProvider` has been exposed, although it is out of scope to fully implement support for it.
 
 * Improvements to the browse caching logic and customizability
-  * Added support for using multiple stores simultaneously in the `FMTCTileProvider`, and exposed constructor directly
+  * Added support for using multiple stores simultaneously in the `FMTCTileProvider` (through `FMTCTileProvider.allStores` & `FMTCTileProvider.multipleStores` constructors)
   * Added `StoreReadWriteBehavior` for increased control over caching behaviour
-  * Added toggle for hit/miss stat recording, to improve performance where these statistics are never read
   * Added Tile Loading Debug system (`FMTCTileProvider.tileLoadingDebugger`) to provide a method to debug internal tile loading mechanisms and perform advanced custom logging
+  * Added toggle for hit/miss stat recording, to improve performance where these statistics are never read
   * Replaced `FMTCTileProviderSettings.maxStoreLength` with a `maxLength` property on each store individually
-  * Refactored and exposed tile provider logic into seperate `getBytes` method
-* Replaced `obscureQueryParams` with more flexible `urlTransformer` (and static `urlTransformerOmitKeyValues` utility method to provide old behaviour)
+  * Refactored and exposed tile provider logic into seperate and externally visible (via `FMTCTileProvider.getBytes`) method
+  * `FMTCBrowsingErrorHandler` callback may now return bytes to be displayed instead of (re)throwing exception
+* Improved speed (by massive amounts) and accuracy & reduced memory consumption of `CircleRegion`'s tile generation & counting algorithm
+* Replaced `obscureQueryParams` with more flexible `urlTransformer` (and static `urlTransformerOmitKeyValues` utility method to provide old behaviour with more customizability)
 * Removed deprecated remnants from v9.*
 * Other generic improvements
 
 ## [9.1.1] - 2024/07/16
 
-* Fixed bug where errors within the import functionality would not be catchable by the original invoker
+* Fixed bug where errors within the import functionality would not always be catchable by the original invoker
 * Minor other improvements
 
 ## [9.1.0] - 2024/05/27
