@@ -169,7 +169,8 @@ class FMTCTileProviderSettings {
   /// parameter.
   ///
   /// Matching and removal is performed by a regular expression. Does not mutate
-  /// input [url].
+  /// input [url]. [link] and [delimiter] are escaped (using [RegExp.escape])
+  /// before they are used within the regular expression.
   ///
   /// This is not designed to be a security mechanism, and should not be relied
   /// upon as such.
@@ -181,7 +182,13 @@ class FMTCTileProviderSettings {
   }) {
     var mutableUrl = url;
     for (final key in keys) {
-      mutableUrl = mutableUrl.replaceAll(RegExp('$key$link[^$delimiter]*'), '');
+      mutableUrl = mutableUrl.replaceAll(
+        RegExp(
+          '${RegExp.escape(key)}${RegExp.escape(link)}'
+          '[^${RegExp.escape(delimiter)}]*',
+        ),
+        '',
+      );
     }
     return mutableUrl;
   }
