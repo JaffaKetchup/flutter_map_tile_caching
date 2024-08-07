@@ -18,6 +18,11 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [9.1.2] - 2024/08/07
+
+* Fixed compilation on web platforms: FMTC now internally overrides the `FMTCObjectBoxBackend` and becomes a no-op
+* Minor documentation improvements
+
 ## [9.1.1] - 2024/07/16
 
 * Fixed bug where errors within the import functionality would not be catchable by the original invoker
