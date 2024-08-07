@@ -5,8 +5,8 @@ import 'package:meta/meta.dart';
 
 /// Largest fully representable integer in Dart
 @internal
-const largestInt = 9223372036854775807;
+final largestInt = double.maxFinite.toInt();
 
 /// Smallest fully representable integer in Dart
 @internal
-const smallestInt = -9223372036854775808;
+final smallestInt = -double.maxFinite.toInt();
