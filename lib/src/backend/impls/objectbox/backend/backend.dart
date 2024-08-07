@@ -31,9 +31,17 @@ part 'internal_workers/thread_safe.dart';
 part 'errors.dart';
 part 'internal.dart';
 
+/// {@template fmtc.backend.objectbox}
 /// Implementation of [FMTCBackend] that uses ObjectBox as the storage database
+///
+/// On web, this redirects to a no-op implementation that throws
+/// [UnsupportedError]s when attempting to use [initialise] or [uninitialise],
+/// and [RootUnavailable] when trying to use any other method.
+/// {@endtemplate}
 final class FMTCObjectBoxBackend implements FMTCBackend {
   /// {@macro fmtc.backend.initialise}
+  ///
+  /// {@template fmtc.backend.objectbox.initialise}
   ///
   /// ---
   ///
@@ -50,6 +58,7 @@ final class FMTCObjectBoxBackend implements FMTCBackend {
   /// thread.
   ///
   /// Avoid using [useInMemoryDatabase] outside of testing purposes.
+  /// {@endtemplate}
   @override
   Future<void> initialise({
     String? rootDirectory,
@@ -68,11 +77,14 @@ final class FMTCObjectBoxBackend implements FMTCBackend {
 
   /// {@macro fmtc.backend.uninitialise}
   ///
+  /// {@template fmtc.backend.objectbox.uninitialise}
+  ///
   /// If [immediate] is `true`, any operations currently underway will be lost,
   /// as the worker will be killed as quickly as possible (not necessarily
   /// instantly).
   /// If `false`, all operations currently underway will be allowed to complete,
   /// but any operations started after this method call will be lost.
+  /// {@endtemplate}
   @override
   Future<void> uninitialise({
     bool deleteRoot = false,
