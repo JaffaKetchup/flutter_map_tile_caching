@@ -89,7 +89,7 @@ class _NumericalInputRowState extends State<NumericalInputRow> {
                     FilteringTextInputFormatter.digitsOnly,
                     _NumericalRangeFormatter(
                       min: widget.min,
-                      max: widget.max ?? 9223372036854775807,
+                      max: widget.max ?? double.maxFinite.toInt(),
                     ),
                   ],
                   onChanged: (newVal) => widget.onChanged(
