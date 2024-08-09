@@ -13,7 +13,7 @@ import '../../../flutter_map_tile_caching.dart';
 ///
 /// These can usually be safely ignored, as they simply represent a fall
 /// through of all valid/possible cases, but you may wish to handle them
-/// anyway using [FMTCTileProviderSettings.errorHandler].
+/// anyway using [FMTCTileProvider.errorHandler].
 ///
 /// Use [type] to establish the condition that threw this exception, and
 /// [message] for a user-friendly English description of this exception. Also
@@ -24,7 +24,7 @@ class FMTCBrowsingError implements Exception {
   ///
   /// These can usually be safely ignored, as they simply represent a fall
   /// through of all valid/possible cases, but you may wish to handle them
-  /// anyway using [FMTCTileProviderSettings.errorHandler].
+  /// anyway using [FMTCTileProvider.errorHandler].
   ///
   /// Use [type] to establish the condition that threw this exception, and
   /// [message] for a user-friendly English description of this exception. Also
@@ -56,7 +56,7 @@ class FMTCBrowsingError implements Exception {
   final String networkUrl;
 
   /// The storage-suitable UID of the tile: the result of
-  /// [FMTCTileProviderSettings.urlTransformer] on [networkUrl]
+  /// [FMTCTileProvider.urlTransformer] on [networkUrl]
   final String storageSuitableUID;
 
   /// If available, the attempted HTTP request
@@ -93,10 +93,12 @@ class FMTCBrowsingError implements Exception {
 enum FMTCBrowsingErrorType {
   /// Failed to load the tile from the cache because it was missing
   ///
-  /// Ensure that tiles are cached before using [CacheBehavior.cacheOnly].
+  /// Ensure that tiles are cached before using
+  /// [BrowseLoadingStrategy.cacheOnly].
   missingInCacheOnlyMode(
     'Failed to load the tile from the cache because it was missing.',
-    'Ensure that tiles are cached before using `CacheBehavior.cacheOnly`.',
+    'Ensure that tiles are cached before using '
+        '`BrowseLoadingStrategy.cacheOnly`.',
   ),
 
   /// Failed to load the tile from the cache or the network because it was

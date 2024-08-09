@@ -2,8 +2,8 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 /// Determines the read/update/create tile behaviour of a store
 ///
-/// Expands [StoreReadWriteBehaviour].
-enum InternalStoreReadWriteBehaviour {
+/// Expands [BrowseStoreStrategy].
+enum InternalBrowseStoreStrategy {
   /// Disable store entirely
   disable,
 
@@ -24,33 +24,33 @@ enum InternalStoreReadWriteBehaviour {
   /// See [readUpdate] for a definition of 'update'.
   readUpdateCreate;
 
-  StoreReadWriteBehavior? toStoreReadWriteBehavior([
-    StoreReadWriteBehavior? inheritableBehaviour,
+  BrowseStoreStrategy? toBrowseStoreStrategy([
+    BrowseStoreStrategy? inheritableBehaviour,
   ]) =>
       switch (this) {
         disable => null,
         inherit => inheritableBehaviour,
-        read => StoreReadWriteBehavior.read,
-        readUpdate => StoreReadWriteBehavior.readUpdate,
-        readUpdateCreate => StoreReadWriteBehavior.readUpdateCreate,
+        read => BrowseStoreStrategy.read,
+        readUpdate => BrowseStoreStrategy.readUpdate,
+        readUpdateCreate => BrowseStoreStrategy.readUpdateCreate,
       };
 
-  static InternalStoreReadWriteBehaviour fromStoreReadWriteBehavior(
-    StoreReadWriteBehavior? behaviour,
+  static InternalBrowseStoreStrategy fromBrowseStoreStrategy(
+    BrowseStoreStrategy? behaviour,
   ) =>
       switch (behaviour) {
-        null => InternalStoreReadWriteBehaviour.disable,
-        StoreReadWriteBehavior.read => InternalStoreReadWriteBehaviour.read,
-        StoreReadWriteBehavior.readUpdate =>
-          InternalStoreReadWriteBehaviour.readUpdate,
-        StoreReadWriteBehavior.readUpdateCreate =>
-          InternalStoreReadWriteBehaviour.readUpdateCreate,
+        null => InternalBrowseStoreStrategy.disable,
+        BrowseStoreStrategy.read => InternalBrowseStoreStrategy.read,
+        BrowseStoreStrategy.readUpdate =>
+          InternalBrowseStoreStrategy.readUpdate,
+        BrowseStoreStrategy.readUpdateCreate =>
+          InternalBrowseStoreStrategy.readUpdateCreate,
       };
 
   static const priority = [
     null,
-    StoreReadWriteBehaviour.read,
-    StoreReadWriteBehaviour.readUpdate,
-    StoreReadWriteBehaviour.readUpdateCreate,
+    BrowseStoreStrategy.read,
+    BrowseStoreStrategy.readUpdate,
+    BrowseStoreStrategy.readUpdateCreate,
   ];
 }

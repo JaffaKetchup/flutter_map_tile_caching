@@ -9,11 +9,11 @@ part of '../../../flutter_map_tile_caching.dart';
 /// To use a single store, use [FMTCStore.getTileProvider].
 ///
 /// To use multiple stores, use the [FMTCTileProvider.multipleStores]
-/// constructor. See documentation on [storeNames] and [otherStoresBehavior]
+/// constructor. See documentation on [storeNames] and [otherStoresStrategy]
 /// for information on usage.
 ///
 /// To use all stores, use the [FMTCTileProvider.allStores] constructor. See
-/// documentation on [otherStoresBehavior] for information on usage.
+/// documentation on [otherStoresStrategy] for information on usage.
 ///
 /// An "FMTC" identifying mark is injected into the "User-Agent" header generated
 /// by flutter_map, except if specified in the constructor. For technical
@@ -25,17 +25,19 @@ class FMTCTileProvider extends TileProvider {
   /// See [FMTCTileProvider] for information
   FMTCTileProvider.multipleStores({
     required this.storeNames,
-    this.otherStoresBehavior,
-    FMTCTileProviderSettings? settings,
-    this.tileLoadingDebugger,
-    Map<String, String>? headers,
+    this.otherStoresStrategy,
+    this.loadingStrategy = BrowseLoadingStrategy.cacheFirst,
+    this.useOtherStoresAsFallbackOnly = false,
+    this.recordHitsAndMisses = true,
+    this.cachedValidDuration = Duration.zero,
+    UrlTransformer? urlTransformer,
+    this.errorHandler,
+    this.tileLoadingInterceptor,
     http.Client? httpClient,
-  })  : settings = settings ?? FMTCTileProviderSettings.instance,
+    Map<String, String>? headers,
+  })  : assert(storeNames.isNotEmpty, '`storeNames` cannot be empty'),
+        urlTransformer = (urlTransformer ?? (u) => u),
         httpClient = httpClient ?? IOClient(HttpClient()..userAgent = null),
-        assert(
-          storeNames.isNotEmpty || otherStoresBehavior != null,
-          '`storeNames` cannot be empty if `allStoresConfiguration` is `null`',
-        ),
         super(
           headers: (headers?.containsKey('User-Agent') ?? false)
               ? headers
@@ -44,29 +46,35 @@ class FMTCTileProvider extends TileProvider {
 
   /// See [FMTCTileProvider] for information
   FMTCTileProvider.allStores({
-    required StoreReadWriteBehavior allStoresConfiguration,
-    FMTCTileProviderSettings? settings,
-    ValueNotifier<TileLoadingDebugMap>? tileLoadingDebugger,
-    Map<String, String>? headers,
+    required BrowseStoreStrategy allStoresStrategy,
+    this.loadingStrategy = BrowseLoadingStrategy.cacheFirst,
+    this.useOtherStoresAsFallbackOnly = false,
+    this.recordHitsAndMisses = true,
+    this.cachedValidDuration = Duration.zero,
+    UrlTransformer? urlTransformer,
+    this.errorHandler,
+    this.tileLoadingInterceptor,
     http.Client? httpClient,
-  }) : this.multipleStores(
-          storeNames: const {},
-          otherStoresBehavior: allStoresConfiguration,
-          settings: settings,
-          tileLoadingDebugger: tileLoadingDebugger,
-          headers: headers,
-          httpClient: httpClient,
+    Map<String, String>? headers,
+  })  : storeNames = const {},
+        otherStoresStrategy = allStoresStrategy,
+        urlTransformer = (urlTransformer ?? (u) => u),
+        httpClient = httpClient ?? IOClient(HttpClient()..userAgent = null),
+        super(
+          headers: (headers?.containsKey('User-Agent') ?? false)
+              ? headers
+              : _CustomUserAgentCompatMap(headers ?? {}),
         );
 
   /// The store names from which to (possibly) read/update/create tiles from/in
   ///
-  /// Keys represent store names, and the associated [StoreReadWriteBehavior]
+  /// Keys represent store names, and the associated [BrowseStoreStrategy]
   /// represents how that store should be used.
   ///
   /// Stores not included will not be used by default. However,
-  /// [otherStoresBehavior] determines whether & how all other unspecified
+  /// [otherStoresStrategy] determines whether & how all other unspecified
   /// stores should be used.
-  final Map<String, StoreReadWriteBehavior> storeNames;
+  final Map<String, BrowseStoreStrategy> storeNames;
 
   /// The behaviour of all other stores not specified in [storeNames]
   ///
@@ -75,15 +83,116 @@ class FMTCTileProvider extends TileProvider {
   /// Setting a non-`null` value may reduce performance, as internal queries
   /// will have fewer constraints and therefore be less efficient.
   ///
-  /// Also see [FMTCTileProviderSettings.useOtherStoresAsFallbackOnly] for
-  /// whether these unspecified stores should only be used as a last resort or
-  /// in addition to the specified stores as normal.
-  final StoreReadWriteBehavior? otherStoresBehavior;
+  /// Also see [useOtherStoresAsFallbackOnly] for whether these unspecified
+  /// stores should only be used as a last resort or in addition to the specified
+  /// stores as normal.
+  final BrowseStoreStrategy? otherStoresStrategy;
 
-  /// The tile provider settings to use
+  /// Determines whether the network or cache is preferred during browse
+  /// caching, and how to fallback
   ///
-  /// Defaults to the ambient [FMTCTileProviderSettings.instance].
-  final FMTCTileProviderSettings settings;
+  /// Defaults to [BrowseLoadingStrategy.cacheFirst].
+  final BrowseLoadingStrategy loadingStrategy;
+
+  /// Whether to only use tiles retrieved by
+  /// [FMTCTileProvider.otherStoresStrategy] after all specified stores have
+  /// been exhausted (where the tile was not present)
+  ///
+  /// When tiles are retrieved from other stores, it is counted as a miss for the
+  /// specified store(s).
+  ///
+  /// This may introduce notable performance reductions, especially if failures
+  /// occur often or the root is particularly large, as an extra lookup with
+  /// unbounded constraints is required for each tile.
+  ///
+  /// Defaults to `false`.
+  final bool useOtherStoresAsFallbackOnly;
+
+  /// Whether to record the [StoreStats.hits] and [StoreStats.misses] statistics
+  ///
+  /// When enabled, hits will be recorded for all stores that the tile belonged
+  /// to and were present in [FMTCTileProvider.storeNames], when necessary.
+  /// Misses will be recorded for all stores specified in the tile provided,
+  /// where necessary
+  ///
+  /// Disable to improve performance and/or if these statistics are never used.
+  ///
+  /// Defaults to `true`.
+  final bool recordHitsAndMisses;
+
+  /// The duration for which a tile does not require updating when cached, after
+  /// which it is marked as expired and updated at the next possible
+  /// opportunity
+  ///
+  /// Set to [Duration.zero] to never expire a tile (default).
+  final Duration cachedValidDuration;
+
+  /// Method used to create a tile's storage-suitable UID from it's real URL
+  ///
+  /// The input string is the tile's URL. The output string should be a unique
+  /// string to that tile that will remain as stable as necessary if parts of the
+  /// URL not directly related to the tile image change.
+  ///
+  /// To store and retrieve tiles, FMTC uses a tile's storage-suitable UID.
+  /// When a tile is stored, the tile URL is transformed before storage. When a
+  /// tile is retrieved from the cache, the tile URL is transformed before
+  /// retrieval.
+  ///
+  /// A storage-suitable UID is usually the tile's own real URL - although it may
+  /// not necessarily be. The tile URL is guaranteed to refer only to that tile
+  /// from that server (unless the server backend changes).
+  ///
+  /// However, some parts of the tile URL should not be stored. For example,
+  /// an API key transmitted as part of the query parameters should not be
+  /// stored - and is not storage-suitable. This is because, if the API key
+  /// changes, the cached tile will still use the old UID containing the old API
+  /// key, and thus the tile will never be retrieved from storage, even if the
+  /// image is the same.
+  ///
+  /// [urlTransformerOmitKeyValues] may be used as a transformer to omit entire
+  /// key-value pairs from a URL where the key matches one of the specified keys.
+  ///
+  /// > [!IMPORTANT]
+  /// > The callback will be passed to a different isolate: therefore, avoid
+  /// > using any external state that may not be properly captured or cannot be
+  /// > copied to an isolate spawned with [Isolate.spawn] (see [SendPort.send]).
+  ///
+  /// _Internally, the storage-suitable UID is usually referred to as the tile
+  /// URL (with distinction inferred)._
+  ///
+  /// By default, the output string is the input string - that is, the
+  /// storage-suitable UID is the tile's real URL.
+  final UrlTransformer urlTransformer;
+
+  /// A custom callback that will be called when an [FMTCBrowsingError] is thrown
+  ///
+  /// If no value is returned, the error will be (re)thrown as normal. However,
+  /// if a [Uint8List], that will be displayed instead (decoded as an image),
+  /// and no error will be thrown.
+  final BrowsingExceptionHandler? errorHandler;
+
+  /// Allows tracking (eg. for debugging and logging) of the internal tile
+  /// loading mechanisms
+  ///
+  /// For example, this could be used to debug why tiles aren't loading as
+  /// expected (perhaps in combination with [TileLayer.tileBuilder] &
+  /// [ValueListenableBuilder] as in the example app), or to perform more
+  /// advanced monitoring and logging than the hit & miss statistics provide.
+  ///
+  /// ---
+  ///
+  /// To use, first initialise a [ValueNotifier], like so, then pass it to this
+  /// parameter:
+  ///
+  /// ```dart
+  /// final tileLoadingInterceptor =
+  ///   ValueNotifier<TileLoadingInterceptorMap>({}); // Do not use `const {}`
+  /// ```
+  ///
+  /// This notifier will be notified, and the `value` updated, every time a tile
+  /// completes loading (successfully or unsuccessfully). The `value` maps
+  /// [TileCoordinates]s to [TileLoadingInterceptorResult]s.
+  final ValueNotifier<TileLoadingInterceptorMap>? tileLoadingInterceptor;
 
   /// [http.Client] (such as a [IOClient]) used to make all network requests
   ///
@@ -91,26 +200,6 @@ class FMTCTileProvider extends TileProvider {
   ///
   /// Defaults to a standard [IOClient]/[HttpClient].
   final http.Client httpClient;
-
-  /// Allows debugging and advanced logging of internal tile loading mechanisms
-  ///
-  /// To use, first initialise a [ValueNotifier], like so, then pass it to this
-  /// parameter:
-  ///
-  /// ```dart
-  /// final tileLoadingDebugger = ValueNotifier<TileLoadingDebugMap>({});
-  /// // Do not use `const {}`
-  /// ```
-  ///
-  /// This notifier will be notified, and the `value` updated, every time a tile
-  /// completes loading (successfully or unsuccessfully). The `value` maps
-  /// [TileCoordinates] to [TileLoadingDebugInfo]s.
-  ///
-  /// For example, this could be used to debug why tiles aren't loading as
-  /// expected (perhaps when used with [TileLayer.tileBuilder] &
-  /// [ValueListenableBuilder]), or to perform more advanced monitoring and
-  /// logging than the hit & miss statistics provide.
-  final ValueNotifier<TileLoadingDebugMap>? tileLoadingDebugger;
 
   /// Each [Completer] is completed once the corresponding tile has finished
   /// loading
@@ -166,62 +255,88 @@ class FMTCTileProvider extends TileProvider {
 
   /// Check whether a specified tile is cached in any of the current stores
   ///
-  /// If [storeNames] contains `null` (for example if
-  /// [FMTCTileProvider.allStores]) has been used, then the check is for if the
-  /// tile has been cached at all.
-  Future<bool> checkTileCached({
+  /// If [otherStoresStrategy] is not `null`, then the check is for if the
+  /// tile has been cached in any store.
+  Future<bool> isTileCached({
     required TileCoordinates coords,
     required TileLayer options,
   }) =>
       FMTCBackendAccess.internal.tileExists(
         storeNames: _getSpecifiedStoresOrNull(),
-        url: settings.urlTransformer(getTileUrl(coords, options)),
+        url: urlTransformer(getTileUrl(coords, options)),
       );
+
+  /// Removes specified key-value pairs from the specified [url]
+  ///
+  /// Both the key itself and its associated value, for each of [keys], will be
+  /// omitted.
+  ///
+  /// [link] connects a key to its value (defaults to '='). [delimiter]
+  /// seperates two different key value pairs (defaults to '&').
+  ///
+  /// For example, the [url] 'abc=123&xyz=987' with [keys] only containing 'abc'
+  /// would become '&xyz=987'. In this case, if these were query parameters, it
+  /// is assumed the server will be able to handle a missing first query
+  /// parameter.
+  ///
+  /// Matching and removal is performed by a regular expression. Does not mutate
+  /// input [url]. [link] and [delimiter] are escaped (using [RegExp.escape])
+  /// before they are used within the regular expression.
+  ///
+  /// This is not designed to be a security mechanism, and should not be relied
+  /// upon as such.
+  static String urlTransformerOmitKeyValues({
+    required String url,
+    required Iterable<String> keys,
+    String link = '=',
+    String delimiter = '&',
+  }) {
+    var mutableUrl = url;
+    for (final key in keys) {
+      mutableUrl = mutableUrl.replaceAll(
+        RegExp(
+          '${RegExp.escape(key)}${RegExp.escape(link)}'
+          '[^${RegExp.escape(delimiter)}]*',
+        ),
+        '',
+      );
+    }
+    return mutableUrl;
+  }
 
   /// If [storeNames] contains `null`, returns `null`, otherwise returns all
   /// non-null names (which cannot be empty)
   List<String>? _getSpecifiedStoresOrNull() =>
-      otherStoresBehavior != null ? null : storeNames.keys.toList();
+      otherStoresStrategy != null ? null : storeNames.keys.toList();
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is FMTCTileProvider &&
-          other.storeNames == storeNames &&
-          other.headers == headers &&
-          other.settings == settings &&
-          other.httpClient == httpClient);
+          mapEquals(other.storeNames, storeNames) &&
+          other.otherStoresStrategy == otherStoresStrategy &&
+          other.loadingStrategy == loadingStrategy &&
+          other.useOtherStoresAsFallbackOnly == useOtherStoresAsFallbackOnly &&
+          other.recordHitsAndMisses == recordHitsAndMisses &&
+          other.cachedValidDuration == cachedValidDuration &&
+          other.urlTransformer == urlTransformer &&
+          other.errorHandler == errorHandler &&
+          other.tileLoadingInterceptor == tileLoadingInterceptor &&
+          other.httpClient == httpClient &&
+          other.headers == headers);
 
   @override
-  int get hashCode => Object.hash(storeNames, settings, headers, httpClient);
-}
-
-/// Custom override of [Map] that only overrides the [MapView.putIfAbsent]
-/// method, to enable injection of an identifying mark ("FMTC")
-class _CustomUserAgentCompatMap extends MapView<String, String> {
-  const _CustomUserAgentCompatMap(super.map);
-
-  /// Modified implementation of [MapView.putIfAbsent], that overrides behaviour
-  /// only when [key] is "User-Agent"
-  ///
-  /// flutter_map's [TileLayer] constructor calls this method after the
-  /// [TileLayer.tileProvider] has been constructed to customize the
-  /// "User-Agent" header with `TileLayer.userAgentPackageName`.
-  /// This method intercepts any call with [key] equal to "User-Agent" and
-  /// replacement value that matches the expected format, and adds an "FMTC"
-  /// identifying mark.
-  ///
-  /// The identifying mark is injected to seperate traffic sent via FMTC from
-  /// standard flutter_map traffic, as it significantly changes the behaviour of
-  /// tile retrieval, and could generate more traffic.
-  @override
-  String putIfAbsent(String key, String Function() ifAbsent) {
-    if (key != 'User-Agent') return super.putIfAbsent(key, ifAbsent);
-
-    final replacementValue = ifAbsent();
-    if (!RegExp(r'flutter_map \(.+\)').hasMatch(replacementValue)) {
-      return super.putIfAbsent(key, ifAbsent);
-    }
-    return this[key] = replacementValue.replaceRange(11, 12, ' + FMTC ');
-  }
+  int get hashCode => Object.hash(
+        storeNames,
+        otherStoresStrategy,
+        loadingStrategy,
+        useOtherStoresAsFallbackOnly,
+        recordHitsAndMisses,
+        cachedValidDuration,
+        urlTransformer,
+        errorHandler,
+        tileLoadingInterceptor,
+        httpClient,
+        headers,
+      );
 }

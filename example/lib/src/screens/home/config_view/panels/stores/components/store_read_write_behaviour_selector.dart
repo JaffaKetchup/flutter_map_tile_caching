@@ -17,29 +17,29 @@ class StoreReadWriteBehaviourSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      Selector<GeneralProvider, InternalStoreReadWriteBehaviour?>(
+      Selector<GeneralProvider, InternalBrowseStoreStrategy?>(
         selector: (context, provider) => provider.currentStores[storeName],
         builder: (context, currentBehaviour, child) =>
-            Selector<GeneralProvider, StoreReadWriteBehaviour?>(
+            Selector<GeneralProvider, BrowseStoreStrategy?>(
           selector: (context, provider) =>
-              provider.inheritableStoreReadWriteBehaviour,
+              provider.inheritableBrowseStoreStrategy,
           builder: (context, inheritableBehaviour, _) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Checkbox.adaptive(
-                value: currentBehaviour ==
-                        InternalStoreReadWriteBehaviour.inherit ||
-                    currentBehaviour == null,
+                value:
+                    currentBehaviour == InternalBrowseStoreStrategy.inherit ||
+                        currentBehaviour == null,
                 onChanged: enabled
                     ? (v) {
                         final provider = context.read<GeneralProvider>();
 
                         provider
                           ..currentStores[storeName] = v!
-                              ? InternalStoreReadWriteBehaviour.inherit
-                              : InternalStoreReadWriteBehaviour
-                                  .fromStoreReadWriteBehavior(
-                                  provider.inheritableStoreReadWriteBehaviour,
+                              ? InternalBrowseStoreStrategy.inherit
+                              : InternalBrowseStoreStrategy
+                                  .fromBrowseStoreStrategy(
+                                  provider.inheritableBrowseStoreStrategy,
                                 )
                           ..changedCurrentStores();
                       }
@@ -48,14 +48,14 @@ class StoreReadWriteBehaviourSelector extends StatelessWidget {
                 visualDensity: VisualDensity.comfortable,
               ),
               const VerticalDivider(width: 2),
-              ...StoreReadWriteBehavior.values.map(
+              ...BrowseStoreStrategy.values.map(
                 (e) => _StoreReadWriteBehaviourSelectorCheckbox(
                   storeName: storeName,
                   representativeBehaviour: e,
                   currentBehaviour: currentBehaviour == null
                       ? inheritableBehaviour
                       : currentBehaviour
-                          .toStoreReadWriteBehavior(inheritableBehaviour),
+                          .toBrowseStoreStrategy(inheritableBehaviour),
                   enabled: enabled,
                 ),
               ),
@@ -74,17 +74,16 @@ class _StoreReadWriteBehaviourSelectorCheckbox extends StatelessWidget {
   });
 
   final String storeName;
-  final StoreReadWriteBehaviour representativeBehaviour;
-  final StoreReadWriteBehaviour? currentBehaviour;
+  final BrowseStoreStrategy representativeBehaviour;
+  final BrowseStoreStrategy? currentBehaviour;
   final bool enabled;
 
   @override
   Widget build(BuildContext context) => Checkbox.adaptive(
         value: currentBehaviour == representativeBehaviour
             ? true
-            : InternalStoreReadWriteBehaviour.priority
-                        .indexOf(currentBehaviour) <
-                    InternalStoreReadWriteBehaviour.priority
+            : InternalBrowseStoreStrategy.priority.indexOf(currentBehaviour) <
+                    InternalBrowseStoreStrategy.priority
                         .indexOf(representativeBehaviour)
                 ? false
                 : null,
@@ -96,19 +95,18 @@ class _StoreReadWriteBehaviourSelectorCheckbox extends StatelessWidget {
                   // Deselected current selection
                   //  > Disable inheritance and disable store
                   provider.currentStores[storeName] =
-                      InternalStoreReadWriteBehaviour.disable;
+                      InternalBrowseStoreStrategy.disable;
                 } else if (representativeBehaviour ==
-                    provider.inheritableStoreReadWriteBehaviour) {
+                    provider.inheritableBrowseStoreStrategy) {
                   // Selected same as inherited
                   //  > Automatically enable inheritance (assumed desire, can be undone)
                   provider.currentStores[storeName] =
-                      InternalStoreReadWriteBehaviour.inherit;
+                      InternalBrowseStoreStrategy.inherit;
                 } else {
                   // Selected something else
                   //  > Disable inheritance and change store
                   provider.currentStores[storeName] =
-                      InternalStoreReadWriteBehaviour
-                          .fromStoreReadWriteBehavior(
+                      InternalBrowseStoreStrategy.fromBrowseStoreStrategy(
                     representativeBehaviour,
                   );
                 }

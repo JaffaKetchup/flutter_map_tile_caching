@@ -13,7 +13,7 @@ class DebuggingTileBuilder extends StatelessWidget {
 
   final Widget tileWidget;
   final TileImage tile;
-  final ValueNotifier<TileLoadingDebugMap> tileLoadingDebugger;
+  final ValueNotifier<TileLoadingInterceptorMap> tileLoadingDebugger;
   final bool usingFMTC;
 
   @override
@@ -80,7 +80,7 @@ class DebuggingTileBuilder extends StatelessWidget {
                                 : 'Unknown error',
                             textAlign: TextAlign.center,
                           ),
-                        if (info.result case final result?) ...[
+                        if (info.resultPath case final result?) ...[
                           Text(
                             "'${result.name}' in "
                             '${tile.loadFinishedAt == null || tile.loadStarted == null ? 'Loading...' : '${tile.loadFinishedAt!.difference(tile.loadStarted!).inMilliseconds} ms'}\n',
@@ -96,7 +96,7 @@ class DebuggingTileBuilder extends StatelessWidget {
                               'New tile',
                               textAlign: TextAlign.center,
                             ),
-                          if (info.writeResult case final writeResult?)
+                          if (info.storesWriteResult case final writeResult?)
                             FutureBuilder(
                               future: writeResult,
                               builder: (context, snapshot) {

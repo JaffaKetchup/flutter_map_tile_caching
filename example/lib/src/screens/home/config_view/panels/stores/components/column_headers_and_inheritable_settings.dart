@@ -55,19 +55,18 @@ class ColumnHeadersAndInheritableSettings extends StatelessWidget {
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Selector<GeneralProvider, StoreReadWriteBehaviour?>(
+            child: Selector<GeneralProvider, BrowseStoreStrategy?>(
               selector: (context, provider) =>
-                  provider.inheritableStoreReadWriteBehaviour,
+                  provider.inheritableBrowseStoreStrategy,
               builder: (context, currentBehaviour, child) => Row(
                 mainAxisAlignment: MainAxisAlignment.end,
-                children: StoreReadWriteBehavior.values.map(
+                children: BrowseStoreStrategy.values.map(
                   (e) {
                     final value = currentBehaviour == e
                         ? true
-                        : InternalStoreReadWriteBehaviour.priority
+                        : InternalBrowseStoreStrategy.priority
                                     .indexOf(currentBehaviour) <
-                                InternalStoreReadWriteBehaviour.priority
-                                    .indexOf(e)
+                                InternalBrowseStoreStrategy.priority.indexOf(e)
                             ? false
                             : null;
 
@@ -75,7 +74,7 @@ class ColumnHeadersAndInheritableSettings extends StatelessWidget {
                       value: value,
                       onChanged: (v) => context
                               .read<GeneralProvider>()
-                              .inheritableStoreReadWriteBehaviour =
+                              .inheritableBrowseStoreStrategy =
                           v == null ? null : e,
                       tristate: true,
                       materialTapTargetSize: MaterialTapTargetSize.padded,

@@ -11,9 +11,9 @@ class ConfigPanelBehaviour extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      Selector<GeneralProvider, CacheBehavior>(
-        selector: (context, provider) => provider.cacheBehavior,
-        builder: (context, cacheBehavior, _) => Column(
+      Selector<GeneralProvider, BrowseLoadingStrategy>(
+        selector: (context, provider) => provider.loadingStrategy,
+        builder: (context, loadingStrategy, _) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
@@ -21,25 +21,25 @@ class ConfigPanelBehaviour extends StatelessWidget {
               child: SegmentedButton(
                 segments: const [
                   ButtonSegment(
-                    value: CacheBehavior.cacheOnly,
+                    value: BrowseLoadingStrategy.cacheOnly,
                     icon: Icon(Icons.download_for_offline_outlined),
                     label: Text('Cache Only'),
                   ),
                   ButtonSegment(
-                    value: CacheBehavior.cacheFirst,
+                    value: BrowseLoadingStrategy.cacheFirst,
                     icon: Icon(Icons.storage_rounded),
                     label: Text('Cache'),
                   ),
                   ButtonSegment(
-                    value: CacheBehavior.onlineFirst,
+                    value: BrowseLoadingStrategy.onlineFirst,
                     icon: Icon(Icons.public_rounded),
                     label: Text('Network'),
                   ),
                 ],
-                selected: {cacheBehavior},
+                selected: {loadingStrategy},
                 onSelectionChanged: (value) => context
                     .read<GeneralProvider>()
-                    .cacheBehavior = value.single,
+                    .loadingStrategy = value.single,
                 style: const ButtonStyle(
                   visualDensity: VisualDensity.comfortable,
                 ),

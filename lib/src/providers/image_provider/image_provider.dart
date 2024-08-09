@@ -117,8 +117,9 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
     void Function()? finishedLoadingBytes,
     bool requireValidImage = false,
   }) async {
-    final currentTileDebugNotifierInfo =
-        provider.tileLoadingDebugger != null ? TileLoadingDebugInfo._() : null;
+    final currentTLIR = provider.tileLoadingInterceptor != null
+        ? TileLoadingInterceptorResult._()
+        : null;
 
     void close([Object? error]) {
       finishedLoadingBytes?.call();
@@ -130,12 +131,12 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
         unawaited(chunkEvents.close());
       }
 
-      if (currentTileDebugNotifierInfo != null) {
-        currentTileDebugNotifierInfo.error = error;
-        if (error != null) currentTileDebugNotifierInfo.result = null;
+      if (currentTLIR != null) {
+        currentTLIR.error = error;
+        if (error != null) currentTLIR.resultPath = null;
 
-        provider.tileLoadingDebugger!
-          ..value[coords] = currentTileDebugNotifierInfo
+        provider.tileLoadingInterceptor!
+          ..value[coords] = currentTLIR
           // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
           ..notifyListeners();
       }
@@ -151,13 +152,13 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
         provider: provider,
         chunkEvents: chunkEvents,
         requireValidImage: requireValidImage,
-        currentTLDI: currentTileDebugNotifierInfo,
+        currentTLIR: currentTLIR,
       );
     } catch (err, stackTrace) {
       close(err);
 
       if (err is FMTCBrowsingError) {
-        final handlerResult = provider.settings.errorHandler?.call(err);
+        final handlerResult = provider.errorHandler?.call(err);
         if (handlerResult != null) return handlerResult;
       }
 

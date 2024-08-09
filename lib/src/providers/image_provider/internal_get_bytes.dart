@@ -9,19 +9,19 @@ Future<Uint8List> _internalGetBytes({
   required FMTCTileProvider provider,
   required StreamController<ImageChunkEvent>? chunkEvents,
   required bool requireValidImage,
-  required TileLoadingDebugInfo? currentTLDI,
+  required TileLoadingInterceptorResult? currentTLIR,
 }) async {
   void registerHit(List<String> storeNames) {
-    currentTLDI?.hitOrMiss = true;
-    if (provider.settings.recordHitsAndMisses) {
+    currentTLIR?.hitOrMiss = true;
+    if (provider.recordHitsAndMisses) {
       FMTCBackendAccess.internal
           .registerHitOrMiss(storeNames: storeNames, hit: true);
     }
   }
 
   void registerMiss() {
-    currentTLDI?.hitOrMiss = false;
-    if (provider.settings.recordHitsAndMisses) {
+    currentTLIR?.hitOrMiss = false;
+    if (provider.recordHitsAndMisses) {
       FMTCBackendAccess.internal.registerHitOrMiss(
         storeNames: provider._getSpecifiedStoresOrNull(), // TODO: Verify
         hit: false,
@@ -30,10 +30,10 @@ Future<Uint8List> _internalGetBytes({
   }
 
   final networkUrl = provider.getTileUrl(coords, options);
-  final matcherUrl = provider.settings.urlTransformer(networkUrl);
+  final matcherUrl = provider.urlTransformer(networkUrl);
 
-  currentTLDI?.networkUrl = networkUrl;
-  currentTLDI?.storageSuitableUID = matcherUrl;
+  currentTLIR?.networkUrl = networkUrl;
+  currentTLIR?.storageSuitableUID = matcherUrl;
 
   final (
     tile: existingTile,
@@ -44,11 +44,11 @@ Future<Uint8List> _internalGetBytes({
     storeNames: provider._getSpecifiedStoresOrNull(),
   );
 
-  currentTLDI?.existingStores =
+  currentTLIR?.existingStores =
       allExistingStores.isEmpty ? null : allExistingStores;
 
   final tileExistsInUnspecifiedStoresOnly = existingTile != null &&
-      provider.settings.useOtherStoresAsFallbackOnly &&
+      provider.useOtherStoresAsFallbackOnly &&
       provider.storeNames.keys
           .toSet()
           .union(
@@ -56,7 +56,7 @@ Future<Uint8List> _internalGetBytes({
           ) // TODO: Verify (intersect? simplify?)
           .isEmpty;
 
-  currentTLDI?.tileExistsInUnspecifiedStoresOnly =
+  currentTLIR?.tileExistsInUnspecifiedStoresOnly =
       tileExistsInUnspecifiedStoresOnly;
 
   // Prepare a list of image bytes and prefill if there's already a cached
@@ -66,19 +66,20 @@ Future<Uint8List> _internalGetBytes({
 
   // If there is a cached tile that's in date available, use it
   final needsUpdating = existingTile != null &&
-      (provider.settings.behavior == CacheBehavior.onlineFirst ||
-          (provider.settings.cachedValidDuration != Duration.zero &&
+      (provider.loadingStrategy == BrowseLoadingStrategy.onlineFirst ||
+          (provider.cachedValidDuration != Duration.zero &&
               DateTime.timestamp().millisecondsSinceEpoch -
                       existingTile.lastModified.millisecondsSinceEpoch >
-                  provider.settings.cachedValidDuration.inMilliseconds));
+                  provider.cachedValidDuration.inMilliseconds));
 
-  currentTLDI?.needsUpdating = needsUpdating;
+  currentTLIR?.needsUpdating = needsUpdating;
 
   if (existingTile != null &&
       !needsUpdating &&
       !tileExistsInUnspecifiedStoresOnly) {
-    currentTLDI?.result = TileLoadingDebugResultPath.perfectFromStores;
-    currentTLDI?.writeResult = null;
+    currentTLIR?.resultPath =
+        TileLoadingInterceptorResultPath.perfectFromStores;
+    currentTLIR?.storesWriteResult = null;
 
     registerHit(intersectedExistingStores);
     return bytes!;
@@ -86,10 +87,11 @@ Future<Uint8List> _internalGetBytes({
 
   // If a tile is not available and cache only mode is in use, just fail
   // before attempting a network call
-  if (provider.settings.behavior == CacheBehavior.cacheOnly) {
+  if (provider.loadingStrategy == BrowseLoadingStrategy.cacheOnly) {
     if (existingTile != null) {
-      currentTLDI?.result = TileLoadingDebugResultPath.cacheOnlyFromOtherStores;
-      currentTLDI?.writeResult = null;
+      currentTLIR?.resultPath =
+          TileLoadingInterceptorResultPath.cacheOnlyFromOtherStores;
+      currentTLIR?.storesWriteResult = null;
 
       registerMiss();
       return bytes!;
@@ -101,6 +103,7 @@ Future<Uint8List> _internalGetBytes({
       storageSuitableUID: matcherUrl,
     );
 
+    // TODO: remove below
     /*if (tileExistsInUnspecifiedStoresOnly) {
       registerMiss();
       return bytes!;
@@ -122,8 +125,8 @@ Future<Uint8List> _internalGetBytes({
     response = await provider.httpClient.send(request);
   } catch (e) {
     if (existingTile != null) {
-      currentTLDI?.result = TileLoadingDebugResultPath.noFetch;
-      currentTLDI?.writeResult = null;
+      currentTLIR?.resultPath = TileLoadingInterceptorResultPath.noFetch;
+      currentTLIR?.storesWriteResult = null;
 
       registerMiss();
       return bytes!;
@@ -143,8 +146,8 @@ Future<Uint8List> _internalGetBytes({
   // Check whether the network response is not 200 OK
   if (response.statusCode != 200) {
     if (existingTile != null) {
-      currentTLDI?.result = TileLoadingDebugResultPath.noFetch;
-      currentTLDI?.writeResult = null;
+      currentTLIR?.resultPath = TileLoadingInterceptorResultPath.noFetch;
+      currentTLIR?.storesWriteResult = null;
 
       registerMiss();
       return bytes!;
@@ -195,8 +198,8 @@ Future<Uint8List> _internalGetBytes({
 
     if (isValidImageData != null) {
       if (existingTile != null) {
-        currentTLDI?.result = TileLoadingDebugResultPath.noFetch;
-        currentTLDI?.writeResult = null;
+        currentTLIR?.resultPath = TileLoadingInterceptorResultPath.noFetch;
+        currentTLIR?.storesWriteResult = null;
 
         registerMiss();
         return bytes!;
@@ -220,16 +223,16 @@ Future<Uint8List> _internalGetBytes({
   final writeTileToSpecified = provider.storeNames.entries
       .where(
         (e) => switch (e.value) {
-          StoreReadWriteBehavior.read => false,
-          StoreReadWriteBehavior.readUpdate =>
+          BrowseStoreStrategy.read => false,
+          BrowseStoreStrategy.readUpdate =>
             intersectedExistingStores.contains(e.key),
-          StoreReadWriteBehavior.readUpdateCreate => true,
+          BrowseStoreStrategy.readUpdateCreate => true,
         },
       )
       .map((e) => e.key);
 
   final writeTileToIntermediate =
-      (provider.otherStoresBehavior == StoreReadWriteBehavior.readUpdate &&
+      (provider.otherStoresStrategy == BrowseStoreStrategy.readUpdate &&
                   existingTile != null
               ? writeTileToSpecified.followedBy(
                   intersectedExistingStores
@@ -241,13 +244,13 @@ Future<Uint8List> _internalGetBytes({
 
   // Cache tile to necessary stores
   if (writeTileToIntermediate.isNotEmpty ||
-      provider.otherStoresBehavior == StoreReadWriteBehavior.readUpdateCreate) {
-    currentTLDI?.writeResult = FMTCBackendAccess.internal.writeTile(
+      provider.otherStoresStrategy == BrowseStoreStrategy.readUpdateCreate) {
+    currentTLIR?.storesWriteResult = FMTCBackendAccess.internal.writeTile(
       storeNames: writeTileToIntermediate,
-      writeAllNotIn: provider.otherStoresBehavior ==
-              StoreReadWriteBehavior.readUpdateCreate
-          ? provider.storeNames.keys.toList(growable: false)
-          : null,
+      writeAllNotIn:
+          provider.otherStoresStrategy == BrowseStoreStrategy.readUpdateCreate
+              ? provider.storeNames.keys.toList(growable: false)
+              : null,
       url: matcherUrl,
       bytes: responseBytes,
       // ignore: unawaited_futures
@@ -264,10 +267,10 @@ Future<Uint8List> _internalGetBytes({
         );
       });
   } else {
-    currentTLDI?.writeResult = null;
+    currentTLIR?.storesWriteResult = null;
   }
 
-  currentTLDI?.result = TileLoadingDebugResultPath.fetched;
+  currentTLIR?.resultPath = TileLoadingInterceptorResultPath.fetched;
 
   registerMiss();
   return responseBytes;

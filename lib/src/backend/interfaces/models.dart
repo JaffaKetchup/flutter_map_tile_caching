@@ -14,7 +14,7 @@ import '../../../flutter_map_tile_caching.dart';
 abstract base class BackendTile {
   /// The storage-suitable UID of the tile
   ///
-  /// This is the result of [FMTCTileProviderSettings.urlTransformer].
+  /// This is the result of [FMTCTileProvider.urlTransformer].
   String get url;
 
   /// The time at which the [bytes] of this tile were last changed

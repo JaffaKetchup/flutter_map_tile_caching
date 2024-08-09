@@ -103,9 +103,8 @@ class StoreDownload {
   ///
   /// ---
   ///
-  /// For information about [urlTransformer], see the documentation on
-  /// [FMTCTileProviderSettings.urlTransformer]. Will default to the value in
-  /// the default [FMTCTileProviderSettings], else the identity function.
+  /// For info about [urlTransformer], see [FMTCTileProvider.urlTransformer].
+  /// Defaults to the identity function.
   ///
   /// To set additional headers, set it via [TileProvider.headers] when
   /// constructing the [DownloadableRegion].
@@ -124,16 +123,6 @@ class StoreDownload {
     Duration? maxReportInterval = const Duration(seconds: 1),
     bool disableRecovery = false,
     String Function(String)? urlTransformer,
-    @Deprecated(
-      '`obscuredQueryParams` has been deprecated in favour of `urlTransformer`, '
-      'which provides more flexibility.\n'
-      'To restore similar functioning, use '
-      '`FMTCTileProviderSettings.urlTransformerOmitKeyValues`. Note that this '
-      'will apply to the entire URL, not only the query part, which may have '
-      'a different behaviour in some rare cases.\n'
-      'This argument will be removed in a future version.',
-    )
-    List<String>? obscuredQueryParams,
     Object instanceId = 0,
   }) async* {
     FMTCBackendAccess.internal; // Verify intialisation
@@ -201,18 +190,7 @@ class StoreDownload {
         skipSeaTiles: skipSeaTiles,
         maxReportInterval: maxReportInterval,
         rateLimit: rateLimit,
-        urlTransformer: urlTransformer ??
-            ((obscuredQueryParams?.isNotEmpty ?? false)
-                ? (url) {
-                    final components = url.split('?');
-                    if (components.length == 1) return url;
-                    return '${components[0]}?'
-                        '${FMTCTileProviderSettings.urlTransformerOmitKeyValues(
-                      url: url,
-                      keys: obscuredQueryParams!,
-                    )}';
-                  }
-                : FMTCTileProviderSettings.instance.urlTransformer),
+        urlTransformer: urlTransformer ?? (url) => url,
         recoveryId: recoveryId,
         backend: FMTCBackendAccessThreadSafe.internal,
       ),

@@ -4,18 +4,16 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import '../misc/internal_store_read_write_behaviour.dart';
 
 class GeneralProvider extends ChangeNotifier {
-  StoreReadWriteBehaviour? _inheritableStoreReadWriteBehaviour =
-      StoreReadWriteBehaviour.readUpdateCreate;
-  StoreReadWriteBehaviour? get inheritableStoreReadWriteBehaviour =>
-      _inheritableStoreReadWriteBehaviour;
-  set inheritableStoreReadWriteBehaviour(
-    StoreReadWriteBehaviour? newBehaviour,
-  ) {
-    _inheritableStoreReadWriteBehaviour = newBehaviour;
+  BrowseStoreStrategy? _inheritableBrowseStoreStrategy =
+      BrowseStoreStrategy.readUpdateCreate;
+  BrowseStoreStrategy? get inheritableBrowseStoreStrategy =>
+      _inheritableBrowseStoreStrategy;
+  set inheritableBrowseStoreStrategy(BrowseStoreStrategy? newStoreStrategy) {
+    _inheritableBrowseStoreStrategy = newStoreStrategy;
     notifyListeners();
   }
 
-  final Map<String, InternalStoreReadWriteBehaviour> currentStores = {};
+  final Map<String, InternalBrowseStoreStrategy> currentStores = {};
   void changedCurrentStores() => notifyListeners();
 
   String _urlTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -25,10 +23,10 @@ class GeneralProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  CacheBehavior _cacheBehavior = CacheBehavior.cacheFirst;
-  CacheBehavior get cacheBehavior => _cacheBehavior;
-  set cacheBehavior(CacheBehavior newCacheBehavior) {
-    _cacheBehavior = newCacheBehavior;
+  BrowseLoadingStrategy _loadingStrategy = BrowseLoadingStrategy.cacheFirst;
+  BrowseLoadingStrategy get loadingStrategy => _loadingStrategy;
+  set loadingStrategy(BrowseLoadingStrategy newLoadingStrategy) {
+    _loadingStrategy = newLoadingStrategy;
     notifyListeners();
   }
 

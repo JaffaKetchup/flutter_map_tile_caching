@@ -37,28 +37,33 @@ class FMTCStore {
   /// Provides bulk downloading functionality
   StoreDownload get download => StoreDownload._(storeName);
 
-  /// Generate a [TileProvider] that connects to FMTC internals
-  ///
-  /// [settings] defaults to the current ambient
-  /// [FMTCTileProviderSettings.instance], which defaults to the initial
-  /// configuration if no other instance has been set.
+  /// Generate an [FMTCTileProvider] that only specifies this store
   ///
   /// See other available [FMTCTileProvider] contructors to use multiple stores
-  /// at once.
+  /// at once. See [FMTCTileProvider] for more info.
   FMTCTileProvider getTileProvider({
-    StoreReadWriteBehavior readWriteBehavior =
-        StoreReadWriteBehavior.readUpdateCreate,
-    StoreReadWriteBehavior? otherStoresBehavior,
-    FMTCTileProviderSettings? settings,
-    ValueNotifier<TileLoadingDebugMap>? tileLoadingDebugger,
+    BrowseStoreStrategy storeStrategy = BrowseStoreStrategy.readUpdateCreate,
+    BrowseStoreStrategy? otherStoresStrategy,
+    BrowseLoadingStrategy loadingStrategy = BrowseLoadingStrategy.cacheFirst,
+    bool useOtherStoresAsFallbackOnly = false,
+    bool recordHitsAndMisses = true,
+    Duration cachedValidDuration = Duration.zero,
+    UrlTransformer? urlTransformer,
+    BrowsingExceptionHandler? errorHandler,
+    ValueNotifier<TileLoadingInterceptorMap>? tileLoadingInterceptor,
     Map<String, String>? headers,
     http.Client? httpClient,
   }) =>
       FMTCTileProvider.multipleStores(
-        storeNames: {storeName: readWriteBehavior},
-        otherStoresBehavior: otherStoresBehavior,
-        settings: settings,
-        tileLoadingDebugger: tileLoadingDebugger,
+        storeNames: {storeName: storeStrategy},
+        otherStoresStrategy: otherStoresStrategy,
+        loadingStrategy: loadingStrategy,
+        useOtherStoresAsFallbackOnly: useOtherStoresAsFallbackOnly,
+        recordHitsAndMisses: recordHitsAndMisses,
+        cachedValidDuration: cachedValidDuration,
+        urlTransformer: urlTransformer,
+        errorHandler: errorHandler,
+        tileLoadingInterceptor: tileLoadingInterceptor,
         headers: headers,
         httpClient: httpClient,
       );

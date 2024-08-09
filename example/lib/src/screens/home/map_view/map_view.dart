@@ -52,7 +52,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
     duration: MapView.animationDuration,
   );
 
-  final _tileLoadingDebugger = ValueNotifier<TileLoadingDebugMap>({});
+  final _tileLoadingDebugger = ValueNotifier<TileLoadingInterceptorMap>({});
 
   late final _storesStream =
       FMTCRoot.stats.watchStores(triggerImmediately: true).asyncMap(
@@ -235,9 +235,9 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                   .map((e) {
                 final internalBehaviour = provider.currentStores[e];
                 final behaviour = internalBehaviour == null
-                    ? provider.inheritableStoreReadWriteBehaviour
-                    : internalBehaviour.toStoreReadWriteBehavior(
-                        provider.inheritableStoreReadWriteBehaviour,
+                    ? provider.inheritableBrowseStoreStrategy
+                    : internalBehaviour.toBrowseStoreStrategy(
+                        provider.inheritableBrowseStoreStrategy,
                       );
                 if (behaviour == null) return null;
                 return MapEntry(e, behaviour);
@@ -279,11 +279,9 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                       ? NetworkTileProvider()
                       : FMTCTileProvider.multipleStores(
                           storeNames: compiledStoreNames,
-                          settings: FMTCTileProviderSettings(
-                            behavior: provider.cacheBehavior,
-                            recordHitsAndMisses: false,
-                          ),
-                          tileLoadingDebugger: _tileLoadingDebugger,
+                          loadingStrategy: provider.loadingStrategy,
+                          recordHitsAndMisses: false,
+                          tileLoadingInterceptor: _tileLoadingDebugger,
                         ),
                   tileBuilder: !provider.displayDebugOverlay
                       ? null

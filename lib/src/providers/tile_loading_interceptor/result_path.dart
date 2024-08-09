@@ -4,16 +4,17 @@
 part of '../../../flutter_map_tile_caching.dart';
 
 /// Methods that a tile can complete loading successfully
-enum TileLoadingDebugResultPath {
+enum TileLoadingInterceptorResultPath {
   /// The tile was retrieved from:
   ///
   /// * the specified stores
   /// * the unspecified stores, if
-  /// [FMTCTileProviderSettings.useOtherStoresAsFallbackOnly] is `false`
+  /// [FMTCTileProvider.useOtherStoresAsFallbackOnly] is `false`
   perfectFromStores,
 
-  /// The specified [CacheBehavior] was [CacheBehavior.cacheOnly], and the tile
-  /// was retrieved from the cache (as a fallback)
+  /// The specified [BrowseLoadingStrategy] was
+  /// [BrowseLoadingStrategy.cacheOnly], and the tile was retrieved from the
+  /// cache (as a fallback)
   cacheOnlyFromOtherStores,
 
   /// The tile was retrieved from the cache as a fallback
