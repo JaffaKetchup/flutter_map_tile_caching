@@ -2,6 +2,7 @@
 // A full license can be found at .\LICENSE
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
@@ -14,6 +15,7 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../../flutter_map_tile_caching.dart';
+import '../../../../misc/int_extremes.dart';
 import '../../../export_internal.dart';
 import '../models/generated/objectbox.g.dart';
 import '../models/src/recovery.dart';
@@ -24,7 +26,6 @@ import '../models/src/tile.dart';
 export 'package:objectbox/objectbox.dart' show StorageException;
 
 part 'internal_workers/standard/cmd_type.dart';
-part 'internal_workers/standard/incoming_cmd.dart';
 part 'internal_workers/standard/worker.dart';
 part 'internal_workers/shared.dart';
 part 'internal_workers/thread_safe.dart';
@@ -46,7 +47,8 @@ final class FMTCObjectBoxBackend implements FMTCBackend {
   /// ---
   ///
   /// [maxDatabaseSize] is the maximum size the database file can grow
-  /// to, in KB. Exceeding it throws [DbFullException]. Defaults to 10 GB.
+  /// to, in KB. Exceeding it throws [DbFullException] on write operations.
+  /// Defaults to 10 GB (10000000 KB).
   ///
   /// [macosApplicationGroup] should be set when creating a sandboxed macOS app,
   /// specify the application group (of less than 20 chars). See
