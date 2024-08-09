@@ -6,7 +6,7 @@ part of '../../../flutter_map_tile_caching.dart';
 /// Determines whether the network or cache is preferred during browse caching,
 /// and how to fallback
 ///
-/// | `BrowseLoadingStrategy`  | Preferred fetch method | Fallback fetch method |
+/// | `BrowseLoadingStrategy`  | Preferred method       | Fallback method       |
 /// |--------------------------|------------------------|-----------------------|
 /// | `cacheOnly`              | Cache                  | None                  |
 /// | `cacheFirst`             | Cache                  | Network               |

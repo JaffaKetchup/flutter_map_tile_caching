@@ -133,21 +133,8 @@ class FMTCTileProvider extends TileProvider {
   /// string to that tile that will remain as stable as necessary if parts of the
   /// URL not directly related to the tile image change.
   ///
-  /// To store and retrieve tiles, FMTC uses a tile's storage-suitable UID.
-  /// When a tile is stored, the tile URL is transformed before storage. When a
-  /// tile is retrieved from the cache, the tile URL is transformed before
-  /// retrieval.
-  ///
-  /// A storage-suitable UID is usually the tile's own real URL - although it may
-  /// not necessarily be. The tile URL is guaranteed to refer only to that tile
-  /// from that server (unless the server backend changes).
-  ///
-  /// However, some parts of the tile URL should not be stored. For example,
-  /// an API key transmitted as part of the query parameters should not be
-  /// stored - and is not storage-suitable. This is because, if the API key
-  /// changes, the cached tile will still use the old UID containing the old API
-  /// key, and thus the tile will never be retrieved from storage, even if the
-  /// image is the same.
+  /// For more information, see:
+  /// <https://fmtc.jaffaketchup.dev/flutter_map-integration/url-transformer>.
   ///
   /// [urlTransformerOmitKeyValues] may be used as a transformer to omit entire
   /// key-value pairs from a URL where the key matches one of the specified keys.
@@ -232,7 +219,45 @@ class FMTCTileProvider extends TileProvider {
     super.dispose();
   }
 
-  /// {@macro fmtc.imageProvider.getBytes}
+  /// {@template fmtc.imageProvider.getBytes}
+  /// Use FMTC's caching logic to get the bytes of the specific tile (at
+  /// [coords]) with the specified [TileLayer] options and [FMTCTileProvider]
+  /// provider
+  ///
+  /// Used internally by [_FMTCImageProvider.loadImage]. `loadImage` provides
+  /// a decoding wrapper, but is only suitable for codecs Flutter can render.
+  ///
+  /// Therefore, this method does not make any assumptions about the format
+  /// of the bytes, and it is up to the user to decode/render appropriately.
+  /// For example, this could be incorporated into another [ImageProvider] (via
+  /// a [TileProvider]) to integrate FMTC caching for vector tiles.
+  ///
+  /// ---
+  ///
+  /// [key] is used to control the [ImageCache], and should be set when in a
+  /// context where [ImageProvider.obtainKey] is available.
+  ///
+  /// [chunkEvents] is used to improve the quality of an [ImageProvider], and
+  /// should be set when [MultiFrameImageStreamCompleter] is in use inside an
+  /// [ImageProvider.loadImage]. Note that it will be closed by this method.
+  ///
+  /// [startedLoading] & [finishedLoadingBytes] are used to indicate to
+  /// flutter_map when it is safe to dispose a [TileProvider], and should be set
+  /// when used inside a [TileProvider]'s context (such as directly or within
+  /// a dedicated [ImageProvider]).
+  ///
+  /// [requireValidImage] is `false` by default, but should be `true` when
+  /// only Flutter decodable data is being used (ie. most raster tiles) (and is
+  /// set `true` when used by `loadImage` internally). This provides an extra
+  /// layer of protection by preventing invalid data from being stored inside
+  /// the cache, which could cause further issues at a later point. However, this
+  /// may be set `false` intentionally, for example to allow for vector tiles
+  /// to be stored. If this is `true`, and the image is invalid, an
+  /// [FMTCBrowsingError] with sub-category
+  /// [FMTCBrowsingErrorType.invalidImageData] will be thrown - if `false`, then
+  /// FMTC will not throw an error, but Flutter will if the bytes are attempted
+  /// to be decoded (now or at a later time).
+  /// {@endtemplate}
   Future<Uint8List> getBytes({
     required TileCoordinates coords,
     required TileLayer options,
@@ -266,10 +291,7 @@ class FMTCTileProvider extends TileProvider {
         url: urlTransformer(getTileUrl(coords, options)),
       );
 
-  /// Removes specified key-value pairs from the specified [url]
-  ///
-  /// Both the key itself and its associated value, for each of [keys], will be
-  /// omitted.
+  /// Removes key-value pairs from the specified [url], given only the [keys]
   ///
   /// [link] connects a key to its value (defaults to '='). [delimiter]
   /// seperates two different key value pairs (defaults to '&').
@@ -285,6 +307,8 @@ class FMTCTileProvider extends TileProvider {
   ///
   /// This is not designed to be a security mechanism, and should not be relied
   /// upon as such.
+  ///
+  /// See [urlTransformer] for more information.
   static String urlTransformerOmitKeyValues({
     required String url,
     required Iterable<String> keys,
