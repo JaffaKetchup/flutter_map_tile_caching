@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'src/screens/home/config_view/panels/stores/state/export_selection_provider.dart';
 import 'src/screens/home/home.dart';
 import 'src/screens/home/map_view/state/region_selection_provider.dart';
 import 'src/screens/initialisation_error/initialisation_error.dart';
@@ -110,22 +111,13 @@ class _AppContainer extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => GeneralProvider(),
         ),
-        /*ChangeNotifierProvider(
-          create: (_) => MapProvider(),
-          lazy: true,
-        ),*/
+        ChangeNotifierProvider(
+          create: (_) => ExportSelectionProvider(),
+        ),
         ChangeNotifierProvider(
           create: (_) => RegionSelectionProvider(),
           lazy: true,
-        ), /*
-        ChangeNotifierProvider(
-          create: (_) => ConfigureDownloadProvider(),
-          lazy: true,
         ),
-        ChangeNotifierProvider(
-          create: (_) => DownloadingProvider(),
-          lazy: true,
-        ),*/
       ],
       child: MaterialApp(
         title: 'FMTC Demo',

@@ -8,6 +8,7 @@ import '../../../../../../shared/misc/exts/size_formatter.dart';
 import '../../../../../../shared/misc/store_metadata_keys.dart';
 import '../../../../../../shared/state/general_provider.dart';
 import '../../../../../store_editor/store_editor.dart';
+import '../state/export_selection_provider.dart';
 import 'store_read_write_behaviour_selector.dart';
 
 class StoreTile extends StatefulWidget {
@@ -35,60 +36,78 @@ class _StoreTileState extends State<StoreTile> {
   Timer? _toolsAutoHiderTimer;
 
   @override
-  Widget build(BuildContext context) => Material(
+  Widget build(BuildContext context) {
+    final storeName = widget.store.storeName;
+
+    return RepaintBoundary(
+      child: Material(
         color: Colors.transparent,
-        child: Consumer<GeneralProvider>(
-          builder: (context, provider, _) => FutureBuilder(
+        child: Consumer2<GeneralProvider, ExportSelectionProvider>(
+          builder: (context, provider, exportSelectionProvider, _) =>
+              FutureBuilder(
             future: widget.metadata,
             builder: (context, metadataSnapshot) {
               final matchesUrl = metadataSnapshot.data != null &&
                   provider.urlTemplate ==
                       metadataSnapshot.data![StoreMetadataKeys.urlTemplate.key];
 
-              final toolsChildren = _toolsDeleteLoading
-                  ? [
-                      const Center(
-                        child: SizedBox.square(
-                          dimension: 25,
-                          child: Center(
-                            child: CircularProgressIndicator.adaptive(),
-                          ),
-                        ),
+              final toolsChildren = [
+                IconButton(
+                  onPressed: _exportStore,
+                  icon: const Icon(Icons.send_and_archive),
+                ),
+                IconButton(
+                  onPressed: _editStore,
+                  icon: const Icon(Icons.edit),
+                ),
+                if (_toolsEmptyLoading)
+                  const Center(
+                    child: SizedBox.square(
+                      dimension: 25,
+                      child: Center(
+                        child: CircularProgressIndicator.adaptive(),
                       ),
-                    ]
-                  : [
-                      IconButton(
-                        onPressed: _editStore,
-                        icon: const Icon(Icons.edit),
-                      ),
-                      if (_toolsEmptyLoading)
-                        const Center(
-                          child: SizedBox.square(
-                            dimension: 25,
-                            child: Center(
-                              child: CircularProgressIndicator.adaptive(),
-                            ),
-                          ),
-                        )
-                      else
-                        IconButton(
-                          onPressed: _emptyStore,
-                          icon: const Icon(Icons.delete),
-                        ),
-                      IconButton(
-                        onPressed: _deleteStore,
-                        icon: const Icon(
-                          Icons.delete_forever,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ];
+                    ),
+                  )
+                else
+                  IconButton(
+                    onPressed: _emptyStore,
+                    icon: const Icon(Icons.delete),
+                  ),
+                IconButton(
+                  onPressed: _deleteStore,
+                  icon: const Icon(
+                    Icons.delete_forever,
+                    color: Colors.red,
+                  ),
+                ),
+              ];
+
+              final exportModeChildren = [
+                const Icon(Icons.note_add),
+                const SizedBox(width: 12),
+                Checkbox.adaptive(
+                  value: exportSelectionProvider.selectedStores
+                      .contains(storeName),
+                  onChanged: (v) {
+                    if (v!) {
+                      context
+                          .read<ExportSelectionProvider>()
+                          .addSelectedStore(storeName);
+                    } else if (!v) {
+                      context
+                          .read<ExportSelectionProvider>()
+                          .removeSelectedStore(storeName);
+                    }
+                  },
+                ),
+              ];
 
               return InkWell(
                 onSecondaryTap: _showTools,
                 child: ListTile(
                   title: Text(
-                    widget.store.storeName,
+                    storeName,
                     maxLines: 1,
                     overflow: TextOverflow.fade,
                     softWrap: false,
@@ -180,10 +199,57 @@ class _StoreTileState extends State<StoreTile> {
                                         .surfaceDim,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: toolsChildren,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                    ),
+                                    child: _toolsDeleteLoading
+                                        ? const Center(
+                                            child: SizedBox.square(
+                                              dimension: 25,
+                                              child: Center(
+                                                child: CircularProgressIndicator
+                                                    .adaptive(),
+                                              ),
+                                            ),
+                                          )
+                                        : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: toolsChildren,
+                                          ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          AnimatedOpacity(
+                            opacity: exportSelectionProvider
+                                    .selectedStores.isNotEmpty
+                                ? 1
+                                : 0,
+                            duration: const Duration(milliseconds: 150),
+                            curve: Curves.easeInOut,
+                            child: IgnorePointer(
+                              ignoring: exportSelectionProvider
+                                  .selectedStores.isEmpty,
+                              child: SizedBox.expand(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceDim,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: exportModeChildren,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -200,7 +266,16 @@ class _StoreTileState extends State<StoreTile> {
             },
           ),
         ),
-      );
+      ),
+    );
+  }
+
+  Future<void> _exportStore() async {
+    context
+        .read<ExportSelectionProvider>()
+        .addSelectedStore(widget.store.storeName);
+    await _hideTools();
+  }
 
   Future<void> _editStore() async {
     await Navigator.of(context).pushNamed(

@@ -85,11 +85,7 @@ class ColumnHeadersAndInheritableSettings extends StatelessWidget {
               ),
             ),
           ),
-          const Divider(
-            height: 8,
-            indent: 24,
-            endIndent: 24,
-          ),
+          const Divider(height: 8, indent: 12, endIndent: 12),
         ],
       );
 }
