@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../import/import.dart';
 import '../../../../../store_editor/store_editor.dart';
 
 class NewStoreButton extends StatelessWidget {
@@ -28,7 +29,7 @@ class NewStoreButton extends StatelessWidget {
                   IconButton.outlined(
                     icon: const Icon(Icons.file_open),
                     tooltip: 'Import store',
-                    onPressed: () {},
+                    onPressed: () => ImportPopup.start(context),
                   ),
                 ],
               ),

@@ -298,10 +298,8 @@ class _StoreTileState extends State<StoreTile> {
   }
 
   Future<void> _emptyStore() async {
-    _toolsAutoHiderTimer?.cancel();
     setState(() => _toolsEmptyLoading = true);
     await widget.store.manage.reset();
-    await _hideTools();
     setState(() => _toolsEmptyLoading = false);
   }
 

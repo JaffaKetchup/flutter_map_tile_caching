@@ -26,11 +26,24 @@ typedef StoresToStates = Map<String, ({String? name, bool hadConflict})>;
 /// Export & import 'archives' of selected stores and tiles, outside of the
 /// FMTC environment
 ///
-/// Archives are backend specific, and FMTC specific. They cannot necessarily
-/// be imported by a backend different to the one that exported it. The
-/// archive may hold a similar form to the raw format of the database used by
-/// the backend, but FMTC specific information has been attached, and therefore
-/// the file will be unreadable by non-FMTC database implementations.
+/// ---
+///
+/// Archives are backend specific. They cannot be imported by a backend
+/// different to the one that exported it.
+///
+/// Archives are only readable by FMTC. The archive may hold a similar form to
+/// the raw format of the database used by the backend, but FMTC-specific
+/// information has been attached, and therefore the file will be unreadable by
+/// non-FMTC database implementations.
+///
+/// Archives are potentially backend/FMTC version specific, dependent on whether
+/// the database schema was changed. An archive created on an older schema is
+/// usually importable into a newer schema, but this is not guaranteed. An
+/// archive created in a newer schema cannot be imported into an older schema.
+/// Note that this is not enforced by the archive format, and the schema may not
+/// change between FMTC or backend version changes.
+///
+/// ---
 ///
 /// Importing (especially) and exporting operations are likely to be slow. It is
 /// not recommended to attempt to use other FMTC operations during the
@@ -52,11 +65,11 @@ class RootExternal {
   /// > devices, it should not be in external storage, unless the app has the
   /// > appropriate (dangerous) permissions.
   /// >
-  /// > On mobile platforms (/those platforms which operate sandboxed storage), it
-  /// > is recommended to set this path to a path the application can definitely
-  /// > control (such as app support), using a path from 'package:path_provider',
-  /// > then share it somewhere else using the system flow (using
-  /// > 'package:share_plus').
+  /// > On mobile platforms (/those platforms which operate sandboxed storage),
+  /// > if the app does not have external storage permissions, it is recommended
+  /// > to set this path to a path the application can definitely control (such
+  /// > as app support), using a path from 'package:path_provider', then share
+  /// > it somewhere else using the system flow (using 'package:share_plus').
   final String pathToArchive;
 
   /// Creates an archive at [pathToArchive] containing the specified stores and

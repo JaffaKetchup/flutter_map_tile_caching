@@ -85,7 +85,7 @@ class ExportStoresButton extends StatelessWidget {
     final fileNameTime =
         DateTime.now().toString().split('.').first.replaceAll(':', '-');
 
-    late final String filePath;
+    final String filePath;
     late final String tempDir;
     if (Platform.isAndroid || Platform.isIOS) {
       tempDir = p.join(

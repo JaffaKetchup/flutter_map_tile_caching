@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class LoadingIndicator extends StatelessWidget {
-  const LoadingIndicator(this.text, {super.key});
+class SharedLoadingIndicator extends StatelessWidget {
+  const SharedLoadingIndicator(this.text, {super.key});
 
   final String text;
 

@@ -219,7 +219,8 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
       stream: _storesStream,
       builder: (context, snapshot) {
         if (snapshot.data == null) {
-          return const AbsorbPointer(child: LoadingIndicator('Preparing map'));
+          return const AbsorbPointer(
+              child: SharedLoadingIndicator('Preparing map'));
         }
 
         final stores = snapshot.data!;

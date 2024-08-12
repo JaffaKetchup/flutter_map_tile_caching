@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'src/screens/home/config_view/panels/stores/state/export_selection_provider.dart';
 import 'src/screens/home/home.dart';
 import 'src/screens/home/map_view/state/region_selection_provider.dart';
+import 'src/screens/import/import.dart';
 import 'src/screens/initialisation_error/initialisation_error.dart';
 import 'src/screens/store_editor/store_editor.dart';
 import 'src/shared/misc/shared_preferences.dart';
@@ -47,6 +48,14 @@ class _AppContainer extends StatelessWidget {
       std: null,
       custom: (context, settings) => MaterialPageRoute(
             builder: (context) => const StoreEditorPopup(),
+            settings: settings,
+            fullscreenDialog: true,
+          ),
+    ),
+    ImportPopup.route: (
+      std: null,
+      custom: (context, settings) => MaterialPageRoute(
+            builder: (context) => const ImportPopup(),
             settings: settings,
             fullscreenDialog: true,
           ),
