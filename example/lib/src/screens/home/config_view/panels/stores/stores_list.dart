@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../../shared/misc/exts/size_formatter.dart';
 import 'components/column_headers_and_inheritable_settings.dart';
-import 'components/export_stores_button.dart';
+import 'components/export_stores/button.dart';
 import 'components/new_store_button.dart';
 import 'components/no_stores.dart';
 import 'components/root_tile.dart';

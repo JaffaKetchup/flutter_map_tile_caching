@@ -5,9 +5,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
-import '../state/export_selection_provider.dart';
+import '../../state/export_selection_provider.dart';
+
+part 'name_input_dialog.dart';
+part 'progress_dialog.dart';
 
 class ExportStoresButton extends StatelessWidget {
   const ExportStoresButton({super.key});
@@ -81,13 +86,29 @@ class ExportStoresButton extends StatelessWidget {
         DateTime.now().toString().split('.').first.replaceAll(':', '-');
 
     late final String filePath;
+    late final String tempDir;
     if (Platform.isAndroid || Platform.isIOS) {
-      final dirPath = await FilePicker.platform.getDirectoryPath();
-      if (dirPath == null) return;
-      filePath = p.join(
-        dirPath,
-        'export ($fileNameTime).fmtc',
+      tempDir = p.join(
+        (await getTemporaryDirectory()).absolute.path,
+        'fmtc_export',
       );
+      await Directory(tempDir).create(recursive: true);
+
+      if (!context.mounted) {
+        provider.clearSelectedStores();
+        return;
+      }
+
+      final name = await showDialog(
+        context: context,
+        builder: (context) => _ExportingNameInputDialog(
+          defaultName: 'export ($fileNameTime)',
+          tempDir: tempDir,
+        ),
+      );
+      if (name == null) return;
+
+      filePath = p.join(tempDir, '$name.fmtc');
     } else {
       final intermediateFilePath = await FilePicker.platform.saveFile(
         dialogTitle: 'Export Stores',
@@ -95,35 +116,36 @@ class ExportStoresButton extends StatelessWidget {
         type: FileType.custom,
         allowedExtensions: ['fmtc'],
       );
+
       if (intermediateFilePath == null) return;
-      filePath = intermediateFilePath;
-    }
+      final selectedType = await FileSystemEntity.type(intermediateFilePath);
 
-    final selectedType = await FileSystemEntity.type(filePath);
-
-    if (!context.mounted) {
-      provider.clearSelectedStores();
-      return;
-    }
-
-    const invalidTypeSnackbar = SnackBar(
-      content: Text(
-        'Cannot start export: must be a file or non-existent',
-      ),
-    );
-
-    switch (selectedType) {
-      case FileSystemEntityType.notFound:
-        break;
-      case FileSystemEntityType.directory:
-      case FileSystemEntityType.link:
-      case FileSystemEntityType.pipe:
-      case FileSystemEntityType.unixDomainSock:
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(invalidTypeSnackbar);
+      if (!context.mounted) {
+        provider.clearSelectedStores();
         return;
-      case FileSystemEntityType.file:
-        if ((Platform.isAndroid || Platform.isIOS) &&
-            (await showOverwriteConfirmationDialog(context) ?? false)) return;
+      }
+
+      const invalidTypeSnackbar = SnackBar(
+        content: Text(
+          'Cannot start export: must be a file or non-existent',
+        ),
+      );
+
+      switch (selectedType) {
+        case FileSystemEntityType.notFound:
+          break;
+        case FileSystemEntityType.directory:
+        case FileSystemEntityType.link:
+        case FileSystemEntityType.pipe:
+        case FileSystemEntityType.unixDomainSock:
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(invalidTypeSnackbar);
+          return;
+        case FileSystemEntityType.file:
+          if ((Platform.isAndroid || Platform.isIOS) &&
+              (await showOverwriteConfirmationDialog(context) ?? false)) return;
+      }
+
+      filePath = intermediateFilePath;
     }
 
     if (!context.mounted) {
@@ -154,28 +176,10 @@ class ExportStoresButton extends StatelessWidget {
         ),
       ),
     );
+
+    if (Platform.isAndroid || Platform.isIOS) {
+      await Share.shareXFiles([XFile(filePath)]);
+      await Directory(tempDir).delete(recursive: true);
+    }
   }
-}
-
-class _ExportingProgressDialog extends StatelessWidget {
-  const _ExportingProgressDialog();
-
-  @override
-  Widget build(BuildContext context) => const AlertDialog.adaptive(
-        icon: Icon(Icons.send_and_archive),
-        title: Text('Export in progress'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator.adaptive(),
-            SizedBox(height: 12),
-            Text(
-              "Please don't close this dialog or leave the app.\nThe operation "
-              "will continue if the dialog is closed.\nWe'll let you know once "
-              "we're done.",
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
 }

@@ -29,7 +29,6 @@ part 'internal_workers/standard/cmd_type.dart';
 part 'internal_workers/standard/worker.dart';
 part 'internal_workers/shared.dart';
 part 'internal_workers/thread_safe.dart';
-part 'errors.dart';
 part 'internal.dart';
 
 /// {@template fmtc.backend.objectbox}

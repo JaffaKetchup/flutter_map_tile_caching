@@ -818,20 +818,24 @@ Future<void> _worker(
         final storeNames = cmd.args['storeNames']! as List<String>;
         final outputPath = cmd.args['outputPath']! as String;
 
-        final outputDir = path.dirname(outputPath);
+        final workingDir =
+            Directory(path.join(input.rootDirectory, 'export_working_dir'));
 
-        if (path.equals(outputDir, input.rootDirectory)) {
-          throw ExportInRootDirectoryForbidden();
+        if (workingDir.existsSync()) workingDir.deleteSync(recursive: true);
+        workingDir.createSync(recursive: true);
+
+        late final Store exportingRoot;
+        try {
+          exportingRoot = Store(
+            getObjectBoxModel(),
+            directory: workingDir.absolute.path,
+            maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
+            macosApplicationGroup: input.macosApplicationGroup,
+          );
+        } catch (_) {
+          workingDir.deleteSync(recursive: true);
+          rethrow;
         }
-
-        Directory(outputDir).createSync(recursive: true);
-
-        final exportingRoot = Store(
-          getObjectBoxModel(),
-          directory: outputDir,
-          maxDBSizeInKB: input.maxDatabaseSize, // Defaults to 10 GB
-          macosApplicationGroup: input.macosApplicationGroup,
-        );
 
         final storesQuery = root
             .box<ObjectBoxStore>()
@@ -919,11 +923,10 @@ Future<void> _worker(
                 tilesQuery.close();
                 exportingRoot.close();
 
-                File(path.join(outputDir, 'lock.mdb')).delete();
+                final dbFile =
+                    File(path.join(workingDir.absolute.path, 'data.mdb'));
 
-                final ram = File(path.join(outputDir, 'data.mdb'))
-                    .renameSync(outputPath)
-                    .openSync(mode: FileMode.writeOnlyAppend);
+                final ram = dbFile.openSync(mode: FileMode.writeOnlyAppend);
                 try {
                   ram
                     ..writeFromSync(List.filled(4, 255))
@@ -935,33 +938,56 @@ Future<void> _worker(
                   ram.closeSync();
                 }
 
+                try {
+                  dbFile.renameSync(outputPath);
+                } on FileSystemException {
+                  dbFile.copySync(outputPath);
+                } finally {
+                  workingDir.deleteSync(recursive: true);
+                }
+
                 sendRes(id: cmd.id);
               },
-            );
+            ).catchError((error, stackTrace) {
+              exportingRoot.close();
+              try {
+                workingDir.deleteSync(recursive: true);
+                // ignore: empty_catches
+              } on FileSystemException {}
+              Error.throwWithStackTrace(error, stackTrace);
+            });
           },
-        );
+        ).catchError((error, stackTrace) {
+          exportingRoot.close();
+          try {
+            workingDir.deleteSync(recursive: true);
+            // ignore: empty_catches
+          } on FileSystemException {}
+          Error.throwWithStackTrace(error, stackTrace);
+        });
       case _CmdType.importStores:
         final importPath = cmd.args['path']! as String;
         final strategy = cmd.args['strategy'] as ImportConflictStrategy;
         final storesToImport = cmd.args['stores'] as List<String>?;
 
-        final importDir = path.join(input.rootDirectory, 'import_tmp');
-        final importDirIO = Directory(importDir)..createSync();
+        final workingDir =
+            Directory(path.join(input.rootDirectory, 'import_working_dir'));
+        if (workingDir.existsSync()) workingDir.deleteSync(recursive: true);
+        workingDir.createSync(recursive: true);
 
-        final importFile =
-            File(importPath).copySync(path.join(importDir, 'data.mdb'));
+        final importFile = File(importPath)
+            .copySync(path.join(workingDir.absolute.path, 'data.mdb'));
 
         try {
           verifyImportableArchive(importFile);
         } catch (e) {
-          importFile.deleteSync();
-          importDirIO.deleteSync();
+          workingDir.deleteSync(recursive: true);
           rethrow;
         }
 
         final importingRoot = Store(
           getObjectBoxModel(),
-          directory: importDir,
+          directory: workingDir.absolute.path,
           maxDBSizeInKB: input.maxDatabaseSize,
           macosApplicationGroup: input.macosApplicationGroup,
         );
@@ -983,10 +1009,7 @@ Future<void> _worker(
           importingStoresQuery.close();
           specificStoresQuery.close();
           importingRoot.close();
-
-          importFile.deleteSync();
-          File(path.join(importDir, 'lock.mdb')).deleteSync();
-          importDirIO.deleteSync();
+          workingDir.deleteSync(recursive: true);
         }
 
         final StoresToStates storesToStates = {};

@@ -60,26 +60,38 @@ class _StoreTileState extends State<StoreTile> {
                   onPressed: _editStore,
                   icon: const Icon(Icons.edit),
                 ),
-                if (_toolsEmptyLoading)
-                  const Center(
-                    child: SizedBox.square(
-                      dimension: 25,
-                      child: Center(
-                        child: CircularProgressIndicator.adaptive(),
-                      ),
-                    ),
-                  )
-                else
-                  IconButton(
-                    onPressed: _emptyStore,
-                    icon: const Icon(Icons.delete),
-                  ),
-                IconButton(
-                  onPressed: _deleteStore,
-                  icon: const Icon(
-                    Icons.delete_forever,
-                    color: Colors.red,
-                  ),
+                FutureBuilder(
+                  future: widget.stats,
+                  builder: (context, statsSnapshot) {
+                    if (statsSnapshot.data?.length == 0) {
+                      return IconButton(
+                        onPressed: _deleteStore,
+                        icon: const Icon(
+                          Icons.delete_forever,
+                          color: Colors.red,
+                        ),
+                      );
+                    }
+
+                    if (_toolsEmptyLoading) {
+                      return const IconButton(
+                        onPressed: null,
+                        icon: SizedBox.square(
+                          dimension: 22,
+                          child: Center(
+                            child: CircularProgressIndicator.adaptive(
+                              strokeWidth: 3,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return IconButton(
+                      onPressed: _emptyStore,
+                      icon: const Icon(Icons.delete),
+                    );
+                  },
                 ),
               ];
 
