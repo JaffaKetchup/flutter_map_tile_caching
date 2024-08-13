@@ -8,7 +8,6 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
-import '../../../shared/components/loading_indicator.dart';
 import '../../../shared/misc/shared_preferences.dart';
 import '../../../shared/misc/store_metadata_keys.dart';
 import '../../../shared/state/general_provider.dart';
@@ -220,7 +219,22 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
       builder: (context, snapshot) {
         if (snapshot.data == null) {
           return const AbsorbPointer(
-              child: SharedLoadingIndicator('Preparing map'));
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator.adaptive(),
+                  SizedBox(height: 12),
+                  Text('Preparing map...', textAlign: TextAlign.center),
+                  Text(
+                    'This should only take a few moments',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontStyle: FontStyle.italic),
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         final stores = snapshot.data!;

@@ -946,7 +946,10 @@ Future<void> _worker(
                   workingDir.deleteSync(recursive: true);
                 }
 
-                sendRes(id: cmd.id);
+                sendRes(
+                  id: cmd.id,
+                  data: {'numExportedTiles': numExportedTiles},
+                );
               },
             ).catchError((error, stackTrace) {
               exportingRoot.close();

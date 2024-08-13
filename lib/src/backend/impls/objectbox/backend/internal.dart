@@ -595,7 +595,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       );
 
   @override
-  Future<void> exportStores({
+  Future<int> exportStores({
     required List<String> storeNames,
     required String path,
   }) async {
@@ -608,10 +608,10 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       throw ImportExportPathNotFile();
     }
 
-    await _sendCmdOneShot(
+    return (await _sendCmdOneShot(
       type: _CmdType.exportStores,
       args: {'storeNames': storeNames, 'outputPath': path},
-    );
+    ))!['numExportedTiles'];
   }
 
   @override

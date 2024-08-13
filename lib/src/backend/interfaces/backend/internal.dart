@@ -365,7 +365,9 @@ abstract interface class FMTCBackendInternal
   ///
   /// See [RootExternal] for more information about expected behaviour and
   /// errors.
-  Future<void> exportStores({
+  ///
+  /// Returns the number of exported tiles.
+  Future<int> exportStores({
     required String path,
     required List<String> storeNames,
   });

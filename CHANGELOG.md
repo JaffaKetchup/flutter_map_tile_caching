@@ -36,6 +36,7 @@ Additionally, vector tiles are now supported in theory, as the internal caching/
   * Replaced `FMTCBrowsingErrorHandler` with `BrowsingExceptionHandler`, which may now return bytes to be displayed instead of (re)throwing exception
   * Removed `FMTCTileProviderSettings` & absorbed properties directly into `FMTCTileProvider`
 * Improved speed (by massive amounts) and accuracy & reduced memory consumption of `CircleRegion`'s tile generation & counting algorithm
+* `RootExternal.export` now returns the number of exported tiles
 * Replaced `obscureQueryParams` with more flexible `urlTransformer` (and static `FMTCTileProvider.urlTransformerOmitKeyValues` utility method to provide old behaviour with more customizability)
 * Removed deprecated remnants from v9.*
 * Other generic improvements

@@ -162,7 +162,7 @@ class ExportStoresButton extends StatelessWidget {
     );
 
     final startTime = DateTime.timestamp();
-    await FMTCRoot.external(pathToArchive: filePath)
+    final tiles = await FMTCRoot.external(pathToArchive: filePath)
         .export(storeNames: provider.selectedStores);
 
     provider.clearSelectedStores();
@@ -172,7 +172,8 @@ class ExportStoresButton extends StatelessWidget {
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(
       SnackBar(
         content: Text(
-          'Export complete (in ${DateTime.timestamp().difference(startTime)})',
+          'Exported $tiles tiles in '
+          '${DateTime.timestamp().difference(startTime)}',
         ),
       ),
     );

@@ -80,7 +80,9 @@ class RootExternal {
   /// accessible to the application: see [pathToArchive] for information.
   ///
   /// The specified stores must contain at least one tile.
-  Future<void> export({
+  ///
+  /// Returns the number of exported tiles.
+  Future<int> export({
     required List<String> storeNames,
   }) =>
       FMTCBackendAccess.internal
