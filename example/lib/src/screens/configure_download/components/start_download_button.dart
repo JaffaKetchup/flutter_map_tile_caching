@@ -1,134 +1,103 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../home/map_view/state/region_selection_provider.dart';
+import '../../../shared/misc/store_metadata_keys.dart';
+import '../../download/download.dart';
 import '../state/configure_download_provider.dart';
 
 class StartDownloadButton extends StatelessWidget {
   const StartDownloadButton({
     super.key,
     required this.region,
-    required this.minZoom,
-    required this.maxZoom,
-    required this.startTile,
-    required this.endTile,
+    required this.maxTiles,
   });
 
-  final BaseRegion region;
-  final int minZoom;
-  final int maxZoom;
-  final int startTile;
-  final int? endTile;
+  final DownloadableRegion region;
+  final int? maxTiles;
 
   @override
   Widget build(BuildContext context) =>
-      Selector<ConfigureDownloadProvider, bool>(
-        selector: (context, provider) => provider.isReady,
-        builder: (context, isReady, _) =>
-            Selector<RegionSelectionProvider, FMTCStore?>(
-          selector: (context, provider) => provider.selectedStore,
-          builder: (context, selectedStore, child) => IgnorePointer(
-            ignoring: selectedStore == null,
+      Selector<ConfigureDownloadProvider, FMTCStore?>(
+        selector: (context, provider) => provider.selectedStore,
+        builder: (context, selectedStore, child) {
+          final enabled = selectedStore != null && maxTiles != null;
+
+          return IgnorePointer(
+            ignoring: !enabled,
             child: AnimatedOpacity(
-              opacity: selectedStore == null ? 0 : 1,
+              opacity: enabled ? 1 : 0,
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeInOut,
               child: child,
             ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              AnimatedScale(
-                scale: isReady ? 1 : 0,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInCubic,
-                alignment: Alignment.bottomRight,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                      bottomLeft: Radius.circular(12),
+          );
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            FloatingActionButton.extended(
+              onPressed: () async {
+                final configureDownloadProvider =
+                    context.read<ConfigureDownloadProvider>();
+
+                if (!await configureDownloadProvider
+                        .selectedStore!.manage.ready &&
+                    context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Selected store no longer exists'),
+                    ),
+                  );
+                  return;
+                }
+
+                final urlTemplate = (await configureDownloadProvider
+                    .selectedStore!
+                    .metadata
+                    .read)[StoreMetadataKeys.urlTemplate.key]!;
+
+                if (!context.mounted) return;
+
+                unawaited(
+                  Navigator.of(context).popAndPushNamed(
+                    DownloadPopup.route,
+                    arguments: (
+                      downloadProgress: configureDownloadProvider
+                          .selectedStore!.download
+                          .startForeground(
+                        region: region.originalRegion.toDownloadable(
+                          minZoom: region.minZoom,
+                          maxZoom: region.maxZoom,
+                          start: region.start,
+                          end: region.end,
+                          options: TileLayer(
+                            urlTemplate: urlTemplate,
+                            userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
+                          ),
+                        ),
+                        parallelThreads:
+                            configureDownloadProvider.parallelThreads,
+                        maxBufferLength:
+                            configureDownloadProvider.maxBufferLength,
+                        skipExistingTiles:
+                            configureDownloadProvider.skipExistingTiles,
+                        skipSeaTiles: configureDownloadProvider.skipSeaTiles,
+                        rateLimit: configureDownloadProvider.rateLimit,
+                      ),
+                      maxTiles: maxTiles!
                     ),
                   ),
-                  margin: const EdgeInsets.only(right: 12, left: 32),
-                  padding: const EdgeInsets.all(12),
-                  constraints: const BoxConstraints(maxWidth: 500),
-                  child: const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        "You must abide by your tile server's Terms of Service when bulk downloading. Many servers will forbid or heavily restrict this action, as it places extra strain on resources. Be respectful, and note that you use this functionality at your own risk.",
-                        textAlign: TextAlign.end,
-                        style: TextStyle(color: Colors.black),
-                      ),
-                      SizedBox(height: 8),
-                      Icon(Icons.report, color: Colors.red, size: 32),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              FloatingActionButton.extended(
-                onPressed: () async {
-                  final configureDownloadProvider =
-                      context.read<ConfigureDownloadProvider>();
-
-                  if (!isReady) {
-                    configureDownloadProvider.isReady = true;
-                    return;
-                  }
-
-                  final regionSelectionProvider =
-                      context.read<RegionSelectionProvider>();
-                  final downloadingProvider =
-                      context.read<DownloadingProvider>();
-
-                  final navigator = Navigator.of(context);
-
-                  final metadata = await regionSelectionProvider
-                      .selectedStore!.metadata.read;
-
-                  downloadingProvider.setDownloadProgress(
-                    regionSelectionProvider.selectedStore!.download
-                        .startForeground(
-                          region: region.toDownloadable(
-                            minZoom: minZoom,
-                            maxZoom: maxZoom,
-                            start: startTile,
-                            end: endTile,
-                            options: TileLayer(
-                              urlTemplate: metadata['sourceURL'],
-                              userAgentPackageName:
-                                  'dev.jaffaketchup.fmtc.demo',
-                            ),
-                          ),
-                          parallelThreads:
-                              configureDownloadProvider.parallelThreads,
-                          maxBufferLength:
-                              configureDownloadProvider.maxBufferLength,
-                          skipExistingTiles:
-                              configureDownloadProvider.skipExistingTiles,
-                          skipSeaTiles: configureDownloadProvider.skipSeaTiles,
-                          rateLimit: configureDownloadProvider.rateLimit,
-                        )
-                        .asBroadcastStream(),
-                  );
-                  configureDownloadProvider.isReady = false;
-
-                  navigator.pop();
-                },
-                label: const Text('Start Download'),
-                icon: Icon(isReady ? Icons.save : Icons.arrow_forward),
-              ),
-            ],
-          ),
+                );
+              },
+              label: const Text('Start Download'),
+              icon: const Icon(Icons.save),
+            ),
+          ],
         ),
       );
 }

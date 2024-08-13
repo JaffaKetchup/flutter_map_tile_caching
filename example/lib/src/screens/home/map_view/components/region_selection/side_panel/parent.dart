@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../../shared/misc/exts/interleave.dart';
+import '../../../../../configure_download/configure_download.dart';
 import '../../../state/region_selection_provider.dart';
 
 part 'additional_panes/additional_pane.dart';
@@ -30,9 +31,8 @@ class RegionSelectionSidePanel extends StatelessWidget {
       bottomPaddingWrapperBuilder;
   final Axis layoutDirection;
 
-  void finalizeSelection(BuildContext context) {
-    throw UnimplementedError();
-  }
+  void finalizeSelection(BuildContext context) =>
+      Navigator.of(context).pushNamed(ConfigureDownloadPopup.route);
 
   @override
   Widget build(BuildContext context) {

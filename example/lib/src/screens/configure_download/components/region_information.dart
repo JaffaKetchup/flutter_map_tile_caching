@@ -12,17 +12,11 @@ class RegionInformation extends StatefulWidget {
   const RegionInformation({
     super.key,
     required this.region,
-    required this.minZoom,
-    required this.maxZoom,
-    required this.startTile,
-    required this.endTile,
+    required this.maxTiles,
   });
 
-  final BaseRegion region;
-  final int minZoom;
-  final int maxZoom;
-  final int startTile;
-  final int? endTile;
+  final DownloadableRegion region;
+  final int? maxTiles;
 
   @override
   State<RegionInformation> createState() => _RegionInformationState();
@@ -30,20 +24,6 @@ class RegionInformation extends StatefulWidget {
 
 class _RegionInformationState extends State<RegionInformation> {
   final distance = const Distance(roundResult: false).distance;
-
-  late Future<int> numOfTiles;
-
-  @override
-  void initState() {
-    super.initState();
-    numOfTiles = const FMTCStore('').download.check(
-          widget.region.toDownloadable(
-            minZoom: widget.minZoom,
-            maxZoom: widget.maxZoom,
-            options: TileLayer(),
-          ),
-        );
-  }
 
   @override
   Widget build(BuildContext context) => Column(
@@ -57,63 +37,73 @@ class _RegionInformationState extends State<RegionInformation> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ...widget.region.when(
-                    rectangle: (rectangle) => [
-                      const Text('TOTAL AREA'),
-                      Text(
-                        '${(distance(rectangle.bounds.northWest, rectangle.bounds.northEast) * distance(rectangle.bounds.northEast, rectangle.bounds.southEast) / 1000000).toStringAsFixed(3)} km²',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
+                    rectangle: (rectangleRegion) {
+                      final rectangle = rectangleRegion.originalRegion;
+
+                      return [
+                        const Text('TOTAL AREA'),
+                        Text(
+                          '${(distance(rectangle.bounds.northWest, rectangle.bounds.northEast) * distance(rectangle.bounds.northEast, rectangle.bounds.southEast) / 1000000).toStringAsFixed(3)} km²',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text('APPROX. NORTH WEST'),
-                      Text(
-                        '${rectangle.bounds.northWest.latitude.toStringAsFixed(3)}, ${rectangle.bounds.northWest.longitude.toStringAsFixed(3)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
+                        const SizedBox(height: 10),
+                        const Text('APPROX. NORTH WEST'),
+                        Text(
+                          '${rectangle.bounds.northWest.latitude.toStringAsFixed(3)}, ${rectangle.bounds.northWest.longitude.toStringAsFixed(3)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text('APPROX. SOUTH EAST'),
-                      Text(
-                        '${rectangle.bounds.southEast.latitude.toStringAsFixed(3)}, ${rectangle.bounds.southEast.longitude.toStringAsFixed(3)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
+                        const SizedBox(height: 10),
+                        const Text('APPROX. SOUTH EAST'),
+                        Text(
+                          '${rectangle.bounds.southEast.latitude.toStringAsFixed(3)}, ${rectangle.bounds.southEast.longitude.toStringAsFixed(3)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
                         ),
-                      ),
-                    ],
-                    circle: (circle) => [
-                      const Text('TOTAL AREA'),
-                      Text(
-                        '${(pi * pow(circle.radius, 2)).toStringAsFixed(3)} km²',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
+                      ];
+                    },
+                    circle: (circleRegion) {
+                      final circle = circleRegion.originalRegion;
+
+                      return [
+                        const Text('TOTAL AREA'),
+                        Text(
+                          '${(pi * pow(circle.radius, 2)).toStringAsFixed(3)} km²',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text('RADIUS'),
-                      Text(
-                        '${circle.radius.toStringAsFixed(2)} km',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
+                        const SizedBox(height: 10),
+                        const Text('RADIUS'),
+                        Text(
+                          '${circle.radius.toStringAsFixed(2)} km',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text('APPROX. CENTER'),
-                      Text(
-                        '${circle.center.latitude.toStringAsFixed(3)}, ${circle.center.longitude.toStringAsFixed(3)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
+                        const SizedBox(height: 10),
+                        const Text('APPROX. CENTER'),
+                        Text(
+                          '${circle.center.latitude.toStringAsFixed(3)}, ${circle.center.longitude.toStringAsFixed(3)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
                         ),
-                      ),
-                    ],
-                    line: (line) {
+                      ];
+                    },
+                    line: (lineRegion) {
+                      final line = lineRegion.originalRegion;
+
                       double totalDistance = 0;
 
                       for (int i = 0; i < line.line.length - 1; i++) {
@@ -150,7 +140,9 @@ class _RegionInformationState extends State<RegionInformation> {
                         ),
                       ];
                     },
-                    customPolygon: (customPolygon) {
+                    customPolygon: (customPolygonRegion) {
+                      final customPolygon = customPolygonRegion.originalRegion;
+
                       double area = 0;
 
                       for (final triangle in Earcut.triangulateFromPoints(
@@ -186,7 +178,7 @@ class _RegionInformationState extends State<RegionInformation> {
                 children: [
                   const Text('ZOOM LEVELS'),
                   Text(
-                    '${widget.minZoom} - ${widget.maxZoom}',
+                    '${widget.region.minZoom} - ${widget.region.maxZoom}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
@@ -194,37 +186,34 @@ class _RegionInformationState extends State<RegionInformation> {
                   ),
                   const SizedBox(height: 10),
                   const Text('TOTAL TILES'),
-                  FutureBuilder<int>(
-                    future: numOfTiles,
-                    builder: (context, snapshot) => snapshot.data == null
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: SizedBox(
-                              height: 36,
-                              width: 36,
-                              child: Center(
-                                child: SizedBox(
-                                  height: 28,
-                                  width: 28,
-                                  child: CircularProgressIndicator(
-                                    color:
-                                        Theme.of(context).colorScheme.secondary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                        : Text(
-                            NumberFormat('###,###').format(snapshot.data),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24,
+                  if (widget.maxTiles case final maxTiles?)
+                    Text(
+                      NumberFormat('###,###').format(maxTiles),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: SizedBox(
+                        height: 36,
+                        width: 36,
+                        child: Center(
+                          child: SizedBox(
+                            height: 28,
+                            width: 28,
+                            child: CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.secondary,
                             ),
                           ),
-                  ),
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 10),
                   const Text('TILES RANGE'),
-                  if (widget.startTile == 1 && widget.endTile == null)
+                  if (widget.region.start == 1 && widget.region.end == null)
                     const Text(
                       '*',
                       style: TextStyle(
@@ -234,7 +223,7 @@ class _RegionInformationState extends State<RegionInformation> {
                     )
                   else
                     Text(
-                      '${NumberFormat('###,###').format(widget.startTile)} - ${widget.endTile != null ? NumberFormat('###,###').format(widget.endTile) : '*'}',
+                      '${NumberFormat('###,###').format(widget.region.start)} - ${widget.region.end != null ? NumberFormat('###,###').format(widget.region.end) : '*'}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
@@ -243,6 +232,51 @@ class _RegionInformationState extends State<RegionInformation> {
                 ],
               ),
             ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.amber,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(Icons.warning_amber, size: 28),
+                  ),
+                  Expanded(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.amber[200],
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "You must abide by your tile server's Terms of "
+                              'Service when bulk downloading.',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'Many servers will '
+                              'forbid or heavily restrict this action, as it '
+                              'places extra strain on resources. Be respectful, '
+                              'and note that you use this functionality at your '
+                              'own risk.',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       );

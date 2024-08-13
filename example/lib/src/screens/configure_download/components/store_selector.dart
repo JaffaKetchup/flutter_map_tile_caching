@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../../shared/state/general_provider.dart';
-import '../../home/map_view/state/region_selection_provider.dart';
+import '../state/configure_download_provider.dart';
 
 class StoreSelector extends StatefulWidget {
   const StoreSelector({super.key});
@@ -19,34 +18,36 @@ class _StoreSelectorState extends State<StoreSelector> {
           const Text('Store'),
           const Spacer(),
           IntrinsicWidth(
-            child: Consumer2<RegionSelectionProvider, GeneralProvider>(
-              builder: (context, downloadProvider, generalProvider, _) =>
+            child: Selector<ConfigureDownloadProvider, FMTCStore?>(
+              selector: (context, provider) => provider.selectedStore,
+              builder: (context, selectedStore, _) =>
                   FutureBuilder<Iterable<FMTCStore>>(
                 future: FMTCRoot.stats.storesAvailable,
-                builder: (context, snapshot) => DropdownButton<FMTCStore>(
-                  items: snapshot.data
+                builder: (context, snapshot) {
+                  final items = snapshot.data
                       ?.map(
                         (e) => DropdownMenuItem<FMTCStore>(
                           value: e,
                           child: Text(e.storeName),
                         ),
                       )
-                      .toList(),
-                  onChanged: (store) =>
-                      downloadProvider.setSelectedStore(store),
-                  value: downloadProvider.selectedStore ??
-                      (generalProvider.currentStores.length == 1
-                          ? null
-                          : FMTCStore(generalProvider.currentStores.single)),
-                  hint: Text(
-                    snapshot.data == null
-                        ? 'Loading...'
-                        : snapshot.data!.isEmpty
-                            ? 'None Available'
-                            : 'None Selected',
-                  ),
-                  padding: const EdgeInsets.only(left: 12),
-                ),
+                      .toList();
+                  final text = snapshot.data == null
+                      ? 'Loading...'
+                      : snapshot.data!.isEmpty
+                          ? 'None Available'
+                          : 'None Selected';
+
+                  return DropdownButton<FMTCStore>(
+                    items: items,
+                    onChanged: (store) => context
+                        .read<ConfigureDownloadProvider>()
+                        .selectedStore = store,
+                    value: selectedStore,
+                    hint: Text(text),
+                    padding: const EdgeInsets.only(left: 12),
+                  );
+                },
               ),
             ),
           ),

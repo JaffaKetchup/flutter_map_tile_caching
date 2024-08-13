@@ -4,6 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'src/screens/configure_download/configure_download.dart';
+import 'src/screens/configure_download/state/configure_download_provider.dart';
+import 'src/screens/download/download.dart';
 import 'src/screens/home/config_view/panels/stores/state/export_selection_provider.dart';
 import 'src/screens/home/home.dart';
 import 'src/screens/home/map_view/state/region_selection_provider.dart';
@@ -60,35 +63,22 @@ class _AppContainer extends StatelessWidget {
             fullscreenDialog: true,
           ),
     ),
-    /*
-    ProfileScreen.route: (
-      std: (BuildContext context) => const ProfileScreen(),
-      custom: ({
-        required Widget Function(
-          BuildContext,
-          Animation<double>,
-          Animation<double>,
-        ) pageBuilder,
-        required RouteSettings settings,
-      }) =>
-          PageRouteBuilder(
-            pageBuilder: pageBuilder,
+    ConfigureDownloadPopup.route: (
+      std: null,
+      custom: (context, settings) => MaterialPageRoute(
+            builder: (context) => const ConfigureDownloadPopup(),
             settings: settings,
-            transitionsBuilder: (context, animation, _, child) {
-              const begin = Offset(0, 1);
-              const end = Offset.zero;
-              const curve = Curves.ease;
-
-              final tween =
-                  Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-
-              return SlideTransition(
-                position: animation.drive(tween),
-                child: child,
-              );
-            },
+            fullscreenDialog: true,
           ),
-    ),*/
+    ),
+    DownloadPopup.route: (
+      std: null,
+      custom: (context, settings) => MaterialPageRoute(
+            builder: (context) => const DownloadPopup(),
+            settings: settings,
+            fullscreenDialog: true,
+          ),
+    ),
   };
 
   @override
@@ -125,6 +115,10 @@ class _AppContainer extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => RegionSelectionProvider(),
+          lazy: true,
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ConfigureDownloadProvider(),
           lazy: true,
         ),
       ],

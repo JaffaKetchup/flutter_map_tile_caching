@@ -129,11 +129,4 @@ class RegionSelectionProvider extends ChangeNotifier {
     _endTile = endTile;
     notifyListeners();
   }
-
-  FMTCStore? _selectedStore;
-  FMTCStore? get selectedStore => _selectedStore;
-  void setSelectedStore(FMTCStore? newStore, {bool notify = true}) {
-    _selectedStore = newStore;
-    if (notify) notifyListeners();
-  }
 }
