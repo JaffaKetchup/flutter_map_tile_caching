@@ -4,16 +4,9 @@
 part of '../../../flutter_map_tile_caching.dart';
 
 /// A geographically circular region based off a [center] coord and [radius]
-///
-/// It can be converted to a:
-///  - [DownloadableRegion] for downloading: [toDownloadable]
-///  - list of [LatLng]s forming the outline: [toOutline]
 class CircleRegion extends BaseRegion {
-  /// A geographically circular region based off a [center] coord and [radius]
-  ///
-  /// It can be converted to a:
-  ///  - [DownloadableRegion] for downloading: [toDownloadable]
-  ///  - list of [LatLng]s forming the outline: [toOutline]
+  /// Create a geographically circular region based off a [center] coord and
+  /// [radius]
   const CircleRegion(this.center, this.radius);
 
   /// Center coordinate

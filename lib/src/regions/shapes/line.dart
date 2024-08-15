@@ -4,16 +4,9 @@
 part of '../../../flutter_map_tile_caching.dart';
 
 /// A geographically line/locus region based off a list of coords and a [radius]
-///
-/// It can be converted to a:
-///  - [DownloadableRegion] for downloading: [toDownloadable]
-///  - list of [LatLng]s forming the outline: [LineRegion.toOutlines]
 class LineRegion extends BaseRegion {
-  /// A geographically line/locus region based off a list of coords and a [radius]
-  ///
-  /// It can be converted to a:
-  ///  - [DownloadableRegion] for downloading: [toDownloadable]
-  ///  - list of [LatLng]s forming the outline: [LineRegion.toOutlines]
+  /// Create a geographically line/locus region based off a list of coords and a
+  /// [radius]
   const LineRegion(this.line, this.radius);
 
   /// The center line defined by a list of coordinates
@@ -112,5 +105,5 @@ class LineRegion extends BaseRegion {
           listEquals(line, other.line));
 
   @override
-  int get hashCode => Object.hash(line, radius);
+  int get hashCode => Object.hashAll([...line, radius]);
 }

@@ -29,18 +29,43 @@ sealed class BaseRegion {
   ///  - [CustomPolygonRegion]
   const BaseRegion();
 
-  /// Output a value of type [T] dependent on `this` and its type
+  /// Output a value of type [T] the type of this region
+  ///
+  /// Requires all region types to have a defined handler. See [maybeWhen] for
+  /// the equivalent where this is not required.
   T when<T>({
     required T Function(RectangleRegion rectangle) rectangle,
     required T Function(CircleRegion circle) circle,
     required T Function(LineRegion line) line,
     required T Function(CustomPolygonRegion customPolygon) customPolygon,
+    required T Function(MultiRegion multi) multi,
+  }) =>
+      maybeWhen(
+        rectangle: rectangle,
+        circle: circle,
+        line: line,
+        customPolygon: customPolygon,
+        multi: multi,
+      )!;
+
+  /// Output a value of type [T] the type of this region
+  ///
+  /// If the specified method is not defined for the type of region which this
+  /// region is, `null` will be returned.
+  T? maybeWhen<T>({
+    T Function(RectangleRegion rectangle)? rectangle,
+    T Function(CircleRegion circle)? circle,
+    T Function(LineRegion line)? line,
+    T Function(CustomPolygonRegion customPolygon)? customPolygon,
+    T Function(MultiRegion multi)? multi,
   }) =>
       switch (this) {
-        RectangleRegion() => rectangle(this as RectangleRegion),
-        CircleRegion() => circle(this as CircleRegion),
-        LineRegion() => line(this as LineRegion),
-        CustomPolygonRegion() => customPolygon(this as CustomPolygonRegion),
+        RectangleRegion() => rectangle?.call(this as RectangleRegion),
+        CircleRegion() => circle?.call(this as CircleRegion),
+        LineRegion() => line?.call(this as LineRegion),
+        CustomPolygonRegion() =>
+          customPolygon?.call(this as CustomPolygonRegion),
+        MultiRegion() => multi?.call(this as MultiRegion),
       };
 
   /// Generate the [DownloadableRegion] ready for bulk downloading

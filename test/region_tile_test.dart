@@ -16,16 +16,29 @@ void main() {
   Future<int> countByGenerator(DownloadableRegion<BaseRegion> region) async {
     final tileReceivePort = ReceivePort();
     final tileIsolate = await Isolate.spawn(
-      region.when(
-        rectangle: (_) => TileGenerators.rectangleTiles,
-        circle: (_) => TileGenerators.circleTiles,
-        line: (_) => TileGenerators.lineTiles,
-        customPolygon: (_) => TileGenerators.customPolygonTiles,
+      (({SendPort sendPort, DownloadableRegion region}) input) =>
+          input.region.when(
+        rectangle: (region) => TileGenerators.rectangleTiles(
+          (sendPort: input.sendPort, region: region),
+        ),
+        circle: (region) => TileGenerators.circleTiles(
+          (sendPort: input.sendPort, region: region),
+        ),
+        line: (region) => TileGenerators.lineTiles(
+          (sendPort: input.sendPort, region: region),
+        ),
+        customPolygon: (region) => TileGenerators.customPolygonTiles(
+          (sendPort: input.sendPort, region: region),
+        ),
+        multi: (region) => TileGenerators.multiTiles(
+          (sendPort: input.sendPort, region: region),
+        ),
       ),
       (sendPort: tileReceivePort.sendPort, region: region),
       onExit: tileReceivePort.sendPort,
       debugName: '[FMTC] Tile Coords Generator Thread',
     );
+
     late final SendPort requestTilePort;
 
     int evts = -1;
@@ -80,6 +93,23 @@ void main() {
           print('${clock.elapsedMilliseconds / 1000} s');
           expect(tiles, 179196);
         },
+      );
+
+      final multiRegion = MultiRegion(
+        [
+          rectRegion.originalRegion,
+          rectRegion.originalRegion,
+        ],
+      ).toDownloadable(minZoom: 1, maxZoom: 16, options: TileLayer());
+
+      test(
+        '`MultiRegion` Match Counter',
+        () => expect(TileCounters.multiTiles(multiRegion), 179196 * 2),
+      );
+
+      test(
+        '`MultiRegion` Match Generator',
+        () async => expect(await countByGenerator(multiRegion), 179196 * 2),
       );
     },
     timeout: const Timeout(Duration(minutes: 1)),

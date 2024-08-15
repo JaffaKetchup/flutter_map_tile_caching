@@ -5,17 +5,10 @@ part of '../../../flutter_map_tile_caching.dart';
 
 /// A geographically rectangular region based off coordinate bounds
 ///
-/// Rectangles do not support skewing into parallelograms.
-///
-/// It can be converted to a:
-///  - [DownloadableRegion] for downloading: [toDownloadable]
-///  - list of [LatLng]s forming the outline: [toOutline]
+/// Does not support skewing into parallelograms: use [CustomPolygonRegion]
+/// instead.
 class RectangleRegion extends BaseRegion {
-  /// A geographically rectangular region based off coordinate bounds
-  ///
-  /// It can be converted to a:
-  ///  - [DownloadableRegion] for downloading: [toDownloadable]
-  ///  - list of [LatLng]s forming the outline: [toOutline]
+  /// Create a geographically rectangular region based off coordinate bounds
   const RectangleRegion(this.bounds);
 
   /// The coordinate bounds

@@ -152,16 +152,38 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
     required String storeName,
     required DownloadableRegion region,
     required int endTile,
-  }) =>
-      expectInitialisedRoot.box<ObjectBoxRecovery>().put(
+  }) {
+    expectInitialisedRoot;
+
+    ObjectBoxRecoveryRegion recursiveWriteRecoveryRegions(BaseRegion region) {
+      final recoveryRegion = ObjectBoxRecoveryRegion.fromRegion(region: region);
+
+      if (region case final MultiRegion region) {
+        recoveryRegion.multiLinkedRegions
+            .addAll(region.regions.map(recursiveWriteRecoveryRegions));
+      }
+
+      _root!
+          .box<ObjectBoxRecoveryRegion>()
+          .put(recoveryRegion, mode: PutMode.insert);
+
+      return recoveryRegion;
+    }
+
+    _root!.runInTransaction(
+      TxMode.write,
+      () => _root!.box<ObjectBoxRecovery>().put(
             ObjectBoxRecovery.fromRegion(
               refId: id,
               storeName: storeName,
               region: region,
               endTile: endTile,
+              target: recursiveWriteRecoveryRegions(region.originalRegion),
             ),
             mode: PutMode.insert,
-          );
+          ),
+    );
+  }
 
   @override
   void updateRecovery({

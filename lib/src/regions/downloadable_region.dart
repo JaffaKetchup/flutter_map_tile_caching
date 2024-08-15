@@ -75,6 +75,9 @@ class DownloadableRegion<R extends BaseRegion> {
       );
 
   /// Output a value of type [T] dependent on [originalRegion] and its type [R]
+  ///
+  /// Requires all region types to have a defined handler. See [maybeWhen] for
+  /// the equivalent where this is not required.
   T when<T>({
     required T Function(DownloadableRegion<RectangleRegion> rectangle)
         rectangle,
@@ -82,12 +85,34 @@ class DownloadableRegion<R extends BaseRegion> {
     required T Function(DownloadableRegion<LineRegion> line) line,
     required T Function(DownloadableRegion<CustomPolygonRegion> customPolygon)
         customPolygon,
+    required T Function(DownloadableRegion<MultiRegion> multi) multi,
+  }) =>
+      maybeWhen(
+        rectangle: rectangle,
+        circle: circle,
+        line: line,
+        customPolygon: customPolygon,
+        multi: multi,
+      )!;
+
+  /// Output a value of type [T] dependent on [originalRegion] and its type [R]
+  ///
+  /// If the specified method is not defined for the type of region which this
+  /// region is, `null` will be returned.
+  T? maybeWhen<T>({
+    T Function(DownloadableRegion<RectangleRegion> rectangle)? rectangle,
+    T Function(DownloadableRegion<CircleRegion> circle)? circle,
+    T Function(DownloadableRegion<LineRegion> line)? line,
+    T Function(DownloadableRegion<CustomPolygonRegion> customPolygon)?
+        customPolygon,
+    T Function(DownloadableRegion<MultiRegion> multi)? multi,
   }) =>
       switch (originalRegion) {
-        RectangleRegion() => rectangle(_cast()),
-        CircleRegion() => circle(_cast()),
-        LineRegion() => line(_cast()),
-        CustomPolygonRegion() => customPolygon(_cast()),
+        RectangleRegion() => rectangle?.call(_cast()),
+        CircleRegion() => circle?.call(_cast()),
+        LineRegion() => line?.call(_cast()),
+        CustomPolygonRegion() => customPolygon?.call(_cast()),
+        MultiRegion() => multi?.call(_cast()),
       };
 
   @override

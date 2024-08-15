@@ -27,15 +27,24 @@ class TileGenerators {
   /// generic type [RectangleRegion]
   @internal
   static Future<void> rectangleTiles(
-    ({SendPort sendPort, DownloadableRegion region}) input,
-  ) async {
-    final region = input.region as DownloadableRegion<RectangleRegion>;
+    ({SendPort sendPort, DownloadableRegion<RectangleRegion> region}) input, {
+    StreamQueue? multiRequestQueue,
+  }) async {
+    final region = input.region;
+    final sendPort = input.sendPort;
+    final inMulti = multiRequestQueue != null;
+
+    final StreamQueue requestQueue;
+    if (inMulti) {
+      requestQueue = multiRequestQueue;
+    } else {
+      final receivePort = ReceivePort();
+      sendPort.send(receivePort.sendPort);
+      requestQueue = StreamQueue(receivePort);
+    }
+
     final northWest = region.originalRegion.bounds.northWest;
     final southEast = region.originalRegion.bounds.southEast;
-
-    final receivePort = ReceivePort();
-    input.sendPort.send(receivePort.sendPort);
-    final requestQueue = StreamQueue(receivePort);
 
     int tileCounter = -1;
     final start = region.start - 1;
@@ -56,28 +65,39 @@ class TileGenerators {
         for (int y = nwPoint.y; y <= sePoint.y; y++) {
           tileCounter++;
           if (tileCounter < start) continue;
-          if (tileCounter > end) Isolate.exit();
+          if (tileCounter > end) {
+            if (!inMulti) Isolate.exit();
+            return;
+          }
 
           await requestQueue.next;
-          input.sendPort.send((x, y, zoomLvl.toInt()));
+          sendPort.send((x, y, zoomLvl.toInt()));
         }
       }
     }
 
-    Isolate.exit();
+    if (!inMulti) Isolate.exit();
   }
 
   /// Generate the coordinates of each tile within a [DownloadableRegion] with
   /// generic type [CircleRegion]
   @internal
   static Future<void> circleTiles(
-    ({SendPort sendPort, DownloadableRegion region}) input,
-  ) async {
-    final region = input.region as DownloadableRegion<CircleRegion>;
+    ({SendPort sendPort, DownloadableRegion<CircleRegion> region}) input, {
+    StreamQueue? multiRequestQueue,
+  }) async {
+    final region = input.region;
+    final sendPort = input.sendPort;
+    final inMulti = multiRequestQueue != null;
 
-    final receivePort = ReceivePort();
-    input.sendPort.send(receivePort.sendPort);
-    final requestQueue = StreamQueue(receivePort);
+    final StreamQueue requestQueue;
+    if (inMulti) {
+      requestQueue = multiRequestQueue;
+    } else {
+      final receivePort = ReceivePort();
+      sendPort.send(receivePort.sendPort);
+      requestQueue = StreamQueue(receivePort);
+    }
 
     int tileCounter = -1;
     final start = region.start - 1;
@@ -108,10 +128,13 @@ class TileGenerators {
       if (radius == 0) {
         tileCounter++;
         if (tileCounter < start) continue;
-        if (tileCounter > end) Isolate.exit();
+        if (tileCounter > end) {
+          if (!inMulti) Isolate.exit();
+          return;
+        }
 
         await requestQueue.next;
-        input.sendPort.send((centerTile.x, centerTile.y, zoomLvl));
+        sendPort.send((centerTile.x, centerTile.y, zoomLvl));
 
         continue;
       }
@@ -119,27 +142,43 @@ class TileGenerators {
       if (radius == 1) {
         tileCounter++;
         if (tileCounter < start) continue;
-        if (tileCounter > end) Isolate.exit();
+        if (tileCounter > end) {
+          if (!inMulti) Isolate.exit();
+          return;
+        }
+
         await requestQueue.next;
-        input.sendPort.send((centerTile.x, centerTile.y, zoomLvl));
+        sendPort.send((centerTile.x, centerTile.y, zoomLvl));
 
         tileCounter++;
         if (tileCounter < start) continue;
-        if (tileCounter > end) Isolate.exit();
+        if (tileCounter > end) {
+          if (!inMulti) Isolate.exit();
+          return;
+        }
+
         await requestQueue.next;
-        input.sendPort.send((centerTile.x, centerTile.y - 1, zoomLvl));
+        sendPort.send((centerTile.x, centerTile.y - 1, zoomLvl));
 
         tileCounter++;
         if (tileCounter < start) continue;
-        if (tileCounter > end) Isolate.exit();
+        if (tileCounter > end) {
+          if (!inMulti) Isolate.exit();
+          return;
+        }
+
         await requestQueue.next;
-        input.sendPort.send((centerTile.x - 1, centerTile.y, zoomLvl));
+        sendPort.send((centerTile.x - 1, centerTile.y, zoomLvl));
 
         tileCounter++;
         if (tileCounter < start) continue;
-        if (tileCounter > end) Isolate.exit();
+        if (tileCounter > end) {
+          if (!inMulti) Isolate.exit();
+          return;
+        }
+
         await requestQueue.next;
-        input.sendPort.send((centerTile.x - 1, centerTile.y - 1, zoomLvl));
+        sendPort.send((centerTile.x - 1, centerTile.y - 1, zoomLvl));
 
         continue;
       }
@@ -149,29 +188,37 @@ class TileGenerators {
         for (int dx = -mdx - 1; dx <= mdx; dx++) {
           tileCounter++;
           if (tileCounter < start) continue;
-          if (tileCounter > end) Isolate.exit();
+          if (tileCounter > end) {
+            if (!inMulti) Isolate.exit();
+            return;
+          }
+
           await requestQueue.next;
-          input.sendPort.send((dx + centerTile.x, dy + centerTile.y, zoomLvl));
+          sendPort.send((dx + centerTile.x, dy + centerTile.y, zoomLvl));
 
           tileCounter++;
           if (tileCounter < start) continue;
-          if (tileCounter > end) Isolate.exit();
+          if (tileCounter > end) {
+            if (!inMulti) Isolate.exit();
+            return;
+          }
+
           await requestQueue.next;
-          input.sendPort
-              .send((dx + centerTile.x, -dy - 1 + centerTile.y, zoomLvl));
+          sendPort.send((dx + centerTile.x, -dy - 1 + centerTile.y, zoomLvl));
         }
       }
     }
 
-    Isolate.exit();
+    if (!inMulti) Isolate.exit();
   }
 
   /// Generate the coordinates of each tile within a [DownloadableRegion] with
   /// generic type [LineRegion]
   @internal
   static Future<void> lineTiles(
-    ({SendPort sendPort, DownloadableRegion region}) input,
-  ) async {
+    ({SendPort sendPort, DownloadableRegion<LineRegion> region}) input, {
+    StreamQueue? multiRequestQueue,
+  }) async {
     // This took some time and is fairly complicated, so this is the overall explanation:
     // 1. Given 4 `LatLng` points, create a 'straight' rectangle around the 'rotated' rectangle, that can be defined with just 2 `LatLng` points
     // 2. Convert the straight rectangle into tile numbers, and loop through the same as `rectangleTiles`
@@ -214,12 +261,20 @@ class TileGenerators {
       return true;
     }
 
-    final region = input.region as DownloadableRegion<LineRegion>;
-    final lineOutline = region.originalRegion.toOutlines(1);
+    final region = input.region;
+    final sendPort = input.sendPort;
+    final inMulti = multiRequestQueue != null;
 
-    final receivePort = ReceivePort();
-    input.sendPort.send(receivePort.sendPort);
-    final requestQueue = StreamQueue(receivePort);
+    final StreamQueue requestQueue;
+    if (inMulti) {
+      requestQueue = multiRequestQueue;
+    } else {
+      final receivePort = ReceivePort();
+      sendPort.send(receivePort.sendPort);
+      requestQueue = StreamQueue(receivePort);
+    }
+
+    final lineOutline = region.originalRegion.toOutlines(1);
 
     int tileCounter = -1;
     final start = region.start - 1;
@@ -293,7 +348,10 @@ class TileGenerators {
           for (int y = straightRectangleNW.y; y <= straightRectangleSE.y; y++) {
             tileCounter++;
             if (tileCounter < start) continue;
-            if (tileCounter > end) Isolate.exit();
+            if (tileCounter > end) {
+              if (!inMulti) Isolate.exit();
+              return;
+            }
 
             final tile = _Polygon(
               Point(x, y),
@@ -315,7 +373,7 @@ class TileGenerators {
               generatedTiles.add(tile.hashCode);
               foundOverlappingTile = true;
               await requestQueue.next;
-              input.sendPort.send((x, y, zoomLvl.toInt()));
+              sendPort.send((x, y, zoomLvl.toInt()));
             } else if (foundOverlappingTile) {
               break;
             }
@@ -324,21 +382,31 @@ class TileGenerators {
       }
     }
 
-    Isolate.exit();
+    if (!inMulti) Isolate.exit();
   }
 
   /// Generate the coordinates of each tile within a [DownloadableRegion] with
   /// generic type [CustomPolygonRegion]
   @internal
   static Future<void> customPolygonTiles(
-    ({SendPort sendPort, DownloadableRegion region}) input,
-  ) async {
-    final region = input.region as DownloadableRegion<CustomPolygonRegion>;
-    final customPolygonOutline = region.originalRegion.outline;
+    ({
+      SendPort sendPort,
+      DownloadableRegion<CustomPolygonRegion> region
+    }) input, {
+    StreamQueue? multiRequestQueue,
+  }) async {
+    final region = input.region;
+    final sendPort = input.sendPort;
+    final inMulti = multiRequestQueue != null;
 
-    final receivePort = ReceivePort();
-    input.sendPort.send(receivePort.sendPort);
-    final requestQueue = StreamQueue(receivePort);
+    final StreamQueue requestQueue;
+    if (inMulti) {
+      requestQueue = multiRequestQueue;
+    } else {
+      final receivePort = ReceivePort();
+      sendPort.send(receivePort.sendPort);
+      requestQueue = StreamQueue(receivePort);
+    }
 
     int tileCounter = -1;
     final start = region.start - 1;
@@ -349,7 +417,7 @@ class TileGenerators {
         zoomLvl++) {
       final allOutlineTiles = <Point<int>>{};
 
-      final pointsOutline = customPolygonOutline
+      final pointsOutline = region.originalRegion.outline
           .map((e) => region.crs.latLngToPoint(e, zoomLvl).floor());
 
       for (final triangle in Earcut.triangulateFromPoints(
@@ -392,7 +460,7 @@ class TileGenerators {
 
           for (int x = xsMin; x <= xsMax; x++) {
             await requestQueue.next;
-            input.sendPort.send((x, y, zoomLvl.toInt()));
+            sendPort.send((x, y, zoomLvl.toInt()));
           }
         }
       }
@@ -400,13 +468,72 @@ class TileGenerators {
       for (final Point(:x, :y) in allOutlineTiles) {
         tileCounter++;
         if (tileCounter < start) continue;
-        if (tileCounter > end) Isolate.exit();
+        if (tileCounter > end) {
+          if (!inMulti) Isolate.exit();
+          return;
+        }
 
         await requestQueue.next;
-        input.sendPort.send((x, y, zoomLvl.toInt()));
+        sendPort.send((x, y, zoomLvl.toInt()));
       }
     }
 
-    Isolate.exit();
+    if (!inMulti) Isolate.exit();
+  }
+
+  /// Generate the coordinates of each tile within a [DownloadableRegion] with
+  /// generic type [MultiRegion]
+  @internal
+  static Future<void> multiTiles(
+    ({SendPort sendPort, DownloadableRegion<MultiRegion> region}) input, {
+    StreamQueue? multiRequestQueue,
+  }) async {
+    final region = input.region;
+    final inMulti = multiRequestQueue != null;
+
+    final StreamQueue requestQueue;
+    if (inMulti) {
+      requestQueue = multiRequestQueue;
+    } else {
+      final receivePort = ReceivePort();
+      input.sendPort.send(receivePort.sendPort);
+      requestQueue = StreamQueue(receivePort);
+    }
+
+    for (final subRegion in region.originalRegion.regions) {
+      await subRegion
+          .toDownloadable(
+            minZoom: region.minZoom,
+            maxZoom: region.maxZoom,
+            options: region.options,
+            start: region.start,
+            end: region.end,
+            crs: region.crs,
+          )
+          .when(
+            rectangle: (region) => rectangleTiles(
+              (sendPort: input.sendPort, region: region),
+              multiRequestQueue: requestQueue,
+            ),
+            circle: (region) => circleTiles(
+              (sendPort: input.sendPort, region: region),
+              multiRequestQueue: requestQueue,
+            ),
+            line: (region) => lineTiles(
+              (sendPort: input.sendPort, region: region),
+              multiRequestQueue: requestQueue,
+            ),
+            customPolygon: (region) => customPolygonTiles(
+              (sendPort: input.sendPort, region: region),
+              multiRequestQueue: requestQueue,
+            ),
+            multi: (region) => multiTiles(
+              (sendPort: input.sendPort, region: region),
+              multiRequestQueue: requestQueue,
+            ),
+          );
+    }
+
+    if (!inMulti) Isolate.exit();
   }
 }

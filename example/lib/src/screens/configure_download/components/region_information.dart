@@ -170,6 +170,9 @@ class _RegionInformationState extends State<RegionInformation> {
                         ),
                       ];
                     },
+                    multi: (_) => throw UnsupportedError(
+                      '`MultiRegion` is not supported in the example app',
+                    ),
                   ),
                 ],
               ),

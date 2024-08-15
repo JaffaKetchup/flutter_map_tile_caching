@@ -56,6 +56,7 @@ part 'src/providers/tile_provider/tile_provider.dart';
 part 'src/providers/tile_provider/typedefs.dart';
 part 'src/regions/base_region.dart';
 part 'src/regions/downloadable_region.dart';
+part 'src/regions/shapes/multi.dart';
 part 'src/regions/recovered_region.dart';
 part 'src/regions/shapes/circle.dart';
 part 'src/regions/shapes/custom_polygon.dart';

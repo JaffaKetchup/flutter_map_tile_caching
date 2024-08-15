@@ -4,16 +4,9 @@
 part of '../../../flutter_map_tile_caching.dart';
 
 /// A geographical region who's outline is defined by a list of coordinates
-///
-/// It can be converted to a:
-///  - [DownloadableRegion] for downloading: [toDownloadable]
-///  - list of [LatLng]s forming the outline: [toOutline]
 class CustomPolygonRegion extends BaseRegion {
-  /// A geographical region who's outline is defined by a list of coordinates
-  ///
-  /// It can be converted to a:
-  ///  - [DownloadableRegion] for downloading: [toDownloadable]
-  ///  - list of [LatLng]s forming the outline: [toOutline]
+  /// Create a geographical region who's outline is defined by a list of
+  /// coordinates
   const CustomPolygonRegion(this.outline);
 
   /// The outline coordinates
@@ -47,5 +40,5 @@ class CustomPolygonRegion extends BaseRegion {
       (other is CustomPolygonRegion && listEquals(outline, other.outline));
 
   @override
-  int get hashCode => outline.hashCode;
+  int get hashCode => Object.hashAll(outline);
 }

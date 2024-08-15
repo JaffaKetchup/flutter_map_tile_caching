@@ -19,6 +19,7 @@ import '../../../../misc/int_extremes.dart';
 import '../../../export_internal.dart';
 import '../models/generated/objectbox.g.dart';
 import '../models/src/recovery.dart';
+import '../models/src/recovery_region.dart';
 import '../models/src/root.dart';
 import '../models/src/store.dart';
 import '../models/src/tile.dart';

@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:5472631385587455945",
-      "lastPropertyId": "21:3590067577930145922",
+      "lastPropertyId": "22:2247444187089993412",
       "name": "ObjectBoxRecovery",
       "properties": [
         {
@@ -52,69 +52,12 @@
           "type": 6
         },
         {
-          "id": "9:7217406424708558740",
-          "name": "typeId",
-          "type": 6
-        },
-        {
-          "id": "10:5971465387225017460",
-          "name": "rectNwLat",
-          "type": 8
-        },
-        {
-          "id": "11:6703340231106164623",
-          "name": "rectNwLng",
-          "type": 8
-        },
-        {
-          "id": "12:741105584939284321",
-          "name": "rectSeLat",
-          "type": 8
-        },
-        {
-          "id": "13:2939837278126242427",
-          "name": "rectSeLng",
-          "type": 8
-        },
-        {
-          "id": "14:2393337671661697697",
-          "name": "circleCenterLat",
-          "type": 8
-        },
-        {
-          "id": "15:8055510540122966413",
-          "name": "circleCenterLng",
-          "type": 8
-        },
-        {
-          "id": "16:9110709438555760246",
-          "name": "circleRadius",
-          "type": 8
-        },
-        {
-          "id": "17:8363656194353400366",
-          "name": "lineLats",
-          "type": 29
-        },
-        {
-          "id": "18:7008680868853575786",
-          "name": "lineLngs",
-          "type": 29
-        },
-        {
-          "id": "19:7670007285707179405",
-          "name": "lineRadius",
-          "type": 8
-        },
-        {
-          "id": "20:490933261424375687",
-          "name": "customPolygonLats",
-          "type": 29
-        },
-        {
-          "id": "21:3590067577930145922",
-          "name": "customPolygonLngs",
-          "type": 29
+          "id": "22:2247444187089993412",
+          "name": "regionId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "5:2172676985778936605",
+          "relationTarget": "ObjectBoxRecoveryRegion"
         }
       ],
       "relations": []
@@ -232,17 +175,116 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "5:5692106664767803360",
+      "lastPropertyId": "14:2380085283533950474",
+      "name": "ObjectBoxRecoveryRegion",
+      "properties": [
+        {
+          "id": "1:4629353002259573678",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:1116094237557270575",
+          "name": "typeId",
+          "type": 6
+        },
+        {
+          "id": "3:8476920990388836149",
+          "name": "rectNwLat",
+          "type": 8
+        },
+        {
+          "id": "4:3015129163086269263",
+          "name": "rectNwLng",
+          "type": 8
+        },
+        {
+          "id": "5:8302525711584098439",
+          "name": "rectSeLat",
+          "type": 8
+        },
+        {
+          "id": "6:1939082009138163489",
+          "name": "rectSeLng",
+          "type": 8
+        },
+        {
+          "id": "7:5260761364748928203",
+          "name": "circleCenterLat",
+          "type": 8
+        },
+        {
+          "id": "8:3329863004721648966",
+          "name": "circleCenterLng",
+          "type": 8
+        },
+        {
+          "id": "9:8471244801699851283",
+          "name": "circleRadius",
+          "type": 8
+        },
+        {
+          "id": "10:5745879403192313286",
+          "name": "lineLats",
+          "type": 29
+        },
+        {
+          "id": "11:4679809662196927204",
+          "name": "lineLngs",
+          "type": 29
+        },
+        {
+          "id": "12:8730805542251345960",
+          "name": "lineRadius",
+          "type": 8
+        },
+        {
+          "id": "13:1607230668161719129",
+          "name": "customPolygonLats",
+          "type": 29
+        },
+        {
+          "id": "14:2380085283533950474",
+          "name": "customPolygonLngs",
+          "type": 29
+        }
+      ],
+      "relations": [
+        {
+          "id": "2:6378075033578405480",
+          "name": "multiLinkedRegions",
+          "targetId": "5:5692106664767803360"
+        }
+      ]
     }
   ],
-  "lastEntityId": "4:8718814737097934474",
-  "lastIndexId": "4:4857742396480146668",
-  "lastRelationId": "1:7496298295217061586",
+  "lastEntityId": "5:5692106664767803360",
+  "lastIndexId": "5:2172676985778936605",
+  "lastRelationId": "2:6378075033578405480",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
   "modelVersionParserMinimum": 5,
   "retiredEntityUids": [],
   "retiredIndexUids": [],
-  "retiredPropertyUids": [],
+  "retiredPropertyUids": [
+    7217406424708558740,
+    5971465387225017460,
+    6703340231106164623,
+    741105584939284321,
+    2939837278126242427,
+    2393337671661697697,
+    8055510540122966413,
+    9110709438555760246,
+    8363656194353400366,
+    7008680868853575786,
+    7670007285707179405,
+    490933261424375687,
+    3590067577930145922
+  ],
   "retiredRelationUids": [],
   "version": 1
 }

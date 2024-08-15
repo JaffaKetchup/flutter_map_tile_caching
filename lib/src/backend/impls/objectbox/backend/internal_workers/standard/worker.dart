@@ -772,14 +772,32 @@ Future<void> _worker(
       case _CmdType.cancelRecovery:
         final id = cmd.args['id']! as int;
 
-        root
-            .box<ObjectBoxRecovery>()
-            .query(ObjectBoxRecovery_.refId.equals(id))
-            .build()
-          ..remove()
-          ..close();
+        void recursiveDeleteRecoveryRegions(ObjectBoxRecoveryRegion region) {
+          if (region.typeId == 4) {
+            region.multiLinkedRegions.forEach(recursiveDeleteRecoveryRegions);
+          }
+          root.box<ObjectBoxRecoveryRegion>().remove(region.id);
+        }
 
-        sendRes(id: cmd.id);
+        root.runInTransaction(
+          TxMode.write,
+          () {
+            final detailsQuery = root
+                .box<ObjectBoxRecovery>()
+                .query(ObjectBoxRecovery_.refId.equals(id))
+                .build();
+
+            recursiveDeleteRecoveryRegions(
+              detailsQuery.findUnique()!.region.target!,
+            );
+
+            detailsQuery.remove();
+
+            sendRes(id: cmd.id);
+
+            detailsQuery.close();
+          },
+        );
       case _CmdType.watchRecovery:
         final triggerImmediately = cmd.args['triggerImmediately']! as bool;
 
@@ -880,7 +898,7 @@ Future<void> _worker(
             .length
             .then(
           (numExportedStores) {
-            if (numExportedStores == 0) throw StateError('Unpossible.');
+            if (numExportedStores == 0) throw StateError('Unpossible');
 
             final exportingTiles = root.runInTransaction(
               TxMode.read,

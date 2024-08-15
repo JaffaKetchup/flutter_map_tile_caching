@@ -33,9 +33,7 @@ class TileCounters {
   /// Returns the number of tiles within a [DownloadableRegion] with generic type
   /// [RectangleRegion]
   @internal
-  static int rectangleTiles(DownloadableRegion region) {
-    region as DownloadableRegion<RectangleRegion>;
-
+  static int rectangleTiles(DownloadableRegion<RectangleRegion> region) {
     final northWest = region.originalRegion.bounds.northWest;
     final southEast = region.originalRegion.bounds.southEast;
 
@@ -62,9 +60,7 @@ class TileCounters {
   /// Returns the number of tiles within a [DownloadableRegion] with generic type
   /// [CircleRegion]
   @internal
-  static int circleTiles(DownloadableRegion region) {
-    region as DownloadableRegion<CircleRegion>;
-
+  static int circleTiles(DownloadableRegion<CircleRegion> region) {
     int numberOfTiles = 0;
 
     final edgeTile = const Distance(roundResult: false).offset(
@@ -110,9 +106,7 @@ class TileCounters {
   /// Returns the number of tiles within a [DownloadableRegion] with generic type
   /// [LineRegion]
   @internal
-  static int lineTiles(DownloadableRegion region) {
-    region as DownloadableRegion<LineRegion>;
-
+  static int lineTiles(DownloadableRegion<LineRegion> region) {
     // Overlap algorithm originally in Python, available at
     // https://stackoverflow.com/a/56962827/11846040
     bool overlap(_Polygon a, _Polygon b) {
@@ -252,9 +246,9 @@ class TileCounters {
   /// Returns the number of tiles within a [DownloadableRegion] with generic type
   /// [CustomPolygonRegion]
   @internal
-  static int customPolygonTiles(DownloadableRegion region) {
-    region as DownloadableRegion<CustomPolygonRegion>;
-
+  static int customPolygonTiles(
+    DownloadableRegion<CustomPolygonRegion> region,
+  ) {
     final customPolygonOutline = region.originalRegion.outline;
 
     int numberOfTiles = 0;
@@ -314,4 +308,29 @@ class TileCounters {
 
     return _trimToRange(region, numberOfTiles);
   }
+
+  /// Returns the number of tiles within a [DownloadableRegion] with generic type
+  /// [MultiRegion]
+  @internal
+  static int multiTiles(DownloadableRegion<MultiRegion> region) =>
+      region.originalRegion.regions
+          .map(
+            (subRegion) => subRegion
+                .toDownloadable(
+                  minZoom: region.minZoom,
+                  maxZoom: region.maxZoom,
+                  options: region.options,
+                  start: region.start,
+                  end: region.end,
+                  crs: region.crs,
+                )
+                .when(
+                  rectangle: rectangleTiles,
+                  circle: circleTiles,
+                  line: lineTiles,
+                  customPolygon: customPolygonTiles,
+                  multi: multiTiles,
+                ),
+          )
+          .sum;
 }

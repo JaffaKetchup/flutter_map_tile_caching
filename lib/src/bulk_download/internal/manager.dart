@@ -42,6 +42,7 @@ Future<void> _downloadManager(
     circle: TileCounters.circleTiles,
     line: TileCounters.lineTiles,
     customPolygon: TileCounters.customPolygonTiles,
+    multi: TileCounters.multiTiles,
   );
 
   // Setup sea tile removal system
@@ -66,24 +67,37 @@ Future<void> _downloadManager(
   late final List<int> threadBuffersSize;
   late final List<int> threadBuffersTiles;
   if (input.maxBufferLength != 0) {
-    // TODO: Verify `filled`
     threadBuffersSize = List.filled(input.parallelThreads, 0);
     threadBuffersTiles = List.filled(input.parallelThreads, 0);
   }
 
   // Setup tile generator isolate
   final tileReceivePort = ReceivePort();
+
   final tileIsolate = await Isolate.spawn(
-    input.region.when(
-      rectangle: (_) => TileGenerators.rectangleTiles,
-      circle: (_) => TileGenerators.circleTiles,
-      line: (_) => TileGenerators.lineTiles,
-      customPolygon: (_) => TileGenerators.customPolygonTiles,
+    (({SendPort sendPort, DownloadableRegion region}) input) =>
+        input.region.when(
+      rectangle: (region) => TileGenerators.rectangleTiles(
+        (sendPort: input.sendPort, region: region),
+      ),
+      circle: (region) => TileGenerators.circleTiles(
+        (sendPort: input.sendPort, region: region),
+      ),
+      line: (region) => TileGenerators.lineTiles(
+        (sendPort: input.sendPort, region: region),
+      ),
+      customPolygon: (region) => TileGenerators.customPolygonTiles(
+        (sendPort: input.sendPort, region: region),
+      ),
+      multi: (region) => TileGenerators.multiTiles(
+        (sendPort: input.sendPort, region: region),
+      ),
     ),
     (sendPort: tileReceivePort.sendPort, region: input.region),
     onExit: tileReceivePort.sendPort,
     debugName: '[FMTC] Tile Coords Generator Thread',
   );
+
   final tileQueue = StreamQueue(
     input.rateLimit == null
         ? tileReceivePort

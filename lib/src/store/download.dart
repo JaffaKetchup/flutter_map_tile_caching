@@ -255,11 +255,12 @@ class StoreDownload {
   ///
   /// Returns the number of tiles.
   Future<int> check(DownloadableRegion region) => compute(
-        region.when(
-          rectangle: (_) => TileCounters.rectangleTiles,
-          circle: (_) => TileCounters.circleTiles,
-          line: (_) => TileCounters.lineTiles,
-          customPolygon: (_) => TileCounters.customPolygonTiles,
+        (region) => region.when(
+          rectangle: TileCounters.rectangleTiles,
+          circle: TileCounters.circleTiles,
+          line: TileCounters.lineTiles,
+          customPolygon: TileCounters.customPolygonTiles,
+          multi: TileCounters.multiTiles,
         ),
         region,
       );
