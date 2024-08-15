@@ -34,14 +34,23 @@ Additionally, vector tiles are now supported in theory, as the internal caching/
   * Replaced `FMTCTileProviderSettings.maxStoreLength` with a `maxLength` property on each store individually
   * Replaced `CacheBehavior` with `BrowseLoadingStrategy`
   * Replaced `FMTCBrowsingErrorHandler` with `BrowsingExceptionHandler`, which may now return bytes to be displayed instead of (re)throwing exception
+  * Replaced `obscureQueryParams` with more flexible `urlTransformer` (and static `FMTCTileProvider.urlTransformerOmitKeyValues` utility method to provide old behaviour with more customizability) - also applies to bulk downloading in `StoreDownload.startForeground`
   * Removed `FMTCTileProviderSettings` & absorbed properties directly into `FMTCTileProvider`
+
 * Improvements & additions to bulk downloadable `BaseRegion`s
   * Added `MultiRegion`, which contains multiple other `BaseRegion`s
   * Improved speed (by massive amounts) and accuracy & reduced memory consumption of `CircleRegion`'s tile generation & counting algorithm
-* Replaced `obscureQueryParams` with more flexible `urlTransformer` (and static `FMTCTileProvider.urlTransformerOmitKeyValues` utility method to provide old behaviour with more customizability)
-* `RootExternal.export` now returns the number of exported tiles
+
+And here's some smaller, but still remarkable, changes:
+
+* Performance of the internal tile image provider has been significantly improved when fetching images from the network URL  
+  There was a significant time loss due to attempting to handle the network request response as a stream of incoming bytes, which allowed for `chunkEvents` to be reported back to Flutter (allowing it to get progress updates on the state of the tile), but meant the bytes had to be collected and built manually. Removing this functionality allows the network requests to use more streamlined 'package:http' methods, which does not expose a stream of incoming bytes, meaning that bytes no longer have to be treated manually. This can save hundreds of milliseconds on tile loading - a significant time save of potentially up to ~50% in some cases!
+* Exporting stores is now more stable, and has improved documentation  
+  The method now works in a dedicated temporary environment and attempts to perform two different strategies to move/copy-and-delete the result to the specified directory at the end before failing. Improved documentation covers the potential pitfalls of permissions and now recommends exporting to an app directory, then using the system share functionality on some devices. It now also returns the number of exported tiles.
+
 * Removed deprecated remnants from v9.*
-* Other generic improvements
+
+* Other generic improvements (performance & stability)
 
 ## [9.1.2] - 2024/08/07
 

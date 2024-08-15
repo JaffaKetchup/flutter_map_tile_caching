@@ -104,7 +104,9 @@ class StoreDownload {
   /// ---
   ///
   /// For info about [urlTransformer], see [FMTCTileProvider.urlTransformer].
-  /// Defaults to the identity function.
+  /// If unspecified, and the [region]'s [DownloadableRegion.options] is an
+  /// [FMTCTileProvider], will default to that tile provider's `urlTransformer`
+  /// if specified. Otherwise, will default to the identity function.
   ///
   /// To set additional headers, set it via [TileProvider.headers] when
   /// constructing the [DownloadableRegion].
@@ -122,7 +124,7 @@ class StoreDownload {
     int? rateLimit,
     Duration? maxReportInterval = const Duration(seconds: 1),
     bool disableRecovery = false,
-    String Function(String)? urlTransformer,
+    UrlTransformer? urlTransformer,
     Object instanceId = 0,
   }) async* {
     FMTCBackendAccess.internal; // Verify intialisation
@@ -160,6 +162,18 @@ class StoreDownload {
       );
     }
 
+    final UrlTransformer resolvedUrlTransformer;
+    if (urlTransformer != null) {
+      resolvedUrlTransformer = urlTransformer;
+    } else {
+      if (region.options.tileProvider
+          case final FMTCTileProvider tileProvider) {
+        resolvedUrlTransformer = tileProvider.urlTransformer;
+      } else {
+        resolvedUrlTransformer = (u) => u;
+      }
+    }
+
     // Create download instance
     final instance = DownloadInstance.registerIfAvailable(instanceId);
     if (instance == null) {
@@ -190,7 +204,7 @@ class StoreDownload {
         skipSeaTiles: skipSeaTiles,
         maxReportInterval: maxReportInterval,
         rateLimit: rateLimit,
-        urlTransformer: urlTransformer ?? (url) => url,
+        urlTransformer: resolvedUrlTransformer,
         recoveryId: recoveryId,
         backend: FMTCBackendAccessThreadSafe.internal,
       ),
