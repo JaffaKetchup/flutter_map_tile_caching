@@ -3,14 +3,43 @@
 
 part of '../../../flutter_map_tile_caching.dart';
 
+/// A 'temporary' object that collects information from [_internalGetBytes] to
+/// be used to construct a [TileLoadingInterceptorResult]
+///
+/// See documentation on [TileLoadingInterceptorResult] for more information
+class _TLIRConstructor {
+  _TLIRConstructor._();
+
+  TileLoadingInterceptorResultPath? resultPath;
+  Object? error;
+  late String networkUrl;
+  late String storageSuitableUID;
+  List<String>? existingStores;
+  late bool tileExistsInUnspecifiedStoresOnly;
+  late bool needsUpdating;
+  bool? hitOrMiss;
+  Future<Map<String, bool>>? storesWriteResult;
+  late Duration cacheFetchDuration;
+  Duration? networkFetchDuration;
+}
+
 /// Information useful to debug and record detailed statistics for the loading
 /// mechanisms and paths of a tile
-///
-/// When an object of this type is emitted through a [TileLoadingInterceptorMap],
-/// the tile will have finished loading (successfully or unsuccessfully), and all
-/// fields/properties will be initialised and safe to read.
+@immutable
 class TileLoadingInterceptorResult {
-  TileLoadingInterceptorResult._();
+  const TileLoadingInterceptorResult._({
+    required this.resultPath,
+    required this.error,
+    required this.networkUrl,
+    required this.storageSuitableUID,
+    required this.existingStores,
+    required this.tileExistsInUnspecifiedStoresOnly,
+    required this.needsUpdating,
+    required this.hitOrMiss,
+    required this.storesWriteResult,
+    required this.cacheFetchDuration,
+    required this.networkFetchDuration,
+  });
 
   /// Indicates whether & how the tile completed loading successfully
   ///
@@ -20,7 +49,7 @@ class TileLoadingInterceptorResult {
   ///
   /// See [didComplete] for a boolean result. If `null`, see [error] for the
   /// error/exception object.
-  late final TileLoadingInterceptorResultPath? resultPath;
+  final TileLoadingInterceptorResultPath? resultPath;
 
   /// Indicates whether & how the tile completed loading unsuccessfully
   ///
@@ -30,7 +59,7 @@ class TileLoadingInterceptorResult {
   ///
   /// See [didComplete] for a boolean result. If `null`, see [resultPath] for the
   /// exact result path.
-  late final Object? error;
+  final Object? error;
 
   /// Indicates whether the tile completed loading successfully
   ///
@@ -39,14 +68,14 @@ class TileLoadingInterceptorResult {
   bool get didComplete => resultPath != null;
 
   /// The requested URL of the tile (based on the [TileLayer.urlTemplate])
-  late final String networkUrl;
+  final String networkUrl;
 
   /// The storage-suitable UID of the tile: the result of
   /// [FMTCTileProvider.urlTransformer] on [networkUrl]
-  late final String storageSuitableUID;
+  final String storageSuitableUID;
 
   /// If the tile already existed, the stores that it existed in/belonged to
-  late final List<String>? existingStores;
+  final List<String>? existingStores;
 
   /// Reflection of an internal indicator of the same name
   ///
@@ -57,7 +86,7 @@ class TileLoadingInterceptorResult {
   /// `useOtherStoresAsFallbackOnly` &&
   /// <whether the union of the specified `storeNames` and `existingStores` is empty>
   /// ```
-  late final bool tileExistsInUnspecifiedStoresOnly;
+  final bool tileExistsInUnspecifiedStoresOnly;
 
   /// Reflection of an internal indicator of the same name
   ///
@@ -70,10 +99,12 @@ class TileLoadingInterceptorResult {
   ///   <whether the existing tile had expired>
   /// )
   /// ```
-  late final bool needsUpdating;
+  final bool needsUpdating;
 
   /// Whether a hit or miss was (or would have) been recorded
-  late final bool hitOrMiss;
+  ///
+  /// `null` if the tile did not complete loading successfully.
+  final bool? hitOrMiss;
 
   /// A mapping of all stores the tile was written to, to whether that tile was
   /// newly created in that store (not updated)
@@ -81,6 +112,21 @@ class TileLoadingInterceptorResult {
   /// Is a future because the result must come from an asynchronously triggered
   /// database write operation.
   ///
-  /// `null` if no write operation was necessary/attempted.
-  late final Future<Map<String, bool>>? storesWriteResult;
+  /// `null` if no write operation was necessary/attempted, or the tile did not
+  /// complete loading successfully.
+  final Future<Map<String, bool>>? storesWriteResult;
+
+  /// The duration of the operation used to attempt to read the existing tile
+  /// from the store/cache
+  ///
+  /// Even in [BrowseLoadingStrategy.onlineFirst] and where the tile is not used
+  /// from the local store/cache, the tile read attempt still occurs.
+  final Duration cacheFetchDuration;
+
+  /// The duration of the operation used to attempt to fetch the tile from the
+  /// network.
+  ///
+  /// `null` if no network fetch was attempted, or the tile did not complete
+  /// loading successfully.
+  final Duration? networkFetchDuration;
 }

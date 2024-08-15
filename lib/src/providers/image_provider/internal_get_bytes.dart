@@ -7,9 +7,8 @@ Future<Uint8List> _internalGetBytes({
   required TileCoordinates coords,
   required TileLayer options,
   required FMTCTileProvider provider,
-  required StreamController<ImageChunkEvent>? chunkEvents,
   required bool requireValidImage,
-  required TileLoadingInterceptorResult? currentTLIR,
+  required _TLIRConstructor? currentTLIR,
 }) async {
   void registerHit(List<String> storeNames) {
     currentTLIR?.hitOrMiss = true;
@@ -35,6 +34,9 @@ Future<Uint8List> _internalGetBytes({
   currentTLIR?.networkUrl = networkUrl;
   currentTLIR?.storageSuitableUID = matcherUrl;
 
+  late final DateTime cacheFetchStartTime;
+  if (currentTLIR != null) cacheFetchStartTime = DateTime.now();
+
   final (
     tile: existingTile,
     intersectedStoreNames: intersectedExistingStores,
@@ -44,8 +46,12 @@ Future<Uint8List> _internalGetBytes({
     storeNames: provider._getSpecifiedStoresOrNull(),
   );
 
-  currentTLIR?.existingStores =
-      allExistingStores.isEmpty ? null : allExistingStores;
+  currentTLIR?.cacheFetchDuration =
+      DateTime.now().difference(cacheFetchStartTime);
+
+  if (allExistingStores.isNotEmpty) {
+    currentTLIR?.existingStores = allExistingStores;
+  }
 
   final tileExistsInUnspecifiedStoresOnly = existingTile != null &&
       provider.useOtherStoresAsFallbackOnly &&
@@ -79,7 +85,6 @@ Future<Uint8List> _internalGetBytes({
       !tileExistsInUnspecifiedStoresOnly) {
     currentTLIR?.resultPath =
         TileLoadingInterceptorResultPath.perfectFromStores;
-    currentTLIR?.storesWriteResult = null;
 
     registerHit(intersectedExistingStores);
     return bytes!;
@@ -91,7 +96,6 @@ Future<Uint8List> _internalGetBytes({
     if (existingTile != null) {
       currentTLIR?.resultPath =
           TileLoadingInterceptorResultPath.cacheOnlyFromOtherStores;
-      currentTLIR?.storesWriteResult = null;
 
       registerMiss();
       return bytes!;
@@ -118,15 +122,17 @@ Future<Uint8List> _internalGetBytes({
   }
 
   // Setup a network request for the tile & handle network exceptions
-  final request = http.Request('GET', Uri.parse(networkUrl))
-    ..headers.addAll(provider.headers);
-  final http.StreamedResponse response;
+  final http.Response response;
+
+  late final DateTime networkFetchStartTime;
+  if (currentTLIR != null) networkFetchStartTime = DateTime.now();
+
   try {
-    response = await provider.httpClient.send(request);
+    response = await provider.httpClient
+        .get(Uri.parse(networkUrl), headers: provider.headers);
   } catch (e) {
     if (existingTile != null) {
       currentTLIR?.resultPath = TileLoadingInterceptorResultPath.noFetch;
-      currentTLIR?.storesWriteResult = null;
 
       registerMiss();
       return bytes!;
@@ -138,16 +144,17 @@ Future<Uint8List> _internalGetBytes({
           : FMTCBrowsingErrorType.unknownFetchException,
       networkUrl: networkUrl,
       storageSuitableUID: matcherUrl,
-      request: request,
       originalError: e,
     );
   }
+
+  currentTLIR?.networkFetchDuration =
+      DateTime.now().difference(networkFetchStartTime);
 
   // Check whether the network response is not 200 OK
   if (response.statusCode != 200) {
     if (existingTile != null) {
       currentTLIR?.resultPath = TileLoadingInterceptorResultPath.noFetch;
-      currentTLIR?.storesWriteResult = null;
 
       registerMiss();
       return bytes!;
@@ -157,23 +164,9 @@ Future<Uint8List> _internalGetBytes({
       type: FMTCBrowsingErrorType.negativeFetchResponse,
       networkUrl: networkUrl,
       storageSuitableUID: matcherUrl,
-      request: request,
       response: response,
     );
   }
-
-  // Extract the image bytes from the streamed network response
-  final bytesBuilder = BytesBuilder(copy: false);
-  await for (final byte in response.stream) {
-    bytesBuilder.add(byte);
-    chunkEvents?.add(
-      ImageChunkEvent(
-        cumulativeBytesLoaded: bytesBuilder.length,
-        expectedTotalBytes: response.contentLength,
-      ),
-    );
-  }
-  final responseBytes = bytesBuilder.takeBytes();
 
   // Perform a secondary check to ensure that the bytes recieved actually
   // encode a valid image
@@ -182,7 +175,7 @@ Future<Uint8List> _internalGetBytes({
 
     try {
       isValidImageData = (await (await instantiateImageCodec(
-                responseBytes,
+                response.bodyBytes,
                 targetWidth: 8,
                 targetHeight: 8,
               ))
@@ -199,7 +192,6 @@ Future<Uint8List> _internalGetBytes({
     if (isValidImageData != null) {
       if (existingTile != null) {
         currentTLIR?.resultPath = TileLoadingInterceptorResultPath.noFetch;
-        currentTLIR?.storesWriteResult = null;
 
         registerMiss();
         return bytes!;
@@ -209,7 +201,6 @@ Future<Uint8List> _internalGetBytes({
         type: FMTCBrowsingErrorType.invalidImageData,
         networkUrl: networkUrl,
         storageSuitableUID: matcherUrl,
-        request: request,
         response: response,
         originalError: isValidImageData,
       );
@@ -252,7 +243,7 @@ Future<Uint8List> _internalGetBytes({
               ? provider.storeNames.keys.toList(growable: false)
               : null,
       url: matcherUrl,
-      bytes: responseBytes,
+      bytes: response.bodyBytes,
       // ignore: unawaited_futures
     )..then((result) {
         final createdIn =
@@ -266,12 +257,10 @@ Future<Uint8List> _internalGetBytes({
           storeNames: createdIn.toList(growable: false), // TODO: Verify
         );
       });
-  } else {
-    currentTLIR?.storesWriteResult = null;
   }
 
   currentTLIR?.resultPath = TileLoadingInterceptorResultPath.fetched;
 
   registerMiss();
-  return responseBytes;
+  return response.bodyBytes;
 }

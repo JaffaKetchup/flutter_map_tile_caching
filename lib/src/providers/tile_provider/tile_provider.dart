@@ -237,10 +237,6 @@ class FMTCTileProvider extends TileProvider {
   /// [key] is used to control the [ImageCache], and should be set when in a
   /// context where [ImageProvider.obtainKey] is available.
   ///
-  /// [chunkEvents] is used to improve the quality of an [ImageProvider], and
-  /// should be set when [MultiFrameImageStreamCompleter] is in use inside an
-  /// [ImageProvider.loadImage]. Note that it will be closed by this method.
-  ///
   /// [startedLoading] & [finishedLoadingBytes] are used to indicate to
   /// flutter_map when it is safe to dispose a [TileProvider], and should be set
   /// when used inside a [TileProvider]'s context (such as directly or within
@@ -262,7 +258,6 @@ class FMTCTileProvider extends TileProvider {
     required TileCoordinates coords,
     required TileLayer options,
     Object? key,
-    StreamController<ImageChunkEvent>? chunkEvents,
     void Function()? startedLoading,
     void Function()? finishedLoadingBytes,
     bool requireValidImage = false,
@@ -272,7 +267,6 @@ class FMTCTileProvider extends TileProvider {
         options: options,
         provider: this,
         key: key,
-        chunkEvents: chunkEvents,
         startedLoading: startedLoading,
         finishedLoadingBytes: finishedLoadingBytes,
         requireValidImage: requireValidImage,

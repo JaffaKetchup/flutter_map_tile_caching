@@ -34,7 +34,6 @@ class FMTCBrowsingError implements Exception {
     required this.type,
     required this.networkUrl,
     required this.storageSuitableUID,
-    this.request,
     this.response,
     this.originalError,
   }) : message = '${type.explanation} ${type.resolution}';
@@ -59,18 +58,12 @@ class FMTCBrowsingError implements Exception {
   /// [FMTCTileProvider.urlTransformer] on [networkUrl]
   final String storageSuitableUID;
 
-  /// If available, the attempted HTTP request
-  ///
-  /// Will be available if [type] is not
-  /// [FMTCBrowsingErrorType.missingInCacheOnlyMode].
-  final Request? request;
-
   /// If available, the HTTP response streamed from the server
   ///
   /// Will be available if [type] is
   /// [FMTCBrowsingErrorType.negativeFetchResponse] or
   /// [FMTCBrowsingErrorType.invalidImageData].
-  final StreamedResponse? response;
+  final Response? response;
 
   /// If available, the error object that was caught when attempting the HTTP
   /// request

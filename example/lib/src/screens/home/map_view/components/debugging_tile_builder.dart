@@ -61,9 +61,10 @@ class DebuggingTileBuilder extends StatelessWidget {
                   );
                 }
 
-                return OverflowBox(
-                  child: Padding(
-                    padding: const EdgeInsets.all(6),
+                return Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -76,14 +77,21 @@ class DebuggingTileBuilder extends StatelessWidget {
                         if (info.error case final error?)
                           Text(
                             error is FMTCBrowsingError
-                                ? error.type.name
-                                : 'Unknown error',
+                                ? '`${error.type.name}`'
+                                : 'Unknown error (${error.runtimeType})',
                             textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                         if (info.resultPath case final result?) ...[
                           Text(
-                            "'${result.name}' in "
-                            '${tile.loadFinishedAt == null || tile.loadStarted == null ? 'Loading...' : '${tile.loadFinishedAt!.difference(tile.loadStarted!).inMilliseconds} ms'}\n',
+                            '`${result.name}` in ${tile.loadFinishedAt == null || tile.loadStarted == null ? '...' : tile.loadFinishedAt!.difference(tile.loadStarted!).inMilliseconds} ms',
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            '(${info.cacheFetchDuration.inMilliseconds} ms cache${info.networkFetchDuration == null ? ')' : ' | ${info.networkFetchDuration!.inMilliseconds} ms network)'}\n',
                             textAlign: TextAlign.center,
                           ),
                           if (info.existingStores case final existingStores?)

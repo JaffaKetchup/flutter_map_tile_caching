@@ -41,32 +41,25 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
   ImageStreamCompleter loadImage(
     _FMTCImageProvider key,
     ImageDecoderCallback decode,
-  ) {
-    // Closed by `getBytes`
-    // ignore: close_sinks
-    final chunkEvents = StreamController<ImageChunkEvent>();
-
-    return MultiFrameImageStreamCompleter(
-      codec: getBytes(
-        coords: coords,
-        options: options,
-        provider: provider,
-        key: key,
-        chunkEvents: chunkEvents,
-        finishedLoadingBytes: finishedLoadingBytes,
-        startedLoading: startedLoading,
-        requireValidImage: true,
-      ).then(ImmutableBuffer.fromUint8List).then((v) => decode(v)),
-      chunkEvents: chunkEvents.stream,
-      scale: 1,
-      debugLabel: coords.toString(),
-      informationCollector: () => [
-        DiagnosticsProperty('Store names', provider.storeNames),
-        DiagnosticsProperty('Tile coordinates', coords),
-        DiagnosticsProperty('Current provider', key),
-      ],
-    );
-  }
+  ) =>
+      MultiFrameImageStreamCompleter(
+        codec: getBytes(
+          coords: coords,
+          options: options,
+          provider: provider,
+          key: key,
+          finishedLoadingBytes: finishedLoadingBytes,
+          startedLoading: startedLoading,
+          requireValidImage: true,
+        ).then(ImmutableBuffer.fromUint8List).then((v) => decode(v)),
+        scale: 1,
+        debugLabel: coords.toString(),
+        informationCollector: () => [
+          DiagnosticsProperty('Store names', provider.storeNames),
+          DiagnosticsProperty('Tile coordinates', coords),
+          DiagnosticsProperty('Current provider', key),
+        ],
+      );
 
   /// {@macro fmtc.imageProvider.getBytes}
   static Future<Uint8List> getBytes({
@@ -74,14 +67,12 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
     required TileLayer options,
     required FMTCTileProvider provider,
     Object? key,
-    StreamController<ImageChunkEvent>? chunkEvents,
     void Function()? startedLoading,
     void Function()? finishedLoadingBytes,
     bool requireValidImage = false,
   }) async {
-    final currentTLIR = provider.tileLoadingInterceptor != null
-        ? TileLoadingInterceptorResult._()
-        : null;
+    final currentTLIR =
+        provider.tileLoadingInterceptor != null ? _TLIRConstructor._() : null;
 
     void close([Object? error]) {
       finishedLoadingBytes?.call();
@@ -89,18 +80,27 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
       if (key != null && error != null) {
         scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
       }
-      if (chunkEvents != null) {
-        unawaited(chunkEvents.close());
-      }
 
       if (currentTLIR != null) {
         currentTLIR.error = error;
-        if (error != null) currentTLIR.resultPath = null;
 
         provider.tileLoadingInterceptor!
-          ..value[coords] = currentTLIR
+          ..value[coords] = TileLoadingInterceptorResult._(
+            resultPath: currentTLIR.resultPath,
+            error: currentTLIR.error,
+            networkUrl: currentTLIR.networkUrl,
+            storageSuitableUID: currentTLIR.storageSuitableUID,
+            existingStores: currentTLIR.existingStores,
+            tileExistsInUnspecifiedStoresOnly:
+                currentTLIR.tileExistsInUnspecifiedStoresOnly,
+            needsUpdating: currentTLIR.needsUpdating,
+            hitOrMiss: currentTLIR.hitOrMiss,
+            storesWriteResult: currentTLIR.storesWriteResult,
+            cacheFetchDuration: currentTLIR.cacheFetchDuration,
+            networkFetchDuration: currentTLIR.networkFetchDuration,
+          )
           // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
-          ..notifyListeners();
+          ..notifyListeners(); // `Map` is mutable, so must notify manually
       }
     }
 
@@ -112,7 +112,6 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
         coords: coords,
         options: options,
         provider: provider,
-        chunkEvents: chunkEvents,
         requireValidImage: requireValidImage,
         currentTLIR: currentTLIR,
       );

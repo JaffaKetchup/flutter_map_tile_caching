@@ -32,23 +32,19 @@ part 'internal_workers/shared.dart';
 part 'internal_workers/thread_safe.dart';
 part 'internal.dart';
 
-/// {@template fmtc.backend.objectbox}
 /// Implementation of [FMTCBackend] that uses ObjectBox as the storage database
 ///
 /// On web, this redirects to a no-op implementation that throws
 /// [UnsupportedError]s when attempting to use [initialise] or [uninitialise],
 /// and [RootUnavailable] when trying to use any other method.
-/// {@endtemplate}
 final class FMTCObjectBoxBackend implements FMTCBackend {
   /// {@macro fmtc.backend.initialise}
-  ///
-  /// {@template fmtc.backend.objectbox.initialise}
   ///
   /// ---
   ///
   /// [maxDatabaseSize] is the maximum size the database file can grow
-  /// to, in KB. Exceeding it throws [DbFullException] on write operations.
-  /// Defaults to 10 GB (10000000 KB).
+  /// to, in KB. Exceeding it throws [DbFullException] (from
+  /// 'package:objectbox') on write operations. Defaults to 10 GB (10000000 KB).
   ///
   /// [macosApplicationGroup] should be set when creating a sandboxed macOS app,
   /// specify the application group (of less than 20 chars). See
@@ -60,7 +56,6 @@ final class FMTCObjectBoxBackend implements FMTCBackend {
   /// thread.
   ///
   /// Avoid using [useInMemoryDatabase] outside of testing purposes.
-  /// {@endtemplate}
   @override
   Future<void> initialise({
     String? rootDirectory,
@@ -79,14 +74,11 @@ final class FMTCObjectBoxBackend implements FMTCBackend {
 
   /// {@macro fmtc.backend.uninitialise}
   ///
-  /// {@template fmtc.backend.objectbox.uninitialise}
-  ///
   /// If [immediate] is `true`, any operations currently underway will be lost,
   /// as the worker will be killed as quickly as possible (not necessarily
   /// instantly).
   /// If `false`, all operations currently underway will be allowed to complete,
   /// but any operations started after this method call will be lost.
-  /// {@endtemplate}
   @override
   Future<void> uninitialise({
     bool deleteRoot = false,
