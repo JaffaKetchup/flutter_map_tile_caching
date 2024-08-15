@@ -140,12 +140,14 @@ class _StoreTileState extends State<StoreTile> {
                     aspectRatio: 1,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
-                      child: FutureBuilder(
-                        future: widget.tileImage,
-                        builder: (context, snapshot) {
-                          if (snapshot.data case final data?) return data;
-                          return const Icon(Icons.filter_none);
-                        },
+                      child: RepaintBoundary(
+                        child: FutureBuilder(
+                          future: widget.tileImage,
+                          builder: (context, snapshot) {
+                            if (snapshot.data case final data?) return data;
+                            return const Icon(Icons.filter_none);
+                          },
+                        ),
                       ),
                     ),
                   ),

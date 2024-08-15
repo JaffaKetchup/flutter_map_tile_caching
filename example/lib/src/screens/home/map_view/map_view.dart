@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:http/io_client.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
@@ -36,19 +38,15 @@ class MapView extends StatefulWidget {
       bottomPaddingWrapperBuilder;
   final Axis layoutDirection;
 
-  static const animationDuration = Duration(milliseconds: 500);
-  static const animationCurve = Curves.easeInOut;
-
   @override
   State<MapView> createState() => _MapViewState();
 }
 
 class _MapViewState extends State<MapView> with TickerProviderStateMixin {
+  late final _httpClient = IOClient(HttpClient()..userAgent = null);
   late final _mapController = AnimatedMapController(
     vsync: this,
-    curve: MapView.animationCurve,
-    // ignore: avoid_redundant_argument_values
-    duration: MapView.animationDuration,
+    curve: Curves.easeInOut,
   );
 
   final _tileLoadingDebugger = ValueNotifier<TileLoadingInterceptorMap>({});
@@ -297,6 +295,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                           loadingStrategy: provider.loadingStrategy,
                           recordHitsAndMisses: false,
                           tileLoadingInterceptor: _tileLoadingDebugger,
+                          httpClient: _httpClient,
                         ),
                   tileBuilder: !provider.displayDebugOverlay
                       ? null
@@ -357,6 +356,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                               : SystemMouseCursors.precise,
                       child: map,
                     ),
+                    // TODO: Use AnimatedSwitcher for performance
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,

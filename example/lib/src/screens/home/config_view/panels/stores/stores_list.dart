@@ -41,7 +41,11 @@ class _StoresListState extends State<StoresList> {
           store: (
             stats: store.stats.all,
             metadata: store.metadata.read,
-            tileImage: store.stats.tileImage(size: 51.2, fit: BoxFit.cover),
+            tileImage: store.stats.tileImage(
+              size: 51.2,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+            ),
           ),
       };
     },
