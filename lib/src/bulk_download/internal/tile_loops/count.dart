@@ -24,11 +24,11 @@ part of 'shared.dart';
 /// automated tests.
 @internal
 class TileCounters {
-  /// Trim [numOfTiles] to between the [region]'s [DownloadableRegion.start] and
+  /// Trim [tileCount] to between the [region]'s [DownloadableRegion.start] and
   /// [DownloadableRegion.end]
-  static int _trimToRange(DownloadableRegion region, int numOfTiles) =>
-      min(region.end ?? largestInt, numOfTiles) -
-      min(region.start - 1, numOfTiles);
+  static int _trimToRange(DownloadableRegion region, int tileCount) =>
+      min(region.end ?? largestInt, tileCount) -
+      min(region.start - 1, tileCount);
 
   /// Returns the number of tiles within a [DownloadableRegion] with generic type
   /// [RectangleRegion]
@@ -37,7 +37,7 @@ class TileCounters {
     final northWest = region.originalRegion.bounds.northWest;
     final southEast = region.originalRegion.bounds.southEast;
 
-    var numberOfTiles = 0;
+    var tileCount = 0;
 
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
@@ -50,18 +50,17 @@ class TileCounters {
               .ceil() -
           const Point(1, 1);
 
-      numberOfTiles +=
-          (sePoint.x - nwPoint.x + 1) * (sePoint.y - nwPoint.y + 1);
+      tileCount += (sePoint.x - nwPoint.x + 1) * (sePoint.y - nwPoint.y + 1);
     }
 
-    return _trimToRange(region, numberOfTiles);
+    return _trimToRange(region, tileCount);
   }
 
   /// Returns the number of tiles within a [DownloadableRegion] with generic type
   /// [CircleRegion]
   @internal
   static int circleTiles(DownloadableRegion<CircleRegion> region) {
-    int numberOfTiles = 0;
+    int tileCount = 0;
 
     final edgeTile = const Distance(roundResult: false).offset(
       region.originalRegion.center,
@@ -86,21 +85,21 @@ class TileCounters {
       final radiusSquared = radius * radius;
 
       if (radius == 0) {
-        numberOfTiles++;
+        tileCount++;
         continue;
       }
 
       if (radius == 1) {
-        numberOfTiles += 4;
+        tileCount += 4;
         continue;
       }
 
       for (int dy = 0; dy < radius; dy++) {
-        numberOfTiles += (4 * sqrt(radiusSquared - dy * dy).floor()) + 4;
+        tileCount += (4 * sqrt(radiusSquared - dy * dy).floor()) + 4;
       }
     }
 
-    return _trimToRange(region, numberOfTiles);
+    return _trimToRange(region, tileCount);
   }
 
   /// Returns the number of tiles within a [DownloadableRegion] with generic type
@@ -145,7 +144,7 @@ class TileCounters {
 
     final lineOutline = region.originalRegion.toOutlines(1);
 
-    int numberOfTiles = 0;
+    int tileCount = 0;
 
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
@@ -229,7 +228,7 @@ class TileCounters {
               ),
               tile,
             )) {
-              numberOfTiles++;
+              tileCount++;
               generatedTiles.add(tile.hashCode);
               foundOverlappingTile = true;
             } else if (foundOverlappingTile) {
@@ -240,7 +239,7 @@ class TileCounters {
       }
     }
 
-    return _trimToRange(region, numberOfTiles);
+    return _trimToRange(region, tileCount);
   }
 
   /// Returns the number of tiles within a [DownloadableRegion] with generic type
@@ -251,7 +250,7 @@ class TileCounters {
   ) {
     final customPolygonOutline = region.originalRegion.outline;
 
-    int numberOfTiles = 0;
+    int tileCount = 0;
 
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
@@ -299,14 +298,14 @@ class TileCounters {
           for (; xs.contains(xsRawMax - i); i++) {}
           final xsMax = xsRawMax - i;
 
-          if (xsMin <= xsMax) numberOfTiles += (xsMax - xsMin) + 1;
+          if (xsMin <= xsMax) tileCount += (xsMax - xsMin) + 1;
         }
       }
 
-      numberOfTiles += allOutlineTiles.length;
+      tileCount += allOutlineTiles.length;
     }
 
-    return _trimToRange(region, numberOfTiles);
+    return _trimToRange(region, tileCount);
   }
 
   /// Returns the number of tiles within a [DownloadableRegion] with generic type

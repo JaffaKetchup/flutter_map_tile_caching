@@ -464,7 +464,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
           _sendCmdOneShot(
             type: _CmdType.removeOldestTilesAboveLimit,
             args: {'storeNames': storeNames},
-          ).then((v) => v!['numOrphans']),
+          ).then((v) => v!['orphansCounts']),
         );
 
     // If the store has changed, failing to reset the batch/queue will mean
@@ -498,7 +498,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       (await _sendCmdOneShot(
         type: _CmdType.removeTilesOlderThan,
         args: {'storeName': storeName, 'expiry': expiry},
-      ))!['numOrphans'];
+      ))!['orphansCount'];
 
   @override
   Future<Map<String, String>> readMetadata({
