@@ -13,7 +13,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@master
+            uses: actions/checkout@v4
           - name: Run Dart Package Analyser
             uses: axel-op/dart-package-analyzer@master
             id: analysis
@@ -35,11 +35,12 @@ jobs:
         runs-on: ubuntu-latest
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@master
+            uses: actions/checkout@v4
           - name: Setup Flutter Environment
-            uses: subosito/flutter-action@main
+            uses: subosito/flutter-action@v2
             with:
               channel: "beta"
+              cache: true
           - name: Get Package Dependencies
             run: flutter pub get
           - name: Get Example Dependencies
@@ -56,11 +57,12 @@ jobs:
         runs-on: ubuntu-latest
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@master
+            uses: actions/checkout@v4
           - name: Setup Flutter Environment
-            uses: subosito/flutter-action@main
+            uses: subosito/flutter-action@v2
             with:
               channel: "beta"
+              cache: true
           - name: Get Dependencies
             run: flutter pub get
           - name: Install ObjectBox Libs For Testing
@@ -77,20 +79,22 @@ jobs:
             working-directory: ./example
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@master
-          - name: Setup Java 17 Environment
-            uses: actions/setup-java@v3
+            uses: actions/checkout@v4
+          - name: Setup Java 21 Environment
+            uses: actions/setup-java@v4
             with:
               distribution: "temurin"
-              java-version: "17"
+              java-version: "21"
+              cache: 'gradle'
           - name: Setup Flutter Environment
-            uses: subosito/flutter-action@main
+            uses: subosito/flutter-action@v2
             with:
               channel: "beta"
+              cache: true
           - name: Build
             run: flutter build apk --obfuscate --split-debug-info=./symbols
           - name: Upload Artifact
-            uses: actions/upload-artifact@v3.1.2
+            uses: actions/upload-artifact@v4
             with:
               name: android-demo
               path: example/build/app/outputs/apk/release
@@ -105,18 +109,19 @@ jobs:
             working-directory: ./example
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@master
+            uses: actions/checkout@v4
           - name: Setup Flutter Environment
-            uses: subosito/flutter-action@main
+            uses: subosito/flutter-action@v2
             with:
               channel: "beta"
+              cache: true
           - name: Build
             run: flutter build windows --obfuscate --split-debug-info=./symbols
           - name: Create Installer
             run: iscc "windowsApplicationInstallerSetup.iss"
             working-directory: .
           - name: Upload Artifact
-            uses: actions/upload-artifact@v3.1.2
+            uses: actions/upload-artifact@v4
             with:
               name: windows-demo
               path: windowsTemp/WindowsApplication.exe
@@ -131,9 +136,9 @@ jobs:
             working-directory: ./tile_server
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@master
+            uses: actions/checkout@v4
           - name: Setup Dart Environment
-            uses: dart-lang/setup-dart@v1.6.2
+            uses: dart-lang/setup-dart@v1
           - name: Get Dependencies
             run: dart pub get
           - name: Get Dart Dependencies
@@ -143,7 +148,7 @@ jobs:
           - name: Compile
             run: dart compile exe bin/tile_server.dart
           - name: Upload Artifact
-            uses: actions/upload-artifact@v4.3.1
+            uses: actions/upload-artifact@v4
             with:
               name: windows-ts
               path: tile_server/bin/tile_server.exe
@@ -158,9 +163,9 @@ jobs:
             working-directory: ./tile_server
         steps:
           - name: Checkout Repository
-            uses: actions/checkout@master
+            uses: actions/checkout@v4
           - name: Setup Dart Environment
-            uses: dart-lang/setup-dart@v1.6.2
+            uses: dart-lang/setup-dart@v1
           - name: Get Dependencies
             run: dart pub get
           - name: Run Pre-Compile Generator
@@ -168,7 +173,7 @@ jobs:
           - name: Compile
             run: dart compile exe bin/tile_server.dart
           - name: Upload Artifact
-            uses: actions/upload-artifact@v3.1.2
+            uses: actions/upload-artifact@v4
             with:
               name: linux-ts
               path: tile_server/bin/tile_server.exe
