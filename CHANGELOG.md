@@ -18,6 +18,11 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [9.1.3] - 2024/08/19
+
+* Fixed bug where any operation that attempted to delete tiles fatally crashed on some iOS devices  
+  This appears to be an [ObjectBox issue](https://github.com/objectbox/objectbox-dart/issues/654) where streaming the results of a database query caused the crash. Instead, FMTC now uses a custom chunking system to avoid streaming and also avoid loading potentially many tiles into memory.
+
 ## [9.1.2] - 2024/08/07
 
 * Fixed compilation on web platforms: FMTC now internally overrides the `FMTCObjectBoxBackend` and becomes a no-op
