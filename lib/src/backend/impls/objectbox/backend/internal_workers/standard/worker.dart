@@ -81,50 +81,64 @@ Future<void> _worker(
   /// Note that a transaction is used internally as necessary.
   ///
   /// Returns the number of orphaned (deleted) tiles.
-  Future<int> deleteTiles({
+  int deleteTiles({
     required Query<ObjectBoxStore> storesQuery,
     required Query<ObjectBoxTile> tilesQuery,
-  }) async {
+    int? limitTiles,
+  }) {
+    // Loading all tiles at once will consume too much memory
+    const chunkSize = 200; // Alternative to streaming: chunking/paging
+
     final stores = root.box<ObjectBoxStore>();
     final tiles = root.box<ObjectBoxTile>();
 
     bool hadTilesToUpdate = false;
     int rootDeltaSize = 0;
     final tilesToRemove = <int>[];
-    //final tileRelationsToUpdate = <ToMany<ObjectBoxStore>>[];
     final storesToUpdate = <String, ObjectBoxStore>{};
-
-    final queriedStores = storesQuery.property(ObjectBoxStore_.name).find();
-    if (queriedStores.isEmpty) return 0;
-
-    // For each store, remove it from the tile if requested
-    // For each store & if removed, update that store's stats
-    await for (final tile in tilesQuery.stream()) {
-      tile.stores.removeWhere((store) {
-        if (!queriedStores.contains(store.name)) return false;
-
-        storesToUpdate[store.name] = (storesToUpdate[store.name] ?? store)
-          ..length -= 1
-          ..size -= tile.bytes.lengthInBytes;
-
-        return true;
-      });
-
-      if (tile.stores.isNotEmpty) {
-        tile.stores.applyToDb(mode: PutMode.update);
-        hadTilesToUpdate = true;
-        continue;
-      }
-
-      rootDeltaSize -= tile.bytes.lengthInBytes;
-      tilesToRemove.add(tile.id);
-    }
-
-    if (!hadTilesToUpdate && tilesToRemove.isEmpty) return 0;
 
     root.runInTransaction(
       TxMode.write,
       () {
+        final queriedStores = storesQuery.property(ObjectBoxStore_.name).find();
+        if (queriedStores.isEmpty) return 0;
+
+        final tileCount =
+            min(limitTiles ?? double.infinity, tilesQuery.count());
+        if (tileCount == 0) return 0;
+
+        for (int offset = 0; offset < tileCount; offset += chunkSize) {
+          final tilesChunk = (tilesQuery
+                ..offset = offset
+                ..limit = chunkSize)
+              .find();
+
+          // For each store, remove it from the tile if requested
+          // For each store & if removed, update that store's stats
+          for (final tile in tilesChunk) {
+            tile.stores.removeWhere((store) {
+              if (!queriedStores.contains(store.name)) return false;
+
+              storesToUpdate[store.name] = (storesToUpdate[store.name] ?? store)
+                ..length -= 1
+                ..size -= tile.bytes.lengthInBytes;
+
+              return true;
+            });
+
+            if (tile.stores.isNotEmpty) {
+              tile.stores.applyToDb(mode: PutMode.update);
+              hadTilesToUpdate = true;
+              continue;
+            }
+
+            rootDeltaSize -= tile.bytes.lengthInBytes;
+            tilesToRemove.add(tile.id);
+          }
+        }
+
+        if (!hadTilesToUpdate && tilesToRemove.isEmpty) return 0;
+
         tilesToRemove.forEach(tiles.remove);
 
         updateRootStatistics(
@@ -302,21 +316,21 @@ Future<void> _worker(
               ))
             .build();
 
-        deleteTiles(storesQuery: storeQuery, tilesQuery: tilesQuery).then((_) {
-          stores.put(
-            store
-              ..length = 0
-              ..size = 0
-              ..hits = 0
-              ..misses = 0,
-            mode: PutMode.update,
-          );
+        deleteTiles(storesQuery: storeQuery, tilesQuery: tilesQuery);
 
-          sendRes(id: cmd.id);
+        stores.put(
+          store
+            ..length = 0
+            ..size = 0
+            ..hits = 0
+            ..misses = 0,
+          mode: PutMode.update,
+        );
 
-          storeQuery.close();
-          tilesQuery.close();
-        });
+        sendRes(id: cmd.id);
+
+        storeQuery.close();
+        tilesQuery.close();
       case _CmdType.renameStore:
         final currentStoreName = cmd.args['currentStoreName']! as String;
         final newStoreName = cmd.args['newStoreName']! as String;
@@ -352,14 +366,14 @@ Future<void> _worker(
               ))
             .build();
 
-        deleteTiles(storesQuery: storesQuery, tilesQuery: tilesQuery).then((_) {
-          storesQuery.remove();
+        deleteTiles(storesQuery: storesQuery, tilesQuery: tilesQuery);
 
-          sendRes(id: cmd.id);
+        storesQuery.remove();
 
-          storesQuery.close();
-          tilesQuery.close();
-        });
+        sendRes(id: cmd.id);
+
+        storesQuery.close();
+        tilesQuery.close();
       case _CmdType.tileExistsInStore:
         final storeName = cmd.args['storeName']! as String;
         final url = cmd.args['url']! as String;
@@ -436,16 +450,16 @@ Future<void> _worker(
             .query(ObjectBoxTile_.url.equals(url))
             .build();
 
-        deleteTiles(storesQuery: storesQuery, tilesQuery: tilesQuery)
-            .then((orphans) {
-          sendRes(
-            id: cmd.id,
-            data: {'wasOrphan': orphans == 1},
-          );
+        final orphans =
+            deleteTiles(storesQuery: storesQuery, tilesQuery: tilesQuery);
 
-          storesQuery.close();
-          tilesQuery.close();
-        });
+        sendRes(
+          id: cmd.id,
+          data: {'wasOrphan': orphans == 1},
+        );
+
+        storesQuery.close();
+        tilesQuery.close();
       case _CmdType.registerHitOrMiss:
         final storeName = cmd.args['storeName']! as String;
         final hit = cmd.args['hit']! as bool;
@@ -501,18 +515,19 @@ Future<void> _worker(
           storeQuery.close();
           tilesQuery.close();
         } else {
-          tilesQuery.limit = numToRemove;
+          final orphans = deleteTiles(
+            storesQuery: storeQuery,
+            tilesQuery: tilesQuery,
+            limitTiles: numToRemove,
+          );
 
-          deleteTiles(storesQuery: storeQuery, tilesQuery: tilesQuery)
-              .then((orphans) {
-            sendRes(
-              id: cmd.id,
-              data: {'numOrphans': orphans},
-            );
+          sendRes(
+            id: cmd.id,
+            data: {'numOrphans': orphans},
+          );
 
-            storeQuery.close();
-            tilesQuery.close();
-          });
+          storeQuery.close();
+          tilesQuery.close();
         }
       case _CmdType.removeTilesOlderThan:
         final storeName = cmd.args['storeName']! as String;
@@ -531,17 +546,16 @@ Future<void> _worker(
               ))
             .build();
 
-        deleteTiles(storesQuery: storesQuery, tilesQuery: tilesQuery)
-            .then((orphans) {
-          sendRes(
-            id: cmd.id,
-            data: {'numOrphans': orphans},
-          );
+        final orphans =
+            deleteTiles(storesQuery: storesQuery, tilesQuery: tilesQuery);
 
-          storesQuery.close();
-          tilesQuery.close();
-        });
+        sendRes(
+          id: cmd.id,
+          data: {'numOrphans': orphans},
+        );
 
+        storesQuery.close();
+        tilesQuery.close();
       case _CmdType.readMetadata:
         final storeName = cmd.args['storeName']! as String;
 
@@ -1109,7 +1123,7 @@ Future<void> _worker(
                     ))
                   .build();
 
-              await deleteTiles(
+              deleteTiles(
                 storesQuery: storesQuery,
                 tilesQuery: tilesQuery,
               );
