@@ -86,8 +86,12 @@ Future<void> _worker(
     required Query<ObjectBoxTile> tilesQuery,
     int? limitTiles,
   }) {
-    // Loading all tiles at once will consume too much memory
-    const chunkSize = 200; // Alternative to streaming: chunking/paging
+    // This requires processing potentially many tiles, but this will use too
+    // much memory.
+    // Streaming appears to be unstable. Therefore, chunking/paging using
+    // `offset` & `limit` is used in these situations. It may be less efficient,
+    // but more stable.
+    const tilesChunkSize = 200;
 
     final stores = root.box<ObjectBoxStore>();
     final tiles = root.box<ObjectBoxTile>();
@@ -107,10 +111,10 @@ Future<void> _worker(
             min(limitTiles ?? double.infinity, tilesQuery.count());
         if (tileCount == 0) return 0;
 
-        for (int offset = 0; offset < tileCount; offset += chunkSize) {
+        for (int offset = 0; offset < tileCount; offset += tilesChunkSize) {
           final tilesChunk = (tilesQuery
                 ..offset = offset
-                ..limit = chunkSize)
+                ..limit = tilesChunkSize)
               .find();
 
           // For each store, remove it from the tile if requested
