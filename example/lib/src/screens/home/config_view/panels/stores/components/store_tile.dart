@@ -36,6 +36,12 @@ class _StoreTileState extends State<StoreTile> {
   Timer? _toolsAutoHiderTimer;
 
   @override
+  void dispose() {
+    _toolsAutoHiderTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final storeName = widget.store.storeName;
 
