@@ -415,6 +415,8 @@ Future<void> _worker(
 
         storesQuery.remove();
 
+        sendRes(id: cmd.id);
+
         storesQuery.close();
         tilesQuery.close();
       case _CmdType.tileExists:
