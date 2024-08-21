@@ -65,7 +65,7 @@ class _ContentPanels extends StatelessWidget {
                     slivers: [
                       SliverPadding(
                         padding: EdgeInsets.only(top: 16),
-                        sliver: StoresList(),
+                        sliver: StoresList(useCompactLayout: false),
                       ),
                       SliverToBoxAdapter(child: SizedBox(height: 16)),
                     ],

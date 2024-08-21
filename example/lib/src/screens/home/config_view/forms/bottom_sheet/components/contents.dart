@@ -61,7 +61,7 @@ class _ContentPanelsState extends State<_ContentPanels> {
         ),
         const SliverToBoxAdapter(child: Divider(height: 24)),
         const SliverToBoxAdapter(child: SizedBox(height: 6)),
-        const StoresList(),
+        const StoresList(useCompactLayout: true),
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
       ],
     );

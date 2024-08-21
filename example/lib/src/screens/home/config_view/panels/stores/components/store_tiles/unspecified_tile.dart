@@ -3,12 +3,15 @@ import 'package:provider/provider.dart';
 
 import '../../../../../../../shared/misc/internal_store_read_write_behaviour.dart';
 import '../../../../../../../shared/state/general_provider.dart';
-import '../store_read_write_behaviour_selector.dart';
+import '../browse_store_strategy_selector.dart';
 
 class UnspecifiedTile extends StatefulWidget {
   const UnspecifiedTile({
     super.key,
+    required this.useCompactLayout,
   });
+
+  final bool useCompactLayout;
 
   @override
   State<UnspecifiedTile> createState() => _UnspecifiedTileState();
@@ -29,10 +32,12 @@ class _UnspecifiedTileState extends State<UnspecifiedTile> {
         color: Colors.transparent,
         child: ListTile(
           title: const Text(
-            'All URL matching unselected',
+            'All disabled',
             maxLines: 2,
             overflow: TextOverflow.fade,
+            style: TextStyle(fontStyle: FontStyle.italic),
           ),
+          subtitle: const Text('(matching URL)'),
           leading: const SizedBox.square(
             dimension: 48,
             child: Icon(Icons.unpublished, size: 28),
@@ -47,7 +52,7 @@ class _UnspecifiedTileState extends State<UnspecifiedTile> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surfaceDim,
                     borderRadius: BorderRadius.circular(99),
@@ -78,11 +83,13 @@ class _UnspecifiedTileState extends State<UnspecifiedTile> {
                 ),
                 const SizedBox(width: 8),
                 const VerticalDivider(width: 2),
-                const StoreReadWriteBehaviourSelector(
+                BrowseStoreStrategySelector(
                   storeName: '(unspecified)',
                   enabled: true,
                   inheritable: false,
+                  useCompactLayout: widget.useCompactLayout,
                 ),
+                if (widget.useCompactLayout) const SizedBox(width: 12),
               ],
             ),
           ),

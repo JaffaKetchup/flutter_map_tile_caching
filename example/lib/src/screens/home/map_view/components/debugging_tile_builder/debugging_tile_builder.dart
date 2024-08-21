@@ -42,7 +42,7 @@ class DebuggingTileBuilder extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.disabled_by_default_rounded, size: 32),
+                    Icon(Icons.file_download_off, size: 32),
                     SizedBox(height: 6),
                     Text('FMTC not in use'),
                   ],

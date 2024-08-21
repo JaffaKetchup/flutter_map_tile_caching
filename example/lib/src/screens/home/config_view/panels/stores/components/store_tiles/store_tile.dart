@@ -9,7 +9,7 @@ import '../../../../../../../shared/misc/store_metadata_keys.dart';
 import '../../../../../../../shared/state/general_provider.dart';
 import '../../../../../../store_editor/store_editor.dart';
 import '../../state/export_selection_provider.dart';
-import '../store_read_write_behaviour_selector.dart';
+import '../browse_store_strategy_selector.dart';
 
 class StoreTile extends StatefulWidget {
   const StoreTile({
@@ -18,12 +18,14 @@ class StoreTile extends StatefulWidget {
     required this.stats,
     required this.metadata,
     required this.tileImage,
+    required this.useCompactLayout,
   });
 
   final FMTCStore store;
   final Future<({int hits, int length, int misses, double size})> stats;
   final Future<Map<String, String>> metadata;
   final Future<Image?> tileImage;
+  final bool useCompactLayout;
 
   @override
   State<StoreTile> createState() => _StoreTileState();
@@ -58,14 +60,21 @@ class _StoreTileState extends State<StoreTile> {
                       metadataSnapshot.data![StoreMetadataKeys.urlTemplate.key];
 
               final toolsChildren = [
+                const SizedBox(width: 4),
                 IconButton(
                   onPressed: _exportStore,
                   icon: const Icon(Icons.send_and_archive),
+                  visualDensity:
+                      widget.useCompactLayout ? VisualDensity.compact : null,
                 ),
+                const SizedBox(width: 4),
                 IconButton(
                   onPressed: _editStore,
                   icon: const Icon(Icons.edit),
+                  visualDensity:
+                      widget.useCompactLayout ? VisualDensity.compact : null,
                 ),
+                const SizedBox(width: 4),
                 FutureBuilder(
                   future: widget.stats,
                   builder: (context, statsSnapshot) {
@@ -76,6 +85,9 @@ class _StoreTileState extends State<StoreTile> {
                           Icons.delete_forever,
                           color: Colors.red,
                         ),
+                        visualDensity: widget.useCompactLayout
+                            ? VisualDensity.compact
+                            : null,
                       );
                     }
 
@@ -83,7 +95,7 @@ class _StoreTileState extends State<StoreTile> {
                       return const IconButton(
                         onPressed: null,
                         icon: SizedBox.square(
-                          dimension: 22,
+                          dimension: 18,
                           child: Center(
                             child: CircularProgressIndicator.adaptive(
                               strokeWidth: 3,
@@ -96,9 +108,13 @@ class _StoreTileState extends State<StoreTile> {
                     return IconButton(
                       onPressed: _emptyStore,
                       icon: const Icon(Icons.delete),
+                      visualDensity: widget.useCompactLayout
+                          ? VisualDensity.compact
+                          : null,
                     );
                   },
                 ),
+                const SizedBox(width: 4),
               ];
 
               final exportModeChildren = [
@@ -157,125 +173,132 @@ class _StoreTileState extends State<StoreTile> {
                       ),
                     ),
                   ),
-                  trailing: IntrinsicWidth(
-                    child: IntrinsicHeight(
-                      child: Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.all(4),
-                            child: StoreReadWriteBehaviourSelector(
-                              storeName: widget.store.storeName,
-                              enabled: matchesUrl,
-                            ),
-                          ),
-                          AnimatedOpacity(
-                            opacity: matchesUrl ? 0 : 1,
-                            duration: const Duration(milliseconds: 150),
-                            curve: Curves.easeInOut,
-                            child: IgnorePointer(
-                              ignoring: matchesUrl,
-                              child: SizedBox.expand(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .error
-                                        .withOpacity(0.75),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      Icon(Icons.link_off, color: Colors.white),
-                                      Text(
-                                        'URL mismatch',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                  trailing: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IntrinsicWidth(
+                      child: IntrinsicHeight(
+                        child: Stack(
+                          children: [
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: BrowseStoreStrategySelector(
+                                  storeName: widget.store.storeName,
+                                  enabled: matchesUrl,
+                                  useCompactLayout: widget.useCompactLayout,
                                 ),
                               ),
                             ),
-                          ),
-                          AnimatedOpacity(
-                            opacity: _toolsVisible ? 1 : 0,
-                            duration: const Duration(milliseconds: 150),
-                            curve: Curves.easeInOut,
-                            child: IgnorePointer(
-                              ignoring: !_toolsVisible,
-                              child: SizedBox.expand(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .surfaceDim,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 4,
+                            AnimatedOpacity(
+                              opacity: matchesUrl ? 0 : 1,
+                              duration: const Duration(milliseconds: 150),
+                              curve: Curves.easeInOut,
+                              child: IgnorePointer(
+                                ignoring: matchesUrl,
+                                child: SizedBox.expand(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .error
+                                          .withOpacity(0.75),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: _toolsDeleteLoading
-                                        ? const Center(
-                                            child: SizedBox.square(
-                                              dimension: 25,
-                                              child: Center(
-                                                child: CircularProgressIndicator
-                                                    .adaptive(),
-                                              ),
-                                            ),
-                                          )
-                                        : Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            children: toolsChildren,
-                                          ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          AnimatedOpacity(
-                            opacity: exportSelectionProvider
-                                    .selectedStores.isNotEmpty
-                                ? 1
-                                : 0,
-                            duration: const Duration(milliseconds: 150),
-                            curve: Curves.easeInOut,
-                            child: IgnorePointer(
-                              ignoring: exportSelectionProvider
-                                  .selectedStores.isEmpty,
-                              child: SizedBox.expand(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .surfaceDim,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                    ),
-                                    child: Row(
+                                    child: const Row(
                                       mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: exportModeChildren,
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Icon(Icons.link_off,
+                                            color: Colors.white),
+                                        Text(
+                                          'URL mismatch',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                            AnimatedOpacity(
+                              opacity: _toolsVisible ? 1 : 0,
+                              duration: const Duration(milliseconds: 150),
+                              curve: Curves.easeInOut,
+                              child: IgnorePointer(
+                                ignoring: !_toolsVisible,
+                                child: SizedBox.expand(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceDim,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                      ),
+                                      child: _toolsDeleteLoading
+                                          ? const Center(
+                                              child: SizedBox.square(
+                                                dimension: 25,
+                                                child: Center(
+                                                  child:
+                                                      CircularProgressIndicator
+                                                          .adaptive(),
+                                                ),
+                                              ),
+                                            )
+                                          : Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: toolsChildren,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            AnimatedOpacity(
+                              opacity: exportSelectionProvider
+                                      .selectedStores.isNotEmpty
+                                  ? 1
+                                  : 0,
+                              duration: const Duration(milliseconds: 150),
+                              curve: Curves.easeInOut,
+                              child: IgnorePointer(
+                                ignoring: exportSelectionProvider
+                                    .selectedStores.isEmpty,
+                                child: SizedBox.expand(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceDim,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: exportModeChildren,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

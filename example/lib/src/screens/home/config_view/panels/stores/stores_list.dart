@@ -15,7 +15,10 @@ import 'state/export_selection_provider.dart';
 class StoresList extends StatefulWidget {
   const StoresList({
     super.key,
+    required this.useCompactLayout,
   });
+
+  final bool useCompactLayout;
 
   @override
   State<StoresList> createState() => _StoresListState();
@@ -73,10 +76,14 @@ class _StoresListState extends State<StoresList> {
             itemCount: stores.length + 4,
             itemBuilder: (context, index) {
               if (index == 0) {
-                return const ColumnHeadersAndInheritableSettings();
+                return ColumnHeadersAndInheritableSettings(
+                  useCompactLayout: widget.useCompactLayout,
+                );
               }
               if (index - 1 == stores.length) {
-                return const UnspecifiedTile();
+                return UnspecifiedTile(
+                  useCompactLayout: widget.useCompactLayout,
+                );
               }
               if (index - 2 == stores.length) {
                 return RootTile(
@@ -107,6 +114,7 @@ class _StoresListState extends State<StoresList> {
                 stats: stats,
                 metadata: metadata,
                 tileImage: tileImage,
+                useCompactLayout: widget.useCompactLayout,
               );
             },
             separatorBuilder: (context, index) => index - 3 == stores.length - 1
