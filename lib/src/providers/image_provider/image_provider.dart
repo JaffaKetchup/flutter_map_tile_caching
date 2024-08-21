@@ -91,8 +91,10 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
             networkUrl: currentTLIR.networkUrl,
             storageSuitableUID: currentTLIR.storageSuitableUID,
             existingStores: currentTLIR.existingStores,
-            tileExistsInUnspecifiedStoresOnly:
-                currentTLIR.tileExistsInUnspecifiedStoresOnly,
+            tileRetrievedFromOtherStoresAsFallback:
+                currentTLIR.tileRetrievableFromOtherStoresAsFallback &&
+                    currentTLIR.resultPath ==
+                        TileLoadingInterceptorResultPath.cacheAsFallback,
             needsUpdating: currentTLIR.needsUpdating,
             hitOrMiss: currentTLIR.hitOrMiss,
             storesWriteResult: currentTLIR.storesWriteResult,

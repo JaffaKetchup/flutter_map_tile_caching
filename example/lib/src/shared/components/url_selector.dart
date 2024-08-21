@@ -11,14 +11,14 @@ import '../misc/store_metadata_keys.dart';
 class URLSelector extends StatefulWidget {
   const URLSelector({
     super.key,
-    this.initialValue,
+    required this.initialValue,
     this.onSelected,
     this.helperText,
     this.onFocus,
     this.onUnfocus,
   });
 
-  final String? initialValue;
+  final String initialValue;
   final void Function(String)? onSelected;
   final String? helperText;
   final void Function()? onFocus;
@@ -29,14 +29,13 @@ class URLSelector extends StatefulWidget {
 }
 
 class _URLSelectorState extends State<URLSelector> {
-  static const _sharedPrefsNonStoreUrlsKey = 'customNonStoreUrls';
   static const _defaultUrlTemplate =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   late final urlTextController = TextEditingControllerWithMatcherStylizer(
     TileProvider.templatePlaceholderElement,
     const TextStyle(fontStyle: FontStyle.italic),
-    initialValue: widget.initialValue ?? _defaultUrlTemplate,
+    initialValue: widget.initialValue,
   );
 
   final selectableEntriesManualRefreshStream = StreamController<void>();
@@ -113,8 +112,7 @@ class _URLSelectorState extends State<URLSelector> {
                         filled: true,
                         helperMaxLines: 2,
                       ),
-                      initialSelection:
-                          widget.initialValue ?? _defaultUrlTemplate,
+                      initialSelection: widget.initialValue,
                       // Bug in `DropdownMenu` means this cannot be `true`
                       // enableFilter: true,
                       dropdownMenuEntries: _constructMenuEntries(snapshot),
@@ -146,8 +144,9 @@ class _URLSelectorState extends State<URLSelector> {
   void _onSelected(String? v) {
     if (v == null) {
       sharedPrefs.setStringList(
-        _sharedPrefsNonStoreUrlsKey,
-        (sharedPrefs.getStringList(_sharedPrefsNonStoreUrlsKey) ?? <String>[])
+        SharedPrefsKeys.customNonStoreUrls.name,
+        (sharedPrefs.getStringList(SharedPrefsKeys.customNonStoreUrls.name) ??
+            <String>[])
           ..add(urlTextController.text),
       );
 
@@ -172,7 +171,8 @@ class _URLSelectorState extends State<URLSelector> {
     )
       ..add((storeName: '(default)', urlTemplate: _defaultUrlTemplate))
       ..addAll(
-        (sharedPrefs.getStringList(_sharedPrefsNonStoreUrlsKey) ?? <String>[])
+        (sharedPrefs.getStringList(SharedPrefsKeys.customNonStoreUrls.name) ??
+                <String>[])
             .map((url) => (storeName: '(custom)', urlTemplate: url)),
       );
 
@@ -210,9 +210,10 @@ class _URLSelectorState extends State<URLSelector> {
                   ? IconButton(
                       onPressed: () {
                         sharedPrefs.setStringList(
-                          _sharedPrefsNonStoreUrlsKey,
-                          (sharedPrefs
-                                  .getStringList(_sharedPrefsNonStoreUrlsKey) ??
+                          SharedPrefsKeys.customNonStoreUrls.name,
+                          (sharedPrefs.getStringList(
+                                SharedPrefsKeys.customNonStoreUrls.name,
+                              ) ??
                               <String>[])
                             ..remove(e.key),
                         );

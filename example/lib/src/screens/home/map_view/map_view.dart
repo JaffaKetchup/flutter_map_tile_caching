@@ -13,7 +13,7 @@ import 'package:provider/provider.dart';
 import '../../../shared/misc/shared_preferences.dart';
 import '../../../shared/misc/store_metadata_keys.dart';
 import '../../../shared/state/general_provider.dart';
-import 'components/debugging_tile_builder.dart';
+import 'components/debugging_tile_builder/debugging_tile_builder.dart';
 import 'components/region_selection/crosshairs.dart';
 import 'components/region_selection/custom_polygon_snapping_indicator.dart';
 import 'components/region_selection/region_shape.dart';
@@ -280,6 +280,9 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
               ],
             );
 
+            final otherStoresStrategy = provider.currentStores['(unspecified)']
+                ?.toBrowseStoreStrategy();
+
             final map = FlutterMap(
               mapController: _mapController.mapController,
               options: mapOptions,
@@ -288,14 +291,20 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                   urlTemplate: urlTemplate,
                   userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
                   maxNativeZoom: 20,
-                  tileProvider: compiledStoreNames.isEmpty
+                  tileProvider: compiledStoreNames.isEmpty &&
+                          otherStoresStrategy == null
                       ? NetworkTileProvider()
                       : FMTCTileProvider.multipleStores(
                           storeNames: compiledStoreNames,
+                          otherStoresStrategy: otherStoresStrategy,
                           loadingStrategy: provider.loadingStrategy,
+                          useOtherStoresAsFallbackOnly:
+                              provider.useUnspecifiedAsFallbackOnly,
                           recordHitsAndMisses: false,
                           tileLoadingInterceptor: _tileLoadingDebugger,
                           httpClient: _httpClient,
+                          // ignore: invalid_use_of_visible_for_testing_member
+                          fakeNetworkDisconnect: provider.fakeNetworkDisconnect,
                         ),
                   tileBuilder: !provider.displayDebugOverlay
                       ? null
@@ -303,7 +312,8 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                             tileLoadingDebugger: _tileLoadingDebugger,
                             tileWidget: tileWidget,
                             tile: tile,
-                            usingFMTC: compiledStoreNames.isNotEmpty,
+                            usingFMTC: compiledStoreNames.isNotEmpty ||
+                                otherStoresStrategy != null,
                           ),
                 ),
                 if (widget.mode == MapViewMode.regionSelect) ...[

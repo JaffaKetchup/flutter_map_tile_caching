@@ -4,7 +4,6 @@
 import 'dart:async';
 
 /// Rate limiting extension, see [rateLimit] for more information
-// TODO: check https://pub.dev/documentation/stream_transform/latest/stream_transform/RateLimit/throttle.html
 extension RateLimitedStream<E> on Stream<E> {
   /// Transforms a series of events to an output stream where a delay of at least
   /// [minimumSpacing] is inserted between every event

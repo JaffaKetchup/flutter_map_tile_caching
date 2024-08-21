@@ -25,7 +25,7 @@ Future<void> _singleDownloadThread(
   final tileQueue = StreamQueue(receivePort);
 
   // Initialise a long lasting HTTP client
-  final httpClient = http.Client();
+  final httpClient = IOClient();
 
   // Initialise the tile buffer arrays
   final tileUrlsBuffer = <String>[];
@@ -86,7 +86,7 @@ Future<void> _singleDownloadThread(
     }
 
     // Fetch new tile from URL
-    final http.Response response;
+    final Response response;
     try {
       response =
           await httpClient.get(Uri.parse(networkUrl), headers: input.headers);

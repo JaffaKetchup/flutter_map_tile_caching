@@ -7,8 +7,9 @@ import 'components/column_headers_and_inheritable_settings.dart';
 import 'components/export_stores/button.dart';
 import 'components/new_store_button.dart';
 import 'components/no_stores.dart';
-import 'components/root_tile.dart';
-import 'components/store_tile.dart';
+import 'components/store_tiles/root_tile.dart';
+import 'components/store_tiles/store_tile.dart';
+import 'components/store_tiles/unspecified_tile.dart';
 import 'state/export_selection_provider.dart';
 
 class StoresList extends StatefulWidget {
@@ -69,19 +70,22 @@ class _StoresListState extends State<StoresList> {
           if (stores.isEmpty) return const NoStores();
 
           return SliverList.separated(
-            itemCount: stores.length + 3,
+            itemCount: stores.length + 4,
             itemBuilder: (context, index) {
               if (index == 0) {
                 return const ColumnHeadersAndInheritableSettings();
               }
               if (index - 1 == stores.length) {
+                return const UnspecifiedTile();
+              }
+              if (index - 2 == stores.length) {
                 return RootTile(
                   length: _rootLength,
                   size: _rootSize,
                   realSizeAdditional: _rootRealSizeAdditional,
                 );
               }
-              if (index - 2 == stores.length) {
+              if (index - 3 == stores.length) {
                 return Builder(
                   builder: (context) =>
                       context.select<ExportSelectionProvider, bool>(
@@ -105,9 +109,10 @@ class _StoresListState extends State<StoresList> {
                 tileImage: tileImage,
               );
             },
-            separatorBuilder: (context, index) => index - 2 == stores.length - 1
+            separatorBuilder: (context, index) => index - 3 == stores.length - 1
                 ? const Divider()
-                : index - 1 == stores.length - 1
+                : index - 2 == stores.length - 1 ||
+                        index - 1 == stores.length - 1
                     ? const Divider(height: 8, indent: 12, endIndent: 12)
                     : const SizedBox.shrink(),
           );

@@ -77,7 +77,9 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                             : snapshot.data!.contains(input) &&
                                     input != existingStoreName
                                 ? 'Store already exists'
-                                : input == '(default)' || input == '(custom)'
+                                : input == '(default)' ||
+                                        input == '(custom)' ||
+                                        input == '(unspecified)'
                                     ? 'Name reserved (in example app)'
                                     : null,
                         onSaved: (input) => newName = input,

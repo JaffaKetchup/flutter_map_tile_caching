@@ -8,13 +8,14 @@ part of '../../flutter_map_tile_caching.dart';
 /// ---
 ///
 /// {@template num_instances}
-/// By default, only one download is allowed at any one time.
+/// By default, only one download is allowed at any one time, across all stores.
 ///
 /// However, if necessary, multiple can be started by setting methods'
 /// `instanceId` argument to a unique value on methods. Whatever object
 /// `instanceId` is, it must have a valid and useful equality and `hashCode`
 /// implementation, as it is used as the key in a `Map`. Note that this unique
 /// value must be known and remembered to control the state of the download.
+/// Note that instances are shared across all stores.
 ///
 /// > [!WARNING]
 /// > Starting multiple simultaneous downloads may lead to a noticeable
@@ -266,6 +267,8 @@ class StoreDownload {
   ///
   /// This does not include skipped sea tiles or skipped existing tiles, as those
   /// are handled during download only.
+  ///
+  /// Note that this does not require a valid/ready/existing store.
   ///
   /// Returns the number of tiles.
   Future<int> check(DownloadableRegion region) => compute(

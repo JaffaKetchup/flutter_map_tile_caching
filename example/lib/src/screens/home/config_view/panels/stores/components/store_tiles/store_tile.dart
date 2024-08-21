@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../../../shared/misc/exts/size_formatter.dart';
-import '../../../../../../shared/misc/store_metadata_keys.dart';
-import '../../../../../../shared/state/general_provider.dart';
-import '../../../../../store_editor/store_editor.dart';
-import '../state/export_selection_provider.dart';
-import 'store_read_write_behaviour_selector.dart';
+import '../../../../../../../shared/misc/exts/size_formatter.dart';
+import '../../../../../../../shared/misc/store_metadata_keys.dart';
+import '../../../../../../../shared/state/general_provider.dart';
+import '../../../../../../store_editor/store_editor.dart';
+import '../../state/export_selection_provider.dart';
+import '../store_read_write_behaviour_selector.dart';
 
 class StoreTile extends StatefulWidget {
   const StoreTile({

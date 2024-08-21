@@ -33,11 +33,16 @@ class FMTCTileProvider extends TileProvider {
     UrlTransformer? urlTransformer,
     this.errorHandler,
     this.tileLoadingInterceptor,
-    http.Client? httpClient,
+    Client? httpClient,
+    @visibleForTesting this.fakeNetworkDisconnect = false,
     Map<String, String>? headers,
-  })  : assert(storeNames.isNotEmpty, '`storeNames` cannot be empty'),
+  })  : assert(
+          storeNames.isNotEmpty || otherStoresStrategy != null,
+          '`storeNames` cannot be empty if `otherStoresStrategy` is `null`',
+        ),
         urlTransformer = (urlTransformer ?? (u) => u),
         httpClient = httpClient ?? IOClient(HttpClient()..userAgent = null),
+        _wasClientAutomaticallyGenerated = httpClient == null,
         super(
           headers: (headers?.containsKey('User-Agent') ?? false)
               ? headers
@@ -54,12 +59,14 @@ class FMTCTileProvider extends TileProvider {
     UrlTransformer? urlTransformer,
     this.errorHandler,
     this.tileLoadingInterceptor,
-    http.Client? httpClient,
+    Client? httpClient,
+    @visibleForTesting this.fakeNetworkDisconnect = false,
     Map<String, String>? headers,
   })  : storeNames = const {},
         otherStoresStrategy = allStoresStrategy,
         urlTransformer = (urlTransformer ?? (u) => u),
         httpClient = httpClient ?? IOClient(HttpClient()..userAgent = null),
+        _wasClientAutomaticallyGenerated = httpClient == null,
         super(
           headers: (headers?.containsKey('User-Agent') ?? false)
               ? headers
@@ -80,8 +87,8 @@ class FMTCTileProvider extends TileProvider {
   ///
   /// `null` means that all other stores will not be used.
   ///
-  /// Setting a non-`null` value may reduce performance, as internal queries
-  /// will have fewer constraints and therefore be less efficient.
+  /// Setting a non-`null` value may negatively impact performance, because
+  /// internal tile cache lookups will have less constraints.
   ///
   /// Also see [useOtherStoresAsFallbackOnly] for whether these unspecified
   /// stores should only be used as a last resort or in addition to the specified
@@ -101,9 +108,16 @@ class FMTCTileProvider extends TileProvider {
   /// When tiles are retrieved from other stores, it is counted as a miss for the
   /// specified store(s).
   ///
-  /// This may introduce notable performance reductions, especially if failures
-  /// occur often or the root is particularly large, as an extra lookup with
-  /// unbounded constraints is required for each tile.
+  /// Note that an attempt is *always* made to read the tile from the cache,
+  /// regardless of whether the tile is then actually retrieved from the cache
+  /// or the network is then used (successfully).
+  ///
+  /// For example, if a specified store does not contain the tile, and an
+  /// unspecified store does contain the tile:
+  ///  * if this is `false`, then the tile will be retrieved and used from the
+  /// unspecified store
+  ///  * if this is `true`, then the tile will be retrieved (see note above),
+  /// but not used unless the network request fails
   ///
   /// Defaults to `false`.
   final bool useOtherStoresAsFallbackOnly;
@@ -181,12 +195,23 @@ class FMTCTileProvider extends TileProvider {
   /// [TileCoordinates]s to [TileLoadingInterceptorResult]s.
   final ValueNotifier<TileLoadingInterceptorMap>? tileLoadingInterceptor;
 
-  /// [http.Client] (such as a [IOClient]) used to make all network requests
+  /// [Client] (such as a [IOClient]) used to make all network requests
   ///
-  /// Do not close manually.
+  /// If specified, then it will not be closed automatically on [dispose]al.
+  /// When closing manually, ensure no requests are currently underway, else
+  /// they will throw [ClientException]s.
   ///
   /// Defaults to a standard [IOClient]/[HttpClient].
-  final http.Client httpClient;
+  final Client httpClient;
+
+  /// Whether to fake a network disconnect for the purpose of testing
+  ///
+  /// When `true`, prevents a network request and instead throws a
+  /// [SocketException].
+  ///
+  /// Defaults to `false`.
+  @visibleForTesting
+  final bool fakeNetworkDisconnect;
 
   /// Each [Completer] is completed once the corresponding tile has finished
   /// loading
@@ -196,6 +221,8 @@ class FMTCTileProvider extends TileProvider {
   ///
   /// Does not include tiles loaded from session cache.
   final _tilesInProgress = HashMap<TileCoordinates, Completer<void>>();
+
+  final bool _wasClientAutomaticallyGenerated;
 
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>
@@ -212,10 +239,12 @@ class FMTCTileProvider extends TileProvider {
 
   @override
   Future<void> dispose() async {
-    if (_tilesInProgress.isNotEmpty) {
-      await Future.wait(_tilesInProgress.values.map((c) => c.future));
+    if (_wasClientAutomaticallyGenerated) {
+      if (_tilesInProgress.isNotEmpty) {
+        await Future.wait(_tilesInProgress.values.map((c) => c.future));
+      }
+      httpClient.close();
     }
-    httpClient.close();
     super.dispose();
   }
 

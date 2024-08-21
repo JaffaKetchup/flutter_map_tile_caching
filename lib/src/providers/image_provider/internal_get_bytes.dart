@@ -53,17 +53,15 @@ Future<Uint8List> _internalGetBytes({
     currentTLIR?.existingStores = allExistingStores;
   }
 
-  final tileExistsInUnspecifiedStoresOnly = existingTile != null &&
+  final tileRetrievableFromOtherStoresAsFallback = existingTile != null &&
       provider.useOtherStoresAsFallbackOnly &&
       provider.storeNames.keys
           .toSet()
-          .union(
-            allExistingStores.toSet(),
-          ) // TODO: Verify (intersect? simplify?)
+          .intersection(allExistingStores.toSet())
           .isEmpty;
 
-  currentTLIR?.tileExistsInUnspecifiedStoresOnly =
-      tileExistsInUnspecifiedStoresOnly;
+  currentTLIR?.tileRetrievableFromOtherStoresAsFallback =
+      tileRetrievableFromOtherStoresAsFallback;
 
   // Prepare a list of image bytes and prefill if there's already a cached
   // tile available
@@ -82,7 +80,7 @@ Future<Uint8List> _internalGetBytes({
 
   if (existingTile != null &&
       !needsUpdating &&
-      !tileExistsInUnspecifiedStoresOnly) {
+      !tileRetrievableFromOtherStoresAsFallback) {
     currentTLIR?.resultPath =
         TileLoadingInterceptorResultPath.perfectFromStores;
 
@@ -106,33 +104,26 @@ Future<Uint8List> _internalGetBytes({
       networkUrl: networkUrl,
       storageSuitableUID: matcherUrl,
     );
-
-    // TODO: remove below
-    /*if (tileExistsInUnspecifiedStoresOnly) {
-      registerMiss();
-      return bytes!;
-    }
-    if (existingTile == null) {
-      throw FMTCBrowsingError(
-        type: FMTCBrowsingErrorType.missingInCacheOnlyMode,
-        networkUrl: networkUrl,
-        matcherUrl: matcherUrl,
-      );
-    }*/
   }
 
   // Setup a network request for the tile & handle network exceptions
-  final http.Response response;
+  final Response response;
 
   late final DateTime networkFetchStartTime;
   if (currentTLIR != null) networkFetchStartTime = DateTime.now();
 
   try {
+    if (provider.fakeNetworkDisconnect) {
+      throw const SocketException(
+        'Faked `SocketException` due to `fakeNetworkDisconnect`',
+      );
+    }
     response = await provider.httpClient
         .get(Uri.parse(networkUrl), headers: provider.headers);
   } catch (e) {
     if (existingTile != null) {
-      currentTLIR?.resultPath = TileLoadingInterceptorResultPath.noFetch;
+      currentTLIR?.resultPath =
+          TileLoadingInterceptorResultPath.cacheAsFallback;
 
       registerMiss();
       return bytes!;
@@ -154,7 +145,8 @@ Future<Uint8List> _internalGetBytes({
   // Check whether the network response is not 200 OK
   if (response.statusCode != 200) {
     if (existingTile != null) {
-      currentTLIR?.resultPath = TileLoadingInterceptorResultPath.noFetch;
+      currentTLIR?.resultPath =
+          TileLoadingInterceptorResultPath.cacheAsFallback;
 
       registerMiss();
       return bytes!;
@@ -191,7 +183,8 @@ Future<Uint8List> _internalGetBytes({
 
     if (isValidImageData != null) {
       if (existingTile != null) {
-        currentTLIR?.resultPath = TileLoadingInterceptorResultPath.noFetch;
+        currentTLIR?.resultPath =
+            TileLoadingInterceptorResultPath.cacheAsFallback;
 
         registerMiss();
         return bytes!;
@@ -259,7 +252,7 @@ Future<Uint8List> _internalGetBytes({
       });
   }
 
-  currentTLIR?.resultPath = TileLoadingInterceptorResultPath.fetched;
+  currentTLIR?.resultPath = TileLoadingInterceptorResultPath.fetchedFromNetwork;
 
   registerMiss();
   return response.bodyBytes;

@@ -30,7 +30,7 @@ class _RootTileState extends State<RootTile> {
             ),
             leading: const SizedBox.square(
               dimension: 48,
-              child: Icon(Icons.language, size: 28),
+              child: Icon(Icons.storage_rounded, size: 28),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,

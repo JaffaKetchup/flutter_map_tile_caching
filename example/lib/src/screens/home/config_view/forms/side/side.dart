@@ -39,35 +39,9 @@ class _ContentPanels extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(right: 16, top: 16),
         child: SizedBox(
-          width: (constraints.maxWidth / 3).clamp(430, 530),
+          width: (constraints.maxWidth / 3).clamp(515, 560),
           child: Column(
             children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(99),
-                  color: Theme.of(context).colorScheme.surface,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 16,
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Stores & Config',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.help_outline),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),

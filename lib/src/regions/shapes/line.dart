@@ -31,7 +31,7 @@ class LineRegion extends BaseRegion {
     if (line.isEmpty) return;
 
     const dist = Distance();
-    final rad = radius * math.pi / 4;
+    final rad = radius * pi / 4;
 
     for (int i = 0; i < line.length - 1; i++) {
       final cp = line[i];

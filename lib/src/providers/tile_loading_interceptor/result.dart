@@ -15,7 +15,7 @@ class _TLIRConstructor {
   late String networkUrl;
   late String storageSuitableUID;
   List<String>? existingStores;
-  late bool tileExistsInUnspecifiedStoresOnly;
+  late bool tileRetrievableFromOtherStoresAsFallback;
   late bool needsUpdating;
   bool? hitOrMiss;
   Future<Map<String, bool>>? storesWriteResult;
@@ -33,7 +33,7 @@ class TileLoadingInterceptorResult {
     required this.networkUrl,
     required this.storageSuitableUID,
     required this.existingStores,
-    required this.tileExistsInUnspecifiedStoresOnly,
+    required this.tileRetrievedFromOtherStoresAsFallback,
     required this.needsUpdating,
     required this.hitOrMiss,
     required this.storesWriteResult,
@@ -77,18 +77,24 @@ class TileLoadingInterceptorResult {
   /// If the tile already existed, the stores that it existed in/belonged to
   final List<String>? existingStores;
 
-  /// Reflection of an internal indicator of the same name
+  /// Whether the tile was retrieved and used from an unspecified store as a
+  /// fallback
+  ///
+  /// Note that an attempt is *always* made to read the tile from the cache,
+  /// regardless of whether the tile is then actually retrieved from the cache
+  /// or the network is then used (successfully).
   ///
   /// Calculated with:
   ///
   /// ```
-  /// <whether the tile already existed> &&
   /// `useOtherStoresAsFallbackOnly` &&
-  /// <whether the union of the specified `storeNames` and `existingStores` is empty>
+  /// `resultPath` == TileLoadingInterceptorResultPath.cacheAsFallback &&
+  /// <whether the tile already existed> &&
+  /// <whether the intersection of the specified `storeNames` and `existingStores` is empty>
   /// ```
-  final bool tileExistsInUnspecifiedStoresOnly;
+  final bool tileRetrievedFromOtherStoresAsFallback;
 
-  /// Reflection of an internal indicator of the same name
+  /// Whether the tile was indicated for updating (excluding creating)
   ///
   /// Calculated with:
   ///
@@ -119,8 +125,9 @@ class TileLoadingInterceptorResult {
   /// The duration of the operation used to attempt to read the existing tile
   /// from the store/cache
   ///
-  /// Even in [BrowseLoadingStrategy.onlineFirst] and where the tile is not used
-  /// from the local store/cache, the tile read attempt still occurs.
+  /// Note that even in [BrowseLoadingStrategy.onlineFirst] and where the tile
+  /// is not used from the local store/cache, an attempt is *always* made to
+  /// read the tile from the cache.
   final Duration cacheFetchDuration;
 
   /// The duration of the operation used to attempt to fetch the tile from the

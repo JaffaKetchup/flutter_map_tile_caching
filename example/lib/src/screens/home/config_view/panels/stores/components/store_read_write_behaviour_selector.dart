@@ -10,44 +10,51 @@ class StoreReadWriteBehaviourSelector extends StatelessWidget {
     super.key,
     required this.storeName,
     required this.enabled,
+    this.inheritable = true,
   });
 
   final String storeName;
   final bool enabled;
+  final bool inheritable;
 
   @override
   Widget build(BuildContext context) =>
       Selector<GeneralProvider, InternalBrowseStoreStrategy?>(
         selector: (context, provider) => provider.currentStores[storeName],
-        builder: (context, currentBehaviour, child) =>
-            Selector<GeneralProvider, BrowseStoreStrategy?>(
-          selector: (context, provider) =>
-              provider.inheritableBrowseStoreStrategy,
-          builder: (context, inheritableBehaviour, _) => Row(
+        builder: (context, currentBehaviour, child) {
+          final inheritableBehaviour = inheritable
+              ? context.select<GeneralProvider, BrowseStoreStrategy?>(
+                  (provider) => provider.inheritableBrowseStoreStrategy,
+                )
+              : null;
+
+          return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Checkbox.adaptive(
-                value:
-                    currentBehaviour == InternalBrowseStoreStrategy.inherit ||
-                        currentBehaviour == null,
-                onChanged: enabled
-                    ? (v) {
-                        final provider = context.read<GeneralProvider>();
+              if (inheritable) ...[
+                Checkbox.adaptive(
+                  value:
+                      currentBehaviour == InternalBrowseStoreStrategy.inherit ||
+                          currentBehaviour == null,
+                  onChanged: enabled
+                      ? (v) {
+                          final provider = context.read<GeneralProvider>();
 
-                        provider
-                          ..currentStores[storeName] = v!
-                              ? InternalBrowseStoreStrategy.inherit
-                              : InternalBrowseStoreStrategy
-                                  .fromBrowseStoreStrategy(
-                                  provider.inheritableBrowseStoreStrategy,
-                                )
-                          ..changedCurrentStores();
-                      }
-                    : null,
-                materialTapTargetSize: MaterialTapTargetSize.padded,
-                visualDensity: VisualDensity.comfortable,
-              ),
-              const VerticalDivider(width: 2),
+                          provider
+                            ..currentStores[storeName] = v!
+                                ? InternalBrowseStoreStrategy.inherit
+                                : InternalBrowseStoreStrategy
+                                    .fromBrowseStoreStrategy(
+                                    provider.inheritableBrowseStoreStrategy,
+                                  )
+                            ..changedCurrentStores();
+                        }
+                      : null,
+                  materialTapTargetSize: MaterialTapTargetSize.padded,
+                  visualDensity: VisualDensity.comfortable,
+                ),
+                const VerticalDivider(width: 2),
+              ],
               ...BrowseStoreStrategy.values.map(
                 (e) => _StoreReadWriteBehaviourSelectorCheckbox(
                   storeName: storeName,
@@ -60,8 +67,8 @@ class StoreReadWriteBehaviourSelector extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
+          );
+        },
       );
 }
 

@@ -194,7 +194,7 @@ Future<void> _downloadManager(
       id: recoveryId,
       storeName: input.storeName,
       region: input.region,
-      endTile: math.min(input.region.end ?? largestInt, maxTiles),
+      endTile: min(input.region.end ?? largestInt, maxTiles),
     );
   }
 

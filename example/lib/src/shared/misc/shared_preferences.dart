@@ -6,4 +6,10 @@ enum SharedPrefsKeys {
   mapLocationLat,
   mapLocationLng,
   mapLocationZoom,
+  customNonStoreUrls,
+  urlTemplate,
+  inheritableBrowseStoreStrategy,
+  browseLoadingStrategy,
+  displayDebugOverlay,
+  fakeNetworkDisconnect,
 }

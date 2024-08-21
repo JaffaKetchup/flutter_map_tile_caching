@@ -14,22 +14,22 @@ Map<String, bool> _sharedWriteSingleTile({
   final storesBox = root.box<ObjectBoxStore>();
   final rootBox = root.box<ObjectBoxRoot>();
 
-  if (writeAllNotIn != null) {
-    storeNames.addAll(
-      storesBox
-          .getAll()
-          .map((e) => e.name)
-          .where((e) => !writeAllNotIn.contains(e) && !storeNames.contains(e)),
-    );
-  }
+  final compiledStoreNames = writeAllNotIn == null
+      ? storeNames
+      : [
+          ...storeNames,
+          ...storesBox.getAll().map((e) => e.name).where(
+                (e) => !writeAllNotIn.contains(e) && !storeNames.contains(e),
+              ),
+        ];
 
   final tilesQuery = tiles.query(ObjectBoxTile_.url.equals(url)).build();
   final storeQuery =
-      storesBox.query(ObjectBoxStore_.name.oneOf(storeNames)).build();
+      storesBox.query(ObjectBoxStore_.name.oneOf(compiledStoreNames)).build();
 
   final storesToUpdate = <String, ObjectBoxStore>{};
 
-  final result = {for (final storeName in storeNames) storeName: false};
+  final result = {for (final storeName in compiledStoreNames) storeName: false};
 
   root.runInTransaction(
     TxMode.write,
@@ -45,7 +45,7 @@ Map<String, bool> _sharedWriteSingleTile({
 
         for (final relatedStore in existingTile.stores) {
           didContainAlready
-              .addAll(storeNames.where((s) => s == relatedStore.name));
+              .addAll(compiledStoreNames.where((s) => s == relatedStore.name));
 
           storesToUpdate[relatedStore.name] =
               (storesToUpdate[relatedStore.name] ?? relatedStore)

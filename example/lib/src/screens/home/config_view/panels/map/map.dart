@@ -80,8 +80,8 @@ class _ConfigPanelMapState extends State<ConfigPanelMap> {
             builder: (context, displayDebugOverlay, _) => Row(
               children: [
                 const SizedBox(width: 8),
-                const Text('Display debug/info tile overlay'),
-                const Spacer(),
+                const Expanded(child: Text('Display debug/info tile overlay')),
+                const SizedBox(width: 12),
                 Switch.adaptive(
                   value: displayDebugOverlay,
                   onChanged: (value) => context
@@ -91,6 +91,35 @@ class _ConfigPanelMapState extends State<ConfigPanelMap> {
                     (states) => states.contains(WidgetState.selected)
                         ? const Icon(Icons.layers)
                         : const Icon(Icons.layers_clear),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ),
+          ),
+          Selector<GeneralProvider, bool>(
+            selector: (context, provider) => provider.fakeNetworkDisconnect,
+            builder: (context, fakeNetworkDisconnect, _) => Row(
+              children: [
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text('Fake network disconnect (when FMTC in use)'),
+                ),
+                const SizedBox(width: 12),
+                Switch.adaptive(
+                  value: fakeNetworkDisconnect,
+                  onChanged: (value) => context
+                      .read<GeneralProvider>()
+                      .fakeNetworkDisconnect = value,
+                  thumbIcon: WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.selected)
+                        ? const Icon(Icons.cloud_off)
+                        : const Icon(Icons.cloud),
+                  ),
+                  trackColor: WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.selected)
+                        ? Colors.orange
+                        : null,
                   ),
                 ),
                 const SizedBox(width: 8),

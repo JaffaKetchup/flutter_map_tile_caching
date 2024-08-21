@@ -3,7 +3,8 @@
 
 part of '../../../flutter_map_tile_caching.dart';
 
-/// Callback type for [FMTCTileProvider.urlTransformer]
+/// Callback type for [FMTCTileProvider.urlTransformer] &
+/// [StoreDownload.startForeground]
 typedef UrlTransformer = String Function(String);
 
 /// Callback type for [FMTCTileProvider.errorHandler]

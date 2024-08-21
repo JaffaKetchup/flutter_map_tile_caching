@@ -18,8 +18,8 @@ enum TileLoadingInterceptorResultPath {
   cacheOnlyFromOtherStores,
 
   /// The tile was retrieved from the cache as a fallback
-  noFetch,
+  cacheAsFallback,
 
   /// The tile was newly fetched from the network
-  fetched,
+  fetchedFromNetwork,
 }

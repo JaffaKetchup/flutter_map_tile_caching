@@ -41,6 +41,9 @@ class FMTCStore {
   ///
   /// See other available [FMTCTileProvider] contructors to use multiple stores
   /// at once. See [FMTCTileProvider] for more info.
+  ///
+  /// [FMTCTileProvider.fakeNetworkDisconnect] cannot be set through this
+  /// shorthand for [FMTCTileProvider.multipleStores].
   FMTCTileProvider getTileProvider({
     BrowseStoreStrategy storeStrategy = BrowseStoreStrategy.readUpdateCreate,
     BrowseStoreStrategy? otherStoresStrategy,
@@ -52,7 +55,7 @@ class FMTCStore {
     BrowsingExceptionHandler? errorHandler,
     ValueNotifier<TileLoadingInterceptorMap>? tileLoadingInterceptor,
     Map<String, String>? headers,
-    http.Client? httpClient,
+    Client? httpClient,
   }) =>
       FMTCTileProvider.multipleStores(
         storeNames: {storeName: storeStrategy},

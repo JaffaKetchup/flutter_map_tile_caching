@@ -113,14 +113,14 @@ class TileEvent {
   /// Remember to check [isRepeat] before keeping track of this value.
   final Uint8List? tileImage;
 
-  /// The raw [http.Response] from the [url], if available
+  /// The raw [Response] from the HTTP GET request to [url], if available
   ///
   /// Not available if [result] is [TileEventResult.noConnectionDuringFetch],
   /// [TileEventResult.unknownFetchException], or
   /// [TileEventResult.alreadyExisting].
   ///
   /// Remember to check [isRepeat] before keeping track of this value.
-  final http.Response? fetchResponse;
+  final Response? fetchResponse;
 
   /// The raw error thrown when fetching from the [url], if available
   ///
