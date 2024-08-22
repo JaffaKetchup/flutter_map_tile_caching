@@ -9,7 +9,7 @@ import '../../../../../../../shared/misc/store_metadata_keys.dart';
 import '../../../../../../../shared/state/general_provider.dart';
 import '../../../../../../store_editor/store_editor.dart';
 import '../../state/export_selection_provider.dart';
-import '../browse_store_strategy_selector.dart';
+import 'browse_store_strategy_selector/browse_store_strategy_selector.dart';
 
 class StoreTile extends StatefulWidget {
   const StoreTile({
@@ -211,8 +211,10 @@ class _StoreTileState extends State<StoreTile> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceEvenly,
                                       children: [
-                                        Icon(Icons.link_off,
-                                            color: Colors.white),
+                                        Icon(
+                                          Icons.link_off,
+                                          color: Colors.white,
+                                        ),
                                         Text(
                                           'URL mismatch',
                                           style: TextStyle(

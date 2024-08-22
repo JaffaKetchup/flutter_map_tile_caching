@@ -39,7 +39,7 @@ class _ContentPanels extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(right: 16, top: 16),
         child: SizedBox(
-          width: (constraints.maxWidth / 3).clamp(515, 560),
+          width: (constraints.maxWidth / 3).clamp(440, 560),
           child: Column(
             children: [
               Container(
@@ -61,13 +61,15 @@ class _ContentPanels extends StatelessWidget {
                   ),
                   width: double.infinity,
                   height: double.infinity,
-                  child: const CustomScrollView(
+                  child: CustomScrollView(
                     slivers: [
                       SliverPadding(
-                        padding: EdgeInsets.only(top: 16),
-                        sliver: StoresList(useCompactLayout: false),
+                        padding: const EdgeInsets.only(top: 16),
+                        sliver: StoresList(
+                          useCompactLayout: constraints.maxWidth / 3 < 500,
+                        ),
                       ),
-                      SliverToBoxAdapter(child: SizedBox(height: 16)),
+                      const SliverToBoxAdapter(child: SizedBox(height: 16)),
                     ],
                   ),
                 ),

@@ -19,45 +19,33 @@ class LineRegionPane extends StatelessWidget {
               onPressed: () async {
                 final provider = context.read<RegionSelectionProvider>();
 
-                if (Platform.isAndroid || Platform.isIOS) {
-                  await FilePicker.platform.clearTemporaryFiles();
-                }
+                final pickerResult = Platform.isAndroid || Platform.isIOS
+                    ? await FilePicker.platform.pickFiles(
+                        allowMultiple: true,
+                      )
+                    : await FilePicker.platform.pickFiles(
+                        dialogTitle: 'Import GPX',
+                        type: FileType.custom,
+                        allowedExtensions: ['gpx'],
+                        allowMultiple: true,
+                      );
 
-                late final FilePickerResult? result;
-                try {
-                  result = await FilePicker.platform.pickFiles(
-                    dialogTitle: 'Parse From GPX',
-                    type: FileType.custom,
-                    allowedExtensions: ['gpx', 'kml'],
-                    allowMultiple: true,
-                  );
-                } on PlatformException catch (_) {
-                  result = await FilePicker.platform.pickFiles(
-                    dialogTitle: 'Parse From GPX',
-                    allowMultiple: true,
-                  );
-                }
+                if (pickerResult == null) return;
 
-                if (result != null) {
-                  final gpxReader = GpxReader();
-                  for (final path in result.files.map((e) => e.path)) {
-                    provider.addCoordinates(
-                      gpxReader
-                          .fromString(
-                            await File(path!).readAsString(),
-                          )
-                          .trks
-                          .map(
-                            (e) => e.trksegs.map(
-                              (e) => e.trkpts.map(
-                                (e) => LatLng(e.lat!, e.lon!),
-                              ),
-                            ),
-                          )
-                          .expand((e) => e)
-                          .expand((e) => e),
-                    );
-                  }
+                final gpxReader = GpxReader();
+                for (final path in pickerResult.files.map((e) => e.path)) {
+                  provider.addCoordinates(
+                    gpxReader
+                        .fromString(await File(path!).readAsString())
+                        .trks
+                        .map(
+                          (e) => e.trksegs.map(
+                            (e) => e.trkpts.map((e) => LatLng(e.lat!, e.lon!)),
+                          ),
+                        )
+                        .expand((e) => e)
+                        .expand((e) => e),
+                  );
                 }
               },
               icon: const Icon(Icons.route),

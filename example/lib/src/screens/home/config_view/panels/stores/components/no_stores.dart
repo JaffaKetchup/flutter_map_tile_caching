@@ -53,10 +53,9 @@ class NoStores extends StatelessWidget {
                 const SizedBox(height: 32),
                 Text(
                   'Within the example app, for simplicity, each store contains '
-                  'tiles from a single URL template. This is not a limitation '
-                  'with FMTC.\nAdditionally, FMTC supports changing the '
-                  'read/write behaviour for all unspecified stores, but this '
-                  'is not represented wihtin this app.',
+                  'tiles from a single URL template. Additionally, only one '
+                  'tile layer with a single URL template can be used at any '
+                  'one time. These are not limitations with FMTC.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.labelSmall,
                 ),
