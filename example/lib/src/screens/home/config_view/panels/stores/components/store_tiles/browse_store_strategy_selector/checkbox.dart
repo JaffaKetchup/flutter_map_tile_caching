@@ -33,7 +33,8 @@ class _BrowseStoreStrategySelectorCheckbox extends StatelessWidget {
                   provider.currentStores[storeName] =
                       InternalBrowseStoreStrategy.disable;
                 } else if (strategyOption ==
-                    provider.inheritableBrowseStoreStrategy) {
+                        provider.inheritableBrowseStoreStrategy &&
+                    !isUnspecifiedSelector) {
                   // Selected same as inherited
                   //  > Automatically enable inheritance (assumed desire, can be undone)
                   provider.currentStores[storeName] =

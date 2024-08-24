@@ -6,14 +6,12 @@ class _BrowseStoreStrategySelectorDropdown extends StatelessWidget {
     required this.currentStrategy,
     required this.enabled,
     required this.isUnspecifiedSelector,
-    required this.isUsingUnselectedStrategy,
   });
 
   final String storeName;
   final BrowseStoreStrategy? currentStrategy;
   final bool enabled;
   final bool isUnspecifiedSelector;
-  final bool isUsingUnselectedStrategy;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -26,30 +24,39 @@ class _BrowseStoreStrategySelectorDropdown extends StatelessWidget {
                   : null;
 
               final child = switch (e) {
-                null => isUsingUnselectedStrategy
-                    ? switch (context
-                        .select<GeneralProvider, InternalBrowseStoreStrategy?>(
-                        (provider) => provider.currentStores['(unspecified)'],
-                      )) {
-                        InternalBrowseStoreStrategy.read => const Icon(
-                            Icons.visibility,
-                            color: BrowseStoreStrategySelector
-                                ._unspecifiedSelectorColor,
-                          ),
-                        InternalBrowseStoreStrategy.readUpdate => const Icon(
-                            Icons.edit,
-                            color: BrowseStoreStrategySelector
-                                ._unspecifiedSelectorColor,
-                          ),
-                        InternalBrowseStoreStrategy.readUpdateCreate =>
-                          const Icon(
-                            Icons.add,
-                            color: BrowseStoreStrategySelector
-                                ._unspecifiedSelectorColor,
-                          ),
-                        _ => const Icon(Icons.disabled_by_default_rounded),
-                      }
-                    : const Icon(Icons.disabled_by_default_rounded),
+                null when !enabled => const Icon(
+                    Icons.disabled_by_default_rounded,
+                  ),
+                null when isUnspecifiedSelector => const Icon(
+                    Icons.disabled_by_default_rounded,
+                    color:
+                        BrowseStoreStrategySelector._unspecifiedSelectorColor,
+                  ),
+                null => switch (context
+                      .select<GeneralProvider, InternalBrowseStoreStrategy?>(
+                    (provider) => provider.currentStores['(unspecified)'],
+                  )) {
+                    InternalBrowseStoreStrategy.read => const Icon(
+                        Icons.visibility,
+                        color: BrowseStoreStrategySelector
+                            ._unspecifiedSelectorColor,
+                      ),
+                    InternalBrowseStoreStrategy.readUpdate => const Icon(
+                        Icons.edit,
+                        color: BrowseStoreStrategySelector
+                            ._unspecifiedSelectorColor,
+                      ),
+                    InternalBrowseStoreStrategy.readUpdateCreate => const Icon(
+                        Icons.add,
+                        color: BrowseStoreStrategySelector
+                            ._unspecifiedSelectorColor,
+                      ),
+                    _ => const Icon(
+                        Icons.disabled_by_default_rounded,
+                        color: BrowseStoreStrategySelector
+                            ._unspecifiedSelectorColor,
+                      ),
+                  },
                 BrowseStoreStrategy.read =>
                   Icon(Icons.visibility, color: iconColor),
                 BrowseStoreStrategy.readUpdate =>
@@ -70,12 +77,13 @@ class _BrowseStoreStrategySelectorDropdown extends StatelessWidget {
               ? (BrowseStoreStrategy? v) {
                   final provider = context.read<GeneralProvider>();
 
-                  if (v == provider.inheritableBrowseStoreStrategy) {
-                    provider.currentStores[storeName] =
-                        InternalBrowseStoreStrategy.inherit;
-                  } else if (v == null) {
+                  if (v == null) {
                     provider.currentStores[storeName] =
                         InternalBrowseStoreStrategy.disable;
+                  } else if (v == provider.inheritableBrowseStoreStrategy &&
+                      !isUnspecifiedSelector) {
+                    provider.currentStores[storeName] =
+                        InternalBrowseStoreStrategy.inherit;
                   } else {
                     provider.currentStores[storeName] =
                         InternalBrowseStoreStrategy.fromBrowseStoreStrategy(

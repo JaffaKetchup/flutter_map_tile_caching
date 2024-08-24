@@ -79,7 +79,6 @@ class BrowseStoreStrategySelector extends StatelessWidget {
             currentStrategy: resolvedCurrentStrategy,
             enabled: enabled,
             isUnspecifiedSelector: storeName == '(unspecified)',
-            isUsingUnselectedStrategy: isUsingUnselectedStrategy,
           )
         else
           Stack(
@@ -96,8 +95,8 @@ class BrowseStoreStrategySelector extends StatelessWidget {
                   width: isUsingUnselectedStrategy
                       ? switch (unspecifiedStrategy) {
                           InternalBrowseStoreStrategy.read => 40,
-                          InternalBrowseStoreStrategy.readUpdate => 88,
-                          InternalBrowseStoreStrategy.readUpdateCreate => 130,
+                          InternalBrowseStoreStrategy.readUpdate => 85,
+                          InternalBrowseStoreStrategy.readUpdateCreate => 128,
                           _ => 0,
                         }
                       : 0,

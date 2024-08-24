@@ -30,7 +30,10 @@ class GeneralProvider extends ChangeNotifier {
   }
 
   final Map<String, InternalBrowseStoreStrategy> currentStores = {};
-  void changedCurrentStores() => notifyListeners();
+  void changedCurrentStores() {
+    print(currentStores['(unspecified)']);
+    notifyListeners();
+  }
 
   String _urlTemplate =
       sharedPrefs.getString(SharedPrefsKeys.urlTemplate.name) ??
