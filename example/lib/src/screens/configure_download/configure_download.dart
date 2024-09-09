@@ -4,7 +4,7 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
 import '../../shared/misc/exts/interleave.dart';
-import '../home/map_view/state/region_selection_provider.dart';
+import '../main/map_view/state/region_selection_provider.dart';
 import 'components/numerical_input_row.dart';
 import 'components/options_pane.dart';
 import 'components/region_information.dart';

@@ -115,7 +115,7 @@ Future<Uint8List> _internalGetBytes({
   try {
     if (provider.fakeNetworkDisconnect) {
       throw const SocketException(
-        'Faked `SocketException` due to `fakeNetworkDisconnect`',
+        'Faked `SocketException` due to `fakeNetworkDisconnect` flag set',
       );
     }
     response = await provider.httpClient

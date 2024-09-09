@@ -7,11 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'src/screens/configure_download/configure_download.dart';
 import 'src/screens/configure_download/state/configure_download_provider.dart';
 import 'src/screens/download/download.dart';
-import 'src/screens/home/config_view/panels/stores/state/export_selection_provider.dart';
-import 'src/screens/home/home.dart';
-import 'src/screens/home/map_view/state/region_selection_provider.dart';
 import 'src/screens/import/import.dart';
 import 'src/screens/initialisation_error/initialisation_error.dart';
+import 'src/screens/main/main.dart';
+import 'src/screens/main/map_view/state/region_selection_provider.dart';
+import 'src/screens/main/secondary_view/contents/home/components/stores/state/export_selection_provider.dart';
 import 'src/screens/store_editor/store_editor.dart';
 import 'src/shared/misc/shared_preferences.dart';
 import 'src/shared/state/general_provider.dart';
@@ -43,8 +43,8 @@ class _AppContainer extends StatelessWidget {
     Widget Function(BuildContext)? std,
     PageRoute Function(BuildContext, RouteSettings)? custom,
   })>{
-    HomeScreen.route: (
-      std: (BuildContext context) => const HomeScreen(),
+    MainScreen.route: (
+      std: (BuildContext context) => const MainScreen(),
       custom: null,
     ),
     StoreEditorPopup.route: (
@@ -126,7 +126,7 @@ class _AppContainer extends StatelessWidget {
         title: 'FMTC Demo',
         restorationScopeId: 'FMTC Demo',
         theme: themeData,
-        initialRoute: HomeScreen.route,
+        initialRoute: MainScreen.route,
         onGenerateRoute: (settings) {
           final route = _routes[settings.name]!;
           if (route.custom != null) return route.custom!(context, settings);

@@ -54,11 +54,19 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
         ).then(ImmutableBuffer.fromUint8List).then((v) => decode(v)),
         scale: 1,
         debugLabel: coords.toString(),
-        informationCollector: () => [
-          DiagnosticsProperty('Store names', provider.storeNames),
-          DiagnosticsProperty('Tile coordinates', coords),
-          DiagnosticsProperty('Current provider', key),
-        ],
+        informationCollector: () {
+          final tileUrl = provider.getTileUrl(coords, options);
+
+          return [
+            DiagnosticsProperty('Store names', provider.storeNames),
+            DiagnosticsProperty('Tile coordinates', coords),
+            DiagnosticsProperty('Tile URL', tileUrl),
+            DiagnosticsProperty(
+              'Tile storage-suitable UID',
+              provider.urlTransformer(tileUrl),
+            ),
+          ];
+        },
       );
 
   /// {@macro fmtc.imageProvider.getBytes}
