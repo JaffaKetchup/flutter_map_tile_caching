@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../layouts/side/components/panel.dart';
-import 'components/map/map.dart';
-import 'components/stores/stores_list.dart';
+import 'components/map_configurator/map_configurator.dart';
+import 'components/stores_list/stores_list.dart';
 
 class HomeViewSide extends StatefulWidget {
   const HomeViewSide({

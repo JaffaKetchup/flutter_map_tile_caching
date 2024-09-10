@@ -18,7 +18,7 @@ import 'components/region_selection/crosshairs.dart';
 import 'components/region_selection/custom_polygon_snapping_indicator.dart';
 import 'components/region_selection/region_shape.dart';
 import 'components/region_selection/side_panel/parent.dart';
-import 'state/region_selection_provider.dart';
+import '../../../shared/state/region_selection_provider.dart';
 
 enum MapViewMode {
   standard,

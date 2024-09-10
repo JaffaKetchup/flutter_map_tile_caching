@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../shared/components/delayed_frame_attached_dependent_builder.dart';
 import '../../contents/home/home_view_bottom_sheet.dart';
+import '../../contents/region_selection/region_selection_view_bottom_sheet.dart';
+import 'components/delayed_frame_attached_dependent_builder.dart';
 import 'components/scrollable_provider.dart';
 
 class SecondaryViewBottomSheet extends StatefulWidget {
@@ -98,13 +99,14 @@ class _SecondaryViewBottomSheetState extends State<SecondaryViewBottomSheet> {
               // injection, as that may not be possible in future
               BottomSheetScrollableProvider(
                 innerScrollController: innerController,
+                outerScrollController: widget.controller,
                 child: SizedBox(
                   width: double.infinity,
-                  child: widget.selectedTab == 0
-                      ? HomeViewBottomSheet(
-                          bottomSheetOuterController: widget.controller,
-                        )
-                      : const Placeholder(),
+                  child: switch (widget.selectedTab) {
+                    0 => const HomeViewBottomSheet(),
+                    1 => const RegionSelectionViewBottomSheet(),
+                    _ => Placeholder(key: ValueKey(widget.selectedTab)),
+                  },
                 ),
               ),
               IgnorePointer(
@@ -122,7 +124,9 @@ class _SecondaryViewBottomSheetState extends State<SecondaryViewBottomSheet> {
 
                     return SizedBox(
                       height: calcHeight.clamp(
-                          0, SecondaryViewBottomSheet.topPadding),
+                        0,
+                        SecondaryViewBottomSheet.topPadding,
+                      ),
                       width: constraints.maxWidth,
                       child: Semantics(
                         label: MaterialLocalizations.of(context)

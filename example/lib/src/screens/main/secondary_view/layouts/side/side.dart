@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../contents/home/home_view_side.dart';
+import '../../contents/region_selection/region_selection_view_side.dart';
 
 class SecondaryViewSide extends StatelessWidget {
   const SecondaryViewSide({
@@ -38,9 +39,11 @@ class SecondaryViewSide extends StatelessWidget {
                 child: child,
               ),
             ),
-            child: selectedTab == 0
-                ? HomeViewSide(constraints: constraints)
-                : const Placeholder(),
+            child: switch (selectedTab) {
+              0 => HomeViewSide(constraints: constraints),
+              1 => const RegionSelectionViewSide(),
+              _ => Placeholder(key: ValueKey(selectedTab)),
+            },
           ),
         ),
       );

@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../../shared/components/delayed_frame_attached_dependent_builder.dart';
-import 'scrollable_provider.dart';
+import '../components/delayed_frame_attached_dependent_builder.dart';
+import '../components/scrollable_provider.dart';
 
 class TabHeader extends StatelessWidget {
   const TabHeader({
     super.key,
-    required this.bottomSheetOuterController,
+    required this.title,
   });
 
-  final DraggableScrollableController bottomSheetOuterController;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
     final screenTopPadding =
         MediaQueryData.fromView(View.of(context)).padding.top;
+    final outerScrollController =
+        BottomSheetScrollableProvider.outerScrollControllerOf(context);
     final innerScrollController =
         BottomSheetScrollableProvider.innerScrollControllerOf(context);
 
@@ -22,15 +24,26 @@ class TabHeader extends StatelessWidget {
       pinned: true,
       delegate: PersistentHeader(
         child: DelayedControllerAttachmentBuilder(
-          listenable: bottomSheetOuterController,
+          listenable: outerScrollController,
           builder: (context, _) {
-            if (!bottomSheetOuterController.isAttached) {
-              return const SizedBox.shrink();
+            if (!outerScrollController.isAttached ||
+                innerScrollController.positions.length != 1) {
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+              );
             }
 
-            final maxHeight = bottomSheetOuterController.sizeToPixels(1);
+            final maxHeight = outerScrollController.sizeToPixels(1);
 
-            final oldValue = bottomSheetOuterController.pixels;
+            final oldValue = outerScrollController.pixels;
             final oldMax = maxHeight;
             final oldMin = maxHeight - screenTopPadding;
 
@@ -71,14 +84,12 @@ class TabHeader extends StatelessWidget {
                       child: ClipRRect(
                         child: IconButton(
                           onPressed: () {
-                            bottomSheetOuterController.animateTo(
+                            outerScrollController.animateTo(
                               0.3,
                               duration: const Duration(milliseconds: 200),
                               curve: Curves.easeInOut,
                             );
-                            BottomSheetScrollableProvider
-                                    .innerScrollControllerOf(context)
-                                .animateTo(
+                            innerScrollController.animateTo(
                               0,
                               duration: const Duration(milliseconds: 200),
                               curve: Curves.easeInOut,
@@ -90,14 +101,8 @@ class TabHeader extends StatelessWidget {
                     ),
                     SizedBox(width: minimizeIndentSpacer),
                     Text(
-                      'Stores & Config',
+                      title,
                       style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () {},
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.help_outline),
                     ),
                   ],
                 ),

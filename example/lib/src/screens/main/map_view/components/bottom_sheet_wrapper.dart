@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../shared/components/delayed_frame_attached_dependent_builder.dart';
+import '../../secondary_view/layouts/bottom_sheet/components/delayed_frame_attached_dependent_builder.dart';
 
 import '../map_view.dart';
 
