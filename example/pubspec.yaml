@@ -11,8 +11,8 @@ environment:
 
 dependencies:
   async: ^2.11.0
+  auto_size_text: ^3.0.0
   collection: ^1.18.0
-  dart_earcut: ^1.1.0
   file_picker: ^8.1.2
   flutter:
     sdk: flutter
@@ -32,6 +32,9 @@ dependencies:
   stream_transform: ^2.1.0
 
 dependency_overrides:
+  flutter_map:
+    git:
+      url: https://github.com/fleaflet/flutter_map.git
   flutter_map_tile_caching:
     path: ../
 

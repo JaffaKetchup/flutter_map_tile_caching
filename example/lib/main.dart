@@ -10,11 +10,11 @@ import 'src/screens/download/download.dart';
 import 'src/screens/import/import.dart';
 import 'src/screens/initialisation_error/initialisation_error.dart';
 import 'src/screens/main/main.dart';
-import 'src/shared/state/region_selection_provider.dart';
 import 'src/screens/main/secondary_view/contents/home/components/stores_list/state/export_selection_provider.dart';
 import 'src/screens/store_editor/store_editor.dart';
 import 'src/shared/misc/shared_preferences.dart';
 import 'src/shared/state/general_provider.dart';
+import 'src/shared/state/region_selection_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

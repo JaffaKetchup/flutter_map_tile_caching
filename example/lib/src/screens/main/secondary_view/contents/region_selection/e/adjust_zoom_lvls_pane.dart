@@ -1,4 +1,5 @@
-part of '../parent.dart';
+
+/*
 
 class AdjustZoomLvlsPane extends StatelessWidget {
   const AdjustZoomLvlsPane({
@@ -54,3 +55,4 @@ class AdjustZoomLvlsPane extends StatelessWidget {
         ),
       );
 }
+*/

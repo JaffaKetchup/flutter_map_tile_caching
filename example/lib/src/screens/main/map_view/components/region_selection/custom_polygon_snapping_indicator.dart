@@ -12,8 +12,9 @@ class CustomPolygonSnappingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final coords = context
-        .select<RegionSelectionProvider, List<LatLng>>((p) => p.coordinates);
+    final coords = context.select<RegionSelectionProvider, List<LatLng>>(
+      (p) => p.currentConstructingCoordinates,
+    );
 
     return MarkerLayer(
       markers: [

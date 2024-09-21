@@ -1,6 +1,7 @@
 import 'dart:io';
+import 'dart:math';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -10,20 +11,21 @@ enum RegionSelectionMethod {
 }
 
 enum RegionType {
-  square,
+  rectangle,
   circle,
   line,
   customPolygon,
 }
 
 class RegionSelectionProvider extends ChangeNotifier {
-  RegionSelectionMethod _regionSelectionMethod =
+  RegionSelectionMethod _currentRegionSelectionMethod =
       Platform.isAndroid || Platform.isIOS
           ? RegionSelectionMethod.useMapCenter
           : RegionSelectionMethod.usePointer;
-  RegionSelectionMethod get regionSelectionMethod => _regionSelectionMethod;
+  RegionSelectionMethod get regionSelectionMethod =>
+      _currentRegionSelectionMethod;
   set regionSelectionMethod(RegionSelectionMethod newMethod) {
-    _regionSelectionMethod = newMethod;
+    _currentRegionSelectionMethod = newMethod;
     notifyListeners();
   }
 
@@ -34,45 +36,75 @@ class RegionSelectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  RegionType _regionType = RegionType.square;
-  RegionType get regionType => _regionType;
-  set regionType(RegionType newType) {
-    _regionType = newType;
+  RegionType _currentRegionType = RegionType.rectangle;
+  RegionType get currentRegionType => _currentRegionType;
+  set currentRegionType(RegionType newType) {
+    _currentRegionType = newType;
     notifyListeners();
   }
 
-  BaseRegion? _region;
-  BaseRegion? get region => _region;
-  set region(BaseRegion? newRegion) {
-    _region = newRegion;
+  final _constructedRegions = <BaseRegion, HSLColor>{};
+  Map<BaseRegion, HSLColor> get constructedRegions =>
+      Map.unmodifiable(_constructedRegions);
+
+  void addConstructedRegion(BaseRegion region) {
+    assert(region is! MultiRegion, 'Cannot be a `MultiRegion`');
+
+    HSLColor generateUnusedRandomColor({int iteration = 0}) {
+      final color = HSLColor.fromAHSL(1, Random().nextDouble() * 360, 1, 0.5);
+
+      if (iteration > 18) return color;
+
+      for (final usedColor in _constructedRegions.values) {
+        final diff = (color.hue - usedColor.hue).abs();
+        if (diff > 20) continue;
+        return generateUnusedRandomColor(iteration: iteration + 1);
+      }
+
+      return color;
+    }
+
+    _constructedRegions[region] = generateUnusedRandomColor();
+
+    _currentConstructingCoordinates.clear();
+
     notifyListeners();
   }
 
-  final List<LatLng> _coordinates = [];
-  List<LatLng> get coordinates => List.from(_coordinates);
+  void removeConstructedRegion(BaseRegion region) {
+    _constructedRegions.remove(region);
+    notifyListeners();
+  }
+
+  void clearConstructedRegions() {
+    _constructedRegions.clear();
+    notifyListeners();
+  }
+
+  final List<LatLng> _currentConstructingCoordinates = [];
+  List<LatLng> get currentConstructingCoordinates =>
+      List.unmodifiable(_currentConstructingCoordinates);
   List<LatLng> addCoordinate(LatLng coord) {
-    _coordinates.add(coord);
+    _currentConstructingCoordinates.add(coord);
     notifyListeners();
-    return _coordinates;
+    return _currentConstructingCoordinates;
   }
 
   List<LatLng> addCoordinates(Iterable<LatLng> coords) {
-    _coordinates.addAll(coords);
+    _currentConstructingCoordinates.addAll(coords);
     notifyListeners();
-    return _coordinates;
+    return _currentConstructingCoordinates;
   }
 
   void clearCoordinates() {
-    _coordinates.clear();
-    _region = null;
+    _currentConstructingCoordinates.clear();
     notifyListeners();
   }
 
   void removeLastCoordinate() {
-    if (_coordinates.isNotEmpty) _coordinates.removeLast();
-    if (_regionType == RegionType.customPolygon
-        ? !isCustomPolygonComplete
-        : _coordinates.length < 2) _region = null;
+    if (_currentConstructingCoordinates.isNotEmpty) {
+      _currentConstructingCoordinates.removeLast();
+    }
     notifyListeners();
   }
 
@@ -89,11 +121,6 @@ class RegionSelectionProvider extends ChangeNotifier {
     _customPolygonSnap = newState;
     notifyListeners();
   }
-
-  bool get isCustomPolygonComplete =>
-      _regionType == RegionType.customPolygon &&
-      _coordinates.length >= 2 &&
-      _coordinates.first == _coordinates.last;
 
   bool _openAdjustZoomLevelsSlider = false;
   bool get openAdjustZoomLevelsSlider => _openAdjustZoomLevelsSlider;
@@ -127,6 +154,13 @@ class RegionSelectionProvider extends ChangeNotifier {
   int? get endTile => _endTile;
   set endTile(int? newNum) {
     _endTile = endTile;
+    notifyListeners();
+  }
+
+  bool _isDownloadSetupPanelVisible = false;
+  bool get isDownloadSetupPanelVisible => _isDownloadSetupPanelVisible;
+  set isDownloadSetupPanelVisible(bool newState) {
+    _isDownloadSetupPanelVisible = newState;
     notifyListeners();
   }
 }

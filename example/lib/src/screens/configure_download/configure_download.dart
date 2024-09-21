@@ -30,7 +30,7 @@ class _ConfigureDownloadPopupState extends State<ConfigureDownloadPopup> {
     super.didChangeDependencies();
 
     final provider = context.read<RegionSelectionProvider>();
-    const FMTCStore('')
+    /*const FMTCStore('')
         .download
         .check(
           region ??= provider.region!.toDownloadable(
@@ -41,7 +41,7 @@ class _ConfigureDownloadPopupState extends State<ConfigureDownloadPopup> {
             options: TileLayer(),
           ),
         )
-        .then((v) => setState(() => maxTiles = v));
+        .then((v) => setState(() => maxTiles = v));*/
   }
 
   @override

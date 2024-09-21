@@ -13,12 +13,11 @@ import 'package:provider/provider.dart';
 import '../../../shared/misc/shared_preferences.dart';
 import '../../../shared/misc/store_metadata_keys.dart';
 import '../../../shared/state/general_provider.dart';
+import '../../../shared/state/region_selection_provider.dart';
 import 'components/debugging_tile_builder/debugging_tile_builder.dart';
 import 'components/region_selection/crosshairs.dart';
 import 'components/region_selection/custom_polygon_snapping_indicator.dart';
 import 'components/region_selection/region_shape.dart';
-import 'components/region_selection/side_panel/parent.dart';
-import '../../../shared/state/region_selection_provider.dart';
 
 enum MapViewMode {
   standard,
@@ -86,47 +85,43 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
 
         final provider = context.read<RegionSelectionProvider>();
 
-        if (provider.isCustomPolygonComplete) return;
+        final newPoint = provider.currentNewPointPos;
 
-        final List<LatLng> coords;
-        if (provider.customPolygonSnap &&
-            provider.regionType == RegionType.customPolygon) {
-          coords = provider.addCoordinate(provider.coordinates.first);
-          provider.customPolygonSnap = false;
-        } else {
-          coords = provider.addCoordinate(provider.currentNewPointPos);
-        }
+        switch (provider.currentRegionType) {
+          case RegionType.rectangle:
+            final coords = provider.addCoordinate(newPoint);
 
-        if (coords.length < 2) return;
-
-        switch (provider.regionType) {
-          case RegionType.square:
             if (coords.length == 2) {
-              provider.region =
-                  RectangleRegion(LatLngBounds.fromPoints(coords));
-              break;
+              final region = RectangleRegion(LatLngBounds.fromPoints(coords));
+              provider.addConstructedRegion(region);
             }
-            provider
-              ..clearCoordinates()
-              ..addCoordinate(provider.currentNewPointPos);
           case RegionType.circle:
+            final coords = provider.addCoordinate(newPoint);
+
             if (coords.length == 2) {
-              provider.region = CircleRegion(
+              final region = CircleRegion(
                 coords[0],
                 const Distance(roundResult: false)
                         .distance(coords[0], coords[1]) /
                     1000,
               );
-              break;
+              provider.addConstructedRegion(region);
             }
-            provider
-              ..clearCoordinates()
-              ..addCoordinate(provider.currentNewPointPos);
           case RegionType.line:
-            provider.region = LineRegion(coords, provider.lineRadius);
+            provider.addCoordinate(newPoint);
           case RegionType.customPolygon:
-            if (!provider.isCustomPolygonComplete) break;
-            provider.region = CustomPolygonRegion(coords);
+            if (provider.customPolygonSnap) {
+              // Force closed polygon
+              final coords = provider
+                  .addCoordinate(provider.currentConstructingCoordinates.first);
+
+              final region = CustomPolygonRegion(List.from(coords));
+              provider
+                ..addConstructedRegion(region)
+                ..customPolygonSnap = false;
+            } else {
+              provider.addCoordinate(newPoint);
+            }
         }
       },
       onSecondaryTap: (_, __) {
@@ -146,8 +141,8 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
             RegionSelectionMethod.usePointer) {
           provider.currentNewPointPos = point;
 
-          if (provider.regionType == RegionType.customPolygon) {
-            final coords = provider.coordinates;
+          if (provider.currentRegionType == RegionType.customPolygon) {
+            final coords = provider.currentConstructingCoordinates;
             if (coords.length > 1) {
               final newPointPos = _mapController.mapController.camera
                   .latLngToScreenPoint(coords.first)
@@ -171,8 +166,8 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
             RegionSelectionMethod.useMapCenter) {
           provider.currentNewPointPos = position.center;
 
-          if (provider.regionType == RegionType.customPolygon) {
-            final coords = provider.coordinates;
+          if (provider.currentRegionType == RegionType.customPolygon) {
+            final coords = provider.currentConstructingCoordinates;
             if (coords.length > 1) {
               final newPointPos = _mapController.mapController.camera
                   .latLngToScreenPoint(coords.first)
@@ -209,6 +204,9 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
               _mapController.mapController.camera.zoom,
             );
         }
+      },
+      onMapReady: () {
+        context.read<GeneralProvider>().animatedMapController = _mapController;
       },
     );
 
@@ -332,76 +330,36 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
               ],
             );
 
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final double sidePanelLeft =
-                    switch ((widget.layoutDirection, widget.mode)) {
-                  (Axis.vertical, _) => 0,
-                  (Axis.horizontal, MapViewMode.regionSelect) => 0,
-                  (Axis.horizontal, MapViewMode.standard) => -85,
-                };
-                final double sidePanelBottom =
-                    switch ((widget.layoutDirection, widget.mode)) {
-                  (Axis.horizontal, _) => 0,
-                  (Axis.vertical, MapViewMode.regionSelect) => 0,
-                  (Axis.vertical, MapViewMode.standard) => -85,
-                };
-
-                return Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    MouseRegion(
-                      opaque: false,
-                      cursor: widget.mode == MapViewMode.standard ||
-                              context.select<RegionSelectionProvider,
-                                      RegionSelectionMethod>(
-                                    (p) => p.regionSelectionMethod,
-                                  ) ==
-                                  RegionSelectionMethod.useMapCenter
-                          ? MouseCursor.defer
-                          : context.select<RegionSelectionProvider, bool>(
-                              (p) => p.customPolygonSnap,
-                            )
-                              ? SystemMouseCursors.none
-                              : SystemMouseCursors.precise,
-                      child: map,
-                    ),
-                    // TODO: Use AnimatedSwitcher for performance
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeInOut,
-                      left: sidePanelLeft,
-                      bottom: sidePanelBottom,
-                      child: SizedBox(
-                        height: widget.layoutDirection == Axis.horizontal
-                            ? constraints.maxHeight
-                            : null,
-                        width: widget.layoutDirection == Axis.horizontal
-                            ? null
-                            : constraints.maxWidth,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: RegionSelectionSidePanel(
-                            layoutDirection: widget.layoutDirection,
-                            bottomPaddingWrapperBuilder:
-                                widget.bottomPaddingWrapperBuilder,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (widget.mode == MapViewMode.regionSelect &&
-                        context.select<RegionSelectionProvider,
-                                RegionSelectionMethod>(
-                              (p) => p.regionSelectionMethod,
-                            ) ==
-                            RegionSelectionMethod.useMapCenter &&
-                        !context.select<RegionSelectionProvider, bool>(
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                MouseRegion(
+                  opaque: false,
+                  cursor: widget.mode == MapViewMode.standard ||
+                          context.select<RegionSelectionProvider,
+                                  RegionSelectionMethod>(
+                                (p) => p.regionSelectionMethod,
+                              ) ==
+                              RegionSelectionMethod.useMapCenter
+                      ? MouseCursor.defer
+                      : context.select<RegionSelectionProvider, bool>(
                           (p) => p.customPolygonSnap,
-                        ))
-                      const Center(child: Crosshairs()),
-                  ],
-                );
-              },
+                        )
+                          ? SystemMouseCursors.none
+                          : SystemMouseCursors.precise,
+                  child: map,
+                ),
+                if (widget.mode == MapViewMode.regionSelect &&
+                    context.select<RegionSelectionProvider,
+                            RegionSelectionMethod>(
+                          (p) => p.regionSelectionMethod,
+                        ) ==
+                        RegionSelectionMethod.useMapCenter &&
+                    !context.select<RegionSelectionProvider, bool>(
+                      (p) => p.customPolygonSnap,
+                    ))
+                  const Center(child: Crosshairs()),
+              ],
             );
           },
         );

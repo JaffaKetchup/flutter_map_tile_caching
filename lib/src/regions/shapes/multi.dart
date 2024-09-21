@@ -6,7 +6,10 @@ part of '../../../../flutter_map_tile_caching.dart';
 /// A region formed from multiple other [BaseRegion]s
 ///
 /// When downloading, each sub-region specified in [regions] is downloaded
-/// consecutively. [MultiRegion]s may be nested.
+/// consecutively. Overlaps are not resolved into single regions, so it is
+/// recommended to enable `skipExistingTiles` in [StoreDownload.startForeground].
+///
+/// [MultiRegion]s may be nested.
 ///
 /// [toOutline] is not supported and will always throw.
 class MultiRegion extends BaseRegion {

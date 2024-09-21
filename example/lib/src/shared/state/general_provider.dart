@@ -1,10 +1,22 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 import '../misc/internal_store_read_write_behaviour.dart';
 import '../misc/shared_preferences.dart';
 
 class GeneralProvider extends ChangeNotifier {
+  AnimatedMapController? _animatedMapController;
+  AnimatedMapController get animatedMapController =>
+      _animatedMapController ??
+      (throw StateError(
+        '`(Animated)MapController` must be attached before usage',
+      ));
+  set animatedMapController(AnimatedMapController controller) {
+    _animatedMapController = controller;
+    notifyListeners();
+  }
+
   BrowseStoreStrategy? _inheritableBrowseStoreStrategy = () {
     final storedStrategyName = sharedPrefs
         .getString(SharedPrefsKeys.inheritableBrowseStoreStrategy.name);

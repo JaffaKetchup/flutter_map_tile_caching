@@ -4,9 +4,7 @@ import '../../../../../../../import/import.dart';
 import '../../../../../../../store_editor/store_editor.dart';
 
 class NoStores extends StatelessWidget {
-  const NoStores({
-    super.key,
-  });
+  const NoStores({super.key});
 
   @override
   Widget build(BuildContext context) => SliverFillRemaining(

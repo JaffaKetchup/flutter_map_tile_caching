@@ -34,12 +34,11 @@ class _HomeViewSideState extends State<HomeViewSide> {
               child: CustomScrollView(
                 slivers: [
                   SliverPadding(
-                    padding: const EdgeInsets.only(top: 16),
+                    padding: const EdgeInsets.only(top: 16, bottom: 16),
                     sliver: StoresList(
                       useCompactLayout: widget.constraints.maxWidth / 3 < 500,
                     ),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
                 ],
               ),
             ),
