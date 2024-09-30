@@ -122,41 +122,6 @@ class RegionSelectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool _openAdjustZoomLevelsSlider = false;
-  bool get openAdjustZoomLevelsSlider => _openAdjustZoomLevelsSlider;
-  set openAdjustZoomLevelsSlider(bool newState) {
-    _openAdjustZoomLevelsSlider = newState;
-    notifyListeners();
-  }
-
-  int _minZoom = 0;
-  int get minZoom => _minZoom;
-  set minZoom(int newNum) {
-    _minZoom = newNum;
-    notifyListeners();
-  }
-
-  int _maxZoom = 16;
-  int get maxZoom => _maxZoom;
-  set maxZoom(int newNum) {
-    _maxZoom = newNum;
-    notifyListeners();
-  }
-
-  int _startTile = 1;
-  int get startTile => _startTile;
-  set startTile(int newNum) {
-    _startTile = newNum;
-    notifyListeners();
-  }
-
-  int? _endTile;
-  int? get endTile => _endTile;
-  set endTile(int? newNum) {
-    _endTile = endTile;
-    notifyListeners();
-  }
-
   bool _isDownloadSetupPanelVisible = false;
   bool get isDownloadSetupPanelVisible => _isDownloadSetupPanelVisible;
   set isDownloadSetupPanelVisible(bool newState) {

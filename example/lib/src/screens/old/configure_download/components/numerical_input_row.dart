@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../state/configure_download_provider.dart';
+import '../../../../shared/state/download_configuration_provider.dart';
 
 class NumericalInputRow extends StatefulWidget {
   const NumericalInputRow({
@@ -18,11 +18,12 @@ class NumericalInputRow extends StatefulWidget {
 
   final String label;
   final String suffixText;
-  final int Function(ConfigureDownloadProvider provider) value;
+  final int Function(DownloadConfigurationProvider provider) value;
   final int min;
   final int? max;
   final int? maxEligibleTilesPreview;
-  final void Function(ConfigureDownloadProvider provider, int value) onChanged;
+  final void Function(DownloadConfigurationProvider provider, int value)
+      onChanged;
 
   @override
   State<NumericalInputRow> createState() => _NumericalInputRowState();
@@ -33,7 +34,7 @@ class _NumericalInputRowState extends State<NumericalInputRow> {
 
   @override
   Widget build(BuildContext context) =>
-      Selector<ConfigureDownloadProvider, int>(
+      Selector<DownloadConfigurationProvider, int>(
         selector: (context, provider) => widget.value(provider),
         builder: (context, currentValue, _) {
           tec ??= TextEditingController(text: currentValue.toString());
@@ -52,7 +53,7 @@ class _NumericalInputRowState extends State<NumericalInputRow> {
                   onPressed: currentValue > widget.maxEligibleTilesPreview!
                       ? () {
                           widget.onChanged(
-                            context.read<ConfigureDownloadProvider>(),
+                            context.read<DownloadConfigurationProvider>(),
                             widget.maxEligibleTilesPreview!,
                           );
                           tec!.text = widget.maxEligibleTilesPreview.toString();
@@ -93,7 +94,7 @@ class _NumericalInputRowState extends State<NumericalInputRow> {
                     ),
                   ],
                   onChanged: (newVal) => widget.onChanged(
-                    context.read<ConfigureDownloadProvider>(),
+                    context.read<DownloadConfigurationProvider>(),
                     int.tryParse(newVal) ?? currentValue,
                   ),
                 ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../configure_download/state/configure_download_provider.dart';
+import '../../../../shared/state/download_configuration_provider.dart';
 
 class ConfirmCancellationDialog extends StatefulWidget {
   const ConfirmCancellationDialog({super.key});
@@ -31,7 +31,7 @@ class _ConfirmCancellationDialogState extends State<ConfirmCancellationDialog> {
               onPressed: () async {
                 setState(() => isCancelling = true);
                 await context
-                    .read<ConfigureDownloadProvider>()
+                    .read<DownloadConfigurationProvider>()
                     .selectedStore!
                     .download
                     .cancel();

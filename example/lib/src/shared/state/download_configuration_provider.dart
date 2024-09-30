@@ -1,14 +1,46 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
-class ConfigureDownloadProvider extends ChangeNotifier {
+class DownloadConfigurationProvider extends ChangeNotifier {
   static const defaultValues = (
+    minZoom: 0,
+    maxZoom: 14,
+    startTile: 1,
+    endTile: null,
     parallelThreads: 3,
     rateLimit: 200,
-    maxBufferLength: 200,
+    maxBufferLength: 0,
     skipExistingTiles: false,
     skipSeaTiles: true,
   );
+
+  int _minZoom = defaultValues.minZoom;
+  int get minZoom => _minZoom;
+  set minZoom(int newNum) {
+    _minZoom = newNum;
+    notifyListeners();
+  }
+
+  int _maxZoom = defaultValues.maxZoom;
+  int get maxZoom => _maxZoom;
+  set maxZoom(int newNum) {
+    _maxZoom = newNum;
+    notifyListeners();
+  }
+
+  int _startTile = defaultValues.startTile;
+  int get startTile => _startTile;
+  set startTile(int newNum) {
+    _startTile = newNum;
+    notifyListeners();
+  }
+
+  int? _endTile = defaultValues.endTile;
+  int? get endTile => _endTile;
+  set endTile(int? newNum) {
+    _endTile = endTile;
+    notifyListeners();
+  }
 
   int _parallelThreads = defaultValues.parallelThreads;
   int get parallelThreads => _parallelThreads;

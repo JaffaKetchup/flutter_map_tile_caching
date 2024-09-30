@@ -10,7 +10,7 @@ import 'components/options_pane.dart';
 import 'components/region_information.dart';
 import 'components/start_download_button.dart';
 import 'components/store_selector.dart';
-import 'state/configure_download_provider.dart';
+import '../../../shared/state/download_configuration_provider.dart';
 
 class ConfigureDownloadPopup extends StatefulWidget {
   const ConfigureDownloadPopup({super.key});
@@ -108,12 +108,12 @@ class _ConfigureDownloadPopupState extends State<ConfigureDownloadPopup> {
                         const Text('Skip Existing Tiles'),
                         const Spacer(),
                         Switch.adaptive(
-                          value:
-                              context.select<ConfigureDownloadProvider, bool>(
+                          value: context
+                              .select<DownloadConfigurationProvider, bool>(
                             (provider) => provider.skipExistingTiles,
                           ),
                           onChanged: (val) => context
-                              .read<ConfigureDownloadProvider>()
+                              .read<DownloadConfigurationProvider>()
                               .skipExistingTiles = val,
                           activeColor: Theme.of(context).colorScheme.primary,
                         ),
@@ -125,12 +125,12 @@ class _ConfigureDownloadPopupState extends State<ConfigureDownloadPopup> {
                         const Text('Skip Sea Tiles'),
                         const Spacer(),
                         Switch.adaptive(
-                          value:
-                              context.select<ConfigureDownloadProvider, bool>(
+                          value: context
+                              .select<DownloadConfigurationProvider, bool>(
                             (provider) => provider.skipSeaTiles,
                           ),
                           onChanged: (val) => context
-                              .read<ConfigureDownloadProvider>()
+                              .read<DownloadConfigurationProvider>()
                               .skipSeaTiles = val,
                           activeColor: Theme.of(context).colorScheme.primary,
                         ),

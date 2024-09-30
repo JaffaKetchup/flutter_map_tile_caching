@@ -65,6 +65,8 @@ class _ResultDisplay extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     FutureBuilder(
+                      // TODO: Factor out of build to reduce re-futures
+                      // or fix rebuild issue
                       future: fmtcResult.storesWriteResult,
                       builder: (context, snapshot) => IconButton.filledTonal(
                         onPressed: snapshot.data != null

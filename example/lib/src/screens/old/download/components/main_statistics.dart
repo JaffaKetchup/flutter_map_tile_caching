@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../configure_download/state/configure_download_provider.dart';
+import '../../../../shared/state/download_configuration_provider.dart';
 import 'stat_display.dart';
 
 class MainStatistics extends StatefulWidget {
@@ -88,7 +88,7 @@ class _MainStatisticsState extends State<MainStatistics> {
             const SizedBox(height: 24),
             if (!(widget.download?.isComplete ?? false))
               RepaintBoundary(
-                child: Selector<ConfigureDownloadProvider, FMTCStore?>(
+                child: Selector<DownloadConfigurationProvider, FMTCStore?>(
                   selector: (context, provider) => provider.selectedStore,
                   builder: (context, selectedStore, _) => Row(
                     mainAxisSize: MainAxisSize.min,

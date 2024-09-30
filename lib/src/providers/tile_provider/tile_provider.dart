@@ -81,6 +81,8 @@ class FMTCTileProvider extends TileProvider {
   /// Stores not included will not be used by default. However,
   /// [otherStoresStrategy] determines whether & how all other unspecified
   /// stores should be used.
+  ///
+  // TODO: Accept null values to exempt from [otherStoresStrategy]
   final Map<String, BrowseStoreStrategy> storeNames;
 
   /// The behaviour of all other stores not specified in [storeNames]

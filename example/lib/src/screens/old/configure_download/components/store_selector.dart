@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../state/configure_download_provider.dart';
+import '../../../../shared/state/download_configuration_provider.dart';
 
 class StoreSelector extends StatefulWidget {
   const StoreSelector({super.key});
@@ -18,7 +18,7 @@ class _StoreSelectorState extends State<StoreSelector> {
           const Text('Store'),
           const Spacer(),
           IntrinsicWidth(
-            child: Selector<ConfigureDownloadProvider, FMTCStore?>(
+            child: Selector<DownloadConfigurationProvider, FMTCStore?>(
               selector: (context, provider) => provider.selectedStore,
               builder: (context, selectedStore, _) =>
                   FutureBuilder<Iterable<FMTCStore>>(
@@ -41,7 +41,7 @@ class _StoreSelectorState extends State<StoreSelector> {
                   return DropdownButton<FMTCStore>(
                     items: items,
                     onChanged: (store) => context
-                        .read<ConfigureDownloadProvider>()
+                        .read<DownloadConfigurationProvider>()
                         .selectedStore = store,
                     value: selectedStore,
                     hint: Text(text),

@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../shared/misc/store_metadata_keys.dart';
 import '../../download/download.dart';
-import '../state/configure_download_provider.dart';
+import '../../../../shared/state/download_configuration_provider.dart';
 
 class StartDownloadButton extends StatelessWidget {
   const StartDownloadButton({
@@ -21,7 +21,7 @@ class StartDownloadButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      Selector<ConfigureDownloadProvider, FMTCStore?>(
+      Selector<DownloadConfigurationProvider, FMTCStore?>(
         selector: (context, provider) => provider.selectedStore,
         builder: (context, selectedStore, child) {
           final enabled = selectedStore != null && maxTiles != null;
@@ -43,7 +43,7 @@ class StartDownloadButton extends StatelessWidget {
             FloatingActionButton.extended(
               onPressed: () async {
                 final configureDownloadProvider =
-                    context.read<ConfigureDownloadProvider>();
+                    context.read<DownloadConfigurationProvider>();
 
                 if (!await configureDownloadProvider
                         .selectedStore!.manage.ready &&
