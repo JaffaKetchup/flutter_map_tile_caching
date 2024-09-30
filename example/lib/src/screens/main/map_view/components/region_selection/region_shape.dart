@@ -33,7 +33,7 @@ class RegionShape extends StatelessWidget {
                           bounds.southEast,
                           bounds.southWest,
                         ],
-                        color: color.toColor(),
+                        color: color.toColor().withValues(alpha: 0.7),
                       ),
                     ],
                   ),
@@ -43,25 +43,35 @@ class RegionShape extends StatelessWidget {
                         point: center,
                         radius: radius * 1000,
                         useRadiusInMeter: true,
-                        color: color.toColor(),
+                        color: color.toColor().withValues(alpha: 0.7),
                       ),
                     ],
                   ),
-                LineRegion(:final line, :final radius) => PolylineLayer(
-                    polylines: [
-                      Polyline(
+                LineRegion() => PolygonLayer(
+                    polygons:
+                        /* Polyline(
                         points: line,
                         strokeWidth: radius * 2,
                         useStrokeWidthInMeter: true,
-                        color: color.toColor(),
-                      ),
-                    ],
+                        color: color.toColor().withValues(alpha: 0.7),
+                        strokeJoin: StrokeJoin.miter,
+                        strokeCap: StrokeCap.square,
+                      ),*/
+                        region
+                            .toOutlines(1)
+                            .map(
+                              (o) => Polygon(
+                                points: o,
+                                color: color.toColor().withValues(alpha: 0.7),
+                              ),
+                            )
+                            .toList(growable: false),
                   ),
                 CustomPolygonRegion(:final outline) => PolygonLayer(
                     polygons: [
                       Polygon(
                         points: outline,
-                        color: color.toColor(),
+                        color: color.toColor().withValues(alpha: 0.7),
                       ),
                     ],
                   ),
@@ -71,18 +81,37 @@ class RegionShape extends StatelessWidget {
               },
             if (provider.currentConstructingCoordinates.isNotEmpty)
               if (provider.currentRegionType == RegionType.line)
-                PolylineLayer(
+                /* PolylineLayer(
                   polylines: [
                     Polyline(
                       points: [
                         ...provider.currentConstructingCoordinates,
                         provider.currentNewPointPos,
                       ],
-                      color: Colors.white.withOpacity(2 / 3),
+                      color: Colors.white.withValues(alpha: 2 / 3),
                       strokeWidth: provider.lineRadius * 2,
+                      strokeJoin: StrokeJoin.miter,
+                      strokeCap: StrokeCap.square,
                       useStrokeWidthInMeter: true,
                     ),
                   ],
+                )*/
+                PolygonLayer(
+                  polygons: LineRegion(
+                    [
+                      ...provider.currentConstructingCoordinates,
+                      provider.currentNewPointPos,
+                    ],
+                    provider.lineRadius * 2,
+                  )
+                      .toOutlines(1)
+                      .map(
+                        (o) => Polygon(
+                          points: o,
+                          color: Colors.white.withValues(alpha: 2 / 3),
+                        ),
+                      )
+                      .toList(growable: false),
                 )
               else
                 PolygonLayer(
@@ -132,7 +161,7 @@ class RegionShape extends StatelessWidget {
                       color: Theme.of(context)
                           .colorScheme
                           .surface
-                          .withOpacity(0.5),
+                          .withValues(alpha: 0.5),
                     ),
                   ],
                 ),

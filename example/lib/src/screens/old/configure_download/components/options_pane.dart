@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/misc/exts/interleave.dart';
+import '../../../../shared/misc/exts/interleave.dart';
 
 class OptionsPane extends StatelessWidget {
   const OptionsPane({

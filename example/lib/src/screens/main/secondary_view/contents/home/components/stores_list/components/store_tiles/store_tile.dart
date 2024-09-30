@@ -204,7 +204,7 @@ class _StoreTileState extends State<StoreTile> {
                                       color: Theme.of(context)
                                           .colorScheme
                                           .error
-                                          .withOpacity(0.75),
+                                          .withValues(alpha: 0.75),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Row(

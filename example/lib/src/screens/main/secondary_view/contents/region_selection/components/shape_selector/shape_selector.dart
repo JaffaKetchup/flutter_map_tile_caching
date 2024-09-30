@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../../../shared/state/region_selection_provider.dart';
+import '../shared/to_config_method.dart';
 
 part 'components/animated_visibility_icon_button.dart';
 
@@ -232,7 +233,7 @@ class _ShapeSelectorState extends State<ShapeSelector> {
                       tooltip: 'Complete region',
                       isVisible:
                           provider.currentRegionType == RegionType.line &&
-                              provider.constructedRegions.length <= 1,
+                              provider.constructedRegions.isEmpty,
                     ),
                   ],
                 ),
@@ -246,7 +247,7 @@ class _ShapeSelectorState extends State<ShapeSelector> {
 
   void _completeRegion() {
     _addSubRegion();
-    context.read<RegionSelectionProvider>().isDownloadSetupPanelVisible = true;
+    moveToDownloadConfigView(context);
   }
 
   void _addSubRegion() {

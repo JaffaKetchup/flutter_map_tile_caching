@@ -23,7 +23,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final mapMode = switch (selectedTab) {
       0 => MapViewMode.standard,
-      1 => MapViewMode.regionSelect,
+      1 => MapViewMode.downloadRegion,
       _ => throw UnimplementedError(),
     };
 

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
-import '../../shared/misc/exts/size_formatter.dart';
+import '../../../shared/misc/exts/size_formatter.dart';
 import 'components/confirm_cancellation_dialog.dart';
 import 'components/main_statistics.dart';
 import 'components/multi_linear_progress_indicator.dart';

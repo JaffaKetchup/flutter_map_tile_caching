@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../../../shared/state/region_selection_provider.dart';
+import '../../contents/download_configuration/download_configuration_view_side.dart';
 import '../../contents/home/home_view_side.dart';
 import '../../contents/region_selection/region_selection_view_side.dart';
 
@@ -41,7 +44,11 @@ class SecondaryViewSide extends StatelessWidget {
             ),
             child: switch (selectedTab) {
               0 => HomeViewSide(constraints: constraints),
-              1 => const RegionSelectionViewSide(),
+              1 => context.select<RegionSelectionProvider, bool>(
+                  (p) => p.isDownloadSetupPanelVisible,
+                )
+                    ? const DownloadConfigurationViewSide()
+                    : const RegionSelectionViewSide(),
               _ => Placeholder(key: ValueKey(selectedTab)),
             },
           ),

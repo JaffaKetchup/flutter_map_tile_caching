@@ -2,14 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../shared/state/region_selection_provider.dart';
-import '../../layouts/side/components/panel.dart';
-import 'components/shape_selector/shape_selector.dart';
-import 'components/shared/to_config_method.dart';
-import 'components/sub_regions_list/components/no_sub_regions.dart';
-import 'components/sub_regions_list/sub_regions_list.dart';
+import '../region_selection/components/sub_regions_list/components/no_sub_regions.dart';
+import '../region_selection/components/sub_regions_list/sub_regions_list.dart';
 
-class RegionSelectionViewSide extends StatelessWidget {
-  const RegionSelectionViewSide({super.key});
+class DownloadConfigurationViewSide extends StatelessWidget {
+  const DownloadConfigurationViewSide({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,13 +16,30 @@ class RegionSelectionViewSide extends StatelessWidget {
 
     return Column(
       children: [
-        const SideViewPanel(child: ShapeSelector()),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(99),
+              color: Theme.of(context).colorScheme.surface,
+            ),
+            padding: const EdgeInsets.all(4),
+            child: IconButton(
+              onPressed: () {
+                context
+                    .read<RegionSelectionProvider>()
+                    .isDownloadSetupPanelVisible = false;
+              },
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Return to selection',
+            ),
+          ),
+        ),
         const SizedBox(height: 16),
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: BorderRadius.circular(16),
               color: Theme.of(context).colorScheme.surface,
             ),
             width: double.infinity,
@@ -73,8 +87,9 @@ class RegionSelectionViewSide extends StatelessWidget {
                                 SizedBox(
                                   height: double.infinity,
                                   child: FilledButton.icon(
-                                    onPressed: () =>
-                                        moveToDownloadConfigView(context),
+                                    onPressed: () => context
+                                        .read<RegionSelectionProvider>()
+                                        .isDownloadSetupPanelVisible = true,
                                     label: const Text('Configure Download'),
                                     icon: const Icon(Icons.tune),
                                   ),
@@ -91,6 +106,7 @@ class RegionSelectionViewSide extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 16),
       ],
     );
   }

@@ -4,13 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'src/screens/configure_download/configure_download.dart';
-import 'src/screens/configure_download/state/configure_download_provider.dart';
-import 'src/screens/download/download.dart';
 import 'src/screens/import/import.dart';
 import 'src/screens/initialisation_error/initialisation_error.dart';
 import 'src/screens/main/main.dart';
 import 'src/screens/main/secondary_view/contents/home/components/stores_list/state/export_selection_provider.dart';
+import 'src/screens/old/configure_download/configure_download.dart';
+import 'src/screens/old/configure_download/state/configure_download_provider.dart';
+import 'src/screens/old/download/download.dart';
 import 'src/screens/store_editor/store_editor.dart';
 import 'src/shared/misc/shared_preferences.dart';
 import 'src/shared/state/general_provider.dart';

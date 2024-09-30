@@ -70,7 +70,7 @@ class _NumericalInputRowState extends State<NumericalInputRow> {
                     Icons.lock,
                     color: currentValue == widget.max
                         ? Colors.amber
-                        : Colors.white.withOpacity(0.2),
+                        : Colors.white.withValues(alpha: 0.2),
                   ),
                 ),
                 const SizedBox(width: 16),

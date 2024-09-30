@@ -933,7 +933,7 @@ Future<void> _worker(
                                     .map(
                                       (s) => storesObjectsForRelations[s.name],
                                     )
-                                    .whereNotNull(),
+                                    .nonNulls,
                               ),
                             mode: PutMode.insert,
                           );

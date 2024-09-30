@@ -13,13 +13,10 @@ class BottomSheetScrollableProvider extends InheritedWidget {
 
   Widget build(BuildContext context) => child;
 
-  static ScrollController? maybeInnerScrollControllerOf(BuildContext context) =>
-      context
-          .dependOnInheritedWidgetOfExactType<BottomSheetScrollableProvider>()
-          ?.innerScrollController;
-
   static ScrollController innerScrollControllerOf(BuildContext context) =>
-      maybeInnerScrollControllerOf(context)!;
+      context
+          .dependOnInheritedWidgetOfExactType<BottomSheetScrollableProvider>()!
+          .innerScrollController;
 
   static DraggableScrollableController? maybeOuterScrollControllerOf(
     BuildContext context,

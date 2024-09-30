@@ -27,10 +27,10 @@ class DebuggingTileBuilder extends StatelessWidget {
           DecoratedBox(
             decoration: BoxDecoration(
               border: Border.all(
-                color: Colors.black.withOpacity(0.8),
+                color: Colors.black.withValues(alpha: 0.8),
                 width: 2,
               ),
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
             ),
             position: DecorationPosition.foreground,
             child: tileWidget,

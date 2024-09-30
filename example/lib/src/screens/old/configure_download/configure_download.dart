@@ -3,8 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
-import '../../shared/misc/exts/interleave.dart';
-import '../../shared/state/region_selection_provider.dart';
+import '../../../shared/misc/exts/interleave.dart';
+import '../../../shared/state/region_selection_provider.dart';
 import 'components/numerical_input_row.dart';
 import 'components/options_pane.dart';
 import 'components/region_information.dart';

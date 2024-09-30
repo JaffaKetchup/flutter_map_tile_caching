@@ -89,7 +89,7 @@ class BrowseStoreStrategySelector extends StatelessWidget {
                   duration: const Duration(milliseconds: 100),
                   decoration: BoxDecoration(
                     color: BrowseStoreStrategySelector._unspecifiedSelectorColor
-                        .withOpacity(0.75),
+                        .withValues(alpha: 0.75),
                     borderRadius: BorderRadius.circular(99),
                   ),
                   width: isUsingUnselectedStrategy

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:math';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
@@ -21,7 +20,7 @@ import 'components/region_selection/region_shape.dart';
 
 enum MapViewMode {
   standard,
-  regionSelect,
+  downloadRegion,
 }
 
 class MapView extends StatefulWidget {
@@ -63,6 +62,10 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
     },
   );
 
+  bool _isInRegionSelectMode() =>
+      widget.mode == MapViewMode.downloadRegion &&
+      !context.read<RegionSelectionProvider>().isDownloadSetupPanelVisible;
+
   @override
   Widget build(BuildContext context) {
     final mapOptions = MapOptions(
@@ -81,7 +84,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
       keepAlive: true,
       backgroundColor: const Color(0xFFaad3df),
       onTap: (_, __) {
-        if (widget.mode != MapViewMode.regionSelect) return;
+        if (!_isInRegionSelectMode()) return;
 
         final provider = context.read<RegionSelectionProvider>();
 
@@ -125,15 +128,15 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
         }
       },
       onSecondaryTap: (_, __) {
-        if (widget.mode != MapViewMode.regionSelect) return;
+        if (!_isInRegionSelectMode()) return;
         context.read<RegionSelectionProvider>().removeLastCoordinate();
       },
       onLongPress: (_, __) {
-        if (widget.mode != MapViewMode.regionSelect) return;
+        if (!_isInRegionSelectMode()) return;
         context.read<RegionSelectionProvider>().removeLastCoordinate();
       },
       onPointerHover: (evt, point) {
-        if (widget.mode != MapViewMode.regionSelect) return;
+        if (!_isInRegionSelectMode()) return;
 
         final provider = context.read<RegionSelectionProvider>();
 
@@ -158,7 +161,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
         }
       },
       onPositionChanged: (position, _) {
-        if (widget.mode != MapViewMode.regionSelect) return;
+        if (!_isInRegionSelectMode()) return;
 
         final provider = context.read<RegionSelectionProvider>();
 
@@ -252,7 +255,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                       );
                 if (behaviour == null) return null;
                 return MapEntry(e, behaviour);
-              }).whereNotNull(),
+              }).nonNulls,
             );
 
             final attribution = RichAttributionWidget(
@@ -314,7 +317,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                                 otherStoresStrategy != null,
                           ),
                 ),
-                if (widget.mode == MapViewMode.regionSelect) ...[
+                if (widget.mode == MapViewMode.downloadRegion) ...[
                   const RegionShape(),
                   const CustomPolygonSnappingIndicator(),
                 ],
@@ -336,6 +339,9 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                 MouseRegion(
                   opaque: false,
                   cursor: widget.mode == MapViewMode.standard ||
+                          context.select<RegionSelectionProvider, bool>(
+                            (p) => p.isDownloadSetupPanelVisible,
+                          ) ||
                           context.select<RegionSelectionProvider,
                                   RegionSelectionMethod>(
                                 (p) => p.regionSelectionMethod,
@@ -349,7 +355,10 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                           : SystemMouseCursors.precise,
                   child: map,
                 ),
-                if (widget.mode == MapViewMode.regionSelect &&
+                if (widget.mode == MapViewMode.downloadRegion &&
+                    !context.select<RegionSelectionProvider, bool>(
+                      (p) => p.isDownloadSetupPanelVisible,
+                    ) &&
                     context.select<RegionSelectionProvider,
                             RegionSelectionMethod>(
                           (p) => p.regionSelectionMethod,

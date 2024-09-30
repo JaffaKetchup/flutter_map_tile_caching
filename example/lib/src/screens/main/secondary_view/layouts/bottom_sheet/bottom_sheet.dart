@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../../../shared/state/region_selection_provider.dart';
+import '../../contents/download_configuration/download_configuration_view_bottom_sheet.dart';
 import '../../contents/home/home_view_bottom_sheet.dart';
 import '../../contents/region_selection/region_selection_view_bottom_sheet.dart';
 import 'components/delayed_frame_attached_dependent_builder.dart';
@@ -104,7 +107,11 @@ class _SecondaryViewBottomSheetState extends State<SecondaryViewBottomSheet> {
                   width: double.infinity,
                   child: switch (widget.selectedTab) {
                     0 => const HomeViewBottomSheet(),
-                    1 => const RegionSelectionViewBottomSheet(),
+                    1 => context.select<RegionSelectionProvider, bool>(
+                        (p) => p.isDownloadSetupPanelVisible,
+                      )
+                          ? const DownloadConfigurationViewBottomSheet()
+                          : const RegionSelectionViewBottomSheet(),
                     _ => Placeholder(key: ValueKey(widget.selectedTab)),
                   },
                 ),
@@ -141,7 +148,7 @@ class _SecondaryViewBottomSheetState extends State<SecondaryViewBottomSheet> {
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurfaceVariant
-                                  .withOpacity(0.4),
+                                  .withValues(alpha: 0.4),
                             ),
                           ),
                         ),
