@@ -8,6 +8,7 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:http/io_client.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:stream_transform/stream_transform.dart';
 
 import '../../../shared/misc/shared_preferences.dart';
 import '../../../shared/misc/store_metadata_keys.dart';
@@ -15,7 +16,6 @@ import '../../../shared/state/general_provider.dart';
 import '../../../shared/state/region_selection_provider.dart';
 import 'components/debugging_tile_builder/debugging_tile_builder.dart';
 import 'components/download_progress/components/greyscale_masker.dart';
-import 'components/download_progress/download_progress_masker.dart';
 import 'components/region_selection/crosshairs.dart';
 import 'components/region_selection/custom_polygon_snapping_indicator.dart';
 import 'components/region_selection/region_shape.dart';
@@ -64,6 +64,63 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
     },
   );
 
+  final _testingCoordsList = [
+    //TileCoordinates(2212, 1468, 12),
+    //TileCoordinates(2212 * 2, 1468 * 2, 13),
+    //TileCoordinates(2212 * 2 * 2, 1468 * 2 * 2, 14),
+    //TileCoordinates(2212 * 2 * 2 * 2, 1468 * 2 * 2 * 2, 15),
+    const TileCoordinates(
+      2212 * 2 * 2 * 2 * 2,
+      1468 * 2 * 2 * 2 * 2,
+      16,
+    ),
+    const TileCoordinates(
+      2212 * 2 * 2 * 2 * 2 * 2,
+      1468 * 2 * 2 * 2 * 2 * 2,
+      17,
+    ),
+    const TileCoordinates(
+      2212 * 2 * 2 * 2 * 2 * 2 * 2,
+      1468 * 2 * 2 * 2 * 2 * 2 * 2,
+      18,
+    ),
+    const TileCoordinates(
+      2212 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
+      1468 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
+      18,
+    ),
+    const TileCoordinates(
+      2212 * 2 * 2 * 2 * 2 * 2 * 2,
+      1468 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
+      18,
+    ),
+    const TileCoordinates(
+      2212 * 2 * 2 * 2 * 2 * 2 * 2 * 2,
+      1468 * 2 * 2 * 2 * 2 * 2 * 2 * 2,
+      19,
+    ),
+    const TileCoordinates(
+      2212 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
+      1468 * 2 * 2 * 2 * 2 * 2 * 2 * 2,
+      19,
+    ),
+    const TileCoordinates(
+      2212 * 2 * 2 * 2 * 2 * 2 * 2 * 2,
+      1468 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
+      19,
+    ),
+    const TileCoordinates(
+      2212 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
+      1468 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
+      19,
+    ),
+    const TileCoordinates(
+      2212 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 2,
+      1468 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 2,
+      19,
+    ),
+  ];
+
   Stream<TileCoordinates>? _testingDownloadTileCoordsStream;
 
   bool _isInRegionSelectMode() =>
@@ -91,27 +148,29 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
         if (!_isInRegionSelectMode()) {
           setState(
             () => _testingDownloadTileCoordsStream =
-                const FMTCStore('Mapbox JaffaKetchup Outdoors')
+                const FMTCStore('Local Tile Server')
                     .download
                     .startForeground(
-                      region: CircleRegion(
+                      region: const CircleRegion(
                         LatLng(45.3052535669648, 14.476223064038985),
-                        10,
+                        5,
                       ).toDownloadable(
                         minZoom: 11,
-                        maxZoom: 18,
+                        maxZoom: 16,
                         options: TileLayer(
-                          urlTemplate: 'http://127.0.0.1:7070/{z}/{x}/{y}',
+                          //urlTemplate: 'http://127.0.0.1:7070/{z}/{x}/{y}',
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         ),
                       ),
-                      parallelThreads: 10,
+                      parallelThreads: 3,
                       skipSeaTiles: false,
                       urlTransformer: (url) =>
                           FMTCTileProvider.urlTransformerOmitKeyValues(
                         url: url,
                         keys: ['access_token'],
                       ),
-                      rateLimit: 200,
+                      rateLimit: 20,
                     )
                     .map(
                       (event) => event.latestTileEvent.coordinates,
@@ -162,11 +221,11 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
         }
       },
       onSecondaryTap: (_, __) {
+        const FMTCStore('Local Tile Server').download.cancel();
         if (!_isInRegionSelectMode()) return;
         context.read<RegionSelectionProvider>().removeLastCoordinate();
       },
       onLongPress: (_, __) {
-        const FMTCStore('Mapbox JaffaKetchup Outdoors').download.cancel();
         if (!_isInRegionSelectMode()) return;
         context.read<RegionSelectionProvider>().removeLastCoordinate();
       },
@@ -361,14 +420,53 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                       builder: (context) => GreyscaleMasker(
                         key: const ValueKey(11),
                         mapCamera: MapCamera.of(context),
-                        tileCoordinates: _testingDownloadTileCoordsStream!,
+                        tileCoordinatesStream:
+                            _testingDownloadTileCoordsStream!,
+                        /*tileCoordinates: Stream.periodic(
+                        const Duration(seconds: 5),
+                        _testingCoordsList.elementAtOrNull,
+                      ).whereNotNull(),*/
                         minZoom: 11,
-                        maxZoom: 18,
+                        maxZoom: 16,
                         tileSize: 256,
                         child: tileLayer,
                       ),
                     ),
                   ),
+                PolygonLayer(
+                  polygons: [
+                    Polygon(
+                      points: [
+                        LatLng(-90, 180),
+                        LatLng(90, 180),
+                        LatLng(90, -180),
+                        LatLng(-90, -180),
+                      ],
+                      holePointsList: [
+                        const CircleRegion(
+                          LatLng(45.3052535669648, 14.476223064038985),
+                          6,
+                        ).toOutline().toList(growable: false),
+                      ],
+                      color: Colors.black,
+                    ),
+                    Polygon(
+                      points: [
+                        LatLng(-90, 180),
+                        LatLng(90, 180),
+                        LatLng(90, -180),
+                        LatLng(-90, -180),
+                      ],
+                      holePointsList: [
+                        const CircleRegion(
+                          LatLng(45.3052535669648, 14.476223064038985),
+                          5,
+                        ).toOutline().toList(growable: false),
+                      ],
+                      color: Colors.black.withAlpha(255 ~/ 2),
+                    ),
+                  ],
+                ),
                 if (widget.mode == MapViewMode.downloadRegion) ...[
                   const RegionShape(),
                   const CustomPolygonSnappingIndicator(),

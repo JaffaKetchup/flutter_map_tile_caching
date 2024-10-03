@@ -256,6 +256,7 @@ Future<void> _downloadManager(
               .then((sp) => sp.send(null)),
         );
 
+        // TODO: Debug whether multiple threads are downloading the same tile
         downloadThreadReceivePort.listen(
           (evt) async {
             // Thread is sending tile data
