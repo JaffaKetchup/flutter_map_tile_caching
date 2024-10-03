@@ -14,7 +14,8 @@ import '../../../shared/misc/store_metadata_keys.dart';
 import '../../../shared/state/general_provider.dart';
 import '../../../shared/state/region_selection_provider.dart';
 import 'components/debugging_tile_builder/debugging_tile_builder.dart';
-import 'components/download_progress/download_progress.dart';
+import 'components/download_progress/components/greyscale_masker.dart';
+import 'components/download_progress/download_progress_masker.dart';
 import 'components/region_selection/crosshairs.dart';
 import 'components/region_selection/custom_polygon_snapping_indicator.dart';
 import 'components/region_selection/region_shape.dart';
@@ -63,6 +64,8 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
     },
   );
 
+  Stream<TileCoordinates>? _testingDownloadTileCoordsStream;
+
   bool _isInRegionSelectMode() =>
       widget.mode == MapViewMode.downloadRegion &&
       !context.read<RegionSelectionProvider>().isDownloadSetupPanelVisible;
@@ -85,7 +88,37 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
       keepAlive: true,
       backgroundColor: const Color(0xFFaad3df),
       onTap: (_, __) {
-        if (!_isInRegionSelectMode()) return;
+        if (!_isInRegionSelectMode()) {
+          setState(
+            () => _testingDownloadTileCoordsStream =
+                const FMTCStore('Mapbox JaffaKetchup Outdoors')
+                    .download
+                    .startForeground(
+                      region: CircleRegion(
+                        LatLng(45.3052535669648, 14.476223064038985),
+                        10,
+                      ).toDownloadable(
+                        minZoom: 11,
+                        maxZoom: 18,
+                        options: TileLayer(
+                          urlTemplate: 'http://127.0.0.1:7070/{z}/{x}/{y}',
+                        ),
+                      ),
+                      parallelThreads: 10,
+                      skipSeaTiles: false,
+                      urlTransformer: (url) =>
+                          FMTCTileProvider.urlTransformerOmitKeyValues(
+                        url: url,
+                        keys: ['access_token'],
+                      ),
+                      rateLimit: 200,
+                    )
+                    .map(
+                      (event) => event.latestTileEvent.coordinates,
+                    ),
+          );
+          return;
+        }
 
         final provider = context.read<RegionSelectionProvider>();
 
@@ -133,6 +166,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
         context.read<RegionSelectionProvider>().removeLastCoordinate();
       },
       onLongPress: (_, __) {
+        const FMTCStore('Mapbox JaffaKetchup Outdoors').download.cancel();
         if (!_isInRegionSelectMode()) return;
         context.read<RegionSelectionProvider>().removeLastCoordinate();
       },
@@ -285,45 +319,56 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
             final otherStoresStrategy = provider.currentStores['(unspecified)']
                 ?.toBrowseStoreStrategy();
 
+            final tileLayer = TileLayer(
+              urlTemplate: urlTemplate,
+              userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
+              maxNativeZoom: 20,
+              tileProvider:
+                  compiledStoreNames.isEmpty && otherStoresStrategy == null
+                      ? NetworkTileProvider()
+                      : FMTCTileProvider.multipleStores(
+                          storeNames: compiledStoreNames,
+                          otherStoresStrategy: otherStoresStrategy,
+                          loadingStrategy: provider.loadingStrategy,
+                          useOtherStoresAsFallbackOnly:
+                              provider.useUnspecifiedAsFallbackOnly,
+                          recordHitsAndMisses: false,
+                          tileLoadingInterceptor: _tileLoadingDebugger,
+                          httpClient: _httpClient,
+                          // ignore: invalid_use_of_visible_for_testing_member
+                          fakeNetworkDisconnect: provider.fakeNetworkDisconnect,
+                        ),
+              tileBuilder: !provider.displayDebugOverlay
+                  ? null
+                  : (context, tileWidget, tile) => DebuggingTileBuilder(
+                        tileLoadingDebugger: _tileLoadingDebugger,
+                        tileWidget: tileWidget,
+                        tile: tile,
+                        usingFMTC: compiledStoreNames.isNotEmpty ||
+                            otherStoresStrategy != null,
+                      ),
+            );
+
             final map = FlutterMap(
               mapController: _mapController.mapController,
               options: mapOptions,
               children: [
-                Builder(
-                  builder: (context) => DownloadProgressCover(
-                    mapCamera: MapCamera.of(context),
-                    child: TileLayer(
-                      urlTemplate: urlTemplate,
-                      userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
-                      maxNativeZoom: 20,
-                      tileProvider: compiledStoreNames.isEmpty &&
-                              otherStoresStrategy == null
-                          ? NetworkTileProvider()
-                          : FMTCTileProvider.multipleStores(
-                              storeNames: compiledStoreNames,
-                              otherStoresStrategy: otherStoresStrategy,
-                              loadingStrategy: provider.loadingStrategy,
-                              useOtherStoresAsFallbackOnly:
-                                  provider.useUnspecifiedAsFallbackOnly,
-                              recordHitsAndMisses: false,
-                              tileLoadingInterceptor: _tileLoadingDebugger,
-                              httpClient: _httpClient,
-                              // ignore: invalid_use_of_visible_for_testing_member
-                              fakeNetworkDisconnect:
-                                  provider.fakeNetworkDisconnect,
-                            ),
-                      tileBuilder: !provider.displayDebugOverlay
-                          ? null
-                          : (context, tileWidget, tile) => DebuggingTileBuilder(
-                                tileLoadingDebugger: _tileLoadingDebugger,
-                                tileWidget: tileWidget,
-                                tile: tile,
-                                usingFMTC: compiledStoreNames.isNotEmpty ||
-                                    otherStoresStrategy != null,
-                              ),
+                if (_testingDownloadTileCoordsStream == null)
+                  tileLayer
+                else
+                  RepaintBoundary(
+                    child: Builder(
+                      builder: (context) => GreyscaleMasker(
+                        key: const ValueKey(11),
+                        mapCamera: MapCamera.of(context),
+                        tileCoordinates: _testingDownloadTileCoordsStream!,
+                        minZoom: 11,
+                        maxZoom: 18,
+                        tileSize: 256,
+                        child: tileLayer,
+                      ),
                     ),
                   ),
-                ),
                 if (widget.mode == MapViewMode.downloadRegion) ...[
                   const RegionShape(),
                   const CustomPolygonSnappingIndicator(),
