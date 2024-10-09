@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 class DownloadConfigurationProvider extends ChangeNotifier {
   static const defaultValues = (
@@ -77,10 +76,10 @@ class DownloadConfigurationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  FMTCStore? _selectedStore;
-  FMTCStore? get selectedStore => _selectedStore;
-  set selectedStore(FMTCStore? newStore) {
-    _selectedStore = newStore;
+  String? _selectedStoreName;
+  String? get selectedStoreName => _selectedStoreName;
+  set selectedStoreName(String? newStoreName) {
+    _selectedStoreName = newStoreName;
     notifyListeners();
   }
 }

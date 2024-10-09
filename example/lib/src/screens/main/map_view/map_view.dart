@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -11,14 +10,13 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:http/io_client.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:stream_transform/stream_transform.dart';
 
 import '../../../shared/misc/shared_preferences.dart';
 import '../../../shared/misc/store_metadata_keys.dart';
 import '../../../shared/state/general_provider.dart';
 import '../../../shared/state/region_selection_provider.dart';
 import 'components/debugging_tile_builder/debugging_tile_builder.dart';
-import 'components/download_progress/components/greyscale_masker.dart';
+import 'components/download_progress/download_progress_masker.dart';
 import 'components/region_selection/crosshairs.dart';
 import 'components/region_selection/custom_polygon_snapping_indicator.dart';
 import 'components/region_selection/region_shape.dart';
@@ -67,7 +65,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
     },
   ).distinct(mapEquals);
 
-  final _testingCoordsList = [
+  /*final _testingCoordsList = [
     //TileCoordinates(2212, 1468, 12),
     //TileCoordinates(2212 * 2, 1468 * 2, 13),
     //TileCoordinates(2212 * 2 * 2, 1468 * 2 * 2, 14),
@@ -122,7 +120,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
       1468 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 2,
       19,
     ),
-  ];
+  ];*/
 
   Stream<TileCoordinates>? _testingDownloadTileCoordsStream;
 
@@ -177,7 +175,8 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                     )
                     .map(
                       (event) => event.latestTileEvent.coordinates,
-                    ),
+                    )
+                    .asBroadcastStream(),
           );
           return;
         }
@@ -416,27 +415,16 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
               mapController: _mapController.mapController,
               options: mapOptions,
               children: [
-                if (_testingDownloadTileCoordsStream == null)
-                  tileLayer
-                else
-                  RepaintBoundary(
-                    child: Builder(
-                      builder: (context) => GreyscaleMasker(
-                        key: const ValueKey(11),
-                        mapCamera: MapCamera.of(context),
-                        tileCoordinatesStream:
-                            _testingDownloadTileCoordsStream!,
-                        /*tileCoordinates: Stream.periodic(
+                DownloadProgressMasker(
+                  tileCoordinatesStream: _testingDownloadTileCoordsStream,
+                  /*tileCoordinates: Stream.periodic(
                         const Duration(seconds: 5),
                         _testingCoordsList.elementAtOrNull,
                       ).whereNotNull(),*/
-                        minZoom: 11,
-                        maxZoom: 16,
-                        tileSize: 256,
-                        child: tileLayer,
-                      ),
-                    ),
-                  ),
+                  minZoom: 11,
+                  maxZoom: 16,
+                  child: tileLayer,
+                ),
                 PolygonLayer(
                   polygons: [
                     Polygon(

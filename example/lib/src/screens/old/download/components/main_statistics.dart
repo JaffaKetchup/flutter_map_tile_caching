@@ -88,33 +88,37 @@ class _MainStatisticsState extends State<MainStatistics> {
             const SizedBox(height: 24),
             if (!(widget.download?.isComplete ?? false))
               RepaintBoundary(
-                child: Selector<DownloadConfigurationProvider, FMTCStore?>(
-                  selector: (context, provider) => provider.selectedStore,
-                  builder: (context, selectedStore, _) => Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton.outlined(
-                        onPressed: () async {
-                          if (selectedStore.download.isPaused()) {
-                            selectedStore.download.resume();
-                          } else {
-                            await selectedStore.download.pause();
-                          }
-                          setState(() {});
-                        },
-                        icon: Icon(
-                          selectedStore!.download.isPaused()
-                              ? Icons.play_arrow
-                              : Icons.pause,
+                child: Selector<DownloadConfigurationProvider, String?>(
+                  selector: (context, provider) => provider.selectedStoreName,
+                  builder: (context, selectedStoreName, _) {
+                    final selectedStore = FMTCStore(selectedStoreName!);
+
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton.outlined(
+                          onPressed: () async {
+                            if (selectedStore.download.isPaused()) {
+                              selectedStore.download.resume();
+                            } else {
+                              await selectedStore.download.pause();
+                            }
+                            setState(() {});
+                          },
+                          icon: Icon(
+                            selectedStore.download.isPaused()
+                                ? Icons.play_arrow
+                                : Icons.pause,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      IconButton.outlined(
-                        onPressed: () => selectedStore.download.cancel(),
-                        icon: const Icon(Icons.cancel),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 12),
+                        IconButton.outlined(
+                          onPressed: () => selectedStore.download.cancel(),
+                          icon: const Icon(Icons.cancel),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             if (widget.download?.isComplete ?? false)

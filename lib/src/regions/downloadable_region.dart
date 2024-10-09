@@ -29,9 +29,6 @@ class DownloadableRegion<R extends BaseRegion> {
   }
 
   /// A copy of the [BaseRegion] used to form this object
-  ///
-  /// To make decisions based on the type of this region, prefer [when] over
-  /// switching on [R] manually.
   final R originalRegion;
 
   /// The minimum zoom level to fetch tiles for
@@ -124,16 +121,19 @@ class DownloadableRegion<R extends BaseRegion> {
       };
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is DownloadableRegion &&
-          other.originalRegion == originalRegion &&
-          other.minZoom == minZoom &&
-          other.maxZoom == maxZoom &&
-          other.options == options &&
-          other.start == start &&
-          other.end == end &&
-          other.crs == crs);
+  bool operator ==(Object other) {
+    final e = identical(this, other) ||
+        (other is DownloadableRegion &&
+            other.originalRegion == originalRegion &&
+            other.minZoom == minZoom &&
+            other.maxZoom == maxZoom &&
+            other.options == options &&
+            other.start == start &&
+            other.end == end &&
+            other.crs == crs);
+    print((other as DownloadableRegion).options == options);
+    return e;
+  }
 
   @override
   int get hashCode => Object.hashAllUnordered([

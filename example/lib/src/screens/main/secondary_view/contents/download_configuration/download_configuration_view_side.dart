@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../shared/state/region_selection_provider.dart';
-import '../region_selection/components/sub_regions_list/components/no_sub_regions.dart';
-import '../region_selection/components/sub_regions_list/sub_regions_list.dart';
+import '../../layouts/side/components/panel.dart';
 import 'components/config_options/config_options.dart';
+import 'components/confirmation_panel/confirmation_panel.dart';
 
 class DownloadConfigurationViewSide extends StatelessWidget {
   const DownloadConfigurationViewSide({super.key});
@@ -32,69 +32,13 @@ class DownloadConfigurationViewSide extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: Theme.of(context).colorScheme.surface,
-              ),
-              width: double.infinity,
-              height: double.infinity,
-              child: Stack(
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: ConfigOptions(),
-                  ),
-                  PositionedDirectional(
-                    end: 8,
-                    bottom: 8,
-                    child: IgnorePointer(
-                      ignoring: false,
-                      child: AnimatedOpacity(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeInOut,
-                        opacity: 1,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).colorScheme.surfaceContainer,
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: IntrinsicHeight(
-                              child: Row(
-                                children: [
-                                  IconButton(
-                                    onPressed: () => context
-                                        .read<RegionSelectionProvider>()
-                                        .clearConstructedRegions(),
-                                    icon: const Icon(Icons.delete_forever),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  SizedBox(
-                                    height: double.infinity,
-                                    child: FilledButton.icon(
-                                      onPressed: () => context
-                                          .read<RegionSelectionProvider>()
-                                          .isDownloadSetupPanelVisible = true,
-                                      label: const Text('Configure Download'),
-                                      icon: const Icon(Icons.tune),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          const Expanded(
+            child: SideViewPanel(
+              child: SingleChildScrollView(child: ConfigOptions()),
             ),
           ),
+          const SizedBox(height: 16),
+          const SideViewPanel(child: ConfirmationPanel()),
           const SizedBox(height: 16),
         ],
       );

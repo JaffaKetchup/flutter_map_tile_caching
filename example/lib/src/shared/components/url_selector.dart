@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:async/async.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -32,53 +33,47 @@ class _URLSelectorState extends State<URLSelector> {
   static const _defaultUrlTemplate =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
-  late final urlTextController = TextEditingControllerWithMatcherStylizer(
+  late final _urlTextController = TextEditingControllerWithMatcherStylizer(
     TileProvider.templatePlaceholderElement,
     const TextStyle(fontStyle: FontStyle.italic),
     initialValue: widget.initialValue,
   );
 
-  final selectableEntriesManualRefreshStream = StreamController<void>();
+  final _selectableEntriesManualRefreshStream = StreamController<void>();
 
-  late final inUseUrlsStream = (StreamGroup<void>()
-        ..add(FMTCRoot.stats.watchStores(triggerImmediately: true))
-        ..add(selectableEntriesManualRefreshStream.stream))
-      .stream
-      .asyncMap(_constructTemplatesToStoresStream);
+  late final _templatesToStoresStream =
+      (StreamGroup<Map<String, List<String>>>()
+            ..add(
+              _transformToTemplatesToStoresOnTrigger(
+                FMTCRoot.stats.watchStores(triggerImmediately: true),
+              ),
+            )
+            ..add(
+              _transformToTemplatesToStoresOnTrigger(
+                _selectableEntriesManualRefreshStream.stream,
+              ),
+            ))
+          .stream;
 
-  Map<String, List<String>> enableButtonEvaluatorMap = {};
-  final enableAddUrlButton = ValueNotifier<bool>(false);
+  Map<String, List<String>> _enableButtonEvaluatorMap = {};
+  final _enableAddUrlButton = ValueNotifier<bool>(false);
 
-  late final dropdownMenuFocusNode =
+  late final _dropdownMenuFocusNode =
       widget.onFocus != null || widget.onUnfocus != null ? FocusNode() : null;
 
   @override
   void initState() {
     super.initState();
-    urlTextController.addListener(_urlTextControllerListener);
-    dropdownMenuFocusNode?.addListener(_dropdownMenuFocusListener);
+    _urlTextController.addListener(_urlTextControllerListener);
+    _dropdownMenuFocusNode?.addListener(_dropdownMenuFocusListener);
   }
 
   @override
   void dispose() {
-    urlTextController.removeListener(_urlTextControllerListener);
-    dropdownMenuFocusNode?.removeListener(_dropdownMenuFocusListener);
-    selectableEntriesManualRefreshStream.close();
+    _urlTextController.removeListener(_urlTextControllerListener);
+    _dropdownMenuFocusNode?.removeListener(_dropdownMenuFocusListener);
+    _selectableEntriesManualRefreshStream.close();
     super.dispose();
-  }
-
-  void _dropdownMenuFocusListener() {
-    if (widget.onFocus != null && dropdownMenuFocusNode!.hasFocus) {
-      widget.onFocus!();
-    }
-    if (widget.onUnfocus != null && !dropdownMenuFocusNode!.hasFocus) {
-      widget.onUnfocus!();
-    }
-  }
-
-  void _urlTextControllerListener() {
-    enableAddUrlButton.value =
-        !enableButtonEvaluatorMap.containsKey(urlTextController.text);
   }
 
   @override
@@ -89,12 +84,12 @@ class _URLSelectorState extends State<URLSelector> {
             initialData: const {
               _defaultUrlTemplate: ['(default)'],
             },
-            stream: inUseUrlsStream,
+            stream: _templatesToStoresStream,
             builder: (context, snapshot) {
               // Bug in `DropdownMenu` means we must force the controller to
               // update to update the state of the entries
-              final oldValue = urlTextController.value;
-              urlTextController
+              final oldValue = _urlTextController.value;
+              _urlTextController
                 ..value = TextEditingValue.empty
                 ..value = oldValue;
 
@@ -103,7 +98,7 @@ class _URLSelectorState extends State<URLSelector> {
                 children: [
                   Expanded(
                     child: DropdownMenu<String?>(
-                      controller: urlTextController,
+                      controller: _urlTextController,
                       width: constraints.maxWidth,
                       requestFocusOnTap: true,
                       leadingIcon: const Icon(Icons.link),
@@ -119,13 +114,13 @@ class _URLSelectorState extends State<URLSelector> {
                       onSelected: _onSelected,
                       helperText: 'Use standard placeholders & include protocol'
                           '${widget.helperText != null ? '\n${widget.helperText}' : ''}',
-                      focusNode: dropdownMenuFocusNode,
+                      focusNode: _dropdownMenuFocusNode,
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 6, left: 8),
                     child: ValueListenableBuilder(
-                      valueListenable: enableAddUrlButton,
+                      valueListenable: _enableAddUrlButton,
                       builder: (context, enableAddUrlButton, _) =>
                           IconButton.filledTonal(
                         onPressed:
@@ -147,45 +142,14 @@ class _URLSelectorState extends State<URLSelector> {
         SharedPrefsKeys.customNonStoreUrls.name,
         (sharedPrefs.getStringList(SharedPrefsKeys.customNonStoreUrls.name) ??
             <String>[])
-          ..add(urlTextController.text),
+          ..add(_urlTextController.text),
       );
 
-      selectableEntriesManualRefreshStream.add(null);
+      _selectableEntriesManualRefreshStream.add(null);
     }
 
-    widget.onSelected!(v ?? urlTextController.text);
-    dropdownMenuFocusNode?.unfocus();
-  }
-
-  Future<Map<String, List<String>>> _constructTemplatesToStoresStream(
-    _,
-  ) async {
-    final storesAndTemplates = await Future.wait(
-      (await FMTCRoot.stats.storesAvailable).map(
-        (store) async => (
-          storeName: store.storeName,
-          urlTemplate: await store.metadata.read
-              .then((metadata) => metadata[StoreMetadataKeys.urlTemplate.key])
-        ),
-      ),
-    )
-      ..add((storeName: '(default)', urlTemplate: _defaultUrlTemplate))
-      ..addAll(
-        (sharedPrefs.getStringList(SharedPrefsKeys.customNonStoreUrls.name) ??
-                <String>[])
-            .map((url) => (storeName: '(custom)', urlTemplate: url)),
-      );
-
-    final templateToStores = <String, List<String>>{};
-
-    for (final st in storesAndTemplates) {
-      if (st.urlTemplate == null) continue;
-      (templateToStores[st.urlTemplate!] ??= []).add(st.storeName);
-    }
-
-    enableButtonEvaluatorMap = templateToStores;
-
-    return templateToStores;
+    widget.onSelected!(v ?? _urlTextController.text);
+    _dropdownMenuFocusNode?.unfocus();
   }
 
   List<DropdownMenuEntry<String?>> _constructMenuEntries(
@@ -218,7 +182,7 @@ class _URLSelectorState extends State<URLSelector> {
                             ..remove(e.key),
                         );
 
-                        selectableEntriesManualRefreshStream.add(null);
+                        _selectableEntriesManualRefreshStream.add(null);
                       },
                       icon: const Icon(Icons.delete_outline),
                       tooltip: 'Remove URL from non-store list',
@@ -237,6 +201,55 @@ class _URLSelectorState extends State<URLSelector> {
             enabled: false,
           ),
         );
+
+  Stream<Map<String, List<String>>> _transformToTemplatesToStoresOnTrigger(
+    Stream<void> triggerStream,
+  ) =>
+      triggerStream.asyncMap(
+        (e) async {
+          final storesAndTemplates = await Future.wait(
+            (await FMTCRoot.stats.storesAvailable).map(
+              (s) async => (
+                storeName: s.storeName,
+                urlTemplate: await s.metadata.read.then(
+                  (metadata) => metadata[StoreMetadataKeys.urlTemplate.key],
+                )
+              ),
+            ),
+          )
+            ..add((storeName: '(default)', urlTemplate: _defaultUrlTemplate))
+            ..addAll(
+              (sharedPrefs.getStringList(
+                        SharedPrefsKeys.customNonStoreUrls.name,
+                      ) ??
+                      <String>[])
+                  .map((url) => (storeName: '(custom)', urlTemplate: url)),
+            );
+
+          final templateToStores = <String, List<String>>{};
+
+          for (final st in storesAndTemplates) {
+            if (st.urlTemplate == null) continue;
+            (templateToStores[st.urlTemplate!] ??= []).add(st.storeName);
+          }
+
+          return _enableButtonEvaluatorMap = templateToStores;
+        },
+      ).distinct(mapEquals);
+
+  void _dropdownMenuFocusListener() {
+    if (widget.onFocus != null && _dropdownMenuFocusNode!.hasFocus) {
+      widget.onFocus!();
+    }
+    if (widget.onUnfocus != null && !_dropdownMenuFocusNode!.hasFocus) {
+      widget.onUnfocus!();
+    }
+  }
+
+  void _urlTextControllerListener() {
+    _enableAddUrlButton.value =
+        !_enableButtonEvaluatorMap.containsKey(_urlTextController.text);
+  }
 }
 
 // Inspired by https://stackoverflow.com/a/59773962/11846040

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../shared/state/download_configuration_provider.dart';
@@ -30,11 +31,11 @@ class _ConfirmCancellationDialogState extends State<ConfirmCancellationDialog> {
             FilledButton(
               onPressed: () async {
                 setState(() => isCancelling = true);
-                await context
-                    .read<DownloadConfigurationProvider>()
-                    .selectedStore!
-                    .download
-                    .cancel();
+                await FMTCStore(
+                  context
+                      .read<DownloadConfigurationProvider>()
+                      .selectedStoreName!,
+                ).download.cancel();
                 if (context.mounted) Navigator.of(context).pop(true);
               },
               child: const Text('Cancel download'),

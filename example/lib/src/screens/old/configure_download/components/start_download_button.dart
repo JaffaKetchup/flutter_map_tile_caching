@@ -21,8 +21,8 @@ class StartDownloadButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      Selector<DownloadConfigurationProvider, FMTCStore?>(
-        selector: (context, provider) => provider.selectedStore,
+      Selector<DownloadConfigurationProvider, String?>(
+        selector: (context, provider) => provider.selectedStoreName,
         builder: (context, selectedStore, child) {
           final enabled = selectedStore != null && maxTiles != null;
 
@@ -45,9 +45,10 @@ class StartDownloadButton extends StatelessWidget {
                 final configureDownloadProvider =
                     context.read<DownloadConfigurationProvider>();
 
-                if (!await configureDownloadProvider
-                        .selectedStore!.manage.ready &&
-                    context.mounted) {
+                final selectedStore =
+                    FMTCStore(configureDownloadProvider.selectedStoreName!);
+
+                if (!await selectedStore.manage.ready && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Selected store no longer exists'),
@@ -56,10 +57,8 @@ class StartDownloadButton extends StatelessWidget {
                   return;
                 }
 
-                final urlTemplate = (await configureDownloadProvider
-                    .selectedStore!
-                    .metadata
-                    .read)[StoreMetadataKeys.urlTemplate.key]!;
+                final urlTemplate = (await selectedStore
+                    .metadata.read)[StoreMetadataKeys.urlTemplate.key]!;
 
                 if (!context.mounted) return;
 
@@ -67,9 +66,7 @@ class StartDownloadButton extends StatelessWidget {
                   Navigator.of(context).popAndPushNamed(
                     DownloadPopup.route,
                     arguments: (
-                      downloadProgress: configureDownloadProvider
-                          .selectedStore!.download
-                          .startForeground(
+                      downloadProgress: selectedStore.download.startForeground(
                         region: region.originalRegion.toDownloadable(
                           minZoom: region.minZoom,
                           maxZoom: region.maxZoom,

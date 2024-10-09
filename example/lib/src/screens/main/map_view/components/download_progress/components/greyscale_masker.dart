@@ -1,12 +1,4 @@
-import 'dart:async';
-import 'dart:collection';
-import 'dart:math';
-import 'dart:typed_data';
-
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart' hide Path;
+part of '../download_progress_masker.dart';
 
 class GreyscaleMasker extends SingleChildRenderObjectWidget {
   const GreyscaleMasker({
@@ -16,7 +8,7 @@ class GreyscaleMasker extends SingleChildRenderObjectWidget {
     required this.mapCamera,
     required this.minZoom,
     required this.maxZoom,
-    this.tileSize = 256,
+    required this.tileSize,
   });
 
   final Stream<TileCoordinates> tileCoordinatesStream;
@@ -413,7 +405,7 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
             /*context.canvas.clipRect(Offset.zero & size);
             context.canvas.drawColor(
               Colors.green,
-              BlendMode.modulate,
+              BlendMode.hue,
             );*/
           },
           clipBehavior: Clip.hardEdge,

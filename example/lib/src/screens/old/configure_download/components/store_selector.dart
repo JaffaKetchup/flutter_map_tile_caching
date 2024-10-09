@@ -18,16 +18,16 @@ class _StoreSelectorState extends State<StoreSelector> {
           const Text('Store'),
           const Spacer(),
           IntrinsicWidth(
-            child: Selector<DownloadConfigurationProvider, FMTCStore?>(
-              selector: (context, provider) => provider.selectedStore,
+            child: Selector<DownloadConfigurationProvider, String?>(
+              selector: (context, provider) => provider.selectedStoreName,
               builder: (context, selectedStore, _) =>
                   FutureBuilder<Iterable<FMTCStore>>(
                 future: FMTCRoot.stats.storesAvailable,
                 builder: (context, snapshot) {
                   final items = snapshot.data
                       ?.map(
-                        (e) => DropdownMenuItem<FMTCStore>(
-                          value: e,
+                        (e) => DropdownMenuItem<String>(
+                          value: e.storeName,
                           child: Text(e.storeName),
                         ),
                       )
@@ -38,11 +38,11 @@ class _StoreSelectorState extends State<StoreSelector> {
                           ? 'None Available'
                           : 'None Selected';
 
-                  return DropdownButton<FMTCStore>(
+                  return DropdownButton<String>(
                     items: items,
                     onChanged: (store) => context
                         .read<DownloadConfigurationProvider>()
-                        .selectedStore = store,
+                        .selectedStoreName = store,
                     value: selectedStore,
                     hint: Text(text),
                     padding: const EdgeInsets.only(left: 12),
