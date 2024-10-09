@@ -29,9 +29,6 @@ class DownloadableRegion<R extends BaseRegion> {
   }
 
   /// A copy of the [BaseRegion] used to form this object
-  ///
-  /// To make decisions based on the type of this region, prefer [when] over
-  /// switching on [R] manually.
   final R originalRegion;
 
   /// The minimum zoom level to fetch tiles for
@@ -75,6 +72,13 @@ class DownloadableRegion<R extends BaseRegion> {
       );
 
   /// Output a value of type [T] dependent on [originalRegion] and its type [R]
+  ///
+  /// Requires all region types to have a defined handler. See [maybeWhen] for
+  /// the equivalent where this is not required.
+  @Deprecated(
+    'Prefer using a pattern matching selection (such as `if case` or '
+    '`switch`). This will be removed in a future version.',
+  )
   T when<T>({
     required T Function(DownloadableRegion<RectangleRegion> rectangle)
         rectangle,
@@ -82,25 +86,54 @@ class DownloadableRegion<R extends BaseRegion> {
     required T Function(DownloadableRegion<LineRegion> line) line,
     required T Function(DownloadableRegion<CustomPolygonRegion> customPolygon)
         customPolygon,
+    required T Function(DownloadableRegion<MultiRegion> multi) multi,
+  }) =>
+      maybeWhen(
+        rectangle: rectangle,
+        circle: circle,
+        line: line,
+        customPolygon: customPolygon,
+        multi: multi,
+      )!;
+
+  /// Output a value of type [T] dependent on [originalRegion] and its type [R]
+  ///
+  /// If the specified method is not defined for the type of region which this
+  /// region is, `null` will be returned.
+  @Deprecated(
+    'Prefer using a pattern matching selection (such as `if case` or '
+    '`switch`). This will be removed in a future version.',
+  )
+  T? maybeWhen<T>({
+    T Function(DownloadableRegion<RectangleRegion> rectangle)? rectangle,
+    T Function(DownloadableRegion<CircleRegion> circle)? circle,
+    T Function(DownloadableRegion<LineRegion> line)? line,
+    T Function(DownloadableRegion<CustomPolygonRegion> customPolygon)?
+        customPolygon,
+    T Function(DownloadableRegion<MultiRegion> multi)? multi,
   }) =>
       switch (originalRegion) {
-        RectangleRegion() => rectangle(_cast()),
-        CircleRegion() => circle(_cast()),
-        LineRegion() => line(_cast()),
-        CustomPolygonRegion() => customPolygon(_cast()),
+        RectangleRegion() => rectangle?.call(_cast()),
+        CircleRegion() => circle?.call(_cast()),
+        LineRegion() => line?.call(_cast()),
+        CustomPolygonRegion() => customPolygon?.call(_cast()),
+        MultiRegion() => multi?.call(_cast()),
       };
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is DownloadableRegion &&
-          other.originalRegion == originalRegion &&
-          other.minZoom == minZoom &&
-          other.maxZoom == maxZoom &&
-          other.options == options &&
-          other.start == start &&
-          other.end == end &&
-          other.crs == crs);
+  bool operator ==(Object other) {
+    final e = identical(this, other) ||
+        (other is DownloadableRegion &&
+            other.originalRegion == originalRegion &&
+            other.minZoom == minZoom &&
+            other.maxZoom == maxZoom &&
+            other.options == options &&
+            other.start == start &&
+            other.end == end &&
+            other.crs == crs);
+    print((other as DownloadableRegion).options == options);
+    return e;
+  }
 
   @override
   int get hashCode => Object.hashAllUnordered([
