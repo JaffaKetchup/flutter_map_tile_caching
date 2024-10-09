@@ -207,6 +207,7 @@ Future<Uint8List> _internalGetBytes({
   final writeTileToSpecified = provider.storeNames.entries
       .where(
         (e) => switch (e.value) {
+          null => false,
           BrowseStoreStrategy.read => false,
           BrowseStoreStrategy.readUpdate =>
             intersectedExistingStores.contains(e.key),

@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
@@ -62,7 +65,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
               .then((e) => e[StoreMetadataKeys.urlTemplate.key]),
       };
     },
-  );
+  ).distinct(mapEquals);
 
   final _testingCoordsList = [
     //TileCoordinates(2212, 1468, 12),
@@ -336,21 +339,22 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
           builder: (context, provider, _) {
             final urlTemplate = provider.urlTemplate;
 
-            final compiledStoreNames = Map.fromEntries(
-              stores.entries
-                  .where((e) => e.value == urlTemplate)
-                  .map((e) => e.key)
-                  .map((e) {
-                final internalBehaviour = provider.currentStores[e];
+            final compiledStoreNames =
+                Map<String, BrowseStoreStrategy?>.fromEntries([
+              ...stores.entries.where((e) => e.value == urlTemplate).map((e) {
+                final internalBehaviour = provider.currentStores[e.key];
                 final behaviour = internalBehaviour == null
                     ? provider.inheritableBrowseStoreStrategy
                     : internalBehaviour.toBrowseStoreStrategy(
                         provider.inheritableBrowseStoreStrategy,
                       );
                 if (behaviour == null) return null;
-                return MapEntry(e, behaviour);
+                return MapEntry(e.key, behaviour);
               }).nonNulls,
-            );
+              ...stores.entries
+                  .where((e) => e.value != urlTemplate)
+                  .map((e) => MapEntry(e.key, null)),
+            ]);
 
             final attribution = RichAttributionWidget(
               alignment: AttributionAlignment.bottomLeft,
@@ -435,21 +439,6 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                   ),
                 PolygonLayer(
                   polygons: [
-                    Polygon(
-                      points: [
-                        LatLng(-90, 180),
-                        LatLng(90, 180),
-                        LatLng(90, -180),
-                        LatLng(-90, -180),
-                      ],
-                      holePointsList: [
-                        const CircleRegion(
-                          LatLng(45.3052535669648, 14.476223064038985),
-                          6,
-                        ).toOutline().toList(growable: false),
-                      ],
-                      color: Colors.black,
-                    ),
                     Polygon(
                       points: [
                         LatLng(-90, 180),

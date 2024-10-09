@@ -133,10 +133,10 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
   /// very difficult to percieve with the eye, this is acceptable, and improves
   /// performance drastically. The ideal amount is calculated and rounded to the
   /// nearest level.
-  static const _greyscaleLevelsCount = 25;
   final Map<int, Path> _greyscalePathCache = Map.unmodifiable({
     for (int i = 0; i <= _greyscaleLevelsCount; i++) i: Path(),
   });
+  static const _greyscaleLevelsCount = 25;
 
   @override
   void dispose() {
@@ -430,7 +430,7 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
 
 /// See [_GreyscaleMaskerRenderer._tileMapping] for documentation
 ///
-/// Is immutable to improve performance.
+/// Is mutable to improve performance.
 class _TileMappingValue {
   _TileMappingValue.newTile({
     required this.nwCoord,

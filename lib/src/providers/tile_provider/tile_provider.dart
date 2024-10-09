@@ -80,10 +80,9 @@ class FMTCTileProvider extends TileProvider {
   ///
   /// Stores not included will not be used by default. However,
   /// [otherStoresStrategy] determines whether & how all other unspecified
-  /// stores should be used.
-  ///
-  // TODO: Accept null values to exempt from [otherStoresStrategy]
-  final Map<String, BrowseStoreStrategy> storeNames;
+  /// stores should be used. Stores included but with a `null` value will be
+  /// exempt from [otherStoresStrategy].
+  final Map<String, BrowseStoreStrategy?> storeNames;
 
   /// The behaviour of all other stores not specified in [storeNames]
   ///
@@ -95,6 +94,9 @@ class FMTCTileProvider extends TileProvider {
   /// Also see [useOtherStoresAsFallbackOnly] for whether these unspecified
   /// stores should only be used as a last resort or in addition to the specified
   /// stores as normal.
+  ///
+  /// Stores specified in [storeNames] but associated with a `null` value will
+  /// not not gain this behaviour.
   final BrowseStoreStrategy? otherStoresStrategy;
 
   /// Determines whether the network or cache is preferred during browse

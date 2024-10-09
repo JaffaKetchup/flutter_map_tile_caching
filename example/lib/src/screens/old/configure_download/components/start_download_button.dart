@@ -6,8 +6,8 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../shared/misc/store_metadata_keys.dart';
-import '../../download/download.dart';
 import '../../../../shared/state/download_configuration_provider.dart';
+import '../../download/download.dart';
 
 class StartDownloadButton extends StatelessWidget {
   const StartDownloadButton({
