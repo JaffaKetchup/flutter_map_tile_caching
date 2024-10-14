@@ -141,7 +141,7 @@ class TileEvent {
 
   final bool _wasBufferReset;
 
-  TileEvent _repeat() => TileEvent._(
+  TileEvent _copyWithRepeat() => TileEvent._(
         result,
         url: url,
         coordinates: coordinates,

@@ -34,13 +34,13 @@ class ObjectBoxRecoveryRegion {
   /// If representing a [MultiRegion], then [multiLinkedRegions] must be filled
   /// manually.
   ObjectBoxRecoveryRegion.fromRegion({required BaseRegion region})
-      : typeId = region.when(
-          rectangle: (_) => 0,
-          circle: (_) => 1,
-          line: (_) => 2,
-          customPolygon: (_) => 3,
-          multi: (_) => 4,
-        ),
+      : typeId = switch (region) {
+          RectangleRegion() => 0,
+          CircleRegion() => 1,
+          LineRegion() => 2,
+          CustomPolygonRegion() => 3,
+          MultiRegion() => 4,
+        },
         rectNwLat =
             region is RectangleRegion ? region.bounds.northWest.latitude : null,
         rectNwLng = region is RectangleRegion

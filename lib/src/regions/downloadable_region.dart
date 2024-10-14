@@ -75,10 +75,6 @@ class DownloadableRegion<R extends BaseRegion> {
   ///
   /// Requires all region types to have a defined handler. See [maybeWhen] for
   /// the equivalent where this is not required.
-  @Deprecated(
-    'Prefer using a pattern matching selection (such as `if case` or '
-    '`switch`). This will be removed in a future version.',
-  )
   T when<T>({
     required T Function(DownloadableRegion<RectangleRegion> rectangle)
         rectangle,
@@ -100,10 +96,6 @@ class DownloadableRegion<R extends BaseRegion> {
   ///
   /// If the specified method is not defined for the type of region which this
   /// region is, `null` will be returned.
-  @Deprecated(
-    'Prefer using a pattern matching selection (such as `if case` or '
-    '`switch`). This will be removed in a future version.',
-  )
   T? maybeWhen<T>({
     T Function(DownloadableRegion<RectangleRegion> rectangle)? rectangle,
     T Function(DownloadableRegion<CircleRegion> circle)? circle,
@@ -121,19 +113,16 @@ class DownloadableRegion<R extends BaseRegion> {
       };
 
   @override
-  bool operator ==(Object other) {
-    final e = identical(this, other) ||
-        (other is DownloadableRegion &&
-            other.originalRegion == originalRegion &&
-            other.minZoom == minZoom &&
-            other.maxZoom == maxZoom &&
-            other.options == options &&
-            other.start == start &&
-            other.end == end &&
-            other.crs == crs);
-    print((other as DownloadableRegion).options == options);
-    return e;
-  }
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DownloadableRegion &&
+          other.originalRegion == originalRegion &&
+          other.minZoom == minZoom &&
+          other.maxZoom == maxZoom &&
+          other.options == options && //! Will never be equal
+          other.start == start &&
+          other.end == end &&
+          other.crs == crs);
 
   @override
   int get hashCode => Object.hashAllUnordered([

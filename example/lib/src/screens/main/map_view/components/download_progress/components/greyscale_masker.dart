@@ -246,18 +246,12 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
 
         final _TileMappingValue tmv;
         if (_tileMapping[intermediateZoomTile] case final existingTMV?) {
-          try {
-            assert(
-              existingTMV.subtilesCount < maxSubtilesCount,
-              'Existing subtiles count must be smaller than max subtiles count '
-              '($intermediateZoomTile: ${existingTMV.subtilesCount} !< '
-              '$maxSubtilesCount)',
-            );
-          } catch (e) {
-            print(tile);
-            print(intermediateZoomTile);
-            rethrow;
-          }
+          assert(
+            existingTMV.subtilesCount < maxSubtilesCount,
+            'Existing subtiles count must be smaller than max subtiles count '
+            '($intermediateZoomTile: ${existingTMV.subtilesCount} !< '
+            '$maxSubtilesCount)',
+          );
 
           existingTMV.subtilesCount += 1;
           tmv = existingTMV;

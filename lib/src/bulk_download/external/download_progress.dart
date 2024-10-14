@@ -201,7 +201,7 @@ class DownloadProgress {
     required int? rateLimit,
   }) =>
       DownloadProgress.__(
-        latestTileEvent: latestTileEvent._repeat(),
+        latestTileEvent: latestTileEvent._copyWithRepeat(),
         cachedTiles: cachedTiles,
         cachedSize: cachedSize,
         bufferedTiles: bufferedTiles,
@@ -225,38 +225,40 @@ class DownloadProgress {
     required double tilesPerSecond,
     required int? rateLimit,
     bool isComplete = false,
-  }) =>
-      DownloadProgress.__(
-        latestTileEvent: newTileEvent ?? latestTileEvent,
-        cachedTiles: newTileEvent != null &&
-                newTileEvent.result.category == TileEventResultCategory.cached
-            ? cachedTiles + 1
-            : cachedTiles,
-        cachedSize: newTileEvent != null &&
-                newTileEvent.result.category == TileEventResultCategory.cached
-            ? cachedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
-            : cachedSize,
-        bufferedTiles: newBufferedTiles,
-        bufferedSize: newBufferedSize,
-        skippedTiles: newTileEvent != null &&
-                newTileEvent.result.category == TileEventResultCategory.skipped
-            ? skippedTiles + 1
-            : skippedTiles,
-        skippedSize: newTileEvent != null &&
-                newTileEvent.result.category == TileEventResultCategory.skipped
-            ? skippedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
-            : skippedSize,
-        failedTiles: newTileEvent != null &&
-                newTileEvent.result.category == TileEventResultCategory.failed
-            ? failedTiles + 1
-            : failedTiles,
-        maxTiles: maxTiles,
-        elapsedDuration: newDuration,
-        tilesPerSecond: tilesPerSecond,
-        isTPSArtificiallyCapped:
-            tilesPerSecond >= (rateLimit ?? double.infinity) - 0.5,
-        isComplete: isComplete,
-      );
+  }) {
+    final isNewTile = newTileEvent != null;
+    return DownloadProgress.__(
+      latestTileEvent: newTileEvent ?? latestTileEvent._copyWithRepeat(),
+      cachedTiles: isNewTile &&
+              newTileEvent.result.category == TileEventResultCategory.cached
+          ? cachedTiles + 1
+          : cachedTiles,
+      cachedSize: isNewTile &&
+              newTileEvent.result.category == TileEventResultCategory.cached
+          ? cachedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
+          : cachedSize,
+      bufferedTiles: newBufferedTiles,
+      bufferedSize: newBufferedSize,
+      skippedTiles: isNewTile &&
+              newTileEvent.result.category == TileEventResultCategory.skipped
+          ? skippedTiles + 1
+          : skippedTiles,
+      skippedSize: isNewTile &&
+              newTileEvent.result.category == TileEventResultCategory.skipped
+          ? skippedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
+          : skippedSize,
+      failedTiles: isNewTile &&
+              newTileEvent.result.category == TileEventResultCategory.failed
+          ? failedTiles + 1
+          : failedTiles,
+      maxTiles: maxTiles,
+      elapsedDuration: newDuration,
+      tilesPerSecond: tilesPerSecond,
+      isTPSArtificiallyCapped:
+          tilesPerSecond >= (rateLimit ?? double.infinity) - 0.5,
+      isComplete: isComplete,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>

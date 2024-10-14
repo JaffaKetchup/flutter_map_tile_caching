@@ -122,7 +122,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
     ),
   ];*/
 
-  Stream<TileCoordinates>? _testingDownloadTileCoordsStream;
+  Stream<DownloadProgress>? _testingDownloadTileCoordsStream;
 
   bool _isInRegionSelectMode() =>
       widget.mode == MapViewMode.downloadRegion &&
@@ -149,15 +149,13 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
         if (!_isInRegionSelectMode()) {
           setState(
             () => _testingDownloadTileCoordsStream =
-                const FMTCStore('Local Tile Server')
-                    .download
-                    .startForeground(
+                const FMTCStore('Local Tile Server').download.startForeground(
                       region: const CircleRegion(
                         LatLng(45.3052535669648, 14.476223064038985),
                         5,
                       ).toDownloadable(
-                        minZoom: 11,
-                        maxZoom: 16,
+                        minZoom: 0,
+                        maxZoom: 12,
                         options: TileLayer(
                           //urlTemplate: 'http://127.0.0.1:7070/{z}/{x}/{y}',
                           urlTemplate:
@@ -172,11 +170,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                         keys: ['access_token'],
                       ),
                       rateLimit: 20,
-                    )
-                    .map(
-                      (event) => event.latestTileEvent.coordinates,
-                    )
-                    .asBroadcastStream(),
+                    ),
           );
           return;
         }
@@ -416,13 +410,13 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
               options: mapOptions,
               children: [
                 DownloadProgressMasker(
-                  tileCoordinatesStream: _testingDownloadTileCoordsStream,
+                  downloadProgressStream: _testingDownloadTileCoordsStream,
                   /*tileCoordinates: Stream.periodic(
                         const Duration(seconds: 5),
                         _testingCoordsList.elementAtOrNull,
                       ).whereNotNull(),*/
-                  minZoom: 11,
-                  maxZoom: 16,
+                  minZoom: 0,
+                  maxZoom: 12,
                   child: tileLayer,
                 ),
                 PolygonLayer(
