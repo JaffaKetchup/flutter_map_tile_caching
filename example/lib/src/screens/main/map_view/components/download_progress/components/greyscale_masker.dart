@@ -409,8 +409,6 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
 
       layerHandleIndex++;
     }
-
-    context.canvas.drawCircle(offset, 100, Paint()..color = Colors.blue);
   }
 }
 

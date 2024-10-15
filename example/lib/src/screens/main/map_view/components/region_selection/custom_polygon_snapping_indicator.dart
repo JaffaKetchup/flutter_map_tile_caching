@@ -6,22 +6,20 @@ import 'package:provider/provider.dart';
 import '../../../../../shared/state/region_selection_provider.dart';
 
 class CustomPolygonSnappingIndicator extends StatelessWidget {
-  const CustomPolygonSnappingIndicator({
-    super.key,
-  });
+  const CustomPolygonSnappingIndicator({super.key});
 
   @override
   Widget build(BuildContext context) {
     final coords = context.select<RegionSelectionProvider, List<LatLng>>(
       (p) => p.currentConstructingCoordinates,
     );
+    final customPolygonSnap = context.select<RegionSelectionProvider, bool>(
+      (p) => p.customPolygonSnap,
+    );
 
     return MarkerLayer(
       markers: [
-        if (coords.isNotEmpty &&
-            context.select<RegionSelectionProvider, bool>(
-              (p) => p.customPolygonSnap,
-            ))
+        if (coords.isNotEmpty && customPolygonSnap)
           Marker(
             height: 32,
             width: 32,
@@ -32,12 +30,7 @@ class CustomPolygonSnappingIndicator extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(width: 2),
               ),
-              child: const Center(
-                child: Icon(
-                  Icons.auto_fix_normal,
-                  size: 18,
-                ),
-              ),
+              child: const Center(child: Icon(Icons.auto_fix_normal, size: 18)),
             ),
           ),
       ],

@@ -45,7 +45,6 @@ class _ConfigOptionsState extends State<ConfigOptions> {
               Expanded(
                 child: RangeSlider(
                   values: RangeValues(minZoom.toDouble(), maxZoom.toDouble()),
-                  labels: RangeLabels(minZoom.toString(), maxZoom.toString()),
                   max: 20,
                   divisions: 20,
                   onChanged: (r) =>
@@ -53,6 +52,10 @@ class _ConfigOptionsState extends State<ConfigOptions> {
                         ..minZoom = r.start.toInt()
                         ..maxZoom = r.end.toInt(),
                 ),
+              ),
+              Text(
+                '${minZoom.toString().padLeft(2, '0')} - '
+                '${maxZoom.toString().padLeft(2, '0')}',
               ),
             ],
           ),
@@ -67,13 +70,19 @@ class _ConfigOptionsState extends State<ConfigOptions> {
               Expanded(
                 child: Slider(
                   value: parallelThreads.toDouble(),
-                  label: '$parallelThreads threads',
                   min: 1,
                   max: 10,
                   divisions: 9,
                   onChanged: (r) => context
                       .read<DownloadConfigurationProvider>()
                       .parallelThreads = r.toInt(),
+                ),
+              ),
+              SizedBox(
+                width: 71,
+                child: Text(
+                  '$parallelThreads threads',
+                  textAlign: TextAlign.end,
                 ),
               ),
             ],
@@ -90,12 +99,18 @@ class _ConfigOptionsState extends State<ConfigOptions> {
                 child: Slider(
                   min: 1,
                   value: rateLimit.toDouble(),
-                  label: '$rateLimit tps',
                   max: 200,
                   divisions: 199,
                   onChanged: (r) => context
                       .read<DownloadConfigurationProvider>()
                       .rateLimit = r.toInt(),
+                ),
+              ),
+              SizedBox(
+                width: 71,
+                child: Text(
+                  '$rateLimit tps',
+                  textAlign: TextAlign.end,
                 ),
               ),
             ],
@@ -111,14 +126,18 @@ class _ConfigOptionsState extends State<ConfigOptions> {
               Expanded(
                 child: Slider(
                   value: maxBufferLength.toDouble(),
-                  label: maxBufferLength == 0
-                      ? 'Disabled'
-                      : '$maxBufferLength tiles',
                   max: 1000,
                   divisions: 1000,
                   onChanged: (r) => context
                       .read<DownloadConfigurationProvider>()
                       .maxBufferLength = r.toInt(),
+                ),
+              ),
+              SizedBox(
+                width: 71,
+                child: Text(
+                  maxBufferLength == 0 ? 'Disabled' : '$maxBufferLength tiles',
+                  textAlign: TextAlign.end,
                 ),
               ),
             ],

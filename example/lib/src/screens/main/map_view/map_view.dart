@@ -154,12 +154,12 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                         LatLng(45.3052535669648, 14.476223064038985),
                         5,
                       ).toDownloadable(
-                        minZoom: 0,
-                        maxZoom: 12,
+                        minZoom: 5,
+                        maxZoom: 15,
                         options: TileLayer(
-                          //urlTemplate: 'http://127.0.0.1:7070/{z}/{x}/{y}',
-                          urlTemplate:
-                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          urlTemplate: 'http://0.0.0.0:7070/{z}/{x}/{y}',
+                          //urlTemplate:
+                          //    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         ),
                       ),
                       parallelThreads: 3,
@@ -411,15 +411,11 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
               children: [
                 DownloadProgressMasker(
                   downloadProgressStream: _testingDownloadTileCoordsStream,
-                  /*tileCoordinates: Stream.periodic(
-                        const Duration(seconds: 5),
-                        _testingCoordsList.elementAtOrNull,
-                      ).whereNotNull(),*/
-                  minZoom: 0,
-                  maxZoom: 12,
+                  minZoom: 5,
+                  maxZoom: 15,
                   child: tileLayer,
                 ),
-                PolygonLayer(
+                /*PolygonLayer(
                   polygons: [
                     Polygon(
                       points: [
@@ -437,7 +433,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                       color: Colors.black.withAlpha(255 ~/ 2),
                     ),
                   ],
-                ),
+                ),*/
                 if (widget.mode == MapViewMode.downloadRegion) ...[
                   const RegionShape(),
                   const CustomPolygonSnappingIndicator(),
