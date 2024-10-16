@@ -3,23 +3,13 @@
 
 part of '../../flutter_map_tile_caching.dart';
 
-/// A mixture between [BaseRegion] and [DownloadableRegion] containing all the
-/// salvaged data from a recovered download
+/// A wrapper containing recovery & some downloadable region information, around
+/// a [DownloadableRegion]
 ///
 /// See [RootRecovery] for information about the recovery system.
-///
-/// The availability of [bounds], [line], [center] & [radius] depend on the
-/// represented type of the recovered region. Use [toDownloadable] to restore a
-/// valid [DownloadableRegion].
-class RecoveredRegion {
-  /// A mixture between [BaseRegion] and [DownloadableRegion] containing all the
-  /// salvaged data from a recovered download
-  ///
-  /// See [RootRecovery] for information about the recovery system.
-  ///
-  /// The availability of [bounds], [line], [center] & [radius] depend on the
-  /// represented type of the recovered region. Use [toDownloadable] to restore
-  /// a valid [DownloadableRegion].
+class RecoveredRegion<R extends BaseRegion> {
+  /// Create a wrapper containing recovery information around a
+  /// [DownloadableRegion]
   @internal
   RecoveredRegion({
     required this.id,
@@ -29,10 +19,7 @@ class RecoveredRegion {
     required this.maxZoom,
     required this.start,
     required this.end,
-    required this.bounds,
-    required this.center,
-    required this.line,
-    required this.radius,
+    required this.region,
   });
 
   /// A unique ID created for every bulk download operation
@@ -62,27 +49,8 @@ class RecoveredRegion {
   /// region, as determined by [StoreDownload.check].
   final int end;
 
-  /// Corresponds to [RectangleRegion.bounds]
-  final LatLngBounds? bounds;
-
-  /// Corrresponds to [LineRegion.line] & [CustomPolygonRegion.outline]
-  final List<LatLng>? line;
-
-  /// Corrresponds to [CircleRegion.center]
-  final LatLng? center;
-
-  /// Corrresponds to [LineRegion.radius] & [CircleRegion.radius]
-  final double? radius;
-
-  /// Convert this region into a [BaseRegion]
-  ///
-  /// Determine which type of [BaseRegion] using [BaseRegion.when].
-  BaseRegion toRegion() {
-    if (bounds != null) return RectangleRegion(bounds!);
-    if (center != null) return CircleRegion(center!, radius!);
-    if (line != null && radius != null) return LineRegion(line!, radius!);
-    return CustomPolygonRegion(line!);
-  }
+  /// The [BaseRegion] which was recovered
+  final R region;
 
   /// Convert this region into a [DownloadableRegion]
   DownloadableRegion toDownloadable(
@@ -90,7 +58,7 @@ class RecoveredRegion {
     Crs crs = const Epsg3857(),
   }) =>
       DownloadableRegion._(
-        toRegion(),
+        region,
         minZoom: minZoom,
         maxZoom: maxZoom,
         options: options,
