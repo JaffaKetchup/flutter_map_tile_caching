@@ -27,6 +27,12 @@ class _ConfigOptionsState extends State<ConfigOptions> {
         context.select<DownloadConfigurationProvider, int>((p) => p.rateLimit);
     final maxBufferLength = context
         .select<DownloadConfigurationProvider, int>((p) => p.maxBufferLength);
+    final skipExistingTiles =
+        context.select<DownloadConfigurationProvider, bool>(
+      (p) => p.skipExistingTiles,
+    );
+    final skipSeaTiles = context
+        .select<DownloadConfigurationProvider, bool>((p) => p.skipSeaTiles);
 
     return SingleChildScrollView(
       child: Column(
@@ -151,7 +157,12 @@ class _ConfigOptionsState extends State<ConfigOptions> {
               const SizedBox(width: 12),
               const Text('Skip Existing Tiles'),
               const Spacer(),
-              Switch.adaptive(value: true, onChanged: (value) {}),
+              Switch.adaptive(
+                value: skipExistingTiles,
+                onChanged: (v) => context
+                    .read<DownloadConfigurationProvider>()
+                    .skipExistingTiles = v,
+              ),
             ],
           ),
           Row(
@@ -162,7 +173,12 @@ class _ConfigOptionsState extends State<ConfigOptions> {
               const SizedBox(width: 12),
               const Text('Skip Sea Tiles'),
               const Spacer(),
-              Switch.adaptive(value: true, onChanged: (value) {}),
+              Switch.adaptive(
+                value: skipSeaTiles,
+                onChanged: (v) => context
+                    .read<DownloadConfigurationProvider>()
+                    .skipSeaTiles = v,
+              ),
             ],
           ),
         ],

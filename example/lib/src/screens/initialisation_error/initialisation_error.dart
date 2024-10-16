@@ -78,7 +78,7 @@ class InitialisationError extends StatelessWidget {
                       await dir.delete(recursive: true);
                     } on FileSystemException {
                       showFailure();
-                      rethrow;
+                      return;
                     }
 
                     runApp(const SizedBox.shrink()); // Destroy current app

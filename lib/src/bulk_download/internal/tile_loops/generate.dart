@@ -6,10 +6,6 @@ part of 'shared.dart';
 /// A set of methods for each type of [BaseRegion] that generates the coordinates
 /// of every tile within the specified [DownloadableRegion]
 ///
-/// Each method should handle a [DownloadableRegion] with a specific generic type
-/// [BaseRegion]. If a method is passed a non-compatible region, it is expected
-/// to throw a `CastError`.
-///
 /// These methods must be run within seperate isolates, as they do heavy,
 /// potentially lengthy computation. They do perform multiple-communication,
 /// sending a new coordinate after they recieve a request message only. They will

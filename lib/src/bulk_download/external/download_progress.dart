@@ -9,7 +9,7 @@ part of '../../../flutter_map_tile_caching.dart';
 @immutable
 class DownloadProgress {
   const DownloadProgress.__({
-    required TileEvent? latestTileEvent,
+    required this.latestTileEvent,
     required this.cachedTiles,
     required this.cachedSize,
     required this.bufferedTiles,
@@ -22,7 +22,7 @@ class DownloadProgress {
     required this.tilesPerSecond,
     required this.isTPSArtificiallyCapped,
     required this.isComplete,
-  }) : _latestTileEvent = latestTileEvent;
+  });
 
   factory DownloadProgress._initial({required int maxTiles}) =>
       DownloadProgress.__(
@@ -44,8 +44,7 @@ class DownloadProgress {
   /// The result of the latest attempted tile
   ///
   /// {@macro fmtc.tileevent.extraConsiderations}
-  TileEvent get latestTileEvent => _latestTileEvent!;
-  final TileEvent? _latestTileEvent;
+  final TileEvent? latestTileEvent;
 
   /// The number of new tiles successfully downloaded and in the tile buffer or
   /// cached
@@ -201,7 +200,7 @@ class DownloadProgress {
     required int? rateLimit,
   }) =>
       DownloadProgress.__(
-        latestTileEvent: latestTileEvent._copyWithRepeat(),
+        latestTileEvent: latestTileEvent?._copyWithRepeat(),
         cachedTiles: cachedTiles,
         cachedSize: cachedSize,
         bufferedTiles: bufferedTiles,
@@ -228,7 +227,7 @@ class DownloadProgress {
   }) {
     final isNewTile = newTileEvent != null;
     return DownloadProgress.__(
-      latestTileEvent: newTileEvent ?? latestTileEvent._copyWithRepeat(),
+      latestTileEvent: newTileEvent,
       cachedTiles: isNewTile &&
               newTileEvent.result.category == TileEventResultCategory.cached
           ? cachedTiles + 1
@@ -264,7 +263,7 @@ class DownloadProgress {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is DownloadProgress &&
-          _latestTileEvent == other._latestTileEvent &&
+          latestTileEvent == other.latestTileEvent &&
           cachedTiles == other.cachedTiles &&
           cachedSize == other.cachedSize &&
           bufferedTiles == other.bufferedTiles &&
@@ -280,7 +279,7 @@ class DownloadProgress {
 
   @override
   int get hashCode => Object.hashAllUnordered([
-        _latestTileEvent,
+        latestTileEvent,
         cachedTiles,
         cachedSize,
         bufferedTiles,

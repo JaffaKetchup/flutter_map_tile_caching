@@ -39,8 +39,11 @@ class _DownloadProgressMaskerState extends State<DownloadProgressMasker> {
         child: GreyscaleMasker(
           mapCamera: MapCamera.of(context),
           tileCoordinatesStream: dps
-              .where((e) => !e.latestTileEvent.isRepeat)
-              .map((e) => e.latestTileEvent.coordinates),
+              .where(
+                (e) =>
+                    e.latestTileEvent != null && !e.latestTileEvent!.isRepeat,
+              )
+              .map((e) => e.latestTileEvent!.coordinates),
           minZoom: widget.minZoom,
           maxZoom: widget.maxZoom,
           tileSize: widget.tileSize,

@@ -4,7 +4,9 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../../../../shared/misc/store_metadata_keys.dart';
 import '../../../../../../../shared/state/download_configuration_provider.dart';
+import '../../../../../../../shared/state/download_provider.dart';
 import '../../../../../../../shared/state/region_selection_provider.dart';
 
 class ConfirmationPanel extends StatefulWidget {
@@ -15,16 +17,23 @@ class ConfirmationPanel extends StatefulWidget {
 }
 
 class _ConfirmationPanelState extends State<ConfirmationPanel> {
-  DownloadableRegion<MultiRegion>? _prevDownloadableRegion;
+  DownloadableRegion<MultiRegion>? _prevTileCountableRegion;
   late Future<int> _tileCount;
 
-  void _updateTileCount() {
-    _tileCount = const FMTCStore('').download.check(_prevDownloadableRegion!);
-    setState(() {});
-  }
+  bool _loadingDownloader = false;
 
   @override
   Widget build(BuildContext context) {
+    final regions = context
+        .select<RegionSelectionProvider, Map<BaseRegion, HSLColor>>(
+          (p) => p.constructedRegions,
+        )
+        .keys
+        .toList(growable: false);
+    final minZoom =
+        context.select<DownloadConfigurationProvider, int>((p) => p.minZoom);
+    final maxZoom =
+        context.select<DownloadConfigurationProvider, int>((p) => p.maxZoom);
     final startTile =
         context.select<DownloadConfigurationProvider, int>((p) => p.startTile);
     final endTile =
@@ -35,31 +44,21 @@ class _ConfirmationPanelState extends State<ConfirmationPanel> {
             ) !=
             null;
 
-    // Not suitable for download!
-    final downloadableRegion = MultiRegion(
-      context
-          .select<RegionSelectionProvider, Map<BaseRegion, HSLColor>>(
-            (p) => p.constructedRegions,
-          )
-          .keys
-          .toList(growable: false),
-    ).toDownloadable(
-      minZoom:
-          context.select<DownloadConfigurationProvider, int>((p) => p.minZoom),
-      maxZoom:
-          context.select<DownloadConfigurationProvider, int>((p) => p.maxZoom),
+    final tileCountableRegion = MultiRegion(regions).toDownloadable(
+      minZoom: minZoom,
+      maxZoom: maxZoom,
       start: startTile,
       end: endTile,
       options: TileLayer(),
     );
-    if (_prevDownloadableRegion == null ||
-        downloadableRegion.originalRegion !=
-            _prevDownloadableRegion!.originalRegion ||
-        downloadableRegion.minZoom != _prevDownloadableRegion!.minZoom ||
-        downloadableRegion.maxZoom != _prevDownloadableRegion!.maxZoom ||
-        downloadableRegion.start != _prevDownloadableRegion!.start ||
-        downloadableRegion.end != _prevDownloadableRegion!.end) {
-      _prevDownloadableRegion = downloadableRegion;
+    if (_prevTileCountableRegion == null ||
+        tileCountableRegion.originalRegion !=
+            _prevTileCountableRegion!.originalRegion ||
+        tileCountableRegion.minZoom != _prevTileCountableRegion!.minZoom ||
+        tileCountableRegion.maxZoom != _prevTileCountableRegion!.maxZoom ||
+        tileCountableRegion.start != _prevTileCountableRegion!.start ||
+        tileCountableRegion.end != _prevTileCountableRegion!.end) {
+      _prevTileCountableRegion = tileCountableRegion;
       _updateTileCount();
     }
 
@@ -179,13 +178,71 @@ class _ConfirmationPanelState extends State<ConfirmationPanel> {
             height: 46,
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: !hasSelectedStoreName ? null : () {},
-              label: const Text('Start Download'),
-              icon: const Icon(Icons.download),
+              onPressed: !hasSelectedStoreName || _loadingDownloader
+                  ? null
+                  : _startDownload,
+              label: _loadingDownloader
+                  ? const SizedBox.square(
+                      dimension: 24,
+                      child: CircularProgressIndicator.adaptive(),
+                    )
+                  : const Text('Start Download'),
+              icon: _loadingDownloader ? null : const Icon(Icons.download),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _updateTileCount() {
+    _tileCount = const FMTCStore('').download.check(_prevTileCountableRegion!);
+    setState(() {});
+  }
+
+  Future<void> _startDownload() async {
+    setState(() => _loadingDownloader = true);
+
+    final downloadingProvider = context.read<DownloadingProvider>();
+    final regionSelection = context.read<RegionSelectionProvider>();
+    final downloadConfiguration = context.read<DownloadConfigurationProvider>();
+
+    final store = FMTCStore(downloadConfiguration.selectedStoreName!);
+    final urlTemplate =
+        (await store.metadata.read)[StoreMetadataKeys.urlTemplate.key];
+
+    if (!mounted) return;
+
+    final downloadableRegion = MultiRegion(
+      regionSelection.constructedRegions.keys.toList(growable: false),
+    ).toDownloadable(
+      minZoom: downloadConfiguration.minZoom,
+      maxZoom: downloadConfiguration.maxZoom,
+      start: downloadConfiguration.startTile,
+      end: downloadConfiguration.endTile,
+      options: TileLayer(
+        urlTemplate: urlTemplate,
+        userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
+      ),
+    );
+
+    final downloadStream = store.download.startForeground(
+      region: downloadableRegion,
+      parallelThreads: downloadConfiguration.parallelThreads,
+      maxBufferLength: downloadConfiguration.maxBufferLength,
+      skipExistingTiles: downloadConfiguration.skipExistingTiles,
+      skipSeaTiles: downloadConfiguration.skipSeaTiles,
+      rateLimit: downloadConfiguration.rateLimit,
+    );
+
+    downloadingProvider.assignDownload(
+      storeName: downloadConfiguration.selectedStoreName!,
+      downloadableRegion: downloadableRegion,
+      stream: downloadStream,
+    );
+
+    // The downloading view is switched to by `assignDownload`, when the first
+    // event is recieved from the stream (indicating the preparation is
+    // complete and the download is starting).
   }
 }

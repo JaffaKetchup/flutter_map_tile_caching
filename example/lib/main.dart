@@ -8,11 +8,10 @@ import 'src/screens/import/import.dart';
 import 'src/screens/initialisation_error/initialisation_error.dart';
 import 'src/screens/main/main.dart';
 import 'src/screens/main/secondary_view/contents/home/components/stores_list/state/export_selection_provider.dart';
-import 'src/screens/old/configure_download/configure_download.dart';
-import 'src/screens/old/download/download.dart';
 import 'src/screens/store_editor/store_editor.dart';
 import 'src/shared/misc/shared_preferences.dart';
 import 'src/shared/state/download_configuration_provider.dart';
+import 'src/shared/state/download_provider.dart';
 import 'src/shared/state/general_provider.dart';
 import 'src/shared/state/region_selection_provider.dart';
 
@@ -63,22 +62,6 @@ class _AppContainer extends StatelessWidget {
             fullscreenDialog: true,
           ),
     ),
-    ConfigureDownloadPopup.route: (
-      std: null,
-      custom: (context, settings) => MaterialPageRoute(
-            builder: (context) => const ConfigureDownloadPopup(),
-            settings: settings,
-            fullscreenDialog: true,
-          ),
-    ),
-    DownloadPopup.route: (
-      std: null,
-      custom: (context, settings) => MaterialPageRoute(
-            builder: (context) => const DownloadPopup(),
-            settings: settings,
-            fullscreenDialog: true,
-          ),
-    ),
   };
 
   @override
@@ -119,7 +102,9 @@ class _AppContainer extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => DownloadConfigurationProvider(),
-          //lazy: true,
+        ),
+        ChangeNotifierProvider(
+          create: (_) => DownloadingProvider(),
         ),
       ],
       child: MaterialApp(

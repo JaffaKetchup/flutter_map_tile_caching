@@ -6,10 +6,6 @@ part of 'shared.dart';
 /// A set of methods for each type of [BaseRegion] that counts the number of
 /// tiles within the specified [DownloadableRegion]
 ///
-/// Each method should handle a [DownloadableRegion] with a specific generic type
-/// [BaseRegion]. If a method is passed a non-compatible region, it is expected
-/// to throw a `CastError`.
-///
 /// These methods should be run within seperate isolates, as they do heavy,
 /// potentially lengthy computation. They do not perform multiple-communication,
 /// and so only require simple Isolate protocols such as [Isolate.run].

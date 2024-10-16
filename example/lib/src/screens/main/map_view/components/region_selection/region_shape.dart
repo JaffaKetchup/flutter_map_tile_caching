@@ -68,7 +68,7 @@ class RegionShape extends StatelessWidget {
                       color: Theme.of(context)
                           .colorScheme
                           .surface
-                          .withValues(alpha: 0.5),
+                          .withAlpha(255 ~/ 2),
                     ),
                   ],
                 ),
@@ -88,7 +88,7 @@ class RegionShape extends StatelessWidget {
                   bounds.southEast,
                   bounds.southWest,
                 ],
-                color: color.toColor().withValues(alpha: 0.7),
+                color: color.toColor().withAlpha(255 ~/ 2),
               ),
             ],
           ),
@@ -98,7 +98,7 @@ class RegionShape extends StatelessWidget {
                 point: center,
                 radius: radius * 1000,
                 useRadiusInMeter: true,
-                color: color.toColor().withValues(alpha: 0.7),
+                color: color.toColor().withAlpha(255 ~/ 2),
               ),
             ],
           ),
@@ -108,7 +108,7 @@ class RegionShape extends StatelessWidget {
                 .map(
                   (o) => Polygon(
                     points: o,
-                    color: color.toColor().withValues(alpha: 0.7),
+                    color: color.toColor().withAlpha(255 ~/ 2),
                   ),
                 )
                 .toList(growable: false),
@@ -117,7 +117,7 @@ class RegionShape extends StatelessWidget {
             polygons: [
               Polygon(
                 points: outline,
-                color: color.toColor().withValues(alpha: 0.7),
+                color: color.toColor().withAlpha(255 ~/ 2),
               ),
             ],
           ),

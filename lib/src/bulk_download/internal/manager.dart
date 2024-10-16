@@ -216,6 +216,9 @@ Future<void> _downloadManager(
   // Now it's safe, start accepting communications from the root
   send(rootReceivePort.sendPort);
 
+  // Send an initial progress report to indicate the start of the download
+  send(initialDownloadProgress);
+
   // Start download threads & wait for download to complete/cancelled
   downloadDuration.start();
   await Future.wait(
