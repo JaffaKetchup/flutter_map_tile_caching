@@ -34,7 +34,13 @@ class DownloadConfigurationViewSide extends StatelessWidget {
           const SizedBox(height: 16),
           const Expanded(
             child: SideViewPanel(
-              child: SingleChildScrollView(child: ConfigOptions()),
+              autoPadding: false,
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: ConfigOptions(),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 16),

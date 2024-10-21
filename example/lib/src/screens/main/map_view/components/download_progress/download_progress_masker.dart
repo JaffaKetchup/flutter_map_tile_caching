@@ -36,18 +36,21 @@ class _DownloadProgressMaskerState extends State<DownloadProgressMasker> {
   Widget build(BuildContext context) {
     if (widget.downloadProgressStream case final dps?) {
       return RepaintBoundary(
-        child: GreyscaleMasker(
-          mapCamera: MapCamera.of(context),
-          tileCoordinatesStream: dps
+        child: StreamBuilder(
+          stream: dps
               .where(
                 (e) =>
                     e.latestTileEvent != null && !e.latestTileEvent!.isRepeat,
               )
               .map((e) => e.latestTileEvent!.coordinates),
-          minZoom: widget.minZoom,
-          maxZoom: widget.maxZoom,
-          tileSize: widget.tileSize,
-          child: widget.child,
+          builder: (context, snapshot) => GreyscaleMasker(
+            mapCamera: MapCamera.of(context),
+            latestTileCoordinates: snapshot.data,
+            minZoom: widget.minZoom,
+            maxZoom: widget.maxZoom,
+            tileSize: widget.tileSize,
+            child: widget.child,
+          ),
         ),
       );
     }

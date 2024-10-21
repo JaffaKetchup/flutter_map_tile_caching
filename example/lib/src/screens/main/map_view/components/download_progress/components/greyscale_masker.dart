@@ -4,14 +4,14 @@ class GreyscaleMasker extends SingleChildRenderObjectWidget {
   const GreyscaleMasker({
     super.key,
     required super.child,
-    required this.tileCoordinatesStream,
+    required this.latestTileCoordinates,
     required this.mapCamera,
     required this.minZoom,
     required this.maxZoom,
     required this.tileSize,
   });
 
-  final Stream<TileCoordinates> tileCoordinatesStream;
+  final TileCoordinates? latestTileCoordinates;
   final MapCamera mapCamera;
   final int minZoom;
   final int maxZoom;
@@ -21,7 +21,6 @@ class GreyscaleMasker extends SingleChildRenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) =>
       _GreyscaleMaskerRenderer(
         mapCamera: mapCamera,
-        tileCoordinatesStream: tileCoordinatesStream,
         minZoom: minZoom,
         maxZoom: maxZoom,
         tileSize: tileSize,
@@ -34,6 +33,7 @@ class GreyscaleMasker extends SingleChildRenderObjectWidget {
     _GreyscaleMaskerRenderer renderObject,
   ) {
     renderObject.mapCamera = mapCamera;
+    if (latestTileCoordinates case final ltc?) renderObject.addTile(ltc);
     // We don't support changing the other properties. They should not change
     // during a download.
   }
@@ -41,7 +41,6 @@ class GreyscaleMasker extends SingleChildRenderObjectWidget {
 
 class _GreyscaleMaskerRenderer extends RenderProxyBox {
   _GreyscaleMaskerRenderer({
-    required Stream<TileCoordinates> tileCoordinatesStream,
     required MapCamera mapCamera,
     required this.minZoom,
     required this.maxZoom,
@@ -60,9 +59,6 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
       p++;
     }
     _maxSubtilesCountPerZoomLevel[p] = 0;
-
-    // Handle incoming tile coordinates
-    tileCoordinatesStream.listen(_incomingTileHandler);
   }
 
   //! PROPERTIES
@@ -75,6 +71,8 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
     _recompileGreyscalePathCache();
     markNeedsPaint();
   }
+
+  TileCoordinates? _prevTile;
 
   /// Minimum zoom level of the download
   ///
@@ -233,9 +231,12 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
   /// not possible to prune the path cache, so this will slowly become
   /// out-of-sync and less efficient. See [_recompileGreyscalePathCache]
   /// for details.
-  void _incomingTileHandler(TileCoordinates tile) {
+  void addTile(TileCoordinates tile) {
     assert(tile.z >= minZoom, 'Incoming `tile` has zoom level below minimum');
     assert(tile.z <= maxZoom, 'Incoming `tile` has zoom level above maximum');
+
+    if (tile == _prevTile) return;
+    _prevTile = tile;
 
     _recurseTileToMinZoomLevelParentWithCallback(
       tile,
@@ -337,8 +338,8 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
   /// greyscale, so we can save unnecessary painting steps.
   ///
   /// Therefore, it is likely more efficient to paint after running this method
-  /// than after a series of incoming tiles have been handled (as
-  /// [_incomingTileHandler] cannot prune the path cache, only the tile mapping).
+  /// than after a series of incoming tiles have been handled (as [addTile]
+  /// cannot prune the path cache, only the tile mapping).
   ///
   /// This method does not call [markNeedsPaint], the caller should perform that
   /// if necessary.

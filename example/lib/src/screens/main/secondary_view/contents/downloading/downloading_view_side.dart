@@ -101,7 +101,13 @@ class _DownloadingViewSideState extends State<DownloadingViewSide> {
           const SizedBox(height: 16),
           const Expanded(
             child: SideViewPanel(
-              child: SingleChildScrollView(child: DownloadStatistics()),
+              autoPadding: false,
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: DownloadStatistics(),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 16),

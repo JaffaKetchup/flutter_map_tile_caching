@@ -4,9 +4,11 @@ class SideViewPanel extends StatelessWidget {
   const SideViewPanel({
     super.key,
     required this.child,
+    this.autoPadding = true,
   });
 
   final Widget child;
+  final bool autoPadding;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -14,7 +16,7 @@ class SideViewPanel extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           color: Theme.of(context).colorScheme.surface,
         ),
-        padding: const EdgeInsets.all(16),
+        padding: autoPadding ? const EdgeInsets.all(16) : null,
         width: double.infinity,
         child: child,
       );
