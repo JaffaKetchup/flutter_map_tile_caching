@@ -29,18 +29,51 @@ sealed class BaseRegion {
   ///  - [CustomPolygonRegion]
   const BaseRegion();
 
-  /// Output a value of type [T] dependent on `this` and its type
+  /// Output a value of type [T] the type of this region
+  ///
+  /// Requires all region types to have a defined handler. See [maybeWhen] for
+  /// the equivalent where this is not required.
+  @Deprecated(
+    'Prefer using a pattern matching selection (such as `if case` or '
+    '`switch`). This will be removed in a future version.',
+  )
   T when<T>({
     required T Function(RectangleRegion rectangle) rectangle,
     required T Function(CircleRegion circle) circle,
     required T Function(LineRegion line) line,
     required T Function(CustomPolygonRegion customPolygon) customPolygon,
+    required T Function(MultiRegion multi) multi,
+  }) =>
+      maybeWhen(
+        rectangle: rectangle,
+        circle: circle,
+        line: line,
+        customPolygon: customPolygon,
+        multi: multi,
+      )!;
+
+  /// Output a value of type [T] the type of this region
+  ///
+  /// If the specified method is not defined for the type of region which this
+  /// region is, `null` will be returned.
+  @Deprecated(
+    'Prefer using a pattern matching selection (such as `if case` or '
+    '`switch`). This will be removed in a future version.',
+  )
+  T? maybeWhen<T>({
+    T Function(RectangleRegion rectangle)? rectangle,
+    T Function(CircleRegion circle)? circle,
+    T Function(LineRegion line)? line,
+    T Function(CustomPolygonRegion customPolygon)? customPolygon,
+    T Function(MultiRegion multi)? multi,
   }) =>
       switch (this) {
-        RectangleRegion() => rectangle(this as RectangleRegion),
-        CircleRegion() => circle(this as CircleRegion),
-        LineRegion() => line(this as LineRegion),
-        CustomPolygonRegion() => customPolygon(this as CustomPolygonRegion),
+        RectangleRegion() => rectangle?.call(this as RectangleRegion),
+        CircleRegion() => circle?.call(this as CircleRegion),
+        LineRegion() => line?.call(this as LineRegion),
+        CustomPolygonRegion() =>
+          customPolygon?.call(this as CustomPolygonRegion),
+        MultiRegion() => multi?.call(this as MultiRegion),
       };
 
   /// Generate the [DownloadableRegion] ready for bulk downloading
@@ -55,31 +88,9 @@ sealed class BaseRegion {
     Crs crs = const Epsg3857(),
   });
 
-  /// Generate a graphical layer to be placed in a [FlutterMap]
-  ///
-  /// **Deprecated.** Instead obtain the outline/line/points using other methods,
-  /// and render the layer manually. This method is being removed to reduce
-  /// dependency on flutter_map, and allow full usage of flutter_map
-  /// functionality without it needing to be semi-implemented here. This feature
-  /// was deprecated after v9.1.0, and will be removed in the next breaking/major
-  /// release.
-  @Deprecated(
-    'Instead obtain the outline/line/points using other methods, and render the '
-    'layer manually.  '
-    'This method is being removed to reduce dependency on flutter_map, and allow '
-    'full usage of flutter_map functionality without it needing to be '
-    'semi-implemented here. '
-    'This feature was deprecated after v9.1.0, and will be removed in the next '
-    'breaking/major release.',
-  )
-  Widget toDrawable({
-    Color? fillColor,
-    Color borderColor = const Color(0x00000000),
-    double borderStrokeWidth = 3,
-    bool isDotted = false,
-  });
-
   /// Generate the list of all the [LatLng]s forming the outline of this region
+  ///
+  /// May not be supported on all region implementations.
   ///
   /// Returns a `Iterable<LatLng>` which can be used anywhere.
   Iterable<LatLng> toOutline();
