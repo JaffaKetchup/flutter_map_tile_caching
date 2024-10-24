@@ -6,8 +6,25 @@ part of '../../../../flutter_map_tile_caching.dart';
 /// A region formed from multiple other [BaseRegion]s
 ///
 /// When downloading, each sub-region specified in [regions] is downloaded
-/// consecutively. Overlaps are not resolved into single regions, so it is
-/// recommended to enable `skipExistingTiles` in [StoreDownload.startForeground].
+/// consecutively. The advantage of [MultiRegion] is that:
+///
+///  * it avoids repeating the expensive setup and teardown of a bulk download
+///    between each sub-region
+///  * the progress of the download is reported as a whole, so no additional
+///    work is required to keep track of which download is currently being
+///    performed and keep track of custom progress statistics
+///
+/// Overlaps and intersections are not (yet) compiled into single
+/// [CustomPolygonRegion]s. Therefore, where regions are known to overlap:
+///
+///  * (particularly where regions are [RectangleRegion]s & [CustomPolygonRegion]s)
+///    Use ['package:polybool'](https://pub.dev/packages/polybool) (a 3rd party
+///    package in no way associated with FMTC) to take the `union` all polygons:
+///    this will remove self-intersections, combine overlapping polygons into
+///    single polygons, etc - this is best for efficiency.
+///
+///  * (particularly where multiple different other region types are used)
+///    Enable `skipExistingTiles` in [StoreDownload.startForeground].
 ///
 /// [MultiRegion]s may be nested.
 ///

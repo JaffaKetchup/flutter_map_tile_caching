@@ -50,7 +50,8 @@ abstract mixin class FMTCBackendAccessThreadSafe {
   static FMTCBackendInternalThreadSafe? _internal;
 
   /// Provides access to the thread-seperate backend internals
-  /// ([FMTCBackendInternalThreadSafe]) globally with some level of access control
+  /// ([FMTCBackendInternalThreadSafe]) globally with some level of access
+  /// control
   ///
   /// {@macro fmtc.backend.access}
   @meta.internal

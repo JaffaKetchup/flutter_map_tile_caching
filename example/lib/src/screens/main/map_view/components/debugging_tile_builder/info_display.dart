@@ -23,7 +23,7 @@ class _ResultDisplay extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
-              if (fmtcResult.error case final error?)
+              if (fmtcResult.error?.error case final error?)
                 Text(
                   error is FMTCBrowsingError
                       ? '`${error.type.name}`'

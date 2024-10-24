@@ -90,7 +90,6 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
 
     // Efficienctly forward resulting stream, but add extra debug info to any
     // errors
-    // TODO: verify
     yield* controller.stream.handleError(
       (err, stackTrace) => Error.throwWithStackTrace(
         err,

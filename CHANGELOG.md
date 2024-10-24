@@ -26,7 +26,7 @@ This allows a new paradigm to be used: stores may now be treated as bulk downloa
 Additionally, vector tiles are now supported in theory, as the internal caching/retrieval logic of the specialised `ImageProvider` has been exposed, although it is out of scope to fully implement support for it.
 
 * Improvements to the browse caching logic and customizability
-  * Added support for using multiple stores simultaneously in the `FMTCTileProvider` (through `FMTCTileProvider.allStores` & `FMTCTileProvider.multipleStores` constructors)
+  * Added support for using multiple stores simultaneously in the `FMTCTileProvider` (through the `FMTCTileProvider.allStores` & `FMTCTileProvider.multipleStores` constructors)
   * Added `FMTCTileProvider.getBytes` method to expose internal caching mechanisms for external use
   * Added `BrowseStoreStrategy` for increased control over caching behaviour
   * Added 'tile loading interceptor' feature (`FMTCTileProvider.tileLoadingInterceptor`) to track (eg. for debugging and logging) the internal tile loading mechanisms
@@ -36,21 +36,25 @@ Additionally, vector tiles are now supported in theory, as the internal caching/
   * Replaced `FMTCBrowsingErrorHandler` with `BrowsingExceptionHandler`, which may now return bytes to be displayed instead of (re)throwing exception
   * Replaced `obscureQueryParams` with more flexible `urlTransformer` (and static `FMTCTileProvider.urlTransformerOmitKeyValues` utility method to provide old behaviour with more customizability) - also applies to bulk downloading in `StoreDownload.startForeground`
   * Removed `FMTCTileProviderSettings` & absorbed properties directly into `FMTCTileProvider`
+  * Performance of the internal tile image provider has been significantly improved when fetching images from the network URL  
+    > There was a significant time loss due to attempting to handle the network request response as a stream of incoming bytes, which allowed for `chunkEvents` to be reported back to Flutter (allowing it to get progress updates on the state of the tile), but meant the bytes had to be collected and built manually. Removing this functionality allows the network requests to use more streamlined 'package:http' methods, which does not expose a stream of incoming bytes, meaning that bytes no longer have to be treated manually. This can save hundreds of milliseconds on tile loading - a significant time save of potentially up to ~50% in some cases!
 
-* Improvements & additions to bulk downloadable `BaseRegion`s
+* Improvements, additions, and removals for bulk downloadable `BaseRegion`s
   * Added `MultiRegion`, which contains multiple other `BaseRegion`s
   * Improved speed (by massive amounts) and accuracy & reduced memory consumption of `CircleRegion`'s tile generation & counting algorithm
+  * Deprecated `BaseRegion.(maybe)When` - this is easy to perform using a standard pattern-matched switch
 
-And here's some smaller, but still remarkable, changes:
+* Changes to bulk downloading
+  * `DownloadProgress.latestTileEvent` is now nullable
 
-* Performance of the internal tile image provider has been significantly improved when fetching images from the network URL  
-  There was a significant time loss due to attempting to handle the network request response as a stream of incoming bytes, which allowed for `chunkEvents` to be reported back to Flutter (allowing it to get progress updates on the state of the tile), but meant the bytes had to be collected and built manually. Removing this functionality allows the network requests to use more streamlined 'package:http' methods, which does not expose a stream of incoming bytes, meaning that bytes no longer have to be treated manually. This can save hundreds of milliseconds on tile loading - a significant time save of potentially up to ~50% in some cases!
 * Exporting stores is now more stable, and has improved documentation  
   The method now works in a dedicated temporary environment and attempts to perform two different strategies to move/copy-and-delete the result to the specified directory at the end before failing. Improved documentation covers the potential pitfalls of permissions and now recommends exporting to an app directory, then using the system share functionality on some devices. It now also returns the number of exported tiles.
 
 * Removed deprecated remnants from v9.*
 
-* Other generic improvements (performance & stability)
+* Other generic improvements (performance, stability, and documentation)
+
+* Brand new example app to (partially!) showcase the new levels of flexibility and customizability
 
 ## [9.1.3] - 2024/08/19
 

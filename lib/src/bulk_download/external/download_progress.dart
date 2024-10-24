@@ -41,7 +41,20 @@ class DownloadProgress {
         isComplete: false,
       );
 
-  /// The result of the latest attempted tile
+  /// The result of the latest attempted tile, if applicable
+  ///
+  /// `null` if the first tile has not yet been downloaded, or the download has
+  /// completed. The completion of a download may be considered to be reported
+  /// twice, although only the one with [isComplete] should be taken as the
+  /// final indicator: the last tile may (or may not) make all the statistics
+  /// 100%, but it will not set [isComplete]. An event is emitted after the
+  /// final tile, with no tile set, but [isComplete] set.
+  ///
+  /// A similar [TileEvent] may be emitted multiple times sequentially, due to
+  /// fallback reporting (configurable in [StoreDownload.startForeground]). In
+  /// this event, this is not set `null`, but [TileEvent.isRepeat] will be set.
+  /// If this flag is set, the tile should not be counted as a new event in any
+  /// listener.
   ///
   /// {@macro fmtc.tileevent.extraConsiderations}
   final TileEvent? latestTileEvent;

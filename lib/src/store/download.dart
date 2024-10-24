@@ -35,12 +35,19 @@ class StoreDownload {
   /// recovery session by default
   ///
   /// > [!TIP]
-  /// > To check the number of tiles in a region before starting a download, use
+  /// > To count the number of tiles in a region before starting a download, use
   /// > [check].
   ///
   /// Streams a [DownloadProgress] object containing statistics and information
   /// about the download's progression status, once per tile and at intervals
-  /// of no longer than [maxReportInterval] (after the first tile).
+  /// of no longer than [maxReportInterval].
+  ///
+  /// The first event reports the download has started (setup is complete). The
+  /// last event indicates the download has completed (either sucessfully or
+  /// been cancelled). All events between these two emissions will be reporting
+  /// a new tile, or reporting the old tile, due to [maxReportInterval].
+  /// See the documentation on [DownloadProgress.latestTileEvent] &
+  /// [TileEvent.isRepeat] for more details.
   ///
   /// ---
   ///
@@ -128,17 +135,17 @@ class StoreDownload {
     UrlTransformer? urlTransformer,
     Object instanceId = 0,
   }) async* {
-    FMTCBackendAccess.internal; // Verify intialisation
+    FMTCBackendAccess.internal; // Verify initialisation
 
     // Check input arguments for suitability
     if (!(region.options.wmsOptions != null ||
         region.options.urlTemplate != null)) {
       throw ArgumentError(
-        "`.toDownloadable`'s `TileLayer` argument must specify an appropriate `urlTemplate` or `wmsOptions`",
+        "`.toDownloadable`'s `TileLayer` argument must specify an appropriate "
+            '`urlTemplate` or `wmsOptions`',
         'region.options.urlTemplate',
       );
     }
-
     if (parallelThreads < 1) {
       throw ArgumentError.value(
         parallelThreads,
@@ -146,7 +153,6 @@ class StoreDownload {
         'must be 1 or greater',
       );
     }
-
     if (maxBufferLength < 0) {
       throw ArgumentError.value(
         maxBufferLength,
@@ -154,7 +160,6 @@ class StoreDownload {
         'must be 0 or greater',
       );
     }
-
     if ((rateLimit ?? 2) < 1) {
       throw ArgumentError.value(
         rateLimit,
@@ -263,14 +268,13 @@ class StoreDownload {
     cancelCompleter.complete();
   }
 
-  /// Check how many downloadable tiles are within a specified region
+  /// Count the number of tiles within the specified region
   ///
-  /// This does not include skipped sea tiles or skipped existing tiles, as those
-  /// are handled during download only.
+  /// This does not include skipped sea tiles or skipped existing tiles, as
+  /// those are handled during a download (as the contents must be known).
   ///
-  /// Note that this does not require a valid/ready/existing store.
-  ///
-  /// Returns the number of tiles.
+  /// Note that this does not require an existing/ready store, or a sensical
+  /// [DownloadableRegion.options].
   Future<int> check(DownloadableRegion region) => compute(
         (region) => region.when(
           rectangle: TileCounters.rectangleTiles,

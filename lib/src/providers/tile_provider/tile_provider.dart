@@ -252,7 +252,7 @@ class FMTCTileProvider extends TileProvider {
     super.dispose();
   }
 
-  /// {@template fmtc.imageProvider.getBytes}
+  /// {@template fmtc.tileProvider.getBytes}
   /// Use FMTC's caching logic to get the bytes of the specific tile (at
   /// [coords]) with the specified [TileLayer] options and [FMTCTileProvider]
   /// provider

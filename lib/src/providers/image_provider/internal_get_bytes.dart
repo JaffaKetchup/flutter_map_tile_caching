@@ -22,7 +22,7 @@ Future<Uint8List> _internalGetBytes({
     currentTLIR?.hitOrMiss = false;
     if (provider.recordHitsAndMisses) {
       FMTCBackendAccess.internal.registerHitOrMiss(
-        storeNames: provider._getSpecifiedStoresOrNull(), // TODO: Verify
+        storeNames: provider._getSpecifiedStoresOrNull(),
         hit: false,
       );
     }
@@ -248,7 +248,7 @@ Future<Uint8List> _internalGetBytes({
         if (createdIn.isEmpty) return;
 
         FMTCBackendAccess.internal.removeOldestTilesAboveLimit(
-          storeNames: createdIn.toList(growable: false), // TODO: Verify
+          storeNames: createdIn.toList(growable: false),
         );
       });
   }

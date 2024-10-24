@@ -69,7 +69,7 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
         },
       );
 
-  /// {@macro fmtc.imageProvider.getBytes}
+  /// {@macro fmtc.tileProvider.getBytes}
   static Future<Uint8List> getBytes({
     required TileCoordinates coords,
     required TileLayer options,
@@ -82,7 +82,7 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
     final currentTLIR =
         provider.tileLoadingInterceptor != null ? _TLIRConstructor._() : null;
 
-    void close([Object? error]) {
+    void close([({Object error, StackTrace stackTrace})? error]) {
       finishedLoadingBytes?.call();
 
       if (key != null && error != null) {
@@ -126,14 +126,14 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
         currentTLIR: currentTLIR,
       );
     } catch (err, stackTrace) {
-      close(err);
+      close((error: err, stackTrace: stackTrace));
 
       if (err is FMTCBrowsingError) {
         final handlerResult = provider.errorHandler?.call(err);
         if (handlerResult != null) return handlerResult;
       }
 
-      Error.throwWithStackTrace(err, stackTrace);
+      rethrow;
     }
 
     close();

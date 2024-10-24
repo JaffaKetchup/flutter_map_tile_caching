@@ -90,6 +90,8 @@ sealed class BaseRegion {
 
   /// Generate the list of all the [LatLng]s forming the outline of this region
   ///
+  /// May not be supported on all region implementations.
+  ///
   /// Returns a `Iterable<LatLng>` which can be used anywhere.
   Iterable<LatLng> toOutline();
 

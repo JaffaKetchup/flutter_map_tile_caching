@@ -11,7 +11,7 @@ class _TLIRConstructor {
   _TLIRConstructor._();
 
   TileLoadingInterceptorResultPath? resultPath;
-  Object? error;
+  ({Object error, StackTrace stackTrace})? error;
   late String networkUrl;
   late String storageSuitableUID;
   List<String>? existingStores;
@@ -59,7 +59,7 @@ class TileLoadingInterceptorResult {
   ///
   /// See [didComplete] for a boolean result. If `null`, see [resultPath] for the
   /// exact result path.
-  final Object? error;
+  final ({Object error, StackTrace stackTrace})? error;
 
   /// Indicates whether the tile completed loading successfully
   ///
