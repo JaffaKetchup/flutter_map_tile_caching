@@ -17,6 +17,10 @@ class DownloadingProvider extends ChangeNotifier {
   DownloadProgress? _latestEvent;
   DownloadProgress get latestEvent => _latestEvent ?? (throw _notReadyError);
 
+  Stream<DownloadProgress>? _rawStream;
+  Stream<DownloadProgress> get rawStream =>
+      _rawStream ?? (throw _notReadyError);
+
   late int _skippedSeaTileCount;
   int get skippedSeaTileCount => _skippedSeaTileCount;
 
@@ -37,6 +41,8 @@ class DownloadingProvider extends ChangeNotifier {
     required DownloadableRegion downloadableRegion,
     required Stream<DownloadProgress> stream,
   }) {
+    assert(stream.isBroadcast, 'Input stream must be broadcastable');
+
     _storeName = storeName;
     _downloadableRegion = downloadableRegion;
 
@@ -45,6 +51,7 @@ class DownloadingProvider extends ChangeNotifier {
     _skippedExistingTileSize = 0;
     _skippedSeaTileSize = 0;
 
+    _rawStream = stream;
     _streamSub = stream.listen(
       (progress) {
         if (progress.attemptedTiles == 0) _isFocused = true;

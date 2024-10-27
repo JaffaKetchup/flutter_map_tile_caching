@@ -23,23 +23,15 @@ class NoSubRegions extends StatelessWidget {
                   'To bulk download a map, first create a region. Select the '
                   'shape above, and tap on the map to add points. Once a '
                   'region has been finished, download it immediately, or add '
-                  'it to the list of sub-regions to download.',
+                  'it to the list of (sub-)regions to download.',
                   textAlign: TextAlign.center,
                 ),
                 const Divider(height: 82),
                 const Icon(Icons.view_cozy_outlined, size: 64),
                 const SizedBox(height: 12),
                 Text(
-                  'No sub-regions selected',
+                  'No sub-regions constructed',
                   style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'FMTC supports `MultiRegion`s formed of multiple other '
-                  'regions.\nYou can select an area to download and use the '
-                  'panel below to download it, or add it to the list of '
-                  'sub-regions using the button above.',
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),

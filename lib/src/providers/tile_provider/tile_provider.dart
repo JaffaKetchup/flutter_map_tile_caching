@@ -36,11 +36,7 @@ class FMTCTileProvider extends TileProvider {
     Client? httpClient,
     @visibleForTesting this.fakeNetworkDisconnect = false,
     Map<String, String>? headers,
-  })  : assert(
-          storeNames.isNotEmpty || otherStoresStrategy != null,
-          '`storeNames` cannot be empty if `otherStoresStrategy` is `null`',
-        ),
-        urlTransformer = (urlTransformer ?? (u) => u),
+  })  : urlTransformer = (urlTransformer ?? (u) => u),
         httpClient = httpClient ?? IOClient(HttpClient()..userAgent = null),
         _wasClientAutomaticallyGenerated = httpClient == null,
         super(

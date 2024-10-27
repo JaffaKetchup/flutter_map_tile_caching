@@ -45,44 +45,44 @@ class _ResultDisplay extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    IconButton.filledTonal(
-                      onPressed: fmtcResult.existingStores != null
-                          ? () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => _TileReadResultsDialog(
-                                  results: fmtcResult.existingStores!,
-                                  trfosaf: fmtcResult
-                                      .tileRetrievedFromOtherStoresAsFallback,
-                                ),
-                              );
-                            }
-                          : null,
-                      icon: fmtcResult.existingStores != null
-                          ? const Icon(Icons.visibility)
-                          : const Icon(Icons.visibility_off),
-                      tooltip: 'View cache exists result',
+                    GestureDetector(
+                      onTap: () {
+                        if (fmtcResult.existingStores == null) return;
+                        showDialog(
+                          context: context,
+                          builder: (context) => _TileReadResultsDialog(
+                            results: fmtcResult.existingStores!,
+                            trfosaf: fmtcResult
+                                .tileRetrievedFromOtherStoresAsFallback,
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: fmtcResult.existingStores != null
+                            ? const Icon(Icons.visibility)
+                            : const Icon(Icons.visibility_off),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     FutureBuilder(
-                      // TODO: Factor out of build to reduce re-futures
-                      // or fix rebuild issue
                       future: fmtcResult.storesWriteResult,
-                      builder: (context, snapshot) => IconButton.filledTonal(
-                        onPressed: snapshot.data != null
-                            ? () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => _TileWriteResultsDialog(
-                                    results: snapshot.data!,
-                                  ),
-                                );
-                              }
-                            : null,
-                        icon: snapshot.data != null
-                            ? const Icon(Icons.edit)
-                            : const Icon(Icons.edit_off),
-                        tooltip: 'View write result',
+                      builder: (context, snapshot) => GestureDetector(
+                        onTap: () {
+                          if (snapshot.data == null) return;
+                          showDialog(
+                            context: context,
+                            builder: (context) => _TileWriteResultsDialog(
+                              results: snapshot.data!,
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: snapshot.data != null
+                              ? const Icon(Icons.edit)
+                              : const Icon(Icons.edit_off),
+                        ),
                       ),
                     ),
                   ],

@@ -13,10 +13,12 @@ import 'package:provider/provider.dart';
 
 import '../../../shared/misc/shared_preferences.dart';
 import '../../../shared/misc/store_metadata_keys.dart';
+import '../../../shared/state/download_provider.dart';
 import '../../../shared/state/general_provider.dart';
 import '../../../shared/state/region_selection_provider.dart';
 import 'components/debugging_tile_builder/debugging_tile_builder.dart';
 import 'components/download_progress/download_progress_masker.dart';
+import 'components/fmtc_not_in_use_indicator.dart';
 import 'components/region_selection/crosshairs.dart';
 import 'components/region_selection/custom_polygon_snapping_indicator.dart';
 import 'components/region_selection/region_shape.dart';
@@ -65,71 +67,23 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
     },
   ).distinct(mapEquals);
 
-  /*final _testingCoordsList = [
-    //TileCoordinates(2212, 1468, 12),
-    //TileCoordinates(2212 * 2, 1468 * 2, 13),
-    //TileCoordinates(2212 * 2 * 2, 1468 * 2 * 2, 14),
-    //TileCoordinates(2212 * 2 * 2 * 2, 1468 * 2 * 2 * 2, 15),
-    const TileCoordinates(
-      2212 * 2 * 2 * 2 * 2,
-      1468 * 2 * 2 * 2 * 2,
-      16,
-    ),
-    const TileCoordinates(
-      2212 * 2 * 2 * 2 * 2 * 2,
-      1468 * 2 * 2 * 2 * 2 * 2,
-      17,
-    ),
-    const TileCoordinates(
-      2212 * 2 * 2 * 2 * 2 * 2 * 2,
-      1468 * 2 * 2 * 2 * 2 * 2 * 2,
-      18,
-    ),
-    const TileCoordinates(
-      2212 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
-      1468 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
-      18,
-    ),
-    const TileCoordinates(
-      2212 * 2 * 2 * 2 * 2 * 2 * 2,
-      1468 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
-      18,
-    ),
-    const TileCoordinates(
-      2212 * 2 * 2 * 2 * 2 * 2 * 2 * 2,
-      1468 * 2 * 2 * 2 * 2 * 2 * 2 * 2,
-      19,
-    ),
-    const TileCoordinates(
-      2212 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
-      1468 * 2 * 2 * 2 * 2 * 2 * 2 * 2,
-      19,
-    ),
-    const TileCoordinates(
-      2212 * 2 * 2 * 2 * 2 * 2 * 2 * 2,
-      1468 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
-      19,
-    ),
-    const TileCoordinates(
-      2212 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
-      1468 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 1,
-      19,
-    ),
-    const TileCoordinates(
-      2212 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 2,
-      1468 * 2 * 2 * 2 * 2 * 2 * 2 * 2 + 2,
-      19,
-    ),
-  ];*/
-
-  Stream<DownloadProgress>? _testingDownloadTileCoordsStream;
-
   bool _isInRegionSelectMode() =>
       widget.mode == MapViewMode.downloadRegion &&
       !context.read<RegionSelectionProvider>().isDownloadSetupPanelVisible;
 
   @override
   Widget build(BuildContext context) {
+    final isCrosshairsVisible = widget.mode == MapViewMode.downloadRegion &&
+        !context.select<RegionSelectionProvider, bool>(
+          (p) => p.isDownloadSetupPanelVisible,
+        ) &&
+        context.select<RegionSelectionProvider, RegionSelectionMethod>(
+              (p) => p.regionSelectionMethod,
+            ) ==
+            RegionSelectionMethod.useMapCenter &&
+        !context
+            .select<RegionSelectionProvider, bool>((p) => p.customPolygonSnap);
+
     final mapOptions = MapOptions(
       initialCenter: LatLng(
         sharedPrefs.getDouble(SharedPrefsKeys.mapLocationLat.name) ?? 51.5216,
@@ -146,34 +100,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
       keepAlive: true,
       backgroundColor: const Color(0xFFaad3df),
       onTap: (_, __) {
-        if (!_isInRegionSelectMode()) {
-          setState(
-            () => _testingDownloadTileCoordsStream =
-                const FMTCStore('Local Tile Server').download.startForeground(
-                      region: const CircleRegion(
-                        LatLng(45.3052535669648, 14.476223064038985),
-                        5,
-                      ).toDownloadable(
-                        minZoom: 5,
-                        maxZoom: 15,
-                        options: TileLayer(
-                          urlTemplate: 'http://0.0.0.0:7070/{z}/{x}/{y}',
-                          //urlTemplate:
-                          //    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        ),
-                      ),
-                      parallelThreads: 3,
-                      skipSeaTiles: false,
-                      urlTransformer: (url) =>
-                          FMTCTileProvider.urlTransformerOmitKeyValues(
-                        url: url,
-                        keys: ['access_token'],
-                      ),
-                      rateLimit: 20,
-                    ),
-          );
-          return;
-        }
+        if (!_isInRegionSelectMode()) return;
 
         final provider = context.read<RegionSelectionProvider>();
 
@@ -217,7 +144,6 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
         }
       },
       onSecondaryTap: (_, __) {
-        const FMTCStore('Local Tile Server').download.cancel();
         if (!_isInRegionSelectMode()) return;
         context.read<RegionSelectionProvider>().removeLastCoordinate();
       },
@@ -379,72 +305,69 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
               urlTemplate: urlTemplate,
               userAgentPackageName: 'dev.jaffaketchup.fmtc.demo',
               maxNativeZoom: 20,
-              tileProvider:
-                  compiledStoreNames.isEmpty && otherStoresStrategy == null
-                      ? NetworkTileProvider()
-                      : FMTCTileProvider.multipleStores(
-                          storeNames: compiledStoreNames,
-                          otherStoresStrategy: otherStoresStrategy,
-                          loadingStrategy: provider.loadingStrategy,
-                          useOtherStoresAsFallbackOnly:
-                              provider.useUnspecifiedAsFallbackOnly,
-                          recordHitsAndMisses: false,
-                          tileLoadingInterceptor: _tileLoadingDebugger,
-                          httpClient: _httpClient,
-                          // ignore: invalid_use_of_visible_for_testing_member
-                          fakeNetworkDisconnect: provider.fakeNetworkDisconnect,
-                        ),
-              tileBuilder: !provider.displayDebugOverlay
+              tileProvider: widget.mode != MapViewMode.standard
+                  ? NetworkTileProvider()
+                  : FMTCTileProvider.multipleStores(
+                      storeNames: compiledStoreNames,
+                      otherStoresStrategy: otherStoresStrategy,
+                      loadingStrategy: provider.loadingStrategy,
+                      useOtherStoresAsFallbackOnly:
+                          provider.useUnspecifiedAsFallbackOnly,
+                      recordHitsAndMisses: false,
+                      tileLoadingInterceptor: _tileLoadingDebugger,
+                      httpClient: _httpClient,
+                      // ignore: invalid_use_of_visible_for_testing_member
+                      fakeNetworkDisconnect: provider.fakeNetworkDisconnect,
+                    ),
+              tileBuilder: !provider.displayDebugOverlay ||
+                      widget.mode != MapViewMode.standard
                   ? null
                   : (context, tileWidget, tile) => DebuggingTileBuilder(
                         tileLoadingDebugger: _tileLoadingDebugger,
                         tileWidget: tileWidget,
                         tile: tile,
-                        usingFMTC: compiledStoreNames.isNotEmpty ||
-                            otherStoresStrategy != null,
                       ),
             );
+
+            final isDownloadProgressMaskerVisible = widget.mode ==
+                    MapViewMode.downloadRegion &&
+                context.select<DownloadingProvider, bool>((p) => p.isFocused);
 
             final map = FlutterMap(
               mapController: _mapController.mapController,
               options: mapOptions,
               children: [
                 DownloadProgressMasker(
-                  downloadProgressStream: _testingDownloadTileCoordsStream,
-                  minZoom: 5,
-                  maxZoom: 15,
+                  key: ObjectKey(
+                    isDownloadProgressMaskerVisible
+                        ? context
+                            .select<DownloadingProvider, DownloadableRegion>(
+                            (p) => p.downloadableRegion,
+                          )
+                        : null,
+                  ),
+                  downloadProgressStream: isDownloadProgressMaskerVisible
+                      ? context.select<DownloadingProvider,
+                          Stream<DownloadProgress>>((p) => p.rawStream)
+                      : null,
+                  minZoom: isDownloadProgressMaskerVisible
+                      ? context.select<DownloadingProvider, int>(
+                          (p) => p.downloadableRegion.minZoom,
+                        )
+                      : 0,
+                  maxZoom: isDownloadProgressMaskerVisible
+                      ? context.select<DownloadingProvider, int>(
+                          (p) => p.downloadableRegion.maxZoom,
+                        )
+                      : 0,
                   child: tileLayer,
                 ),
-                /*PolygonLayer(
-                  polygons: [
-                    Polygon(
-                      points: [
-                        LatLng(-90, 180),
-                        LatLng(90, 180),
-                        LatLng(90, -180),
-                        LatLng(-90, -180),
-                      ],
-                      holePointsList: [
-                        const CircleRegion(
-                          LatLng(45.3052535669648, 14.476223064038985),
-                          5,
-                        ).toOutline().toList(growable: false),
-                      ],
-                      color: Colors.black.withAlpha(255 ~/ 2),
-                    ),
-                  ],
-                ),*/
                 if (widget.mode == MapViewMode.downloadRegion) ...[
                   const RegionShape(),
                   const CustomPolygonSnappingIndicator(),
                 ],
-                if (widget.bottomPaddingWrapperBuilder != null)
-                  Builder(
-                    builder: (context) => widget.bottomPaddingWrapperBuilder!(
-                      context,
-                      attribution,
-                    ),
-                  )
+                if (widget.bottomPaddingWrapperBuilder case final bpwb?)
+                  Builder(builder: (context) => bpwb(context, attribution))
                 else
                   attribution,
               ],
@@ -472,19 +395,24 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                           : SystemMouseCursors.precise,
                   child: map,
                 ),
-                if (widget.mode == MapViewMode.downloadRegion &&
-                    !context.select<RegionSelectionProvider, bool>(
-                      (p) => p.isDownloadSetupPanelVisible,
-                    ) &&
-                    context.select<RegionSelectionProvider,
-                            RegionSelectionMethod>(
-                          (p) => p.regionSelectionMethod,
-                        ) ==
-                        RegionSelectionMethod.useMapCenter &&
-                    !context.select<RegionSelectionProvider, bool>(
-                      (p) => p.customPolygonSnap,
-                    ))
-                  const Center(child: Crosshairs()),
+                if (isCrosshairsVisible) const Center(child: Crosshairs()),
+                if (widget.bottomPaddingWrapperBuilder case final bpwb?)
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: Builder(
+                      builder: (context) => bpwb(
+                        context,
+                        FMTCNotInUseIndicator(mode: widget.mode),
+                      ),
+                    ),
+                  )
+                else
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: FMTCNotInUseIndicator(mode: widget.mode),
+                  ),
               ],
             );
           },

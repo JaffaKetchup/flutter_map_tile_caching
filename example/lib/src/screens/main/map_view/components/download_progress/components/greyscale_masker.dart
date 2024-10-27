@@ -91,9 +91,6 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
 
   //! STATE
 
-  /// Stream subscription for input `tileCoordinates` stream
-  late final StreamSubscription<TileCoordinates> _tileCoordinatesSub;
-
   /// Maps tiles of a download to a [_TileMappingValue], which contains:
   ///  * the number of subtiles downloaded
   ///  * the lat/lng coordinates of the tile's top-left (North-West) &
@@ -107,8 +104,8 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
   /// root tile should increment the value. With the exception of this case, the
   /// existence of a tile key is an indication that that parent tile has been
   /// downloaded.
-  final Map<TileCoordinates, _TileMappingValue> _tileMapping = SplayTreeMap(
-    (a, b) => a.z.compareTo(b.z) | a.x.compareTo(b.x) | a.y.compareTo(b.y),
+  final _tileMapping = SplayTreeMap<TileCoordinates, _TileMappingValue>(
+    (b, a) => a.z.compareTo(b.z) | a.x.compareTo(b.x) | a.y.compareTo(b.y),
   );
 
   /// The number of subtiles a tile at the zoom level (index) may have
@@ -127,12 +124,6 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
     for (int i = 0; i <= _greyscaleLevelsCount; i++) i: Path(),
   });
   static const _greyscaleLevelsCount = 25;
-
-  @override
-  void dispose() {
-    _tileCoordinatesSub.cancel();
-    super.dispose();
-  }
 
   //! GREYSCALE HANDLING
 
@@ -348,14 +339,15 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
       path.reset();
     }
 
-    for (int i = _tileMapping.length - 1; i >= 0; i--) {
-      final MapEntry(key: tile, value: tmv) = _tileMapping.entries.elementAt(i);
-
+    for (final MapEntry(
+          key: TileCoordinates(z: tileZoom),
+          value: _TileMappingValue(:subtilesCount, :nwCoord, :seCoord),
+        ) in _tileMapping.entries) {
       _greyscalePathCache[_calculateGreyscaleLevel(
-        tmv.subtilesCount,
-        _maxSubtilesCountPerZoomLevel[tile.z - minZoom],
+        subtilesCount,
+        _maxSubtilesCountPerZoomLevel[tileZoom - minZoom],
       )]!
-          .addRect(_calculateRectOfCoords(tmv.nwCoord, tmv.seCoord));
+          .addRect(_calculateRectOfCoords(nwCoord, seCoord));
     }
   }
 

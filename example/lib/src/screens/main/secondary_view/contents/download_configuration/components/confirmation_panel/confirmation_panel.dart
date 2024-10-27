@@ -226,14 +226,16 @@ class _ConfirmationPanelState extends State<ConfirmationPanel> {
       ),
     );
 
-    final downloadStream = store.download.startForeground(
-      region: downloadableRegion,
-      parallelThreads: downloadConfiguration.parallelThreads,
-      maxBufferLength: downloadConfiguration.maxBufferLength,
-      skipExistingTiles: downloadConfiguration.skipExistingTiles,
-      skipSeaTiles: downloadConfiguration.skipSeaTiles,
-      rateLimit: downloadConfiguration.rateLimit,
-    );
+    final downloadStream = store.download
+        .startForeground(
+          region: downloadableRegion,
+          parallelThreads: downloadConfiguration.parallelThreads,
+          maxBufferLength: downloadConfiguration.maxBufferLength,
+          skipExistingTiles: downloadConfiguration.skipExistingTiles,
+          skipSeaTiles: downloadConfiguration.skipSeaTiles,
+          rateLimit: downloadConfiguration.rateLimit,
+        )
+        .asBroadcastStream();
 
     downloadingProvider.assignDownload(
       storeName: downloadConfiguration.selectedStoreName!,
