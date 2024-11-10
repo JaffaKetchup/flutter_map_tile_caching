@@ -8,13 +8,14 @@ part of '../../flutter_map_tile_caching.dart';
 /// ---
 ///
 /// {@template num_instances}
-/// By default, only one download is allowed at any one time.
+/// By default, only one download is allowed at any one time, across all stores.
 ///
 /// However, if necessary, multiple can be started by setting methods'
 /// `instanceId` argument to a unique value on methods. Whatever object
 /// `instanceId` is, it must have a valid and useful equality and `hashCode`
 /// implementation, as it is used as the key in a `Map`. Note that this unique
 /// value must be known and remembered to control the state of the download.
+/// Note that instances are shared across all stores.
 ///
 /// > [!WARNING]
 /// > Starting multiple simultaneous downloads may lead to a noticeable
@@ -34,12 +35,19 @@ class StoreDownload {
   /// recovery session by default
   ///
   /// > [!TIP]
-  /// > To check the number of tiles in a region before starting a download, use
+  /// > To count the number of tiles in a region before starting a download, use
   /// > [check].
   ///
   /// Streams a [DownloadProgress] object containing statistics and information
   /// about the download's progression status, once per tile and at intervals
-  /// of no longer than [maxReportInterval] (after the first tile).
+  /// of no longer than [maxReportInterval].
+  ///
+  /// The first event reports the download has started (setup is complete). The
+  /// last event indicates the download has completed (either sucessfully or
+  /// been cancelled). All events between these two emissions will be reporting
+  /// a new tile, or reporting the old tile, due to [maxReportInterval].
+  /// See the documentation on [DownloadProgress.latestTileEvent] &
+  /// [TileEvent.isRepeat] for more details.
   ///
   /// ---
   ///
@@ -103,9 +111,10 @@ class StoreDownload {
   ///
   /// ---
   ///
-  /// For information about [obscuredQueryParams], see the
-  /// [online documentation](https://fmtc.jaffaketchup.dev/usage/integration#obscuring-query-parameters).
-  /// Will default to the value in the default [FMTCTileProviderSettings].
+  /// For info about [urlTransformer], see [FMTCTileProvider.urlTransformer].
+  /// If unspecified, and the [region]'s [DownloadableRegion.options] is an
+  /// [FMTCTileProvider], will default to that tile provider's `urlTransformer`
+  /// if specified. Otherwise, will default to the identity function.
   ///
   /// To set additional headers, set it via [TileProvider.headers] when
   /// constructing the [DownloadableRegion].
@@ -123,20 +132,20 @@ class StoreDownload {
     int? rateLimit,
     Duration? maxReportInterval = const Duration(seconds: 1),
     bool disableRecovery = false,
-    List<String>? obscuredQueryParams,
+    UrlTransformer? urlTransformer,
     Object instanceId = 0,
   }) async* {
-    FMTCBackendAccess.internal; // Verify intialisation
+    FMTCBackendAccess.internal; // Verify initialisation
 
     // Check input arguments for suitability
     if (!(region.options.wmsOptions != null ||
         region.options.urlTemplate != null)) {
       throw ArgumentError(
-        "`.toDownloadable`'s `TileLayer` argument must specify an appropriate `urlTemplate` or `wmsOptions`",
+        "`.toDownloadable`'s `TileLayer` argument must specify an appropriate "
+            '`urlTemplate` or `wmsOptions`',
         'region.options.urlTemplate',
       );
     }
-
     if (parallelThreads < 1) {
       throw ArgumentError.value(
         parallelThreads,
@@ -144,7 +153,6 @@ class StoreDownload {
         'must be 1 or greater',
       );
     }
-
     if (maxBufferLength < 0) {
       throw ArgumentError.value(
         maxBufferLength,
@@ -152,13 +160,24 @@ class StoreDownload {
         'must be 0 or greater',
       );
     }
-
     if ((rateLimit ?? 2) < 1) {
       throw ArgumentError.value(
         rateLimit,
         'rateLimit',
         'must be 1 or greater, or null',
       );
+    }
+
+    final UrlTransformer resolvedUrlTransformer;
+    if (urlTransformer != null) {
+      resolvedUrlTransformer = urlTransformer;
+    } else {
+      if (region.options.tileProvider
+          case final FMTCTileProvider tileProvider) {
+        resolvedUrlTransformer = tileProvider.urlTransformer;
+      } else {
+        resolvedUrlTransformer = (u) => u;
+      }
     }
 
     // Create download instance
@@ -175,6 +194,7 @@ class StoreDownload {
     final recoveryId = disableRecovery
         ? null
         : Object.hash(instanceId, DateTime.timestamp().millisecondsSinceEpoch);
+    if (!disableRecovery) FMTCRoot.recovery._downloadsOngoing.add(recoveryId!);
 
     // Start download thread
     final receivePort = ReceivePort();
@@ -190,9 +210,7 @@ class StoreDownload {
         skipSeaTiles: skipSeaTiles,
         maxReportInterval: maxReportInterval,
         rateLimit: rateLimit,
-        obscuredQueryParams:
-            obscuredQueryParams?.map((e) => RegExp('$e=[^&]*')).toList() ??
-                FMTCTileProviderSettings.instance.obscuredQueryParams.toList(),
+        urlTransformer: resolvedUrlTransformer,
         recoveryId: recoveryId,
         backend: FMTCBackendAccessThreadSafe.internal,
       ),
@@ -212,7 +230,7 @@ class StoreDownload {
       }
 
       // Handle pause comms
-      if (evt == 1) {
+      if (evt == _DownloadManagerControlCmd.pause) {
         pauseCompleter?.complete();
         continue;
       }
@@ -220,26 +238,21 @@ class StoreDownload {
       // Handle shutdown (both normal and cancellation)
       if (evt == null) break;
 
-      // Handle recovery system startup (unless disabled)
-      if (evt == 2) {
-        FMTCRoot.recovery._downloadsOngoing.add(recoveryId!);
-        continue;
-      }
-
       // Setup control mechanisms (senders)
       if (evt is SendPort) {
         instance
           ..requestCancel = () {
-            evt.send(null);
+            evt.send(_DownloadManagerControlCmd.cancel);
             return cancelCompleter.future;
           }
           ..requestPause = () {
-            evt.send(1);
+            evt.send(_DownloadManagerControlCmd.pause);
+            // Completed by handler above
             return (pauseCompleter = Completer()).future
               ..then((_) => instance.isPaused = true);
           }
           ..requestResume = () {
-            evt.send(2);
+            evt.send(_DownloadManagerControlCmd.resume);
             instance.isPaused = false;
           };
         continue;
@@ -250,23 +263,25 @@ class StoreDownload {
 
     // Handle shutdown (both normal and cancellation)
     receivePort.close();
-    if (recoveryId != null) await FMTCRoot.recovery.cancel(recoveryId);
+    if (!disableRecovery) await FMTCRoot.recovery.cancel(recoveryId!);
     DownloadInstance.unregister(instanceId);
     cancelCompleter.complete();
   }
 
-  /// Check how many downloadable tiles are within a specified region
+  /// Count the number of tiles within the specified region
   ///
-  /// This does not include skipped sea tiles or skipped existing tiles, as those
-  /// are handled during download only.
+  /// This does not include skipped sea tiles or skipped existing tiles, as
+  /// those are handled during a download (as the contents must be known).
   ///
-  /// Returns the number of tiles.
+  /// Note that this does not require an existing/ready store, or a sensical
+  /// [DownloadableRegion.options].
   Future<int> check(DownloadableRegion region) => compute(
-        region.when(
-          rectangle: (_) => TileCounters.rectangleTiles,
-          circle: (_) => TileCounters.circleTiles,
-          line: (_) => TileCounters.lineTiles,
-          customPolygon: (_) => TileCounters.customPolygonTiles,
+        (region) => region.when(
+          rectangle: TileCounters.rectangleTiles,
+          circle: TileCounters.circleTiles,
+          line: TileCounters.lineTiles,
+          customPolygon: TileCounters.customPolygonTiles,
+          multi: TileCounters.multiTiles,
         ),
         region,
       );

@@ -60,6 +60,31 @@ abstract interface class FMTCBackendInternal
   /// {@endtemplate}
   Future<List<String>> listStores();
 
+  /// {@template fmtc.backend.storeGetMaxLength}
+  /// Retrieve the maximum allowable number of tiles within the specified store
+  ///
+  /// This limit is enforced automatically when browse caching, but not when
+  /// bulk downloading.
+  ///
+  /// `null` means there is no configured limit.
+  /// {@endtemplate}
+  Future<int?> storeGetMaxLength({
+    required String storeName,
+  });
+
+  /// {@template fmtc.backend.storeSetMaxLength}
+  /// Set the maximum allowable number of tiles within the specified store
+  ///
+  /// This limit is enforced automatically when browse caching, but not when
+  /// bulk downloading.
+  ///
+  /// Set `null` to disable the limit.
+  /// {@endtemplate}
+  Future<void> storeSetMaxLength({
+    required String storeName,
+    required int? newMaxLength,
+  });
+
   /// {@template fmtc.backend.storeExists}
   /// Check whether the specified store currently exists
   /// {@endtemplate}
@@ -70,10 +95,15 @@ abstract interface class FMTCBackendInternal
   /// {@template fmtc.backend.createStore}
   /// Create a new store with the specified name
   ///
+  /// If set, [maxLength] will be the maximum allowed number of tiles in the
+  /// store. This limit is enforced automatically when browse caching, but not
+  /// when bulk downloading. Defaults to `null`: unlimited.
+  ///
   /// Does nothing if the store already exists.
   /// {@endtemplate}
   Future<void> createStore({
     required String storeName,
+    required int? maxLength,
   });
 
   /// {@template fmtc.backend.deleteStore}
@@ -125,19 +155,33 @@ abstract interface class FMTCBackendInternal
     required String storeName,
   });
 
-  /// Check whether the specified tile exists in the specified store
-  Future<bool> tileExistsInStore({
-    required String storeName,
+  /// Check whether the specified tile exists in any of the specified stores (or
+  /// any store is [storeNames] is `null`)
+  Future<bool> tileExists({
     required String url,
+    List<String>? storeNames,
   });
 
-  /// Retrieve a raw tile by the specified URL
+  /// Retrieve a raw `tile` from any of the specified [storeNames] (or all store
+  /// names if `null` or empty) by the specified URL
   ///
-  /// If [storeName] is specified, the tile will be limited to the specified
-  /// store - if it exists in another store, it will not be returned.
-  Future<BackendTile?> readTile({
+  /// Returns the list of store names the tile belongs to - `allStoreNames` -
+  /// and were present in [storeNames] if specified - `intersectedStoreNames`.
+  ///
+  /// If [storeNames] is `null` or empty, tiles may be retrieved from any store
+  /// (which may be slower depending on the size of the root, as queries may
+  /// be unconstrained).
+  ///
+  /// `intersectedStoreNames` & `allStoreNames` will be empty if `tile` is
+  /// `null`.
+  Future<
+      ({
+        BackendTile? tile,
+        List<String> intersectedStoreNames,
+        List<String> allStoreNames,
+      })> readTile({
     required String url,
-    String? storeName,
+    List<String>? storeNames,
   });
 
   /// {@template fmtc.backend.readLatestTile}
@@ -150,10 +194,14 @@ abstract interface class FMTCBackendInternal
 
   /// Create or update a tile (given a [url] and its [bytes]) in the specified
   /// store
-  Future<void> writeTile({
-    required String storeName,
+  ///
+  /// Returns all the stores that were written to, along with whether that tile
+  /// was new to that store (not updated).
+  Future<Map<String, bool>> writeTile({
     required String url,
     required Uint8List bytes,
+    required List<String> storeNames,
+    required List<String>? writeAllNotIn,
   });
 
   /// Remove the tile from the specified store, deleting it if was orphaned
@@ -173,27 +221,30 @@ abstract interface class FMTCBackendInternal
     required String url,
   });
 
-  /// Register a cache hit or miss on the specified store
+  /// Register a cache hit or miss on the specified stores, or all stores if
+  /// null or empty
   Future<void> registerHitOrMiss({
-    required String storeName,
+    required List<String>? storeNames,
     required bool hit,
   });
 
-  /// Remove tiles in excess of the specified limit from the specified store,
-  /// oldest first
+  /// Remove tiles in excess of the specified limit in each specified store,
+  /// oldest tile first
   ///
   /// Should internally debounce, as this is a repeatedly invoked & potentially
   /// expensive operation, that will have no effect when the number of tiles in
   /// the store is below the limit.
   ///
   /// Returns the number of tiles that were actually deleted (they were
-  /// orphaned (see [deleteTile] for more info)).
+  /// orphaned (see [deleteTile] for more info)) for each store.
   ///
-  /// Throws [RootUnavailable] if the root is uninitialised whilst the
+  /// If a store does not appear in the output, but was inputted, the store
+  /// likely did not have a tile limit, in which case no tiles were removed.
+  ///
+  /// May throw [RootUnavailable] if the root is uninitialised whilst the
   /// debouncing mechanism is running.
-  Future<int> removeOldestTilesAboveLimit({
-    required String storeName,
-    required int tilesLimit,
+  Future<Map<String, int>> removeOldestTilesAboveLimit({
+    required List<String> storeNames,
   });
 
   /// {@template fmtc.backend.removeTilesOlderThan}
@@ -314,7 +365,9 @@ abstract interface class FMTCBackendInternal
   ///
   /// See [RootExternal] for more information about expected behaviour and
   /// errors.
-  Future<void> exportStores({
+  ///
+  /// Returns the number of exported tiles.
+  Future<int> exportStores({
     required String path,
     required List<String> storeNames,
   });
