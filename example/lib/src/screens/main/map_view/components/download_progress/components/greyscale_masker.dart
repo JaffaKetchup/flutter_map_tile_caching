@@ -377,7 +377,7 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
       final MapEntry(key: greyscaleAmount, value: path) =
           _greyscalePathCache.entries.elementAt(i);
 
-      final greyscalePercentage = greyscaleAmount * 1 / 25;
+      final greyscalePercentage = greyscaleAmount * 1 / _greyscaleLevelsCount;
 
       _layerHandles.elementAt(layerHandleIndex).layer = context.pushColorFilter(
         offset,
@@ -387,14 +387,7 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
           offset,
           Offset.zero & size,
           path,
-          (context, offset) {
-            context.paintChild(child!, offset);
-            /*context.canvas.clipRect(Offset.zero & size);
-            context.canvas.drawColor(
-              Colors.green,
-              BlendMode.hue,
-            );*/
-          },
+          (context, offset) => context.paintChild(child!, offset),
           clipBehavior: Clip.hardEdge,
         ),
         oldLayer: _layerHandles.elementAt(layerHandleIndex).layer,
