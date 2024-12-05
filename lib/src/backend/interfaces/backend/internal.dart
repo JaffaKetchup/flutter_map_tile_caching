@@ -197,7 +197,15 @@ abstract interface class FMTCBackendInternal
   });
 
   /// {@template fmtc.backend.removeTilesOlderThan}
-  /// Remove tiles that were last modified after expiry from the specified store
+  /// Remove tiles that were last modified prior to the expiry timestamp from
+  /// the specified store
+  ///
+  /// For example, to remove tiles last modified over 14 days ago, calculate
+  /// [expiry] with:
+  ///
+  /// ```dart
+  /// expiry: DateTime.timestamp().subtract(const Duration(days: 14))
+  /// ```
   ///
   /// Returns the number of tiles that were actually deleted (they were
   /// orphaned). See [deleteTile] for more information about orphan tiles.

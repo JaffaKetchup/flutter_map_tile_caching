@@ -18,6 +18,10 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [9.1.4] - 2024/12/05
+
+* Fixed bug in `removeTilesOlderThan` where actually tiles newer than the specified expiry were being removed ([#172](https://github.com/JaffaKetchup/flutter_map_tile_caching/issues/172))
+
 ## [9.1.3] - 2024/08/19
 
 * Fixed bug where any operation that attempted to delete tiles fatally crashed on some iOS devices  

@@ -543,7 +543,7 @@ Future<void> _worker(
             .build();
         final tilesQuery = (root.box<ObjectBoxTile>().query(
                   ObjectBoxTile_.lastModified
-                      .greaterThan(expiry.millisecondsSinceEpoch),
+                      .lessThan(expiry.millisecondsSinceEpoch),
                 )..linkMany(
                 ObjectBoxTile_.stores,
                 ObjectBoxStore_.name.equals(storeName),
