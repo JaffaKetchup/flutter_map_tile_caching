@@ -56,6 +56,10 @@ Additionally, vector tiles are now supported in theory, as the internal caching/
 
 * Brand new example app to (partially!) showcase the new levels of flexibility and customizability
 
+## [9.1.4] - 2024/12/05
+
+* Fixed bug in `removeTilesOlderThan` where actually tiles newer than the specified expiry were being removed ([#172](https://github.com/JaffaKetchup/flutter_map_tile_caching/issues/172))
+
 ## [9.1.3] - 2024/08/19
 
 * Fixed bug where any operation that attempted to delete tiles fatally crashed on some iOS devices  
