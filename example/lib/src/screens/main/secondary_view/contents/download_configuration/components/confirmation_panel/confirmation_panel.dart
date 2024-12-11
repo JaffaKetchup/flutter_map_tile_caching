@@ -196,7 +196,8 @@ class _ConfirmationPanelState extends State<ConfirmationPanel> {
   }
 
   void _updateTileCount() {
-    _tileCount = const FMTCStore('').download.check(_prevTileCountableRegion!);
+    _tileCount =
+        const FMTCStore('').download.countTiles(_prevTileCountableRegion!);
     setState(() {});
   }
 
@@ -226,21 +227,20 @@ class _ConfirmationPanelState extends State<ConfirmationPanel> {
       ),
     );
 
-    final downloadStream = store.download
-        .startForeground(
-          region: downloadableRegion,
-          parallelThreads: downloadConfiguration.parallelThreads,
-          maxBufferLength: downloadConfiguration.maxBufferLength,
-          skipExistingTiles: downloadConfiguration.skipExistingTiles,
-          skipSeaTiles: downloadConfiguration.skipSeaTiles,
-          rateLimit: downloadConfiguration.rateLimit,
-        )
-        .asBroadcastStream();
+    final downloadStreams = store.download.startForeground(
+      region: downloadableRegion,
+      parallelThreads: downloadConfiguration.parallelThreads,
+      maxBufferLength: downloadConfiguration.maxBufferLength,
+      skipExistingTiles: downloadConfiguration.skipExistingTiles,
+      skipSeaTiles: downloadConfiguration.skipSeaTiles,
+      retryFailedRequestTiles: downloadConfiguration.retryFailedRequestTiles,
+      rateLimit: downloadConfiguration.rateLimit,
+    );
 
     downloadingProvider.assignDownload(
       storeName: downloadConfiguration.selectedStoreName!,
       downloadableRegion: downloadableRegion,
-      stream: downloadStream,
+      downloadStreams: downloadStreams,
     );
 
     // The downloading view is switched to by `assignDownload`, when the first

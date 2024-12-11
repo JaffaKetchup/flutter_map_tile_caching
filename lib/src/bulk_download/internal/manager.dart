@@ -14,6 +14,7 @@ Future<void> _downloadManager(
     bool skipSeaTiles,
     Duration? maxReportInterval,
     int? rateLimit,
+    bool retryFailedRequestTiles,
     String Function(String) urlTransformer,
     int? recoveryId,
     FMTCBackendInternalThreadSafe backend,
@@ -71,9 +72,8 @@ Future<void> _downloadManager(
     threadBuffersTiles = List.filled(input.parallelThreads, 0);
   }
 
-  // Setup tile generator isolate
+  // Setup tile generation
   final tileReceivePort = ReceivePort();
-
   final tileIsolate = await Isolate.spawn(
     (({SendPort sendPort, DownloadableRegion region}) input) =>
         input.region.when(
@@ -98,10 +98,44 @@ Future<void> _downloadManager(
     debugName: '[FMTC] Tile Coords Generator Thread',
   );
 
+  // Setup retry tile utils
+  final retryTiles = <(int, int, int)>[];
+  bool isRetryingTiles = false;
+  (int, int, int)? lastTileRetry; // See explanation below
+
+  // Merge generated and retry tile streams together
+  final mergedTileStreams = () async* {
+    // First, output the generated tile stream
+    // This stream only emits events when a tile is requested, to minimize
+    // memory consumption
+    await for (final evt in tileReceivePort) {
+      if (evt == null) break;
+      yield evt;
+    }
+
+    // After there are no more new tiles available, emit retry tiles if
+    // necessary
+    // We must store these coordinates in memory, so there is no use
+    // implementing a request/recieve system as above
+    // We send the retry tiles through this path to ensure they are rate limited
+    if (retryTiles.isEmpty) return;
+    assert(
+      input.retryFailedRequestTiles,
+      'Should not record tiles for retry when disabled',
+    );
+    // We set a flag, so threads are aware, so `TileEvent`s are aware, so stats
+    // are aware
+    isRetryingTiles = true;
+    yield* Stream.fromIterable(retryTiles); // Must not modify during streaming
+    // We cannot add events to the list of tiles during its streaming, so we
+    // make a special place to store the the potential failure of the last
+    // fresh tile
+    if (lastTileRetry != null) yield lastTileRetry;
+  }();
   final tileQueue = StreamQueue(
     input.rateLimit == null
-        ? tileReceivePort
-        : tileReceivePort.rateLimit(
+        ? mergedTileStreams
+        : mergedTileStreams.rateLimit(
             minimumSpacing: Duration(
               microseconds: ((1 / input.rateLimit!) * 1000000).ceil(),
             ),
@@ -110,7 +144,11 @@ Future<void> _downloadManager(
   final requestTilePort = await tileQueue.next as SendPort;
 
   // Start progress tracking
-  final initialDownloadProgress = DownloadProgress._initial(maxTiles: maxTiles);
+  final initialDownloadProgress = DownloadProgress._initial(
+    maxTilesCount: maxTiles,
+    tilesPerSecondLimit: input.rateLimit,
+    retryFailedRequestTiles: input.retryFailedRequestTiles,
+  );
   var lastDownloadProgress = initialDownloadProgress;
   final downloadDuration = Stopwatch();
   final tileCompletionTimestamps = <DateTime>[];
@@ -134,7 +172,7 @@ Future<void> _downloadManager(
 
   // Setup two-way communications with root
   final rootReceivePort = ReceivePort();
-  void send(Object? m) => input.sendPort.send(m);
+  void sendToMain(Object? m) => input.sendPort.send(m);
 
   // Setup cancel, pause, and resume handling
   Iterable<Completer<void>> generateThreadPausedStates() => Iterable.generate(
@@ -157,7 +195,7 @@ Future<void> _downloadManager(
           threadPausedStates.setAll(0, generateThreadPausedStates());
           await Future.wait(threadPausedStates.map((e) => e.future));
           downloadDuration.stop();
-          send(_DownloadManagerControlCmd.pause);
+          sendToMain(_DownloadManagerControlCmd.pause);
         case _DownloadManagerControlCmd.resume:
           pauseResumeSignal.complete();
           downloadDuration.start();
@@ -175,12 +213,10 @@ Future<void> _downloadManager(
           (_) {
             if (lastDownloadProgress != initialDownloadProgress &&
                 pauseResumeSignal.isCompleted) {
-              send(
-                lastDownloadProgress =
-                    lastDownloadProgress._fallbackReportUpdate(
-                  newDuration: downloadDuration.elapsed,
+              sendToMain(
+                lastDownloadProgress = lastDownloadProgress._updateWithoutTile(
+                  elapsedDuration: downloadDuration.elapsed,
                   tilesPerSecond: getCurrentTPS(registerNewTPS: false),
-                  rateLimit: input.rateLimit,
                 ),
               );
             }
@@ -199,13 +235,11 @@ Future<void> _downloadManager(
   }
 
   // Create convienience method to update recovery system if enabled
-  void updateRecoveryIfNecessary() {
+  void updateRecovery() {
     if (input.recoveryId case final recoveryId?) {
       input.backend.updateRecovery(
         id: recoveryId,
-        newStartTile: 1 +
-            (lastDownloadProgress.cachedTiles -
-                lastDownloadProgress.bufferedTiles),
+        newStartTile: 1 + lastDownloadProgress.flushedTilesCount,
       );
     }
   }
@@ -214,10 +248,10 @@ Future<void> _downloadManager(
   final threadBackend = input.backend.duplicate();
 
   // Now it's safe, start accepting communications from the root
-  send(rootReceivePort.sendPort);
+  sendToMain(rootReceivePort.sendPort);
 
   // Send an initial progress report to indicate the start of the download
-  send(initialDownloadProgress);
+  sendToMain(initialDownloadProgress);
 
   // Start download threads & wait for download to complete/cancelled
   downloadDuration.start();
@@ -255,38 +289,75 @@ Future<void> _downloadManager(
         // kill all threads
         unawaited(
           cancelSignal.future
+              // Handles case when cancel is emitted before thread is setup
               .then((_) => sendPortCompleter.future)
-              .then((sp) => sp.send(null)),
+              .then((s) => s.send(null)),
         );
 
         downloadThreadReceivePort.listen(
           (evt) async {
             // Thread is sending tile data
             if (evt is TileEvent) {
+              // Send event to user
+              sendToMain(evt);
+
+              // Queue tiles for retry if failed and not already a retry attempt
+              if (input.retryFailedRequestTiles &&
+                  evt is FailedRequestTileEvent &&
+                  !evt.wasRetryAttempt) {
+                if (isRetryingTiles) {
+                  assert(
+                    lastTileRetry == null,
+                    'Must not already have a recorded last tile',
+                  );
+                  lastTileRetry = evt.coordinates;
+                } else {
+                  retryTiles.add(evt.coordinates);
+                }
+              }
+
               // If buffering is in use, send a progress update with buffer info
               if (input.maxBufferLength != 0) {
+                // TODO: Fix incorrect stats reporting
+
                 // Update correct thread buffer with new tile on success
-                if (evt.result == TileEventResult.success) {
-                  if (evt._wasBufferReset) {
-                    threadBuffersSize[threadNo] = 0;
+                late final int flushedTilesCount;
+                late final int flushedTilesSize;
+                if (evt is SuccessfulTileEvent) {
+                  if (evt._wasBufferFlushed) {
+                    flushedTilesCount = threadBuffersTiles[threadNo];
+                    flushedTilesSize = threadBuffersSize[threadNo];
                     threadBuffersTiles[threadNo] = 0;
+                    threadBuffersSize[threadNo] = 0;
                   } else {
-                    threadBuffersSize[threadNo] += evt.tileImage!.lengthInBytes;
                     threadBuffersTiles[threadNo]++;
+                    threadBuffersSize[threadNo] += evt.tileImage.lengthInBytes;
                   }
                 }
 
-                send(
-                  lastDownloadProgress =
-                      lastDownloadProgress._updateProgressWithTile(
+                final wasBufferFlushed =
+                    evt is SuccessfulTileEvent && evt._wasBufferFlushed;
+
+                sendToMain(
+                  lastDownloadProgress = lastDownloadProgress._updateWithTile(
                     newTileEvent: evt,
-                    newBufferedTiles:
-                        threadBuffersTiles.reduce((a, b) => a + b),
-                    newBufferedSize:
-                        threadBuffersSize.reduce((a, b) => a + b) / 1024,
-                    newDuration: downloadDuration.elapsed,
+                    bufferedTiles: evt is SuccessfulTileEvent
+                        ? (
+                            count: threadBuffersTiles.reduce((a, b) => a + b),
+                            size: threadBuffersSize.reduce((a, b) => a + b) /
+                                1024,
+                          )
+                        : null,
+                    flushedTiles: wasBufferFlushed
+                        ? (
+                            count: lastDownloadProgress.flushedTilesCount +
+                                flushedTilesCount,
+                            size: lastDownloadProgress.flushedTilesSize +
+                                flushedTilesSize / 1024
+                          )
+                        : null,
+                    elapsedDuration: downloadDuration.elapsed,
                     tilesPerSecond: getCurrentTPS(registerNewTPS: true),
-                    rateLimit: input.rateLimit,
                   ),
                 );
 
@@ -295,21 +366,26 @@ Future<void> _downloadManager(
                 // We don't want to update recovery to a tile that isn't cached
                 // (only buffered), because they'll be lost in the events
                 // recovery is designed to recover from
-                if (evt._wasBufferReset) updateRecoveryIfNecessary();
+                if (wasBufferFlushed) updateRecovery();
               } else {
-                send(
-                  lastDownloadProgress =
-                      lastDownloadProgress._updateProgressWithTile(
+                // We do not need to care about buffering, which makes updates
+                // much easier
+                sendToMain(
+                  lastDownloadProgress = lastDownloadProgress._updateWithTile(
                     newTileEvent: evt,
-                    newBufferedTiles: 0,
-                    newBufferedSize: 0,
-                    newDuration: downloadDuration.elapsed,
+                    flushedTiles: evt is SuccessfulTileEvent
+                        ? (
+                            count: lastDownloadProgress.flushedTilesCount + 1,
+                            size: lastDownloadProgress.flushedTilesSize +
+                                (evt.tileImage.lengthInBytes / 1024)
+                          )
+                        : null,
+                    elapsedDuration: downloadDuration.elapsed,
                     tilesPerSecond: getCurrentTPS(registerNewTPS: true),
-                    rateLimit: input.rateLimit,
                   ),
                 );
 
-                updateRecoveryIfNecessary();
+                updateRecovery();
               }
 
               return;
@@ -317,19 +393,31 @@ Future<void> _downloadManager(
 
             // Thread is requesting new tile coords
             if (evt is int) {
+              // If pause requested, mark thread as paused and wait for resume
               if (!pauseResumeSignal.isCompleted) {
                 threadPausedStates[threadNo].complete();
                 await pauseResumeSignal.future;
               }
 
+              // Request a new tile coord fresh from the generator
+              // This is only necessary if we are not retrying tiles, but we
+              // just attempt anyway
               requestTilePort.send(null);
-              try {
-                sendPort.send(await tileQueue.next);
-                // ignore: avoid_catching_errors
-              } on StateError {
-                sendPort.send(null);
-              }
-              return;
+
+              // Wait for a tile coordinate to be generated if available
+              final nextCoordinates = (await tileQueue.take(1)).firstOrNull;
+
+              // Kill the thread if no new tiles are available
+              if (nextCoordinates == null) return sendPort.send(null);
+
+              // Otherwise, send the coordinate to the thread, marking whether
+              // it is a retry tile
+              return sendPort.send(
+                (
+                  tileCoordinates: nextCoordinates,
+                  isRetryAttempt: isRetryingTiles,
+                ),
+              );
             }
 
             // Thread is establishing comms
@@ -360,21 +448,8 @@ Future<void> _downloadManager(
   );
   downloadDuration.stop();
 
-  // Send final buffer cleared progress report
-  fallbackReportTimer?.cancel();
-  send(
-    lastDownloadProgress = lastDownloadProgress._updateProgressWithTile(
-      newTileEvent: null,
-      newBufferedTiles: 0,
-      newBufferedSize: 0,
-      newDuration: downloadDuration.elapsed,
-      tilesPerSecond: 0,
-      rateLimit: input.rateLimit,
-      isComplete: true,
-    ),
-  );
-
   // Cleanup resources and shutdown
+  fallbackReportTimer?.cancel();
   rootReceivePort.close();
   if (input.recoveryId != null) await input.backend.uninitialise();
   tileIsolate.kill(priority: Isolate.immediate);

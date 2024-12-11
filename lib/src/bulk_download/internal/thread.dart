@@ -34,12 +34,15 @@ Future<void> _singleDownloadThread(
   await input.backend.initialise();
 
   while (true) {
-    // Request new tile coords
+    // Request new data from manager
     send(0);
-    final rawCoords = (await tileQueue.next) as (int, int, int)?;
+    final managerInput = (await tileQueue.next) as ({
+      (int, int, int) tileCoordinates,
+      bool isRetryAttempt,
+    })?;
 
-    // Cleanup resources and shutdown if no more coords available
-    if (rawCoords == null) {
+    // Cleanup resources and shutdown if no more data available
+    if (managerInput == null) {
       receivePort.close();
       await tileQueue.cancel(immediate: true);
 
@@ -58,31 +61,38 @@ Future<void> _singleDownloadThread(
       Isolate.exit();
     }
 
-    // Generate `TileCoordinates`
-    final coordinates =
-        TileCoordinates(rawCoords.$1, rawCoords.$2, rawCoords.$3);
+    // Destructure data from manager
+    final (:tileCoordinates, :isRetryAttempt) = managerInput;
 
-    // Get new tile URL & any existing tile
-    final networkUrl =
-        input.options.tileProvider.getTileUrl(coordinates, input.options);
+    // Get new tile URLs
+    final networkUrl = input.options.tileProvider.getTileUrl(
+      TileCoordinates(
+        tileCoordinates.$1,
+        tileCoordinates.$2,
+        tileCoordinates.$3,
+      ),
+      input.options,
+    );
     final matcherUrl = input.urlTransformer(networkUrl);
 
-    final existingTile = await input.backend.readTile(
-      url: matcherUrl,
-      storeName: input.storeName,
-    );
-
-    // Skip if tile already exists and user demands existing tile pruning
-    if (input.skipExistingTiles && existingTile != null) {
-      send(
-        TileEvent._(
-          TileEventResult.alreadyExisting,
-          url: networkUrl,
-          coordinates: coordinates,
-          tileImage: Uint8List.fromList(existingTile.bytes),
-        ),
-      );
-      continue;
+    // If skipping existing tile, perform extra checks
+    if (input.skipExistingTiles) {
+      if ((await input.backend.readTile(
+        url: matcherUrl,
+        storeName: input.storeName,
+      ))
+              ?.bytes
+          case final bytes?) {
+        send(
+          ExistingTileEvent._(
+            url: networkUrl,
+            coordinates: tileCoordinates,
+            tileImage: Uint8List.fromList(bytes),
+            // Never a retry attempt
+          ),
+        );
+        continue;
+      }
     }
 
     // Fetch new tile from URL
@@ -90,15 +100,13 @@ Future<void> _singleDownloadThread(
     try {
       response =
           await httpClient.get(Uri.parse(networkUrl), headers: input.headers);
-    } catch (e) {
+    } catch (err) {
       send(
-        TileEvent._(
-          e is SocketException
-              ? TileEventResult.noConnectionDuringFetch
-              : TileEventResult.unknownFetchException,
+        FailedRequestTileEvent._(
           url: networkUrl,
-          coordinates: coordinates,
-          fetchError: e,
+          coordinates: tileCoordinates,
+          fetchError: err,
+          wasRetryAttempt: isRetryAttempt,
         ),
       );
       continue;
@@ -106,11 +114,11 @@ Future<void> _singleDownloadThread(
 
     if (response.statusCode != 200) {
       send(
-        TileEvent._(
-          TileEventResult.negativeFetchResponse,
+        NegativeResponseTileEvent._(
           url: networkUrl,
-          coordinates: coordinates,
+          coordinates: tileCoordinates,
           fetchResponse: response,
+          wasRetryAttempt: isRetryAttempt,
         ),
       );
       continue;
@@ -119,12 +127,12 @@ Future<void> _singleDownloadThread(
     // Skip if tile is a sea tile & user demands sea tile pruning
     if (const ListEquality().equals(response.bodyBytes, input.seaTileBytes)) {
       send(
-        TileEvent._(
-          TileEventResult.isSeaTile,
+        SeaTileEvent._(
           url: networkUrl,
-          coordinates: coordinates,
+          coordinates: tileCoordinates,
           tileImage: response.bodyBytes,
           fetchResponse: response,
+          wasRetryAttempt: isRetryAttempt,
         ),
       );
       continue;
@@ -143,8 +151,10 @@ Future<void> _singleDownloadThread(
     }
 
     // Write buffer to database if necessary
-    final wasBufferReset = tileUrlsBuffer.length >= input.maxBufferLength;
-    if (wasBufferReset) {
+    // Must set flag appropriately to indicate to manager whether the buffer
+    // stats and counters should be reset
+    final wasBufferFlushed = tileUrlsBuffer.length >= input.maxBufferLength;
+    if (wasBufferFlushed) {
       await input.backend.writeTiles(
         storeName: input.storeName,
         urls: tileUrlsBuffer,
@@ -156,13 +166,13 @@ Future<void> _singleDownloadThread(
 
     // Return successful response to user
     send(
-      TileEvent._(
-        TileEventResult.success,
+      SuccessfulTileEvent._(
         url: networkUrl,
-        coordinates: coordinates,
+        coordinates: tileCoordinates,
         tileImage: response.bodyBytes,
         fetchResponse: response,
-        wasBufferReset: wasBufferReset,
+        wasBufferFlushed: wasBufferFlushed,
+        wasRetryAttempt: isRetryAttempt,
       ),
     );
   }

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -15,82 +13,114 @@ class ProgressIndicatorText extends StatefulWidget {
 }
 
 class _ProgressIndicatorTextState extends State<ProgressIndicatorText> {
-  late final Timer _rawPercentAlternator;
   bool _usePercentages = false;
 
   @override
-  void initState() {
-    super.initState();
-    _rawPercentAlternator = Timer.periodic(
-      const Duration(seconds: 2),
-      (_) => setState(() => _usePercentages = !_usePercentages),
-    );
-  }
-
-  @override
-  void dispose() {
-    _rawPercentAlternator.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final cachedTilesCount = context.select<DownloadingProvider, int>(
-      (p) => p.latestEvent.cachedTiles - p.latestEvent.bufferedTiles,
+    final successfulFlushedTilesCount =
+        context.select<DownloadingProvider, int>(
+      (p) => p.latestDownloadProgress.flushedTilesCount,
     );
-    final cachedTilesSize = context.select<DownloadingProvider, double>(
-          (p) => p.latestEvent.cachedSize - p.latestEvent.bufferedSize,
+    final successfulFlushedTilesSize =
+        context.select<DownloadingProvider, double>(
+              (p) => p.latestDownloadProgress.flushedTilesSize,
+            ) *
+            1024;
+
+    final successfulBufferedTilesCount =
+        context.select<DownloadingProvider, int>(
+      (p) => p.latestDownloadProgress.bufferedTilesCount,
+    );
+    final successfulBufferedTilesSize =
+        context.select<DownloadingProvider, double>(
+              (p) => p.latestDownloadProgress.bufferedTilesSize,
+            ) *
+            1024;
+
+    final skippedExistingTilesCount = context.select<DownloadingProvider, int>(
+      (p) => p.latestDownloadProgress.existingTilesCount,
+    );
+    final skippedExistingTilesSize =
+        context.select<DownloadingProvider, double>(
+              (p) => p.latestDownloadProgress.existingTilesSize,
+            ) *
+            1024;
+
+    final skippedSeaTilesCount = context.select<DownloadingProvider, int>(
+      (p) => p.latestDownloadProgress.seaTilesCount,
+    );
+    final skippedSeaTilesSize = context.select<DownloadingProvider, double>(
+          (p) => p.latestDownloadProgress.seaTilesSize,
         ) *
         1024;
 
-    final bufferedTilesCount = context
-        .select<DownloadingProvider, int>((p) => p.latestEvent.bufferedTiles);
-    final bufferedTilesSize = context.select<DownloadingProvider, double>(
-          (p) => p.latestEvent.bufferedSize,
-        ) *
-        1024;
+    final failedNegativeResponseTilesCount =
+        context.select<DownloadingProvider, int>(
+      (p) => p.latestDownloadProgress.negativeResponseTilesCount,
+    );
 
-    final skippedExistingTilesCount = context
-        .select<DownloadingProvider, int>((p) => p.skippedExistingTileCount);
-    final skippedExistingTilesSize = context
-        .select<DownloadingProvider, int>((p) => p.skippedExistingTileSize);
+    final failedFailedRequestTilesCount =
+        context.select<DownloadingProvider, int>(
+      (p) => p.latestDownloadProgress.failedRequestTilesCount,
+    );
 
-    final skippedSeaTilesCount =
-        context.select<DownloadingProvider, int>((p) => p.skippedSeaTileCount);
-    final skippedSeaTilesSize =
-        context.select<DownloadingProvider, int>((p) => p.skippedSeaTileSize);
+    final retryTilesQueuedCount = context.select<DownloadingProvider, int>(
+      (p) => p.latestDownloadProgress.retryTilesQueuedCount,
+    );
 
-    final failedTilesCount = context
-        .select<DownloadingProvider, int>((p) => p.latestEvent.failedTiles);
+    final remainingTilesCount = context.select<DownloadingProvider, int>(
+          (p) => p.latestDownloadProgress.remainingTilesCount,
+        ) -
+        retryTilesQueuedCount;
 
-    final pendingTilesCount = context
-        .select<DownloadingProvider, int>((p) => p.latestEvent.remainingTiles);
-
-    final maxTilesCount =
-        context.select<DownloadingProvider, int>((p) => p.latestEvent.maxTiles);
+    final maxTilesCount = context.select<DownloadingProvider, int>(
+      (p) => p.latestDownloadProgress.maxTilesCount,
+    );
 
     return Column(
       children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: SegmentedButton(
+            segments: const [
+              ButtonSegment(
+                value: false,
+                icon: Icon(Icons.numbers),
+                tooltip: 'Show tile counts',
+              ),
+              ButtonSegment(
+                value: true,
+                icon: Icon(Icons.percent),
+                tooltip: 'Show percentages',
+              ),
+            ],
+            selected: {_usePercentages},
+            onSelectionChanged: (v) =>
+                setState(() => _usePercentages = v.single),
+            showSelectedIcon: false,
+          ),
+        ),
+        const SizedBox(height: 8),
         _TextRow(
           color: DownloadingProgressIndicatorColors.successfulColor,
           type: 'Successful',
           statistic: _usePercentages
-              ? '${(((cachedTilesCount + bufferedTilesCount) / maxTilesCount) * 100).toStringAsFixed(1)}% '
-              : '${cachedTilesCount + bufferedTilesCount} tiles (${(cachedTilesSize + bufferedTilesSize).asReadableSize})',
+              ? '${(((successfulFlushedTilesCount + successfulBufferedTilesCount) / maxTilesCount) * 100).toStringAsFixed(1)}% '
+              : '${successfulFlushedTilesCount + successfulBufferedTilesCount} tiles (${(successfulFlushedTilesSize + successfulBufferedTilesSize).asReadableSize})',
         ),
         const SizedBox(height: 4),
         _TextRow(
-          type: 'Cached',
+          type: 'Flushed',
           statistic: _usePercentages
-              ? '${((cachedTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}% '
-              : '$cachedTilesCount tiles (${cachedTilesSize.asReadableSize})',
+              ? '${((successfulFlushedTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}% '
+              : '$successfulFlushedTilesCount tiles (${successfulFlushedTilesSize.asReadableSize})',
         ),
         const SizedBox(height: 4),
         _TextRow(
           type: 'Buffered',
           statistic: _usePercentages
-              ? '${((bufferedTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
-              : '$bufferedTilesCount tiles (${bufferedTilesSize.asReadableSize})',
+              ? '${((successfulBufferedTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
+              : '$successfulBufferedTilesCount tiles (${successfulBufferedTilesSize.asReadableSize})',
         ),
         const SizedBox(height: 4),
         _TextRow(
@@ -119,16 +149,38 @@ class _ProgressIndicatorTextState extends State<ProgressIndicatorText> {
           color: DownloadingProgressIndicatorColors.failedColor,
           type: 'Failed',
           statistic: _usePercentages
-              ? '${((failedTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
-              : '$failedTilesCount tiles',
+              ? '${(((failedNegativeResponseTilesCount + failedFailedRequestTilesCount) / maxTilesCount) * 100).toStringAsFixed(1)}%'
+              : '${failedNegativeResponseTilesCount + failedFailedRequestTilesCount} tiles',
+        ),
+        const SizedBox(height: 4),
+        _TextRow(
+          type: 'Negative Response',
+          statistic: _usePercentages
+              ? '${((failedNegativeResponseTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
+              : '$failedNegativeResponseTilesCount tiles',
+        ),
+        const SizedBox(height: 4),
+        _TextRow(
+          type: 'Failed Request',
+          statistic: _usePercentages
+              ? '${((failedFailedRequestTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
+              : '$failedFailedRequestTilesCount tiles',
+        ),
+        const SizedBox(height: 4),
+        _TextRow(
+          color: DownloadingProgressIndicatorColors.retryQueueColor,
+          type: 'Queued For Retry',
+          statistic: _usePercentages
+              ? '${((retryTilesQueuedCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
+              : '$retryTilesQueuedCount tiles',
         ),
         const SizedBox(height: 4),
         _TextRow(
           color: DownloadingProgressIndicatorColors.pendingColor,
           type: 'Pending',
           statistic: _usePercentages
-              ? '${((pendingTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
-              : '$pendingTilesCount/$maxTilesCount tiles',
+              ? '${((remainingTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
+              : '$remainingTilesCount/$maxTilesCount tiles',
         ),
       ],
     );

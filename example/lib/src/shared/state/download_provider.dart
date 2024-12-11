@@ -10,70 +10,59 @@ class DownloadingProvider extends ChangeNotifier {
   bool _isPaused = false;
   bool get isPaused => _isPaused;
 
+  bool _isComplete = false;
+  bool get isComplete => _isComplete;
+
   DownloadableRegion? _downloadableRegion;
   DownloadableRegion get downloadableRegion =>
       _downloadableRegion ?? (throw _notReadyError);
 
-  DownloadProgress? _latestEvent;
-  DownloadProgress get latestEvent => _latestEvent ?? (throw _notReadyError);
+  DownloadProgress? _latestDownloadProgress;
+  DownloadProgress get latestDownloadProgress =>
+      _latestDownloadProgress ?? (throw _notReadyError);
 
-  Stream<DownloadProgress>? _rawStream;
-  Stream<DownloadProgress> get rawStream =>
-      _rawStream ?? (throw _notReadyError);
+  TileEvent? _latestTileEvent;
+  TileEvent? get latestTileEvent => _latestTileEvent;
 
-  late int _skippedSeaTileCount;
-  int get skippedSeaTileCount => _skippedSeaTileCount;
-
-  late int _skippedSeaTileSize;
-  int get skippedSeaTileSize => _skippedSeaTileSize;
-
-  late int _skippedExistingTileCount;
-  int get skippedExistingTileCount => _skippedExistingTileCount;
-
-  late int _skippedExistingTileSize;
-  int get skippedExistingTileSize => _skippedExistingTileSize;
+  Stream<TileEvent>? _rawTileEventsStream;
+  Stream<TileEvent> get rawTileEventStream =>
+      _rawTileEventsStream ?? (throw _notReadyError);
 
   late String _storeName;
-  late StreamSubscription<DownloadProgress> _streamSub;
 
   void assignDownload({
     required String storeName,
     required DownloadableRegion downloadableRegion,
-    required Stream<DownloadProgress> stream,
+    required ({
+      Stream<DownloadProgress> downloadProgress,
+      Stream<TileEvent> tileEvents
+    }) downloadStreams,
   }) {
-    assert(stream.isBroadcast, 'Input stream must be broadcastable');
-
     _storeName = storeName;
     _downloadableRegion = downloadableRegion;
 
-    _skippedExistingTileCount = 0;
-    _skippedSeaTileCount = 0;
-    _skippedExistingTileSize = 0;
-    _skippedSeaTileSize = 0;
+    _rawTileEventsStream = downloadStreams.tileEvents.asBroadcastStream();
 
-    _rawStream = stream;
-    _streamSub = stream.listen(
-      (progress) {
-        if (progress.attemptedTiles == 0) _isFocused = true;
-        _latestEvent = progress;
+    downloadStreams.downloadProgress.listen(
+      (evt) {
+        // Focus on initial event
+        if (evt.attemptedTilesCount == 0) _isFocused = true;
 
-        final latestTile = progress.latestTileEvent;
-
-        if (latestTile != null && !latestTile.isRepeat) {
-          if (latestTile.result == TileEventResult.alreadyExisting) {
-            _skippedExistingTileCount++;
-            _skippedExistingTileSize += latestTile.tileImage!.lengthInBytes;
-          }
-          if (latestTile.result == TileEventResult.isSeaTile) {
-            _skippedSeaTileCount++;
-            _skippedSeaTileSize += latestTile.tileImage!.lengthInBytes;
-          }
-        }
-
+        // Update stored value
+        _latestDownloadProgress = evt;
         notifyListeners();
       },
-      onDone: () => _streamSub.cancel(),
+      onDone: () {
+        _isComplete = true;
+        notifyListeners();
+      },
     );
+
+    downloadStreams.tileEvents.listen((evt) {
+      // Update stored value
+      _latestTileEvent = evt;
+      notifyListeners();
+    });
   }
 
   Future<void> pause() async {
@@ -92,6 +81,7 @@ class DownloadingProvider extends ChangeNotifier {
 
   void reset() {
     _isFocused = false;
+    _isComplete = false;
     notifyListeners();
   }
 

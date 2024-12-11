@@ -14,14 +14,14 @@ part 'components/greyscale_masker.dart';
 class DownloadProgressMasker extends StatefulWidget {
   const DownloadProgressMasker({
     super.key,
-    required this.downloadProgressStream,
+    required this.tileEvents,
     required this.minZoom,
     required this.maxZoom,
     this.tileSize = 256,
     required this.child,
   });
 
-  final Stream<DownloadProgress>? downloadProgressStream;
+  final Stream<TileEvent>? tileEvents;
   final int minZoom;
   final int maxZoom;
   final int tileSize;
@@ -34,18 +34,21 @@ class DownloadProgressMasker extends StatefulWidget {
 class _DownloadProgressMaskerState extends State<DownloadProgressMasker> {
   @override
   Widget build(BuildContext context) {
-    if (widget.downloadProgressStream case final dps?) {
+    if (widget.tileEvents case final tileEvents?) {
       return RepaintBoundary(
         child: StreamBuilder(
-          stream: dps
-              .where(
-                (e) =>
-                    e.latestTileEvent != null && !e.latestTileEvent!.isRepeat,
-              )
-              .map((e) => e.latestTileEvent!.coordinates),
-          builder: (context, snapshot) => GreyscaleMasker(
+          stream: tileEvents
+              .where((evt) => evt is SuccessfulTileEvent)
+              .map((evt) => evt.coordinates),
+          builder: (context, coords) => GreyscaleMasker(
             mapCamera: MapCamera.of(context),
-            latestTileCoordinates: snapshot.data,
+            latestTileCoordinates: coords.data == null
+                ? null
+                : TileCoordinates(
+                    coords.requireData.$1,
+                    coords.requireData.$2,
+                    coords.requireData.$3,
+                  ),
             minZoom: widget.minZoom,
             maxZoom: widget.maxZoom,
             tileSize: widget.tileSize,

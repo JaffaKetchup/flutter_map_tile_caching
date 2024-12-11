@@ -12,13 +12,24 @@ class ProgressIndicatorBars extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final successful = context.select<DownloadingProvider, double>(
-      (p) => p.latestEvent.successfulTiles / p.latestEvent.maxTiles,
+      (p) =>
+          p.latestDownloadProgress.successfulTilesCount /
+          p.latestDownloadProgress.maxTilesCount,
     );
     final skipped = context.select<DownloadingProvider, double>(
-      (p) => p.latestEvent.skippedTiles / p.latestEvent.maxTiles,
+      (p) =>
+          p.latestDownloadProgress.skippedTilesCount /
+          p.latestDownloadProgress.maxTilesCount,
     );
     final failed = context.select<DownloadingProvider, double>(
-      (p) => p.latestEvent.failedTiles / p.latestEvent.maxTiles,
+      (p) =>
+          p.latestDownloadProgress.failedTilesCount /
+          p.latestDownloadProgress.maxTilesCount,
+    );
+    final retryQueue = context.select<DownloadingProvider, double>(
+      (p) =>
+          p.latestDownloadProgress.retryTilesQueuedCount /
+          p.latestDownloadProgress.maxTilesCount,
     );
 
     return ClipRRect(
@@ -27,9 +38,15 @@ class ProgressIndicatorBars extends StatelessWidget {
         child: Stack(
           children: [
             LinearProgressIndicator(
-              value: successful + skipped + failed,
+              value: successful + skipped + retryQueue + failed,
               backgroundColor: DownloadingProgressIndicatorColors.pendingColor,
               color: DownloadingProgressIndicatorColors.failedColor,
+              minHeight: _barHeight,
+            ),
+            LinearProgressIndicator(
+              value: successful + skipped + retryQueue,
+              backgroundColor: Colors.transparent,
+              color: DownloadingProgressIndicatorColors.retryQueueColor,
               minHeight: _barHeight,
             ),
             LinearProgressIndicator(

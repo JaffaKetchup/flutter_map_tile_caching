@@ -337,7 +337,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
               mapController: _mapController.mapController,
               options: mapOptions,
               children: [
-                DownloadProgressMasker(
+                /*DownloadProgressMasker(
                   key: ObjectKey(
                     isDownloadProgressMaskerVisible
                         ? context
@@ -346,9 +346,9 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                           )
                         : null,
                   ),
-                  downloadProgressStream: isDownloadProgressMaskerVisible
+                  tileEvents: isDownloadProgressMaskerVisible
                       ? context.select<DownloadingProvider,
-                          Stream<DownloadProgress>>((p) => p.rawStream)
+                          Stream<DownloadProgress>>((p) => p.rawTileEventStream)
                       : null,
                   minZoom: isDownloadProgressMaskerVisible
                       ? context.select<DownloadingProvider, int>(
@@ -361,7 +361,8 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                         )
                       : 0,
                   child: tileLayer,
-                ),
+                ),*/
+                tileLayer,
                 if (widget.mode == MapViewMode.downloadRegion) ...[
                   const RegionShape(),
                   const CustomPolygonSnappingIndicator(),

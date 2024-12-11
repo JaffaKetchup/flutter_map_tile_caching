@@ -11,6 +11,7 @@ class DownloadConfigurationProvider extends ChangeNotifier {
     maxBufferLength: 0,
     skipExistingTiles: false,
     skipSeaTiles: true,
+    retryFailedRequestTiles: true,
   );
 
   int _minZoom = defaultValues.minZoom;
@@ -73,6 +74,13 @@ class DownloadConfigurationProvider extends ChangeNotifier {
   bool get skipSeaTiles => _skipSeaTiles;
   set skipSeaTiles(bool newState) {
     _skipSeaTiles = newState;
+    notifyListeners();
+  }
+
+  bool _retryFailedRequestTiles = defaultValues.retryFailedRequestTiles;
+  bool get retryFailedRequestTiles => _retryFailedRequestTiles;
+  set retryFailedRequestTiles(bool newState) {
+    _retryFailedRequestTiles = newState;
     notifyListeners();
   }
 

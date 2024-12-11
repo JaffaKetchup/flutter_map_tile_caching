@@ -15,7 +15,7 @@ class _TimingStatsState extends State<TimingStats> {
   @override
   Widget build(BuildContext context) {
     final estRemainingDuration = context.select<DownloadingProvider, Duration>(
-      (p) => p.latestEvent.estRemainingDuration,
+      (p) => p.latestDownloadProgress.estRemainingDuration,
     );
 
     return Column(
@@ -30,7 +30,7 @@ class _TimingStatsState extends State<TimingStats> {
                 Text(
                   _formatDuration(
                     context.select<DownloadingProvider, Duration>(
-                      (p) => p.latestEvent.elapsedDuration,
+                      (p) => p.latestDownloadProgress.elapsedDuration,
                     ),
                   ),
                   style: Theme.of(context).textTheme.titleLarge,
@@ -47,13 +47,13 @@ class _TimingStatsState extends State<TimingStats> {
                     Text(
                       context
                           .select<DownloadingProvider, double>(
-                            (p) => p.latestEvent.tilesPerSecond,
+                            (p) => p.latestDownloadProgress.tilesPerSecond,
                           )
                           .toStringAsFixed(0),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     if (context.select<DownloadingProvider, double>(
-                          (p) => p.latestEvent.tilesPerSecond,
+                          (p) => p.latestDownloadProgress.tilesPerSecond,
                         ) >=
                         context.select<DownloadConfigurationProvider, int>(
                               (p) => p.rateLimit,

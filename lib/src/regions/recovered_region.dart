@@ -46,7 +46,7 @@ class RecoveredRegion<R extends BaseRegion> {
   /// Corresponds to [DownloadableRegion.end]
   ///
   /// If originally created as `null`, this will be the number of tiles in the
-  /// region, as determined by [StoreDownload.check].
+  /// region, as determined by [StoreDownload.countTiles].
   final int end;
 
   /// The [BaseRegion] which was recovered

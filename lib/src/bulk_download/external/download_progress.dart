@@ -8,121 +8,258 @@ part of '../../../flutter_map_tile_caching.dart';
 /// See the documentation on each individual property for more information.
 @immutable
 class DownloadProgress {
-  const DownloadProgress.__({
-    required this.latestTileEvent,
-    required this.cachedTiles,
-    required this.cachedSize,
-    required this.bufferedTiles,
-    required this.bufferedSize,
-    required this.skippedTiles,
-    required this.skippedSize,
-    required this.failedTiles,
-    required this.maxTiles,
+  /// Raw constructor
+  ///
+  /// Note that [maxTilesCount], [_tilesPerSecondLimit] &
+  /// [_retryFailedRequestTiles] are set here (or in
+  /// [DownloadProgress._initial]), and are not modified for a download by
+  /// update
+  @protected
+  const DownloadProgress._({
+    required this.flushedTilesCount,
+    required this.flushedTilesSize,
+    required this.bufferedTilesCount,
+    required this.bufferedTilesSize,
+    required this.seaTilesCount,
+    required this.seaTilesSize,
+    required this.existingTilesCount,
+    required this.existingTilesSize,
+    required this.negativeResponseTilesCount,
+    required this.failedRequestTilesCount,
+    required this.retryTilesQueuedCount,
+    required this.maxTilesCount,
     required this.elapsedDuration,
     required this.tilesPerSecond,
-    required this.isTPSArtificiallyCapped,
-    required this.isComplete,
-  });
+    required int? tilesPerSecondLimit,
+    required bool retryFailedRequestTiles,
+  })  : _tilesPerSecondLimit = tilesPerSecondLimit,
+        _retryFailedRequestTiles = retryFailedRequestTiles;
 
-  factory DownloadProgress._initial({required int maxTiles}) =>
-      DownloadProgress.__(
-        latestTileEvent: null,
-        cachedTiles: 0,
-        cachedSize: 0,
-        bufferedTiles: 0,
-        bufferedSize: 0,
-        skippedTiles: 0,
-        skippedSize: 0,
-        failedTiles: 0,
-        maxTiles: maxTiles,
-        elapsedDuration: Duration.zero,
-        tilesPerSecond: 0,
-        isTPSArtificiallyCapped: false,
-        isComplete: false,
+  /// Setup an initial download progress
+  ///
+  /// Note that [maxTilesCount], [_tilesPerSecondLimit] &
+  /// [_retryFailedRequestTiles] are set here (or in [DownloadProgress._]), and
+  /// are not modified for a download by update.
+  const DownloadProgress._initial({
+    required this.maxTilesCount,
+    required int? tilesPerSecondLimit,
+    required bool retryFailedRequestTiles,
+  })  : flushedTilesCount = 0,
+        flushedTilesSize = 0,
+        bufferedTilesCount = 0,
+        bufferedTilesSize = 0,
+        seaTilesCount = 0,
+        seaTilesSize = 0,
+        existingTilesCount = 0,
+        existingTilesSize = 0,
+        negativeResponseTilesCount = 0,
+        failedRequestTilesCount = 0,
+        retryTilesQueuedCount = 0,
+        elapsedDuration = Duration.zero,
+        tilesPerSecond = 0,
+        _tilesPerSecondLimit = tilesPerSecondLimit,
+        _retryFailedRequestTiles = retryFailedRequestTiles;
+
+  /// Create a new progress object based on the existing one, due to a new tile
+  /// event
+  ///
+  /// [newTileEvent] should be provided for non-[SuccessfulTileEvent]s: this
+  /// will be used to automatically update all neccessary statistics.
+  ///
+  /// For [SuccessfulTileEvent]s, the flushed and buffered metrics cannot be
+  /// automatically updated from information in the tile event alone.
+  /// [flushedTiles] & [bufferedTiles] should be updated manually.
+  ///
+  /// [maxTilesCount], [_tilesPerSecondLimit] & [_retryFailedRequestTiles] may
+  /// not be modified. [elapsedDuration] & [tilesPerSecond] must always be
+  /// modified.
+  DownloadProgress _updateWithTile({
+    required TileEvent newTileEvent,
+    ({int count, double size})? flushedTiles,
+    ({int count, double size})? bufferedTiles,
+    required Duration elapsedDuration,
+    required double tilesPerSecond,
+  }) =>
+      DownloadProgress._(
+        flushedTilesCount: flushedTiles?.count ?? flushedTilesCount,
+        flushedTilesSize: flushedTiles?.size ?? flushedTilesSize,
+        bufferedTilesCount: bufferedTiles?.count ?? bufferedTilesCount,
+        bufferedTilesSize: bufferedTiles?.size ?? bufferedTilesSize,
+        seaTilesCount: seaTilesCount + (newTileEvent is SeaTileEvent ? 1 : 0),
+        seaTilesSize: seaTilesSize +
+            (newTileEvent is SeaTileEvent
+                ? newTileEvent.tileImage.lengthInBytes / 1024
+                : 0),
+        existingTilesCount:
+            existingTilesCount + (newTileEvent is ExistingTileEvent ? 1 : 0),
+        existingTilesSize: existingTilesSize +
+            (newTileEvent is ExistingTileEvent
+                ? newTileEvent.tileImage.lengthInBytes / 1024
+                : 0),
+        negativeResponseTilesCount: negativeResponseTilesCount +
+            (newTileEvent is NegativeResponseTileEvent ? 1 : 0),
+        failedRequestTilesCount: failedRequestTilesCount +
+            (newTileEvent is FailedRequestTileEvent &&
+                    (newTileEvent.wasRetryAttempt || !_retryFailedRequestTiles)
+                ? 1
+                : 0),
+        retryTilesQueuedCount: retryTilesQueuedCount +
+            (newTileEvent is FailedRequestTileEvent &&
+                    _retryFailedRequestTiles &&
+                    !newTileEvent.wasRetryAttempt
+                ? 1
+                : newTileEvent.wasRetryAttempt
+                    ? -1
+                    : 0),
+        maxTilesCount: maxTilesCount,
+        elapsedDuration: elapsedDuration,
+        tilesPerSecond: tilesPerSecond,
+        tilesPerSecondLimit: _tilesPerSecondLimit,
+        retryFailedRequestTiles: _retryFailedRequestTiles,
       );
 
-  /// The result of the latest attempted tile, if applicable
-  ///
-  /// `null` if the first tile has not yet been downloaded, or the download has
-  /// completed. The completion of a download may be considered to be reported
-  /// twice, although only the one with [isComplete] should be taken as the
-  /// final indicator: the last tile may (or may not) make all the statistics
-  /// 100%, but it will not set [isComplete]. An event is emitted after the
-  /// final tile, with no tile set, but [isComplete] set.
-  ///
-  /// A similar [TileEvent] may be emitted multiple times sequentially, due to
-  /// fallback reporting (configurable in [StoreDownload.startForeground]). In
-  /// this event, this is not set `null`, but [TileEvent.isRepeat] will be set.
-  /// If this flag is set, the tile should not be counted as a new event in any
-  /// listener.
-  ///
-  /// {@macro fmtc.tileevent.extraConsiderations}
-  final TileEvent? latestTileEvent;
+  /// Create a new progress object based on the existing one, without a new tile
+  DownloadProgress _updateWithoutTile({
+    required Duration elapsedDuration,
+    required double tilesPerSecond,
+  }) =>
+      DownloadProgress._(
+        flushedTilesCount: flushedTilesCount,
+        flushedTilesSize: flushedTilesSize,
+        bufferedTilesCount: bufferedTilesCount,
+        bufferedTilesSize: bufferedTilesSize,
+        seaTilesCount: seaTilesCount,
+        seaTilesSize: seaTilesSize,
+        existingTilesCount: existingTilesCount,
+        existingTilesSize: existingTilesSize,
+        negativeResponseTilesCount: negativeResponseTilesCount,
+        failedRequestTilesCount: failedRequestTilesCount,
+        retryTilesQueuedCount: retryTilesQueuedCount,
+        maxTilesCount: maxTilesCount,
+        elapsedDuration: elapsedDuration,
+        tilesPerSecond: tilesPerSecond,
+        tilesPerSecondLimit: _tilesPerSecondLimit,
+        retryFailedRequestTiles: _retryFailedRequestTiles,
+      );
 
-  /// The number of new tiles successfully downloaded and in the tile buffer or
-  /// cached
+  /// The number of tiles remaining to be attempted to download
   ///
-  /// [TileEvent]s with the result category of [TileEventResultCategory.cached].
-  ///
-  /// Includes [bufferedTiles].
-  final int cachedTiles;
+  /// This includes [retryTilesQueuedCount] as tiles remaining.
+  int get remainingTilesCount =>
+      maxTilesCount - (attemptedTilesCount - retryTilesQueuedCount);
 
-  /// The total size (in KiB) of new tiles successfully downloaded and in the
-  /// tile buffer or cached
+  /// The number of tiles that have been attempted to download
   ///
-  /// [TileEvent]s with the result category of [TileEventResultCategory.cached].
-  ///
-  /// Includes [bufferedSize].
-  final double cachedSize;
+  /// Attempted means they were successful ([successfulTilesCount]), skipped
+  /// ([skippedTilesCount]), or failed ([failedTilesCount]). Additionally, this
+  /// also includes [retryTilesQueuedCount].
+  int get attemptedTilesCount =>
+      successfulTilesCount +
+      skippedTilesCount +
+      failedTilesCount +
+      retryTilesQueuedCount;
 
-  /// The number of new tiles successfully downloaded and in the tile buffer
-  /// waiting to be cached
+  /// The number of tiles successfully downloaded (including both tiles buffered
+  /// and actually flushed/written to cache)
   ///
-  /// [TileEvent]s with the result category of [TileEventResultCategory.cached].
-  ///
-  /// Part of [cachedTiles].
-  final int bufferedTiles;
+  /// This is the number of [SuccessfulTileEvent]s emitted.
+  int get successfulTilesCount => flushedTilesCount + bufferedTilesCount;
 
-  /// The total size (in KiB) of new tiles successfully downloaded and in the
-  /// tile buffer waiting to be cached
-  ///
-  /// [TileEvent]s with the result category of [TileEventResultCategory.cached].
-  ///
-  /// Part of [cachedSize].
-  final double bufferedSize;
+  /// The size in KiB of the tile images successfully downloaded (including both
+  /// tiles buffered and actually flushed/written to cache)
+  double get successfulTilesSize => flushedTilesSize + bufferedTilesSize;
 
-  /// The number of tiles that were skipped (not cached) because they either:
-  ///  - already existed & `skipExistingTiles` was `true`
-  ///  - were a sea tile & `skipSeaTiles` was `true`
-  ///
-  /// [TileEvent]s with the result category of [TileEventResultCategory.skipped].
-  final int skippedTiles;
+  /// The number of tiles successfully downloaded and written to the cache
+  /// (flushed from the buffer)
+  final int flushedTilesCount;
 
-  /// The total size (in KiB) of tiles that were skipped (not cached) because
-  /// they either:
-  ///  - already existed & `skipExistingTiles` was `true`
-  ///  - were a sea tile & `skipSeaTiles` was `true`
-  ///
-  /// [TileEvent]s with the result category of [TileEventResultCategory.skipped].
-  final double skippedSize;
+  /// The size in KiB of the tile images successfully downloaded and written to
+  /// the cache (flushed from the buffer)
+  final double flushedTilesSize;
 
-  /// The number of tiles that were not successfully downloaded, potentially for
-  /// a variety of reasons
+  /// The number of tiles successfully downloaded but still to be written to the
+  /// cache
   ///
-  /// [TileEvent]s with the result category of [TileEventResultCategory.failed].
+  /// These tiles are volatile and will be lost if the download stops
+  /// unexpectedly. However, they will be re-attempted if the download is
+  /// recovered.
+  final int bufferedTilesCount;
+
+  /// The size in KiB of the tile images successfully downloaded but still to be
+  /// written to the cache
   ///
-  /// To check why these tiles failed, use [latestTileEvent] to construct a list
-  /// of tiles that failed.
-  final int failedTiles;
+  /// These tiles are volatile and will be lost if the download stops
+  /// unexpectedly. However, they will be re-attempted if the download is
+  /// recovered.
+  final double bufferedTilesSize;
+
+  /// The number of tiles skipped (including both sea tiles and existing tiles,
+  /// where their respective options are enabled when starting the download)
+  ///
+  /// This is the number of [SkippedTileEvent]s emitted.
+  int get skippedTilesCount => seaTilesCount + existingTilesCount;
+
+  /// The size in KiB of the tile images skipped (including both sea tiles and
+  /// existing tiles, where their respective options are enabled when starting
+  /// the download)
+  double get skippedTilesSize => seaTilesSize + existingTilesSize;
+
+  /// The number of tiles skipped because they were sea tiles and `skipSeaTiles`
+  /// was enabled
+  ///
+  /// This is the number of [SeaTileEvent]s emitted.
+  final int seaTilesCount;
+
+  /// The size in KiB of the tile images skipped because they were sea tiles and
+  /// `skipSeaTiles` was enabled
+  final double seaTilesSize;
+
+  /// The number of tiles skipped because they already existed in the cache and
+  /// `skipExistingTiles` was enabled
+  ///
+  /// This is the number of [ExistingTileEvent]s emitted.
+  final int existingTilesCount;
+
+  /// The size in KiB of the tile images skipped because they already existed in
+  /// the cache and `skipExistingTiles` was enabled
+  final double existingTilesSize;
+
+  /// The number of tiles that could not be downloaded and are not in the queue
+  /// to be retried ([retryTilesQueuedCount])
+  ///
+  /// See [failedRequestTilesCount] for more information about how that metric
+  /// is affected by retry tiles.
+  int get failedTilesCount =>
+      negativeResponseTilesCount + failedRequestTilesCount;
+
+  /// The number of tiles that could not be downloaded because the HTTP response
+  /// was not 200 OK
+  ///
+  /// This is the number of [NegativeResponseTileEvent]s emitted.
+  final int negativeResponseTilesCount;
+
+  /// The number of tiles that could not be downloaded because the HTTP request
+  /// could not be made
+  ///
+  /// Where `retryFailedRequestTiles` is disabled, this is the number of
+  /// [FailedRequestTileEvent]s emitted. Otherwise, this is the number of
+  /// [FailedRequestTileEvent]s emitted only where
+  /// [FailedRequestTileEvent.wasRetryAttempt] is `true`.
+  final int failedRequestTilesCount;
+
+  /// The number of tiles that were queued to be retried
+  ///
+  /// See [StoreDownload.startForeground] for more info.
+  final int retryTilesQueuedCount;
 
   /// The total number of tiles available to be potentially downloaded and
   /// cached
   ///
-  /// The difference between [DownloadableRegion.end] -
-  /// [DownloadableRegion.start] (assuming the maximum number of tiles actually
-  /// available in the region, as determined by [StoreDownload.check], if
-  /// [DownloadableRegion.end] is `null`).
-  final int maxTiles;
+  /// The difference between [DownloadableRegion.end] and
+  /// [DownloadableRegion.start]. If there is no endpoint set, this is the
+  /// the maximum number of tiles actually available in the region, as determined
+  /// by [StoreDownload.countTiles].
+  final int maxTilesCount;
 
   /// The current elapsed duration of the download
   ///
@@ -140,170 +277,86 @@ class DownloadProgress {
   /// capped by the set `rateLimit`
   ///
   /// This is only an approximate indicator.
-  final bool isTPSArtificiallyCapped;
+  bool get isTPSArtificiallyCapped =>
+      _tilesPerSecondLimit != null &&
+      (tilesPerSecond >= _tilesPerSecondLimit - 0.5);
 
-  /// Whether the download is now complete
-  ///
-  /// There will be no more events after this event, regardless of other
-  /// statistics.
-  ///
-  /// Prefer using this over checking any other statistics for completion. If all
-  /// threads have unexpectedly quit due to an error, the other statistics will
-  /// not indicate the the download has stopped/finished/completed, but this will
-  /// be `true`.
-  final bool isComplete;
-
-  /// The number of tiles that were either cached, in buffer, or skipped
-  ///
-  /// Equal to [cachedTiles] + [skippedTiles].
-  int get successfulTiles => cachedTiles + skippedTiles;
-
-  /// The total size (in KiB) of tiles that were either cached, in buffer, or
-  /// skipped
-  ///
-  /// Equal to [cachedSize] + [skippedSize].
-  double get successfulSize => cachedSize + skippedSize;
-
-  /// The number of tiles that have been attempted, with any result
-  ///
-  /// Equal to [successfulTiles] + [failedTiles].
-  int get attemptedTiles => successfulTiles + failedTiles;
-
-  /// The number of tiles that have not yet been attempted
-  ///
-  /// Equal to [maxTiles] - [attemptedTiles].
-  int get remainingTiles => maxTiles - attemptedTiles;
-
-  /// The number of attempted tiles over the number of available tiles as a
-  /// percentage
-  ///
-  /// Equal to [attemptedTiles] / [maxTiles] multiplied by 100.
-  double get percentageProgress => (attemptedTiles / maxTiles) * 100;
+  /// The percentage [attemptedTilesCount] is of [maxTilesCount] (expressed
+  /// from 0 - 100)
+  double get percentageProgress => (attemptedTilesCount / maxTilesCount) * 100;
 
   /// The estimated total duration of the download
   ///
-  /// It may or may not be accurate, except when [isComplete] is `true`, in which
-  /// event, this will always equal [elapsedDuration].
+  /// If the [tilesPerSecond] is 0 or very small, then the reported duration
+  /// is [Duration.zero].
   ///
-  /// It is not recommended to display this value directly to your user. Instead,
-  /// prefer using language such as 'about 𝑥 minutes remaining'.
-  Duration get estTotalDuration => isComplete
-      ? elapsedDuration
-      : Duration(
-          seconds:
-              (((maxTiles / tilesPerSecond.clamp(1, largestInt)) / 10).round() *
-                      10)
-                  .clamp(elapsedDuration.inSeconds, largestInt),
-        );
-
-  /// The estimated remaining duration of the download.
+  /// No accuracy guarantees are given. Precision to 1 second.
   ///
-  /// It may or may not be accurate.
+  /// > [!TIP]
+  /// > It is not recommended to display this value directly to your user.
+  /// > Instead, prefer using language such as 'about 𝑥 minutes remaining'.
+  Duration get estTotalDuration => switch (tilesPerSecond) {
+        < 0 => throw RangeError('Impossible `tilesPerSecond`'),
+        == 0 || < 0.1 => Duration.zero,
+        _ => Duration(
+            seconds: max(
+              elapsedDuration.inSeconds, // Prevent negative time remaining
+              (maxTilesCount / tilesPerSecond).round(),
+            ),
+          ),
+      };
+
+  /// The estimated remaining duration of the download
   ///
-  /// It is not recommended to display this value directly to your user. Instead,
-  /// prefer using language such as 'about 𝑥 minutes remaining'.
-  Duration get estRemainingDuration =>
-      estTotalDuration - elapsedDuration < Duration.zero
-          ? Duration.zero
-          : estTotalDuration - elapsedDuration;
-
-  DownloadProgress _fallbackReportUpdate({
-    required Duration newDuration,
-    required double tilesPerSecond,
-    required int? rateLimit,
-  }) =>
-      DownloadProgress.__(
-        latestTileEvent: latestTileEvent?._copyWithRepeat(),
-        cachedTiles: cachedTiles,
-        cachedSize: cachedSize,
-        bufferedTiles: bufferedTiles,
-        bufferedSize: bufferedSize,
-        skippedTiles: skippedTiles,
-        skippedSize: skippedSize,
-        failedTiles: failedTiles,
-        maxTiles: maxTiles,
-        elapsedDuration: newDuration,
-        tilesPerSecond: tilesPerSecond,
-        isTPSArtificiallyCapped:
-            tilesPerSecond >= (rateLimit ?? double.infinity) - 0.5,
-        isComplete: false,
-      );
-
-  DownloadProgress _updateProgressWithTile({
-    required TileEvent? newTileEvent,
-    required int newBufferedTiles,
-    required double newBufferedSize,
-    required Duration newDuration,
-    required double tilesPerSecond,
-    required int? rateLimit,
-    bool isComplete = false,
-  }) {
-    final isNewTile = newTileEvent != null;
-    return DownloadProgress.__(
-      latestTileEvent: newTileEvent,
-      cachedTiles: isNewTile &&
-              newTileEvent.result.category == TileEventResultCategory.cached
-          ? cachedTiles + 1
-          : cachedTiles,
-      cachedSize: isNewTile &&
-              newTileEvent.result.category == TileEventResultCategory.cached
-          ? cachedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
-          : cachedSize,
-      bufferedTiles: newBufferedTiles,
-      bufferedSize: newBufferedSize,
-      skippedTiles: isNewTile &&
-              newTileEvent.result.category == TileEventResultCategory.skipped
-          ? skippedTiles + 1
-          : skippedTiles,
-      skippedSize: isNewTile &&
-              newTileEvent.result.category == TileEventResultCategory.skipped
-          ? skippedSize + (newTileEvent.tileImage!.lengthInBytes / 1024)
-          : skippedSize,
-      failedTiles: isNewTile &&
-              newTileEvent.result.category == TileEventResultCategory.failed
-          ? failedTiles + 1
-          : failedTiles,
-      maxTiles: maxTiles,
-      elapsedDuration: newDuration,
-      tilesPerSecond: tilesPerSecond,
-      isTPSArtificiallyCapped:
-          tilesPerSecond >= (rateLimit ?? double.infinity) - 0.5,
-      isComplete: isComplete,
-    );
+  /// No accuracy guarantees are given.
+  ///
+  /// > [!TIP]
+  /// > It is not recommended to display this value directly to your user.
+  /// > Instead, prefer using language such as 'about 𝑥 minutes remaining'.
+  Duration get estRemainingDuration {
+    final rawRemaining = estTotalDuration - elapsedDuration;
+    return rawRemaining < Duration.zero ? Duration.zero : rawRemaining;
   }
+
+  final int? _tilesPerSecondLimit;
+  final bool _retryFailedRequestTiles;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is DownloadProgress &&
-          latestTileEvent == other.latestTileEvent &&
-          cachedTiles == other.cachedTiles &&
-          cachedSize == other.cachedSize &&
-          bufferedTiles == other.bufferedTiles &&
-          bufferedSize == other.bufferedSize &&
-          skippedTiles == other.skippedTiles &&
-          skippedSize == other.skippedSize &&
-          failedTiles == other.failedTiles &&
-          maxTiles == other.maxTiles &&
+          flushedTilesCount == other.flushedTilesCount &&
+          flushedTilesSize == other.flushedTilesSize &&
+          bufferedTilesCount == other.bufferedTilesCount &&
+          bufferedTilesSize == other.bufferedTilesSize &&
+          seaTilesCount == other.seaTilesCount &&
+          seaTilesSize == other.seaTilesSize &&
+          existingTilesCount == other.existingTilesCount &&
+          existingTilesSize == other.existingTilesSize &&
+          negativeResponseTilesCount == other.negativeResponseTilesCount &&
+          failedRequestTilesCount == other.failedRequestTilesCount &&
+          retryTilesQueuedCount == other.retryTilesQueuedCount &&
+          maxTilesCount == other.maxTilesCount &&
           elapsedDuration == other.elapsedDuration &&
           tilesPerSecond == other.tilesPerSecond &&
-          isTPSArtificiallyCapped == other.isTPSArtificiallyCapped &&
-          isComplete == other.isComplete);
+          _tilesPerSecondLimit == other._tilesPerSecondLimit);
 
   @override
   int get hashCode => Object.hashAllUnordered([
-        latestTileEvent,
-        cachedTiles,
-        cachedSize,
-        bufferedTiles,
-        bufferedSize,
-        skippedTiles,
-        skippedSize,
-        failedTiles,
-        maxTiles,
+        flushedTilesCount,
+        flushedTilesSize,
+        bufferedTilesCount,
+        bufferedTilesSize,
+        seaTilesCount,
+        seaTilesSize,
+        existingTilesCount,
+        existingTilesSize,
+        negativeResponseTilesCount,
+        failedRequestTilesCount,
+        retryTilesQueuedCount,
+        maxTilesCount,
         elapsedDuration,
         tilesPerSecond,
-        isTPSArtificiallyCapped,
-        isComplete,
+        _tilesPerSecondLimit,
       ]);
 }

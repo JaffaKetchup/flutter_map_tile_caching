@@ -34,6 +34,7 @@ dependency_overrides:
   flutter_map:
     git:
       url: https://github.com/fleaflet/flutter_map.git
+      ref: d816b4d54f9245e260b125ea1adbf300b5c39843
   flutter_map_tile_caching:
     path: ../
 

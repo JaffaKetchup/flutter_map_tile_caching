@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import '../../../../../../../shared/state/download_configuration_provider.dart';
 import 'components/store_selector.dart';
 
+part 'components/slider_option.dart';
+part 'components/toggle_option.dart';
+
 class ConfigOptions extends StatefulWidget {
   const ConfigOptions({super.key});
 
@@ -33,6 +36,10 @@ class _ConfigOptionsState extends State<ConfigOptions> {
     );
     final skipSeaTiles = context
         .select<DownloadConfigurationProvider, bool>((p) => p.skipSeaTiles);
+    final retryFailedRequestTiles =
+        context.select<DownloadConfigurationProvider, bool>(
+      (p) => p.retryFailedRequestTiles,
+    );
 
     return SingleChildScrollView(
       child: Column(
@@ -66,60 +73,27 @@ class _ConfigOptionsState extends State<ConfigOptions> {
             ],
           ),
           const Divider(height: 24),
-          Row(
-            children: [
-              const Tooltip(
-                message: 'Parallel Threads',
-                child: Icon(Icons.call_split),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Slider(
-                  value: parallelThreads.toDouble(),
-                  min: 1,
-                  max: 10,
-                  divisions: 9,
-                  onChanged: (r) => context
-                      .read<DownloadConfigurationProvider>()
-                      .parallelThreads = r.toInt(),
-                ),
-              ),
-              SizedBox(
-                width: 71,
-                child: Text(
-                  '$parallelThreads threads',
-                  textAlign: TextAlign.end,
-                ),
-              ),
-            ],
+          _SliderOption(
+            icon: const Icon(Icons.call_split),
+            tooltipMessage: 'Parallel Threads',
+            descriptor: 'threads',
+            value: parallelThreads,
+            min: 1,
+            max: 10,
+            onChanged: (v) => context
+                .read<DownloadConfigurationProvider>()
+                .parallelThreads = v,
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              const Tooltip(
-                message: 'Rate Limit',
-                child: Icon(Icons.speed),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Slider(
-                  min: 1,
-                  value: rateLimit.toDouble(),
-                  max: 200,
-                  divisions: 199,
-                  onChanged: (r) => context
-                      .read<DownloadConfigurationProvider>()
-                      .rateLimit = r.toInt(),
-                ),
-              ),
-              SizedBox(
-                width: 71,
-                child: Text(
-                  '$rateLimit tps',
-                  textAlign: TextAlign.end,
-                ),
-              ),
-            ],
+          _SliderOption(
+            icon: const Icon(Icons.speed),
+            tooltipMessage: 'Rate Limit',
+            descriptor: 'tps max',
+            value: rateLimit,
+            min: 1,
+            max: 200,
+            onChanged: (v) =>
+                context.read<DownloadConfigurationProvider>().rateLimit = v,
           ),
           const SizedBox(height: 8),
           Row(
@@ -149,37 +123,35 @@ class _ConfigOptionsState extends State<ConfigOptions> {
             ],
           ),
           const Divider(height: 24),
-          Row(
-            children: [
-              const Icon(Icons.skip_next),
-              const SizedBox(width: 4),
-              const Icon(Icons.file_copy),
-              const SizedBox(width: 12),
-              const Text('Skip Existing Tiles'),
-              const Spacer(),
-              Switch.adaptive(
-                value: skipExistingTiles,
-                onChanged: (v) => context
-                    .read<DownloadConfigurationProvider>()
-                    .skipExistingTiles = v,
-              ),
-            ],
+          _ToggleOption(
+            icon: const Icon(Icons.file_copy),
+            title: 'Skip Existing Tiles',
+            description: "Don't attempt tiles that are already cached",
+            value: skipExistingTiles,
+            onChanged: (v) => context
+                .read<DownloadConfigurationProvider>()
+                .skipExistingTiles = v,
           ),
-          Row(
-            children: [
-              const Icon(Icons.skip_next),
-              const SizedBox(width: 4),
-              const Icon(Icons.waves),
-              const SizedBox(width: 12),
-              const Text('Skip Sea Tiles'),
-              const Spacer(),
-              Switch.adaptive(
-                value: skipSeaTiles,
-                onChanged: (v) => context
-                    .read<DownloadConfigurationProvider>()
-                    .skipSeaTiles = v,
-              ),
-            ],
+          const SizedBox(height: 8),
+          _ToggleOption(
+            icon: const Icon(Icons.waves),
+            title: 'Skip Sea Tiles',
+            description:
+                "Don't cache tiles with sea/ocean fill as the only visible "
+                'element',
+            value: skipSeaTiles,
+            onChanged: (v) =>
+                context.read<DownloadConfigurationProvider>().skipSeaTiles = v,
+          ),
+          const SizedBox(height: 8),
+          _ToggleOption(
+            icon: const Icon(Icons.plus_one),
+            title: 'Retry Failed Tiles',
+            description: 'Retries tiles that failed their HTTP request once',
+            value: retryFailedRequestTiles,
+            onChanged: (v) => context
+                .read<DownloadConfigurationProvider>()
+                .retryFailedRequestTiles = v,
           ),
         ],
       ),

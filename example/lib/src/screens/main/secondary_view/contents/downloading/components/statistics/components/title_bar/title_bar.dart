@@ -9,8 +9,7 @@ class TitleBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (context
-        .select<DownloadingProvider, bool>((p) => p.latestEvent.isComplete)) {
+    if (context.select<DownloadingProvider, bool>((p) => p.isComplete)) {
       return IntrinsicHeight(
         child: Row(
           children: [

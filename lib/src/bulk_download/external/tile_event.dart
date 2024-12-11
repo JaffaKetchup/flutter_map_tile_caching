@@ -3,177 +3,201 @@
 
 part of '../../../flutter_map_tile_caching.dart';
 
-/// A generalized category for [TileEventResult]
-enum TileEventResultCategory {
-  /// The associated tile has been successfully downloaded and cached
-  ///
-  /// Independent category for [TileEventResult.success] only.
-  cached,
-
-  /// The associated tile may have been downloaded, but was not cached
-  ///
-  /// This may be because it:
-  /// - already existed & `skipExistingTiles` was `true`:
-  /// [TileEventResult.alreadyExisting]
-  /// - was a sea tile & `skipSeaTiles` was `true`: [TileEventResult.isSeaTile]
-  skipped,
-
-  /// The associated tile was not successfully downloaded, potentially for a
-  /// variety of reasons
-  ///
-  /// Category for [TileEventResult.negativeFetchResponse],
-  /// [TileEventResult.noConnectionDuringFetch], and
-  /// [TileEventResult.unknownFetchException].
-  failed;
-}
-
-/// The result of attempting to cache the associated tile/[TileEvent]
-enum TileEventResult {
-  /// The associated tile was successfully downloaded and cached
-  success(TileEventResultCategory.cached),
-
-  /// The associated tile was not downloaded (intentionally), becuase it already
-  /// existed & `skipExistingTiles` was `true`
-  alreadyExisting(TileEventResultCategory.skipped),
-
-  /// The associated tile was downloaded, but was not cached (intentionally),
-  /// because it was a sea tile & `skipSeaTiles` was `true`
-  isSeaTile(TileEventResultCategory.skipped),
-
-  /// The associated tile was not successfully downloaded because the tile server
-  /// responded with a status code other than HTTP 200 OK
-  negativeFetchResponse(TileEventResultCategory.failed),
-
-  /// The associated tile was not successfully downloaded because a connection
-  /// could not be made to the tile server
-  noConnectionDuringFetch(TileEventResultCategory.failed),
-
-  /// The associated tile was not successfully downloaded because of an unknown
-  /// exception when fetching the tile from the tile server
-  unknownFetchException(TileEventResultCategory.failed);
-
-  /// The result of attempting to cache the associated tile/[TileEvent]
-  const TileEventResult(this.category);
-
-  /// A generalized category for this event
-  final TileEventResultCategory category;
-}
-
-/// The raw result of a tile download during bulk downloading
+/// The result of a tile download during bulk downloading
 ///
 /// Does not contain information about the download as a whole, that is
-/// [DownloadProgress]' responsibility.
+/// [DownloadProgress]' scope.
 ///
-/// {@template fmtc.tileevent.extraConsiderations}
-/// > [!IMPORTANT]
-/// > When tracking [TileEvent]s across multiple [DownloadProgress] events,
-/// > extra considerations are necessary. See
-/// > [the documentation](https://fmtc.jaffaketchup.dev/bulk-downloading/start#keeping-track-across-events)
-/// > for more information.
-/// {@endtemplate}
+/// See specific subclasses for more information about the event. This is a
+/// sealed tree, so there are a guaranteed knowable set of results.
 @immutable
-class TileEvent {
-  const TileEvent._(
-    this.result, {
+sealed class TileEvent {
+  const TileEvent._({
     required this.url,
     required this.coordinates,
-    this.tileImage,
-    this.fetchResponse,
-    this.fetchError,
-    this.isRepeat = false,
-    bool wasBufferReset = false,
-  }) : _wasBufferReset = wasBufferReset;
-
-  /// The status of this event, the result of attempting to cache this tile
-  ///
-  /// See [TileEventResult.category] ([TileEventResultCategory]) for
-  /// categorization of this result into 3 categories:
-  ///
-  /// - [TileEventResultCategory.cached] (tile was downloaded and cached)
-  /// - [TileEventResultCategory.skipped] (tile was not cached, but intentionally)
-  /// - [TileEventResultCategory.failed] (tile was not cached, due to an error)
-  ///
-  /// Remember to check [isRepeat] before keeping track of this value.
-  final TileEventResult result;
+    required this.wasRetryAttempt,
+  });
 
   /// The URL used to request the tile
-  ///
-  /// Remember to check [isRepeat] before keeping track of this value.
   final String url;
 
   /// The (x, y, z) coordinates of this tile
-  ///
-  /// Remember to check [isRepeat] before keeping track of this value.
-  final TileCoordinates coordinates;
+  final (int, int, int) coordinates;
 
-  /// The raw bytes that were fetched from the [url], if available
+  /// Whether this tile was a retry attempt of a [FailedRequestTileEvent]
   ///
-  /// Not available if the result category is [TileEventResultCategory.failed].
+  /// Never set if `retryFailedRequestTiles` is disabled.
   ///
-  /// Remember to check [isRepeat] before keeping track of this value.
-  final Uint8List? tileImage;
-
-  /// The raw [Response] from the HTTP GET request to [url], if available
+  /// Implies that the tile has been emitted before. Care should be taken to
+  /// ensure that this does not cause issues (for example, duplication issues).
   ///
-  /// Not available if [result] is [TileEventResult.noConnectionDuringFetch],
-  /// [TileEventResult.unknownFetchException], or
-  /// [TileEventResult.alreadyExisting].
-  ///
-  /// Remember to check [isRepeat] before keeping track of this value.
-  final Response? fetchResponse;
-
-  /// The raw error thrown when fetching from the [url], if available
-  ///
-  /// Only available if [result] is [TileEventResult.noConnectionDuringFetch] or
-  /// [TileEventResult.unknownFetchException].
-  ///
-  /// Remember to check [isRepeat] before keeping track of this value.
-  final Object? fetchError;
-
-  /// Whether this event is a repeat of the last event
-  ///
-  /// Events will occasionally be repeated due to the `maxReportInterval`
-  /// functionality. If using other members, such as [result], to keep count of
-  /// important events, do not count an event where this is `true`.
-  ///
-  /// {@macro fmtc.tileevent.extraConsiderations}
-  final bool isRepeat;
-
-  final bool _wasBufferReset;
-
-  TileEvent _copyWithRepeat() => TileEvent._(
-        result,
-        url: url,
-        coordinates: coordinates,
-        tileImage: tileImage,
-        fetchResponse: fetchResponse,
-        fetchError: fetchError,
-        isRepeat: true,
-        wasBufferReset: _wasBufferReset,
-      );
+  /// (This is also used internally to maintain [DownloadProgress] statistics.)
+  final bool wasRetryAttempt;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is TileEvent &&
-          result == other.result &&
           url == other.url &&
           coordinates == other.coordinates &&
-          tileImage == other.tileImage &&
-          fetchResponse == other.fetchResponse &&
-          fetchError == other.fetchError &&
-          isRepeat == other.isRepeat &&
-          _wasBufferReset == other._wasBufferReset);
+          wasRetryAttempt == other.wasRetryAttempt);
 
   @override
-  int get hashCode => Object.hashAllUnordered([
-        result,
-        url,
-        coordinates,
-        tileImage,
-        fetchResponse,
-        fetchError,
-        isRepeat,
-        _wasBufferReset,
-      ]);
+  int get hashCode => Object.hashAllUnordered([url, coordinates]);
+}
+
+/// The raw result of a successful tile download during bulk downloading
+///
+/// Successful means the tile was requested from the [url] and recieved an HTTP
+/// response of 200 OK, with an image as the body.
+@immutable
+class SuccessfulTileEvent extends TileEvent
+    with TileEventFetchResponse, TileEventImage {
+  const SuccessfulTileEvent._({
+    required super.url,
+    required super.coordinates,
+    required super.wasRetryAttempt,
+    required this.tileImage,
+    required this.fetchResponse,
+    required bool wasBufferFlushed,
+  })  : _wasBufferFlushed = wasBufferFlushed,
+        super._();
+
+  @override
+  final Uint8List tileImage;
+
+  @override
+  final Response fetchResponse;
+
+  /// Whether this tile triggered the internal bulk download buffer to be
+  /// flushed
+  ///
+  /// There is one buffer per download thread, with the `maxBufferLength` being
+  /// shared evenly to all threads. This indication is only applicable for the
+  /// thread from which this event was generated (and is therefore not suitable
+  /// for public exposure).
+  final bool _wasBufferFlushed;
+}
+
+/// The raw result of a skipped tile download during bulk downloading
+///
+/// Skipped means the request to the [url] was not made. See subclasses for
+/// specific skip reasons.
+@immutable
+sealed class SkippedTileEvent extends TileEvent with TileEventImage {
+  const SkippedTileEvent._({
+    required super.url,
+    required super.coordinates,
+    required super.wasRetryAttempt,
+    required this.tileImage,
+  }) : super._();
+
+  @override
+  final Uint8List tileImage;
+}
+
+/// The raw result of an existing tile download during bulk downloading
+///
+/// Existing means the request to the [url] was not made because the tile
+/// already existed and `skipExistingTiles` was enabled.
+///
+/// This implies the tile cannot be retry attempt (as tiles in this category are
+/// never retried because they can never fail due to a previous
+/// [FailedRequestTileEvent]).
+@immutable
+class ExistingTileEvent extends SkippedTileEvent {
+  const ExistingTileEvent._({
+    required super.url,
+    required super.coordinates,
+    required super.tileImage,
+  }) : super._(wasRetryAttempt: false);
+}
+
+/// The raw result of a sea tile download during bulk downloading
+///
+/// Sea means the request to [url] was made, and a response was recieved, but
+/// the tile image was determined to be a sea tile and `skipSeaTiles` was
+/// enabled.
+@immutable
+class SeaTileEvent extends SkippedTileEvent with TileEventFetchResponse {
+  const SeaTileEvent._({
+    required super.url,
+    required super.coordinates,
+    required super.wasRetryAttempt,
+    required super.tileImage,
+    required this.fetchResponse,
+  }) : super._();
+
+  @override
+  final Response fetchResponse;
+}
+
+/// The raw result of a failed tile download during bulk downloading
+///
+/// Failed means a request to [url] was attempted, but a HTTP 200 OK response
+/// was not recieved. See subclasses for specific failure reasons.
+@immutable
+sealed class FailedTileEvent extends TileEvent {
+  const FailedTileEvent._({
+    required super.url,
+    required super.coordinates,
+    required super.wasRetryAttempt,
+  }) : super._();
+}
+
+/// The raw result of a negative response tile download during bulk downloading
+///
+/// Negative response means the request to the [url] was made successfully, but
+/// a HTTP 200 OK response was not received.
+@immutable
+class NegativeResponseTileEvent extends FailedTileEvent
+    with TileEventFetchResponse {
+  const NegativeResponseTileEvent._({
+    required super.url,
+    required super.coordinates,
+    required super.wasRetryAttempt,
+    required this.fetchResponse,
+  }) : super._();
+
+  @override
+  final Response fetchResponse;
+}
+
+/// The raw result of a failed request tile download during bulk downloading
+///
+/// Failed request means the request to the [url] was not made successfully
+/// (likely due to a network issue).
+///
+/// This tile will be added to the retry queue if `retryFailedRequestTiles` is
+/// enabled, and it was not already a retry attempt ([wasRetryAttempt]).
+@immutable
+class FailedRequestTileEvent extends FailedTileEvent {
+  const FailedRequestTileEvent._({
+    required super.url,
+    required super.coordinates,
+    required super.wasRetryAttempt,
+    required this.fetchError,
+  }) : super._();
+
+  /// The raw error thrown when attempting to make a HTTP request to [url]
+  final Object fetchError;
+}
+
+/// Indicates a [TileEvent] recieved a HTTP response from the [TileEvent.url]
+///
+/// The status code may or may not be 200 OK: this does not imply whether the
+/// event was successful or not.
+mixin TileEventFetchResponse on TileEvent {
+  /// The raw HTTP response from the GET request to [url]
+  abstract final Response fetchResponse;
+}
+
+/// Indicates a [TileEvent] has an associated tile image
+///
+/// This may be from a successful HTTP response from [TileEvent.url], or it may
+/// be retrieved from the cache: this does not imply whether the event was
+/// successful or skipped, but it does imply it was not a failure.
+mixin TileEventImage on TileEvent {
+  /// The raw bytes associated with the [url]/[coordinates]
+  abstract final Uint8List tileImage;
 }

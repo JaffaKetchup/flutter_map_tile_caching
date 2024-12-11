@@ -32,10 +32,7 @@ class _DownloadingViewSideState extends State<DownloadingViewSide> {
                   padding: const EdgeInsets.all(4),
                   child: IconButton(
                     onPressed: () async {
-                      if (context
-                          .read<DownloadingProvider>()
-                          .latestEvent
-                          .isComplete) {
+                      if (context.read<DownloadingProvider>().isComplete) {
                         context.read<RegionSelectionProvider>()
                           ..isDownloadSetupPanelVisible = false
                           ..clearConstructedRegions()
@@ -54,9 +51,8 @@ class _DownloadingViewSideState extends State<DownloadingViewSide> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                if (context.select<DownloadingProvider, bool>(
-                  (p) => !p.latestEvent.isComplete,
-                ))
+                if (context
+                    .select<DownloadingProvider, bool>((p) => !p.isComplete))
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(99),

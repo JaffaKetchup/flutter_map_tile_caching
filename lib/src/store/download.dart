@@ -36,18 +36,30 @@ class StoreDownload {
   ///
   /// > [!TIP]
   /// > To count the number of tiles in a region before starting a download, use
-  /// > [check].
+  /// > [countTiles].
   ///
-  /// Streams a [DownloadProgress] object containing statistics and information
-  /// about the download's progression status, once per tile and at intervals
-  /// of no longer than [maxReportInterval].
+  /// ---
   ///
-  /// The first event reports the download has started (setup is complete). The
-  /// last event indicates the download has completed (either sucessfully or
-  /// been cancelled). All events between these two emissions will be reporting
-  /// a new tile, or reporting the old tile, due to [maxReportInterval].
-  /// See the documentation on [DownloadProgress.latestTileEvent] &
-  /// [TileEvent.isRepeat] for more details.
+  /// Outputs two non-broadcast streams.
+  ///
+  /// One emits [DownloadProgress]s which contain stats and info about the whole
+  /// download.
+  ///
+  /// One emits [TileEvent]s which contain info about the most recent tile
+  /// attempted only.
+  ///
+  /// The first stream will emit events once per tile emitted on the second
+  /// stream, at intervals of no longer than [maxReportInterval], and once at
+  /// the start of the download indicating setup is complete and the first tile
+  /// is being downloaded. It finishes once the download is complete, with the
+  /// last event representing the last emitted tile event on the second stream.
+  ///
+  /// Neither output stream respects listen, pause, resume, or cancel events
+  /// when submitted through the stream subscription.
+  /// The download will start when this method is invoked, irrespective of
+  /// whether there are listeners. The download will continue irrespective of
+  /// listeners. The only control methods are via FMTC's [pause], [resume], and
+  /// [cancel] methods.
   ///
   /// ---
   ///
@@ -93,6 +105,17 @@ class StoreDownload {
   ///
   /// ---
   ///
+  /// If [retryFailedRequestTiles] is enabled (as is by default), tiles that
+  /// fail to  download due to a failed request ONLY ([FailedRequestTileEvent])
+  /// will be queued and retried once after all remaining tiles have been
+  /// attempted.
+  /// This does not retry tiles that failed under [NegativeResponseTileEvent],
+  /// as the response from the server in these cases will likely indicate that
+  /// the issue is unlikely to be resolved shortly enough for a retry to succeed
+  /// (for example, 404 Not Found tiles are unlikely to ever exist).
+  ///
+  /// ---
+  ///
   /// A fresh [DownloadProgress] event will always be emitted every
   /// [maxReportInterval] (if specified), which defaults to every 1 second,
   /// regardless of whether any more tiles have been attempted/downloaded/failed.
@@ -122,22 +145,25 @@ class StoreDownload {
   /// ---
   ///
   /// {@macro num_instances}
-  @useResult
-  Stream<DownloadProgress> startForeground({
+  ({
+    Stream<TileEvent> tileEvents,
+    Stream<DownloadProgress> downloadProgress,
+  }) startForeground({
     required DownloadableRegion region,
     int parallelThreads = 5,
     int maxBufferLength = 200,
     bool skipExistingTiles = false,
     bool skipSeaTiles = true,
     int? rateLimit,
+    bool retryFailedRequestTiles = true,
     Duration? maxReportInterval = const Duration(seconds: 1),
     bool disableRecovery = false,
     UrlTransformer? urlTransformer,
     Object instanceId = 0,
-  }) async* {
+  }) {
     FMTCBackendAccess.internal; // Verify initialisation
 
-    // Check input arguments for suitability
+    // Verify input arguments
     if (!(region.options.wmsOptions != null ||
         region.options.urlTemplate != null)) {
       throw ArgumentError(
@@ -196,76 +222,97 @@ class StoreDownload {
         : Object.hash(instanceId, DateTime.timestamp().millisecondsSinceEpoch);
     if (!disableRecovery) FMTCRoot.recovery._downloadsOngoing.add(recoveryId!);
 
-    // Start download thread
-    final receivePort = ReceivePort();
-    await Isolate.spawn(
-      _downloadManager,
-      (
-        sendPort: receivePort.sendPort,
-        region: region,
-        storeName: _storeName,
-        parallelThreads: parallelThreads,
-        maxBufferLength: maxBufferLength,
-        skipExistingTiles: skipExistingTiles,
-        skipSeaTiles: skipSeaTiles,
-        maxReportInterval: maxReportInterval,
-        rateLimit: rateLimit,
-        urlTransformer: resolvedUrlTransformer,
-        recoveryId: recoveryId,
-        backend: FMTCBackendAccessThreadSafe.internal,
-      ),
-      onExit: receivePort.sendPort,
-      debugName: '[FMTC] Master Bulk Download Thread',
-    );
+    // Prepare output streams
+    final tileEventsStreamController = StreamController<TileEvent>();
+    final downloadProgressStreamController =
+        StreamController<DownloadProgress>();
 
-    // Setup control mechanisms (completers)
-    final cancelCompleter = Completer<void>();
-    Completer<void>? pauseCompleter;
+    () async {
+      // Start download thread
+      final receivePort = ReceivePort();
+      await Isolate.spawn(
+        _downloadManager,
+        (
+          sendPort: receivePort.sendPort,
+          region: region,
+          storeName: _storeName,
+          parallelThreads: parallelThreads,
+          maxBufferLength: maxBufferLength,
+          skipExistingTiles: skipExistingTiles,
+          skipSeaTiles: skipSeaTiles,
+          maxReportInterval: maxReportInterval,
+          rateLimit: rateLimit,
+          retryFailedRequestTiles: retryFailedRequestTiles,
+          urlTransformer: resolvedUrlTransformer,
+          recoveryId: recoveryId,
+          backend: FMTCBackendAccessThreadSafe.internal,
+        ),
+        onExit: receivePort.sendPort,
+        debugName: '[FMTC] Master Bulk Download Thread',
+      );
 
-    await for (final evt in receivePort) {
-      // Handle new progress message
-      if (evt is DownloadProgress) {
-        yield evt;
-        continue;
-      }
+      // Setup control mechanisms (completers)
+      final cancelCompleter = Completer<void>();
+      Completer<void>? pauseCompleter;
 
-      // Handle pause comms
-      if (evt == _DownloadManagerControlCmd.pause) {
-        pauseCompleter?.complete();
-        continue;
+      await for (final evt in receivePort) {
+        // Handle new download progress
+        if (evt is DownloadProgress) {
+          downloadProgressStreamController.add(evt);
+          continue;
+        }
+
+        // Handle new tile event
+        if (evt is TileEvent) {
+          tileEventsStreamController.add(evt);
+          continue;
+        }
+
+        // Handle pause comms
+        if (evt == _DownloadManagerControlCmd.pause) {
+          pauseCompleter?.complete();
+          continue;
+        }
+
+        // Handle shutdown (both normal and cancellation)
+        if (evt == null) break;
+
+        // Setup control mechanisms (senders)
+        if (evt is SendPort) {
+          instance
+            ..requestCancel = () {
+              evt.send(_DownloadManagerControlCmd.cancel);
+              return cancelCompleter.future;
+            }
+            ..requestPause = () {
+              evt.send(_DownloadManagerControlCmd.pause);
+              // Completed by handler above
+              return (pauseCompleter = Completer()).future
+                ..then((_) => instance.isPaused = true);
+            }
+            ..requestResume = () {
+              evt.send(_DownloadManagerControlCmd.resume);
+              instance.isPaused = false;
+            };
+          continue;
+        }
+
+        throw UnimplementedError('Unrecognised message');
       }
 
       // Handle shutdown (both normal and cancellation)
-      if (evt == null) break;
+      receivePort.close();
+      if (!disableRecovery) await FMTCRoot.recovery.cancel(recoveryId!);
+      DownloadInstance.unregister(instanceId);
+      cancelCompleter.complete();
+      unawaited(tileEventsStreamController.close());
+      unawaited(downloadProgressStreamController.close());
+    }();
 
-      // Setup control mechanisms (senders)
-      if (evt is SendPort) {
-        instance
-          ..requestCancel = () {
-            evt.send(_DownloadManagerControlCmd.cancel);
-            return cancelCompleter.future;
-          }
-          ..requestPause = () {
-            evt.send(_DownloadManagerControlCmd.pause);
-            // Completed by handler above
-            return (pauseCompleter = Completer()).future
-              ..then((_) => instance.isPaused = true);
-          }
-          ..requestResume = () {
-            evt.send(_DownloadManagerControlCmd.resume);
-            instance.isPaused = false;
-          };
-        continue;
-      }
-
-      throw UnimplementedError('Unrecognised message');
-    }
-
-    // Handle shutdown (both normal and cancellation)
-    receivePort.close();
-    if (!disableRecovery) await FMTCRoot.recovery.cancel(recoveryId!);
-    DownloadInstance.unregister(instanceId);
-    cancelCompleter.complete();
+    return (
+      tileEvents: tileEventsStreamController.stream,
+      downloadProgress: downloadProgressStreamController.stream,
+    );
   }
 
   /// Count the number of tiles within the specified region
@@ -275,7 +322,7 @@ class StoreDownload {
   ///
   /// Note that this does not require an existing/ready store, or a sensical
   /// [DownloadableRegion.options].
-  Future<int> check(DownloadableRegion region) => compute(
+  Future<int> countTiles(DownloadableRegion region) => compute(
         (region) => region.when(
           rectangle: TileCounters.rectangleTiles,
           circle: TileCounters.circleTiles,
@@ -285,6 +332,16 @@ class StoreDownload {
         ),
         region,
       );
+
+  /// Count the number of tiles within the specified region
+  ///
+  /// This does not include skipped sea tiles or skipped existing tiles, as
+  /// those are handled during a download (as the contents must be known).
+  ///
+  /// Note that this does not require an existing/ready store, or a sensical
+  /// [DownloadableRegion.options].
+  @Deprecated('`check` has been renamed to `countTiles`')
+  Future<int> check(DownloadableRegion region) => countTiles(region);
 
   /// Cancel the ongoing foreground download and recovery session
   ///
