@@ -318,15 +318,9 @@ Future<void> _downloadManager(
 
               // If buffering is in use, send a progress update with buffer info
               if (input.maxBufferLength != 0) {
-                // TODO: Fix incorrect stats reporting
-
                 // Update correct thread buffer with new tile on success
-                late final int flushedTilesCount;
-                late final int flushedTilesSize;
                 if (evt is SuccessfulTileEvent) {
                   if (evt._wasBufferFlushed) {
-                    flushedTilesCount = threadBuffersTiles[threadNo];
-                    flushedTilesSize = threadBuffersSize[threadNo];
                     threadBuffersTiles[threadNo] = 0;
                     threadBuffersSize[threadNo] = 0;
                   } else {
@@ -340,7 +334,6 @@ Future<void> _downloadManager(
 
                 sendToMain(
                   lastDownloadProgress = lastDownloadProgress._updateWithTile(
-                    newTileEvent: evt,
                     bufferedTiles: evt is SuccessfulTileEvent
                         ? (
                             count: threadBuffersTiles.reduce((a, b) => a + b),
@@ -348,14 +341,7 @@ Future<void> _downloadManager(
                                 1024,
                           )
                         : null,
-                    flushedTiles: wasBufferFlushed
-                        ? (
-                            count: lastDownloadProgress.flushedTilesCount +
-                                flushedTilesCount,
-                            size: lastDownloadProgress.flushedTilesSize +
-                                flushedTilesSize / 1024
-                          )
-                        : null,
+                    newTileEvent: evt,
                     elapsedDuration: downloadDuration.elapsed,
                     tilesPerSecond: getCurrentTPS(registerNewTPS: true),
                   ),
@@ -373,13 +359,6 @@ Future<void> _downloadManager(
                 sendToMain(
                   lastDownloadProgress = lastDownloadProgress._updateWithTile(
                     newTileEvent: evt,
-                    flushedTiles: evt is SuccessfulTileEvent
-                        ? (
-                            count: lastDownloadProgress.flushedTilesCount + 1,
-                            size: lastDownloadProgress.flushedTilesSize +
-                                (evt.tileImage.lengthInBytes / 1024)
-                          )
-                        : null,
                     elapsedDuration: downloadDuration.elapsed,
                     tilesPerSecond: getCurrentTPS(registerNewTPS: true),
                   ),
@@ -446,7 +425,14 @@ Future<void> _downloadManager(
       growable: false,
     ),
   );
+
+  // Send final progress update
   downloadDuration.stop();
+  sendToMain(
+    lastDownloadProgress = lastDownloadProgress._updateToComplete(
+      elapsedDuration: downloadDuration.elapsed,
+    ),
+  );
 
   // Cleanup resources and shutdown
   fallbackReportTimer?.cancel();

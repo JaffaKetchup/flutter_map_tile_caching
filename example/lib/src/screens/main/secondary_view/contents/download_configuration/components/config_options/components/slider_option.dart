@@ -34,7 +34,7 @@ class _SliderOption extends StatelessWidget {
             ),
           ),
           SizedBox(
-            width: 72,
+            width: 80,
             child: Text(
               '$value $descriptor',
               textAlign: TextAlign.end,

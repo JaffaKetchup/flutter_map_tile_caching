@@ -16,8 +16,8 @@ class DownloadProgress {
   /// update
   @protected
   const DownloadProgress._({
-    required this.flushedTilesCount,
-    required this.flushedTilesSize,
+    required this.successfulTilesSize,
+    required this.successfulTilesCount,
     required this.bufferedTilesCount,
     required this.bufferedTilesSize,
     required this.seaTilesCount,
@@ -44,8 +44,8 @@ class DownloadProgress {
     required this.maxTilesCount,
     required int? tilesPerSecondLimit,
     required bool retryFailedRequestTiles,
-  })  : flushedTilesCount = 0,
-        flushedTilesSize = 0,
+  })  : successfulTilesCount = 0,
+        successfulTilesSize = 0,
         bufferedTilesCount = 0,
         bufferedTilesSize = 0,
         seaTilesCount = 0,
@@ -68,21 +68,24 @@ class DownloadProgress {
   ///
   /// For [SuccessfulTileEvent]s, the flushed and buffered metrics cannot be
   /// automatically updated from information in the tile event alone.
-  /// [flushedTiles] & [bufferedTiles] should be updated manually.
+  /// [bufferedTiles] should be updated manually.
   ///
   /// [maxTilesCount], [_tilesPerSecondLimit] & [_retryFailedRequestTiles] may
   /// not be modified. [elapsedDuration] & [tilesPerSecond] must always be
   /// modified.
   DownloadProgress _updateWithTile({
     required TileEvent newTileEvent,
-    ({int count, double size})? flushedTiles,
     ({int count, double size})? bufferedTiles,
     required Duration elapsedDuration,
     required double tilesPerSecond,
   }) =>
       DownloadProgress._(
-        flushedTilesCount: flushedTiles?.count ?? flushedTilesCount,
-        flushedTilesSize: flushedTiles?.size ?? flushedTilesSize,
+        successfulTilesCount: successfulTilesCount +
+            (newTileEvent is SuccessfulTileEvent ? 1 : 0),
+        successfulTilesSize: successfulTilesSize +
+            (newTileEvent is SuccessfulTileEvent
+                ? newTileEvent.tileImage.lengthInBytes / 1024
+                : 0),
         bufferedTilesCount: bufferedTiles?.count ?? bufferedTilesCount,
         bufferedTilesSize: bufferedTiles?.size ?? bufferedTilesSize,
         seaTilesCount: seaTilesCount + (newTileEvent is SeaTileEvent ? 1 : 0),
@@ -124,8 +127,8 @@ class DownloadProgress {
     required double tilesPerSecond,
   }) =>
       DownloadProgress._(
-        flushedTilesCount: flushedTilesCount,
-        flushedTilesSize: flushedTilesSize,
+        successfulTilesCount: successfulTilesCount,
+        successfulTilesSize: successfulTilesSize,
         bufferedTilesCount: bufferedTilesCount,
         bufferedTilesSize: bufferedTilesSize,
         seaTilesCount: seaTilesCount,
@@ -138,6 +141,32 @@ class DownloadProgress {
         maxTilesCount: maxTilesCount,
         elapsedDuration: elapsedDuration,
         tilesPerSecond: tilesPerSecond,
+        tilesPerSecondLimit: _tilesPerSecondLimit,
+        retryFailedRequestTiles: _retryFailedRequestTiles,
+      );
+
+  /// Create a new progress object that represents a finished download
+  ///
+  /// This means [tilesPerSecond] is set to 0, and the buffered statistics are
+  /// set to 0.
+  DownloadProgress _updateToComplete({
+    required Duration elapsedDuration,
+  }) =>
+      DownloadProgress._(
+        successfulTilesCount: successfulTilesCount,
+        successfulTilesSize: successfulTilesSize,
+        bufferedTilesCount: 0,
+        bufferedTilesSize: 0,
+        seaTilesCount: seaTilesCount,
+        seaTilesSize: seaTilesSize,
+        existingTilesCount: existingTilesCount,
+        existingTilesSize: existingTilesSize,
+        negativeResponseTilesCount: negativeResponseTilesCount,
+        failedRequestTilesCount: failedRequestTilesCount,
+        retryTilesQueuedCount: retryTilesQueuedCount,
+        maxTilesCount: maxTilesCount,
+        elapsedDuration: elapsedDuration,
+        tilesPerSecond: 0,
         tilesPerSecondLimit: _tilesPerSecondLimit,
         retryFailedRequestTiles: _retryFailedRequestTiles,
       );
@@ -163,19 +192,19 @@ class DownloadProgress {
   /// and actually flushed/written to cache)
   ///
   /// This is the number of [SuccessfulTileEvent]s emitted.
-  int get successfulTilesCount => flushedTilesCount + bufferedTilesCount;
+  final int successfulTilesCount;
 
   /// The size in KiB of the tile images successfully downloaded (including both
   /// tiles buffered and actually flushed/written to cache)
-  double get successfulTilesSize => flushedTilesSize + bufferedTilesSize;
+  final double successfulTilesSize;
 
   /// The number of tiles successfully downloaded and written to the cache
   /// (flushed from the buffer)
-  final int flushedTilesCount;
+  int get flushedTilesCount => successfulTilesCount - bufferedTilesCount;
 
   /// The size in KiB of the tile images successfully downloaded and written to
   /// the cache (flushed from the buffer)
-  final double flushedTilesSize;
+  double get flushedTilesSize => successfulTilesSize - bufferedTilesSize;
 
   /// The number of tiles successfully downloaded but still to be written to the
   /// cache
@@ -325,8 +354,8 @@ class DownloadProgress {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is DownloadProgress &&
-          flushedTilesCount == other.flushedTilesCount &&
-          flushedTilesSize == other.flushedTilesSize &&
+          successfulTilesCount == other.successfulTilesCount &&
+          successfulTilesSize == other.successfulTilesSize &&
           bufferedTilesCount == other.bufferedTilesCount &&
           bufferedTilesSize == other.bufferedTilesSize &&
           seaTilesCount == other.seaTilesCount &&
@@ -343,8 +372,8 @@ class DownloadProgress {
 
   @override
   int get hashCode => Object.hashAllUnordered([
-        flushedTilesCount,
-        flushedTilesSize,
+        successfulTilesCount,
+        successfulTilesSize,
         bufferedTilesCount,
         bufferedTilesSize,
         seaTilesCount,

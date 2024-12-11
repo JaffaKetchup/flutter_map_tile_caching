@@ -1,4 +1,4 @@
-import 'dart:async';
+//import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -13,11 +13,11 @@ import 'package:provider/provider.dart';
 
 import '../../../shared/misc/shared_preferences.dart';
 import '../../../shared/misc/store_metadata_keys.dart';
-import '../../../shared/state/download_provider.dart';
+//import '../../../shared/state/download_provider.dart';
 import '../../../shared/state/general_provider.dart';
 import '../../../shared/state/region_selection_provider.dart';
 import 'components/debugging_tile_builder/debugging_tile_builder.dart';
-import 'components/download_progress/download_progress_masker.dart';
+//import 'components/download_progress/download_progress_masker.dart';
 import 'components/fmtc_not_in_use_indicator.dart';
 import 'components/region_selection/crosshairs.dart';
 import 'components/region_selection/custom_polygon_snapping_indicator.dart';
@@ -329,9 +329,9 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                       ),
             );
 
-            final isDownloadProgressMaskerVisible = widget.mode ==
-                    MapViewMode.downloadRegion &&
-                context.select<DownloadingProvider, bool>((p) => p.isFocused);
+            //final isDownloadProgressMaskerVisible = widget.mode ==
+            //        MapViewMode.downloadRegion &&
+            //    context.select<DownloadingProvider, bool>((p) => p.isFocused);
 
             final map = FlutterMap(
               mapController: _mapController.mapController,

@@ -48,11 +48,16 @@ class StoreDownload {
   /// One emits [TileEvent]s which contain info about the most recent tile
   /// attempted only.
   ///
-  /// The first stream will emit events once per tile emitted on the second
-  /// stream, at intervals of no longer than [maxReportInterval], and once at
-  /// the start of the download indicating setup is complete and the first tile
-  /// is being downloaded. It finishes once the download is complete, with the
-  /// last event representing the last emitted tile event on the second stream.
+  /// The first stream (of [DownloadProgress]s) will emit events:
+  ///  * once per [TileEvent] emitted on the second stream
+  ///  * at intervals of no longer than [maxReportInterval]
+  ///  * once at the start of the download indicating setup is complete and the
+  ///    first tile is being downloaded
+  ///  * once additionally at the end of the download after the last tile
+  ///    setting some final statistics (such as tiles per second to 0)
+  ///
+  /// Once the stream of [DownloadProgress]s completes/finishes, the download
+  /// has stopped.
   ///
   /// Neither output stream respects listen, pause, resume, or cancel events
   /// when submitted through the stream subscription.

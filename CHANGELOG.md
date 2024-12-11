@@ -44,11 +44,14 @@ Additionally, vector tiles are now supported in theory, as the internal caching/
   * Improved speed (by massive amounts) and accuracy & reduced memory consumption of `CircleRegion`'s tile generation & counting algorithm
   * Deprecated `BaseRegion.(maybe)When` - this is easy to perform using a standard pattern-matched switch
 
-* Changes to bulk downloading
-  * `DownloadProgress.latestTileEvent` is now nullable
+* Major changes to bulk downloading
+  * Added support for retrying failed tiles (that failed because the request could not be made) once at the end of the download
+  * `StoreDownload.startForeground` output stream split into two streams returned as a record, one for `TileEvent`s, one for `DownloadProgress`s
+  * `TileEvents` has been split up into multiple classes and mixins to reduce nullability and uncertainty
+  * `DownloadProgress` has had its contained metrics changed to reflect the failed tiles retry, and `latestTileEvent` removed
 
 * Exporting stores is now more stable, and has improved documentation  
-  The method now works in a dedicated temporary environment and attempts to perform two different strategies to move/copy-and-delete the result to the specified directory at the end before failing. Improved documentation covers the potential pitfalls of permissions and now recommends exporting to an app directory, then using the system share functionality on some devices. It now also returns the number of exported tiles.
+  > The method now works in a dedicated temporary environment and attempts to perform two different strategies to move/copy-and-delete the result to the specified directory at the end before failing. Improved documentation covers the potential pitfalls of permissions and now recommends exporting to an app directory, then using the system share functionality on some devices. It now also returns the number of exported tiles.
 
 * Removed deprecated remnants from v9.*
 
