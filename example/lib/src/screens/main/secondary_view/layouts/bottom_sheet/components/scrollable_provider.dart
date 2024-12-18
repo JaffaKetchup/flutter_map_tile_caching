@@ -32,5 +32,6 @@ class BottomSheetScrollableProvider extends InheritedWidget {
 
   @override
   bool updateShouldNotify(covariant BottomSheetScrollableProvider oldWidget) =>
-      oldWidget.innerScrollController != innerScrollController;
+      oldWidget.innerScrollController != innerScrollController ||
+      oldWidget.outerScrollController != outerScrollController;
 }

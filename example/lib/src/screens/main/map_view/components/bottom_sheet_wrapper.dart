@@ -37,7 +37,8 @@ class _BottomSheetMapWrapperState extends State<BottomSheetMapWrapper> {
     // Introduce padding at the bottom of the screen to ensure that the
     // center of the map is affected by the bottom sheet, so the center
     // is always in the 'visible' center.
-    final screenPaddingTop = MediaQuery.paddingOf(context).top;
+    final screenPaddingTop =
+        MediaQueryData.fromView(View.of(context)).padding.top;
 
     return DelayedControllerAttachmentBuilder(
       listenable: widget.bottomSheetOuterController,
@@ -72,6 +73,7 @@ class _BottomSheetMapWrapperState extends State<BottomSheetMapWrapper> {
             child: MapView(
               mode: widget.mode,
               layoutDirection: widget.layoutDirection,
+              bottomSheetOuterController: widget.bottomSheetOuterController,
               bottomPaddingWrapperBuilder: (context, child) {
                 final useAssumedRadius =
                     !widget.bottomSheetOuterController.isAttached ||

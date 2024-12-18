@@ -22,47 +22,32 @@ class TabHeader extends StatelessWidget {
 
     return SliverPersistentHeader(
       pinned: true,
-      delegate: PersistentHeader(
+      delegate: _PersistentHeader(
         child: DelayedControllerAttachmentBuilder(
           listenable: outerScrollController,
           builder: (context, _) {
             if (!outerScrollController.isAttached ||
                 innerScrollController.positions.length != 1) {
-              return Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge,
+              return Column(
+                children: [
+                  const _Handle(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ) +
+                        const EdgeInsets.only(bottom: 8),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               );
             }
-
-            final maxHeight = outerScrollController.sizeToPixels(1);
-
-            final oldValue = outerScrollController.pixels;
-            final oldMax = maxHeight;
-            final oldMin = maxHeight - screenTopPadding;
-
-            const maxMinimizeIndentButtonWidth = 40;
-            const maxMinimizeIndentSpacer = 16;
-            const minMinimizeIndent = 0;
-
-            final double minimizeIndentButtonWidth = ((((oldValue - oldMin) *
-                            (maxMinimizeIndentButtonWidth -
-                                minMinimizeIndent)) /
-                        (oldMax - oldMin)) +
-                    minMinimizeIndent)
-                .clamp(0.0, 40);
-
-            final double minimizeIndentSpacer = ((((oldValue - oldMin) *
-                            (maxMinimizeIndentSpacer - minMinimizeIndent)) /
-                        (oldMax - oldMin)) +
-                    minMinimizeIndent)
-                .clamp(0.0, 16);
 
             return AnimatedBuilder(
               animation: innerScrollController,
@@ -74,13 +59,41 @@ class TabHeader extends StatelessWidget {
                     : Theme.of(context).colorScheme.surface,
                 child: child,
               ),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: minimizeIndentButtonWidth,
+              child: Column(
+                children: [
+                  const _Handle(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16) +
+                        const EdgeInsets.only(bottom: 8),
+                    child: AnimatedBuilder(
+                      animation: outerScrollController,
+                      builder: (context, child) {
+                        double calc(double end) {
+                          final animationDstPx = outerScrollController
+                              .sizeToPixels(1 / 4); // from top
+                          final animationTriggerPx =
+                              outerScrollController.sizeToPixels(1) -
+                                  animationDstPx -
+                                  screenTopPadding;
+
+                          return (((outerScrollController.pixels -
+                                          animationTriggerPx) *
+                                      end) /
+                                  animationDstPx)
+                              .clamp(0, end);
+                        }
+
+                        return Row(
+                          children: [
+                            SizedBox(width: calc(40), child: child),
+                            SizedBox(width: calc(16)),
+                            Text(
+                              title,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ],
+                        );
+                      },
                       child: ClipRRect(
                         child: IconButton(
                           onPressed: () {
@@ -99,13 +112,8 @@ class TabHeader extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(width: minimizeIndentSpacer),
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },
@@ -115,8 +123,34 @@ class TabHeader extends StatelessWidget {
   }
 }
 
-class PersistentHeader extends SliverPersistentHeaderDelegate {
-  const PersistentHeader({required this.child});
+class _Handle extends StatelessWidget {
+  const _Handle();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 8),
+        child: Semantics(
+          label: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+          container: true,
+          child: Center(
+            child: Container(
+              height: 4,
+              width: 32,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(2),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: 0.4),
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+class _PersistentHeader extends SliverPersistentHeaderDelegate {
+  const _PersistentHeader({required this.child});
 
   final Widget child;
 
@@ -129,10 +163,10 @@ class PersistentHeader extends SliverPersistentHeaderDelegate {
       Align(child: child);
 
   @override
-  double get maxExtent => 60;
+  double get maxExtent => 84;
 
   @override
-  double get minExtent => 60;
+  double get minExtent => 84;
 
   @override
   bool shouldRebuild(SliverPersistentHeaderDelegate oldDelegate) => false;

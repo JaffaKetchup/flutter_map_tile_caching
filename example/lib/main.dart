@@ -70,7 +70,7 @@ class _AppContainer extends StatelessWidget {
       brightness: Brightness.light,
       useMaterial3: true,
       textTheme: GoogleFonts.ubuntuTextTheme(ThemeData.light().textTheme),
-      colorSchemeSeed: Colors.teal,
+      colorSchemeSeed: Colors.green,
       switchTheme: SwitchThemeData(
         thumbIcon: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)

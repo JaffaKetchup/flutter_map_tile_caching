@@ -16,9 +16,9 @@ import '../../../shared/misc/store_metadata_keys.dart';
 //import '../../../shared/state/download_provider.dart';
 import '../../../shared/state/general_provider.dart';
 import '../../../shared/state/region_selection_provider.dart';
+import 'components/additional_overlay/additional_overlay.dart';
 import 'components/debugging_tile_builder/debugging_tile_builder.dart';
 //import 'components/download_progress/download_progress_masker.dart';
-import 'components/fmtc_not_in_use_indicator.dart';
 import 'components/region_selection/crosshairs.dart';
 import 'components/region_selection/custom_polygon_snapping_indicator.dart';
 import 'components/region_selection/region_shape.dart';
@@ -34,12 +34,14 @@ class MapView extends StatefulWidget {
     this.mode = MapViewMode.standard,
     this.bottomPaddingWrapperBuilder,
     required this.layoutDirection,
+    required this.bottomSheetOuterController,
   });
 
   final MapViewMode mode;
   final Widget Function(BuildContext context, Widget child)?
       bottomPaddingWrapperBuilder;
   final Axis layoutDirection;
+  final DraggableScrollableController bottomSheetOuterController;
 
   @override
   State<MapView> createState() => _MapViewState();
@@ -67,7 +69,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
     },
   ).distinct(mapEquals);
 
-  bool _isInRegionSelectMode() =>
+  bool get _isInRegionSelectMode =>
       widget.mode == MapViewMode.downloadRegion &&
       !context.read<RegionSelectionProvider>().isDownloadSetupPanelVisible;
 
@@ -100,7 +102,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
       keepAlive: true,
       backgroundColor: const Color(0xFFaad3df),
       onTap: (_, __) {
-        if (!_isInRegionSelectMode()) return;
+        if (!_isInRegionSelectMode) return;
 
         final provider = context.read<RegionSelectionProvider>();
 
@@ -144,15 +146,15 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
         }
       },
       onSecondaryTap: (_, __) {
-        if (!_isInRegionSelectMode()) return;
+        if (!_isInRegionSelectMode) return;
         context.read<RegionSelectionProvider>().removeLastCoordinate();
       },
       onLongPress: (_, __) {
-        if (!_isInRegionSelectMode()) return;
+        if (!_isInRegionSelectMode) return;
         context.read<RegionSelectionProvider>().removeLastCoordinate();
       },
       onPointerHover: (evt, point) {
-        if (!_isInRegionSelectMode()) return;
+        if (!_isInRegionSelectMode) return;
 
         final provider = context.read<RegionSelectionProvider>();
 
@@ -177,7 +179,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
         }
       },
       onPositionChanged: (position, _) {
-        if (!_isInRegionSelectMode()) return;
+        if (!_isInRegionSelectMode) return;
 
         final provider = context.read<RegionSelectionProvider>();
 
@@ -397,23 +399,30 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                   child: map,
                 ),
                 if (isCrosshairsVisible) const Center(child: Crosshairs()),
-                if (widget.bottomPaddingWrapperBuilder case final bpwb?)
-                  Positioned(
-                    bottom: 8,
-                    right: 8,
-                    child: Builder(
-                      builder: (context) => bpwb(
-                        context,
-                        FMTCNotInUseIndicator(mode: widget.mode),
-                      ),
-                    ),
-                  )
-                else
-                  Positioned(
-                    bottom: 16,
-                    right: 16,
-                    child: FMTCNotInUseIndicator(mode: widget.mode),
-                  ),
+                Positioned(
+                  bottom: 0,
+                  right: 8,
+                  left: 8,
+                  child: widget.bottomPaddingWrapperBuilder != null
+                      ? Builder(
+                          builder: (context) =>
+                              widget.bottomPaddingWrapperBuilder!(
+                            context,
+                            AdditionalOverlay(
+                              bottomSheetOuterController:
+                                  widget.bottomSheetOuterController,
+                              layoutDirection: Axis.vertical,
+                              mode: widget.mode,
+                            ),
+                          ),
+                        )
+                      : AdditionalOverlay(
+                          bottomSheetOuterController:
+                              widget.bottomSheetOuterController,
+                          layoutDirection: Axis.horizontal,
+                          mode: widget.mode,
+                        ),
+                ),
               ],
             );
           },

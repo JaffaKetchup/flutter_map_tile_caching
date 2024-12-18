@@ -105,20 +105,24 @@ class _ImportSelectionStageState extends State<ImportSelectionStage> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  IconButton.filled(
-                    onPressed: selectedStores.isNotEmpty &&
-                            (conflictStrategy != ImportConflictStrategy.skip ||
-                                selectedStores
-                                    .whereNot(
-                                      (store) => widget.availableStores[store]!,
-                                    )
-                                    .isNotEmpty)
-                        ? () => widget.nextStage(
-                              selectedStores,
-                              conflictStrategy,
-                            )
-                        : null,
-                    icon: const Icon(Icons.file_open),
+                  SizedBox(
+                    height: 42,
+                    child: FilledButton.icon(
+                      onPressed: selectedStores.isNotEmpty &&
+                              (conflictStrategy !=
+                                      ImportConflictStrategy.skip ||
+                                  selectedStores
+                                      .whereNot(
+                                        (store) =>
+                                            widget.availableStores[store]!,
+                                      )
+                                      .isNotEmpty)
+                          ? () =>
+                              widget.nextStage(selectedStores, conflictStrategy)
+                          : null,
+                      icon: const Icon(Icons.file_open),
+                      label: const Text('Start Import'),
+                    ),
                   ),
                 ],
               ),

@@ -247,7 +247,7 @@ class _ShapeSelectorState extends State<ShapeSelector> {
 
   void _completeRegion() {
     _addSubRegion();
-    moveToDownloadConfigView(context);
+    prepareDownloadConfigView(context);
   }
 
   void _addSubRegion() {

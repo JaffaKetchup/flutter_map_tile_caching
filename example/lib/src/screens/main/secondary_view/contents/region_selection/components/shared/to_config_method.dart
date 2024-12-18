@@ -5,7 +5,10 @@ import 'package:provider/provider.dart';
 import '../../../../../../../shared/state/general_provider.dart';
 import '../../../../../../../shared/state/region_selection_provider.dart';
 
-void moveToDownloadConfigView(BuildContext context) {
+void prepareDownloadConfigView(
+  BuildContext context, {
+  bool shouldMoveTo = true,
+}) {
   final regionSelectionProvider = context.read<RegionSelectionProvider>();
 
   final bounds = LatLngBounds.fromPoints(
@@ -21,9 +24,15 @@ void moveToDownloadConfigView(BuildContext context) {
     );
   }
   context.read<GeneralProvider>().animatedMapController.animatedFitCamera(
-        cameraFit:
-            CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(16)),
+        cameraFit: CameraFit.bounds(
+          bounds: bounds,
+          padding: const EdgeInsets.all(16) +
+              MediaQueryData.fromView(View.of(context)).padding +
+              const EdgeInsets.only(bottom: 18),
+        ),
       );
 
-  regionSelectionProvider.isDownloadSetupPanelVisible = true;
+  if (shouldMoveTo) {
+    regionSelectionProvider.isDownloadSetupPanelVisible = true;
+  }
 }

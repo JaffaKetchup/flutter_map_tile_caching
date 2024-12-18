@@ -133,15 +133,15 @@ class ExportStoresButton extends StatelessWidget {
       switch (selectedType) {
         case FileSystemEntityType.notFound:
           break;
-        case FileSystemEntityType.directory:
-        case FileSystemEntityType.link:
-        case FileSystemEntityType.pipe:
-        case FileSystemEntityType.unixDomainSock:
-          ScaffoldMessenger.maybeOf(context)?.showSnackBar(invalidTypeSnackbar);
-          return;
         case FileSystemEntityType.file:
           if ((Platform.isAndroid || Platform.isIOS) &&
-              (await showOverwriteConfirmationDialog(context) ?? false)) return;
+              (await showOverwriteConfirmationDialog(context) ?? false)) {
+            return;
+          }
+        // ignore: no_default_cases
+        default:
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(invalidTypeSnackbar);
+          return;
       }
 
       filePath = intermediateFilePath;

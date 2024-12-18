@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -27,140 +28,84 @@ class SecondaryViewBottomSheet extends StatefulWidget {
 
 class _SecondaryViewBottomSheetState extends State<SecondaryViewBottomSheet> {
   @override
-  Widget build(BuildContext context) {
-    final screenTopPadding =
-        MediaQueryData.fromView(View.of(context)).padding.top;
-
-    return LayoutBuilder(
-      builder: (context, constraints) => DraggableScrollableSheet(
-        initialChildSize: 0.3,
-        minChildSize: 0,
-        snap: true,
-        expand: false,
-        snapSizes: const [0.3],
-        controller: widget.controller,
-        builder: (context, innerController) =>
-            DelayedControllerAttachmentBuilder(
-          listenable: widget.controller,
-          builder: (context, child) {
-            double radius = 18;
-            double calcHeight = 0;
-
-            if (widget.controller.isAttached) {
-              final maxHeight = widget.controller.sizeToPixels(1);
-
-              final oldValue = widget.controller.pixels;
-              final oldMax = maxHeight;
-              final oldMin = maxHeight - radius;
-              const newMax = 0.0;
-              final newMin = radius;
-
-              radius = ((((oldValue - oldMin) * (newMax - newMin)) /
-                          (oldMax - oldMin)) +
-                      newMin)
-                  .clamp(0, radius);
-
-              calcHeight = screenTopPadding -
-                  constraints.maxHeight +
-                  widget.controller.pixels;
-            }
-
-            return ClipRRect(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(radius),
-                topRight: Radius.circular(radius),
-              ),
-              child: Column(
-                children: [
+  Widget build(BuildContext context) => ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(18),
+          topRight: Radius.circular(18),
+        ),
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(
+            dragDevices: PointerDeviceKind.values.toSet(),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) => DraggableScrollableSheet(
+              initialChildSize: 0.3,
+              minChildSize: 32 / constraints.maxHeight,
+              snap: true,
+              expand: false,
+              snapSizes: const [0.3],
+              controller: widget.controller,
+              builder: (context, innerController) =>
                   DelayedControllerAttachmentBuilder(
-                    listenable: innerController,
-                    builder: (context, _) => SizedBox(
-                      height: calcHeight.clamp(0, screenTopPadding),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeInOut,
-                        color: innerController.hasClients &&
-                                innerController.offset != 0
-                            ? Theme.of(context).colorScheme.surfaceContainer
-                            : Theme.of(context).colorScheme.surface,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ColoredBox(
-                      color: Theme.of(context).colorScheme.surface,
-                      child: child,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-          child: Stack(
-            children: [
-              // Future proofing if child is moved out: avoid dependency
-              // injection, as that may not be possible in future
-              BottomSheetScrollableProvider(
-                innerScrollController: innerController,
-                outerScrollController: widget.controller,
-                child: SizedBox(
-                  width: double.infinity,
-                  child: switch (widget.selectedTab) {
-                    0 => const HomeViewBottomSheet(),
-                    1 => context.select<RegionSelectionProvider, bool>(
-                        (p) => p.isDownloadSetupPanelVisible,
-                      )
-                          ? const DownloadConfigurationViewBottomSheet()
-                          : const RegionSelectionViewBottomSheet(),
-                    _ => Placeholder(key: ValueKey(widget.selectedTab)),
-                  },
-                ),
-              ),
-              IgnorePointer(
-                child: DelayedControllerAttachmentBuilder(
-                  listenable: widget.controller,
-                  builder: (context, _) {
-                    if (!widget.controller.isAttached) {
-                      return const SizedBox.shrink();
-                    }
+                listenable: widget.controller,
+                builder: (context, child) {
+                  final screenTopPadding =
+                      MediaQueryData.fromView(View.of(context)).padding.top;
 
-                    final calcHeight = SecondaryViewBottomSheet.topPadding -
-                        (screenTopPadding -
-                            constraints.maxHeight +
-                            widget.controller.pixels);
+                  final double paddingPusherHeight =
+                      widget.controller.isAttached
+                          ? (screenTopPadding -
+                                  constraints.maxHeight +
+                                  widget.controller.pixels)
+                              .clamp(0, screenTopPadding)
+                          : 0;
 
-                    return SizedBox(
-                      height: calcHeight.clamp(
-                        0,
-                        SecondaryViewBottomSheet.topPadding,
-                      ),
-                      width: constraints.maxWidth,
-                      child: Semantics(
-                        label: MaterialLocalizations.of(context)
-                            .modalBarrierDismissLabel,
-                        container: true,
-                        child: Center(
-                          child: Container(
-                            height: 4,
-                            width: 32,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(2),
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant
-                                  .withValues(alpha: 0.4),
-                            ),
+                  return Column(
+                    children: [
+                      // Widget which pushes the contents out of the way of the
+                      // system insets/padding
+                      DelayedControllerAttachmentBuilder(
+                        listenable: innerController,
+                        builder: (context, _) => SizedBox(
+                          height: paddingPusherHeight,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeInOut,
+                            color: innerController.hasClients &&
+                                    innerController.offset != 0
+                                ? Theme.of(context).colorScheme.surfaceContainer
+                                : Theme.of(context).colorScheme.surface,
                           ),
                         ),
                       ),
-                    );
-                  },
+                      Expanded(
+                        child: ColoredBox(
+                          color: Theme.of(context).colorScheme.surface,
+                          child: child,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                child: BottomSheetScrollableProvider(
+                  innerScrollController: innerController,
+                  outerScrollController: widget.controller,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: switch (widget.selectedTab) {
+                      0 => const HomeViewBottomSheet(),
+                      1 => context.select<RegionSelectionProvider, bool>(
+                          (p) => p.isDownloadSetupPanelVisible,
+                        )
+                            ? const DownloadConfigurationViewBottomSheet()
+                            : const RegionSelectionViewBottomSheet(),
+                      _ => Placeholder(key: ValueKey(widget.selectedTab)),
+                    },
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
 }

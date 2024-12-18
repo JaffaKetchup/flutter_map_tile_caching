@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../layouts/bottom_sheet/components/scrollable_provider.dart';
-import '../../layouts/bottom_sheet/utils/bottom_sheet_top_spacer.dart';
 import '../../layouts/bottom_sheet/utils/tab_header.dart';
-import '../region_selection/components/shape_selector/shape_selector.dart';
-import '../region_selection/components/sub_regions_list/sub_regions_list.dart';
 
 class DownloadConfigurationViewBottomSheet extends StatelessWidget {
   const DownloadConfigurationViewBottomSheet({super.key});
@@ -14,18 +11,7 @@ class DownloadConfigurationViewBottomSheet extends StatelessWidget {
         controller:
             BottomSheetScrollableProvider.innerScrollControllerOf(context),
         slivers: const [
-          BottomSheetTopSpacer(),
           TabHeader(title: 'Download Configuration'),
-          SliverToBoxAdapter(child: SizedBox(height: 6)),
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverToBoxAdapter(
-              child: ShapeSelector(),
-            ),
-          ),
-          SliverToBoxAdapter(child: Divider(height: 24)),
-          SliverToBoxAdapter(child: SizedBox(height: 6)),
-          SubRegionsList(),
           SliverToBoxAdapter(child: SizedBox(height: 6)),
         ],
       );

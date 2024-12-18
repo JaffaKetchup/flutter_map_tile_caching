@@ -77,63 +77,59 @@ class _URLSelectorState extends State<URLSelector> {
   }
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, constraints) => SizedBox(
-          width: constraints.maxWidth,
-          child: StreamBuilder<Map<String, List<String>>>(
-            initialData: const {
-              _defaultUrlTemplate: ['(default)'],
-            },
-            stream: _templatesToStoresStream,
-            builder: (context, snapshot) {
-              // Bug in `DropdownMenu` means we must force the controller to
-              // update to update the state of the entries
-              final oldValue = _urlTextController.value;
-              _urlTextController
-                ..value = TextEditingValue.empty
-                ..value = oldValue;
+  Widget build(BuildContext context) =>
+      StreamBuilder<Map<String, List<String>>>(
+        initialData: const {
+          _defaultUrlTemplate: ['(default)'],
+        },
+        stream: _templatesToStoresStream,
+        builder: (context, snapshot) {
+          // Bug in `DropdownMenu` means we must force the controller to
+          // update to update the state of the entries
+          final oldValue = _urlTextController.value;
+          _urlTextController
+            ..value = TextEditingValue.empty
+            ..value = oldValue;
 
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: DropdownMenu<String?>(
-                      controller: _urlTextController,
-                      width: constraints.maxWidth,
-                      requestFocusOnTap: true,
-                      leadingIcon: const Icon(Icons.link),
-                      label: const Text('URL Template'),
-                      inputDecorationTheme: const InputDecorationTheme(
-                        filled: true,
-                        helperMaxLines: 2,
-                      ),
-                      initialSelection: widget.initialValue,
-                      // Bug in `DropdownMenu` means this cannot be `true`
-                      // enableFilter: true,
-                      dropdownMenuEntries: _constructMenuEntries(snapshot),
-                      onSelected: _onSelected,
-                      helperText: 'Use standard placeholders & include protocol'
-                          '${widget.helperText != null ? '\n${widget.helperText}' : ''}',
-                      focusNode: _dropdownMenuFocusNode,
-                    ),
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: DropdownMenu<String?>(
+                  controller: _urlTextController,
+                  expandedInsets: EdgeInsets.zero, // full width
+                  requestFocusOnTap: true,
+                  leadingIcon: const Icon(Icons.link),
+                  label: const Text('URL Template'),
+                  inputDecorationTheme: const InputDecorationTheme(
+                    filled: true,
+                    helperMaxLines: 2,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6, left: 8),
-                    child: ValueListenableBuilder(
-                      valueListenable: _enableAddUrlButton,
-                      builder: (context, enableAddUrlButton, _) =>
-                          IconButton.filledTonal(
-                        onPressed:
-                            enableAddUrlButton ? () => _onSelected(null) : null,
-                        icon: const Icon(Icons.add_link),
-                      ),
-                    ),
+                  initialSelection: widget.initialValue,
+                  // Bug in `DropdownMenu` means this cannot be `true`
+                  // enableFilter: true,
+                  dropdownMenuEntries: _constructMenuEntries(snapshot),
+                  onSelected: _onSelected,
+                  helperText: 'Use standard placeholders & include protocol'
+                      '${widget.helperText != null ? '\n${widget.helperText}' : ''}',
+                  focusNode: _dropdownMenuFocusNode,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 6, left: 8),
+                child: ValueListenableBuilder(
+                  valueListenable: _enableAddUrlButton,
+                  builder: (context, enableAddUrlButton, _) =>
+                      IconButton.filledTonal(
+                    onPressed:
+                        enableAddUrlButton ? () => _onSelected(null) : null,
+                    icon: const Icon(Icons.add_link),
                   ),
-                ],
-              );
-            },
-          ),
-        ),
+                ),
+              ),
+            ],
+          );
+        },
       );
 
   void _onSelected(String? v) {
@@ -247,8 +243,10 @@ class _URLSelectorState extends State<URLSelector> {
   }
 
   void _urlTextControllerListener() {
-    _enableAddUrlButton.value =
-        !_enableButtonEvaluatorMap.containsKey(_urlTextController.text);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _enableAddUrlButton.value =
+          !_enableButtonEvaluatorMap.containsKey(_urlTextController.text);
+    });
   }
 }
 

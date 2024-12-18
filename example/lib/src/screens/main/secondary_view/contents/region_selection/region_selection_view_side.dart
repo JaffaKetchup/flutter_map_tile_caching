@@ -74,7 +74,7 @@ class RegionSelectionViewSide extends StatelessWidget {
                                   height: double.infinity,
                                   child: FilledButton.icon(
                                     onPressed: () =>
-                                        moveToDownloadConfigView(context),
+                                        prepareDownloadConfigView(context),
                                     label: const Text('Configure Download'),
                                     icon: const Icon(Icons.tune),
                                   ),

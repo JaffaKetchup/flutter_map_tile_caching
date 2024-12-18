@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../shared/state/region_selection_provider.dart';
 import 'map_view/components/bottom_sheet_wrapper.dart';
 import 'map_view/map_view.dart';
+import 'secondary_view/contents/region_selection/components/shared/to_config_method.dart';
 import 'secondary_view/layouts/bottom_sheet/bottom_sheet.dart';
+import 'secondary_view/layouts/bottom_sheet/components/delayed_frame_attached_dependent_builder.dart';
 import 'secondary_view/layouts/side/side.dart';
 
 class MainScreen extends StatefulWidget {
@@ -43,6 +47,39 @@ class _MainScreenState extends State<MainScreen> {
               selectedTab: selectedTab,
               controller: bottomSheetOuterController,
             ),
+            floatingActionButton: selectedTab == 1 &&
+                    context
+                        .watch<RegionSelectionProvider>()
+                        .constructedRegions
+                        .isNotEmpty
+                ? DelayedControllerAttachmentBuilder(
+                    listenable: bottomSheetOuterController,
+                    builder: (context, _) => AnimatedBuilder(
+                      animation: bottomSheetOuterController,
+                      builder: (context, _) => FloatingActionButton(
+                        onPressed: () async {
+                          final currentPx = bottomSheetOuterController.pixels;
+                          await bottomSheetOuterController.animateTo(
+                            2 / 3,
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeOut,
+                          );
+                          if (!context.mounted) return;
+                          prepareDownloadConfigView(
+                            context,
+                            shouldMoveTo: currentPx > 33,
+                          );
+                        },
+                        tooltip: bottomSheetOuterController.pixels <= 33
+                            ? 'Show regions'
+                            : 'Configure download',
+                        child: bottomSheetOuterController.pixels <= 33
+                            ? const Icon(Icons.library_add_check)
+                            : const Icon(Icons.tune),
+                      ),
+                    ),
+                  )
+                : null,
             bottomNavigationBar: NavigationBar(
               selectedIndex: selectedTab,
               destinations: const [
@@ -64,42 +101,23 @@ class _MainScreenState extends State<MainScreen> {
               ],
               onDestinationSelected: (i) {
                 setState(() => selectedTab = i);
-                /*if (i == 0) {
-                  final requiresExpanding =
-                      bottomSheetOuterController.size < 0.3;
-
-                  if (selectedTab != 0) {
-                    setState(() => selectedTab = 0);
-                    if (requiresExpanding) {
-                      WidgetsBinding.instance.addPostFrameCallback(
-                        (_) => bottomSheetOuterController.animateTo(
-                          0.3,
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOut,
-                        ),
-                      );
-                    }
-                  } else {
-                    setState(() => selectedTab = i);
-                    WidgetsBinding.instance.addPostFrameCallback(
-                      (_) => bottomSheetOuterController.animateTo(
-                        requiresExpanding ? 0.3 : 0,
-                        duration: const Duration(milliseconds: 200),
-                        curve:
-                            requiresExpanding ? Curves.easeOut : Curves.easeIn,
-                      ),
-                    );
-                  }
-                } else {
-                  setState(() => selectedTab = i);
+                if (i == 1) {
                   WidgetsBinding.instance.addPostFrameCallback(
                     (_) => bottomSheetOuterController.animateTo(
-                      0,
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeIn,
+                      32 / constraints.maxHeight,
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOut,
                     ),
                   );
-                }*/
+                } else {
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => bottomSheetOuterController.animateTo(
+                      0.3,
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOut,
+                    ),
+                  );
+                }
               },
             ),
           );
@@ -156,6 +174,7 @@ class _MainScreenState extends State<MainScreen> {
                       bottomLeft: Radius.circular(16),
                     ),
                     child: MapView(
+                      bottomSheetOuterController: bottomSheetOuterController,
                       mode: mapMode,
                       layoutDirection: layoutDirection,
                     ),

@@ -55,7 +55,10 @@ class _SubRegionsListState extends State<SubRegionsList> {
                           bounds: LatLngBounds.fromPoints(
                             region.toOutline().toList(),
                           ),
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16) +
+                              MediaQueryData.fromView(View.of(context))
+                                  .padding +
+                              const EdgeInsets.only(bottom: 18),
                         ),
                       );
                 },
