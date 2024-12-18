@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../../shared/state/region_selection_provider.dart';
 import '../../contents/download_configuration/download_configuration_view_bottom_sheet.dart';
 import '../../contents/home/home_view_bottom_sheet.dart';
+import '../../contents/recovery/recovery_view_bottom_sheet.dart';
 import '../../contents/region_selection/region_selection_view_bottom_sheet.dart';
 import 'components/delayed_frame_attached_dependent_builder.dart';
 import 'components/scrollable_provider.dart';
@@ -69,7 +70,7 @@ class _SecondaryViewBottomSheetState extends State<SecondaryViewBottomSheet> {
                         builder: (context, _) => SizedBox(
                           height: paddingPusherHeight,
                           child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
+                            duration: const Duration(milliseconds: 150),
                             curve: Curves.easeInOut,
                             color: innerController.hasClients &&
                                     innerController.offset != 0
@@ -99,6 +100,7 @@ class _SecondaryViewBottomSheetState extends State<SecondaryViewBottomSheet> {
                         )
                             ? const DownloadConfigurationViewBottomSheet()
                             : const RegionSelectionViewBottomSheet(),
+                      2 => const RecoveryViewBottomSheet(),
                       _ => Placeholder(key: ValueKey(widget.selectedTab)),
                     },
                   ),

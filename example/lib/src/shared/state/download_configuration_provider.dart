@@ -12,6 +12,7 @@ class DownloadConfigurationProvider extends ChangeNotifier {
     skipExistingTiles: false,
     skipSeaTiles: true,
     retryFailedRequestTiles: true,
+    fromRecovery: null,
   );
 
   int _minZoom = defaultValues.minZoom;
@@ -38,7 +39,7 @@ class DownloadConfigurationProvider extends ChangeNotifier {
   int? _endTile = defaultValues.endTile;
   int? get endTile => _endTile;
   set endTile(int? newNum) {
-    _endTile = endTile;
+    _endTile = newNum;
     notifyListeners();
   }
 
@@ -88,6 +89,20 @@ class DownloadConfigurationProvider extends ChangeNotifier {
   String? get selectedStoreName => _selectedStoreName;
   set selectedStoreName(String? newStoreName) {
     _selectedStoreName = newStoreName;
+    notifyListeners();
+  }
+
+  int? _fromRecovery = defaultValues.fromRecovery;
+  int? get fromRecovery => _fromRecovery;
+  set fromRecovery(int? newState) {
+    _fromRecovery = newState;
+    if (newState == null) {
+      selectedStoreName = null;
+      startTile = DownloadConfigurationProvider.defaultValues.startTile;
+      endTile = DownloadConfigurationProvider.defaultValues.endTile;
+      minZoom = DownloadConfigurationProvider.defaultValues.minZoom;
+      maxZoom = DownloadConfigurationProvider.defaultValues.maxZoom;
+    }
     notifyListeners();
   }
 }

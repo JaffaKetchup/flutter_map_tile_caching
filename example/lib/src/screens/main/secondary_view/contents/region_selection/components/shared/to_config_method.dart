@@ -7,7 +7,7 @@ import '../../../../../../../shared/state/region_selection_provider.dart';
 
 void prepareDownloadConfigView(
   BuildContext context, {
-  bool shouldMoveTo = true,
+  bool shouldShowConfig = true,
 }) {
   final regionSelectionProvider = context.read<RegionSelectionProvider>();
 
@@ -32,7 +32,7 @@ void prepareDownloadConfigView(
         ),
       );
 
-  if (shouldMoveTo) {
+  if (shouldShowConfig) {
     regionSelectionProvider.isDownloadSetupPanelVisible = true;
   }
 }

@@ -13,6 +13,9 @@ class DownloadingProvider extends ChangeNotifier {
   bool _isComplete = false;
   bool get isComplete => _isComplete;
 
+  bool _isDownloading = false;
+  bool get isDownloading => _isDownloading;
+
   DownloadableRegion? _downloadableRegion;
   DownloadableRegion get downloadableRegion =>
       _downloadableRegion ?? (throw _notReadyError);
@@ -40,6 +43,7 @@ class DownloadingProvider extends ChangeNotifier {
   }) {
     _storeName = storeName;
     _downloadableRegion = downloadableRegion;
+    _isDownloading = true;
 
     _rawTileEventsStream = downloadStreams.tileEvents.asBroadcastStream();
 
@@ -82,6 +86,7 @@ class DownloadingProvider extends ChangeNotifier {
   void reset() {
     _isFocused = false;
     _isComplete = false;
+    _isDownloading = false;
     notifyListeners();
   }
 

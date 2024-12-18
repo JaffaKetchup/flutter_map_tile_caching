@@ -47,6 +47,16 @@ class RootRecovery {
   /// can be ignored when fetching [recoverableRegions]
   final Set<int> _downloadsOngoing;
 
+  /// {@macro fmtc.backend.watchRecovery}
+  Stream<void> watch({
+    bool triggerImmediately = false,
+  }) async* {
+    final stream = FMTCBackendAccess.internal.watchRecovery(
+      triggerImmediately: triggerImmediately,
+    );
+    yield* stream;
+  }
+
   /// List all recoverable regions, and whether each one has failed
   ///
   /// Result can be filtered to only include failed downloads using the

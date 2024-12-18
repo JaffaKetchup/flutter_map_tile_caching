@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../../shared/state/download_configuration_provider.dart';
 import '../../../../../shared/state/region_selection_provider.dart';
+import '../../../../../shared/state/selected_tab_state.dart';
 import '../../layouts/side/components/panel.dart';
 import 'components/config_options/config_options.dart';
 import 'components/confirmation_panel/confirmation_panel.dart';
@@ -22,9 +24,19 @@ class DownloadConfigurationViewSide extends StatelessWidget {
               padding: const EdgeInsets.all(4),
               child: IconButton(
                 onPressed: () {
-                  context
-                      .read<RegionSelectionProvider>()
-                      .isDownloadSetupPanelVisible = false;
+                  final regionSelectionProvider =
+                      context.read<RegionSelectionProvider>();
+                  final downloadConfigProvider =
+                      context.read<DownloadConfigurationProvider>();
+
+                  regionSelectionProvider.isDownloadSetupPanelVisible = false;
+
+                  if (downloadConfigProvider.fromRecovery == null) return;
+
+                  regionSelectionProvider.clearConstructedRegions();
+                  downloadConfigProvider.fromRecovery = null;
+
+                  selectedTabState.value = 2;
                 },
                 icon: const Icon(Icons.arrow_back),
                 tooltip: 'Return to selection',

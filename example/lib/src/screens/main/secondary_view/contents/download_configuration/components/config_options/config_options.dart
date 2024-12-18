@@ -40,6 +40,8 @@ class _ConfigOptionsState extends State<ConfigOptions> {
         context.select<DownloadConfigurationProvider, bool>(
       (p) => p.retryFailedRequestTiles,
     );
+    final fromRecovery = context
+        .select<DownloadConfigurationProvider, int?>((p) => p.fromRecovery);
 
     return SingleChildScrollView(
       child: Column(
@@ -49,6 +51,7 @@ class _ConfigOptionsState extends State<ConfigOptions> {
             onStoreNameSelected: (storeName) => context
                 .read<DownloadConfigurationProvider>()
                 .selectedStoreName = storeName,
+            enabled: fromRecovery == null,
           ),
           const Divider(height: 24),
           Row(
@@ -60,8 +63,9 @@ class _ConfigOptionsState extends State<ConfigOptions> {
                   values: RangeValues(minZoom.toDouble(), maxZoom.toDouble()),
                   max: 20,
                   divisions: 20,
-                  onChanged: (r) =>
-                      context.read<DownloadConfigurationProvider>()
+                  onChanged: fromRecovery != null
+                      ? null
+                      : (r) => context.read<DownloadConfigurationProvider>()
                         ..minZoom = r.start.toInt()
                         ..maxZoom = r.end.toInt(),
                 ),

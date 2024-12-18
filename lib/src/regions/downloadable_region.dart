@@ -60,8 +60,10 @@ class DownloadableRegion<R extends BaseRegion> {
   final Crs crs;
 
   /// Cast [originalRegion] from [R] to [N]
+  ///
+  /// Throws if uncastable.
   @optionalTypeArgs
-  DownloadableRegion<N> _cast<N extends BaseRegion>() => DownloadableRegion._(
+  DownloadableRegion<N> cast<N extends BaseRegion>() => DownloadableRegion._(
         originalRegion as N,
         minZoom: minZoom,
         maxZoom: maxZoom,
@@ -105,11 +107,11 @@ class DownloadableRegion<R extends BaseRegion> {
     T Function(DownloadableRegion<MultiRegion> multi)? multi,
   }) =>
       switch (originalRegion) {
-        RectangleRegion() => rectangle?.call(_cast()),
-        CircleRegion() => circle?.call(_cast()),
-        LineRegion() => line?.call(_cast()),
-        CustomPolygonRegion() => customPolygon?.call(_cast()),
-        MultiRegion() => multi?.call(_cast()),
+        RectangleRegion() => rectangle?.call(cast()),
+        CircleRegion() => circle?.call(cast()),
+        LineRegion() => line?.call(cast()),
+        CustomPolygonRegion() => customPolygon?.call(cast()),
+        MultiRegion() => multi?.call(cast()),
       };
 
   @override

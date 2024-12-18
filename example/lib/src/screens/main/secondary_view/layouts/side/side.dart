@@ -6,6 +6,7 @@ import '../../../../../shared/state/region_selection_provider.dart';
 import '../../contents/download_configuration/download_configuration_view_side.dart';
 import '../../contents/downloading/downloading_view_side.dart';
 import '../../contents/home/home_view_side.dart';
+import '../../contents/recovery/recovery_view_side.dart';
 import '../../contents/region_selection/region_selection_view_side.dart';
 
 class SecondaryViewSide extends StatelessWidget {
@@ -24,7 +25,7 @@ class SecondaryViewSide extends StatelessWidget {
         child: SizedBox(
           width: (constraints.maxWidth / 3).clamp(440, 560),
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 150),
             switchInCurve: Curves.easeIn,
             switchOutCurve: Curves.easeOut,
             transitionBuilder: (child, animation) => ScaleTransition(
@@ -53,6 +54,7 @@ class SecondaryViewSide extends StatelessWidget {
                     )
                       ? const DownloadConfigurationViewSide()
                       : const RegionSelectionViewSide(),
+              2 => const RecoveryViewSide(),
               _ => Placeholder(key: ValueKey(selectedTab)),
             },
           ),

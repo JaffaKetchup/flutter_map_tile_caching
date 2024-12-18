@@ -22,14 +22,11 @@ class RootStats {
   Future<int> get length => FMTCBackendAccess.internal.rootLength();
 
   /// {@macro fmtc.backend.watchRecovery}
+  @Deprecated('This has been moved to `FMTCRoot.recovery` & renamed `.watch`')
   Stream<void> watchRecovery({
     bool triggerImmediately = false,
-  }) async* {
-    final stream = FMTCBackendAccess.internal.watchRecovery(
-      triggerImmediately: triggerImmediately,
-    );
-    yield* stream;
-  }
+  }) =>
+      FMTCRoot.recovery.watch(triggerImmediately: triggerImmediately);
 
   /// {@macro fmtc.backend.watchStores}
   ///

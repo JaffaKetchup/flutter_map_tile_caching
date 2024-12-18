@@ -19,6 +19,7 @@ import '../../../shared/state/region_selection_provider.dart';
 import 'components/additional_overlay/additional_overlay.dart';
 import 'components/debugging_tile_builder/debugging_tile_builder.dart';
 //import 'components/download_progress/download_progress_masker.dart';
+import 'components/recovery_regions/recovery_regions.dart';
 import 'components/region_selection/crosshairs.dart';
 import 'components/region_selection/custom_polygon_snapping_indicator.dart';
 import 'components/region_selection/region_shape.dart';
@@ -26,6 +27,7 @@ import 'components/region_selection/region_shape.dart';
 enum MapViewMode {
   standard,
   downloadRegion,
+  recovery,
 }
 
 class MapView extends StatefulWidget {
@@ -369,6 +371,8 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                   const RegionShape(),
                   const CustomPolygonSnappingIndicator(),
                 ],
+                if (widget.mode == MapViewMode.recovery)
+                  const RecoveryRegions(),
                 if (widget.bottomPaddingWrapperBuilder case final bpwb?)
                   Builder(builder: (context) => bpwb(context, attribution))
                 else
@@ -381,21 +385,26 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
               children: [
                 MouseRegion(
                   opaque: false,
-                  cursor: widget.mode == MapViewMode.standard ||
-                          context.select<RegionSelectionProvider, bool>(
-                            (p) => p.isDownloadSetupPanelVisible,
-                          ) ||
-                          context.select<RegionSelectionProvider,
-                                  RegionSelectionMethod>(
-                                (p) => p.regionSelectionMethod,
-                              ) ==
-                              RegionSelectionMethod.useMapCenter
-                      ? MouseCursor.defer
-                      : context.select<RegionSelectionProvider, bool>(
+                  cursor: switch (widget.mode) {
+                    MapViewMode.standard => MouseCursor.defer,
+                    MapViewMode.recovery => MouseCursor.defer,
+                    MapViewMode.downloadRegion
+                        when context.select<RegionSelectionProvider, bool>(
+                              (p) => p.isDownloadSetupPanelVisible,
+                            ) ||
+                            context.select<RegionSelectionProvider,
+                                    RegionSelectionMethod>(
+                                  (p) => p.regionSelectionMethod,
+                                ) ==
+                                RegionSelectionMethod.useMapCenter =>
+                      MouseCursor.defer,
+                    MapViewMode.downloadRegion
+                        when context.select<RegionSelectionProvider, bool>(
                           (p) => p.customPolygonSnap,
-                        )
-                          ? SystemMouseCursors.none
-                          : SystemMouseCursors.precise,
+                        ) =>
+                      SystemMouseCursors.none,
+                    MapViewMode.downloadRegion => SystemMouseCursors.precise,
+                  },
                   child: map,
                 ),
                 if (isCrosshairsVisible) const Center(child: Crosshairs()),

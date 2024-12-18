@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -43,6 +45,9 @@ class _ConfirmationPanelState extends State<ConfirmationPanel> {
               (p) => p.selectedStoreName,
             ) !=
             null;
+    final fromRecovery = context.select<DownloadConfigurationProvider, int?>(
+      (p) => p.fromRecovery,
+    );
 
     final tileCountableRegion = MultiRegion(regions).toDownloadable(
       minZoom: minZoom,
@@ -100,7 +105,7 @@ class _ConfirmationPanelState extends State<ConfirmationPanel> {
               else
                 Text(
                   NumberFormat.decimalPatternDigits(decimalDigits: 0)
-                      .format(snapshot.data),
+                      .format(snapshot.requireData),
                   style: Theme.of(context)
                       .textTheme
                       .headlineLarge!
@@ -190,6 +195,13 @@ class _ConfirmationPanelState extends State<ConfirmationPanel> {
               icon: _loadingDownloader ? null : const Icon(Icons.download),
             ),
           ),
+          if (fromRecovery != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'This will delete the recoverable region',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ],
         ],
       ),
     );
@@ -242,6 +254,11 @@ class _ConfirmationPanelState extends State<ConfirmationPanel> {
       downloadableRegion: downloadableRegion,
       downloadStreams: downloadStreams,
     );
+
+    if (downloadConfiguration.fromRecovery case final recoveryId?) {
+      unawaited(FMTCRoot.recovery.cancel(recoveryId));
+      downloadConfiguration.fromRecovery = null;
+    }
 
     // The downloading view is switched to by `assignDownload`, when the first
     // event is recieved from the stream (indicating the preparation is

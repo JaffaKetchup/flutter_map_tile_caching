@@ -10,10 +10,12 @@ class StoreSelector extends StatefulWidget {
     super.key,
     this.storeName,
     required this.onStoreNameSelected,
+    this.enabled = true,
   });
 
   final String? storeName;
   final void Function(String?) onStoreNameSelected;
+  final bool enabled;
 
   @override
   State<StoreSelector> createState() => _StoreSelectorState();
@@ -70,6 +72,7 @@ class _StoreSelectorState extends State<StoreSelector> {
                   filled: true,
                   helperMaxLines: 2,
                 ),
+                enabled: widget.enabled,
               );
             },
           ),

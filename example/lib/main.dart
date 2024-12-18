@@ -13,6 +13,7 @@ import 'src/shared/misc/shared_preferences.dart';
 import 'src/shared/state/download_configuration_provider.dart';
 import 'src/shared/state/download_provider.dart';
 import 'src/shared/state/general_provider.dart';
+import 'src/shared/state/recoverable_regions_provider.dart';
 import 'src/shared/state/region_selection_provider.dart';
 
 void main() async {
@@ -95,6 +96,7 @@ class _AppContainer extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => ExportSelectionProvider(),
+          lazy: true,
         ),
         ChangeNotifierProvider(
           create: (_) => RegionSelectionProvider(),
@@ -105,6 +107,10 @@ class _AppContainer extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => DownloadingProvider(),
+          // cannot be lazy as must persist when user disposed
+        ),
+        ChangeNotifierProvider(
+          create: (_) => RecoverableRegionsProvider(),
         ),
       ],
       child: MaterialApp(
