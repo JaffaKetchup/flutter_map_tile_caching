@@ -99,7 +99,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                           return const CircularProgressIndicator.adaptive();
                         }
 
-                        return URLSelector(
+                        return UrlSelector(
                           onSelected: (input) => newUrlTemplate = input,
                           initialValue: snapshot
                                   .data?[StoreMetadataKeys.urlTemplate.key] ??

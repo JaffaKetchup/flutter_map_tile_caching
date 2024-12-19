@@ -13,9 +13,6 @@ class DownloadingProvider extends ChangeNotifier {
   bool _isComplete = false;
   bool get isComplete => _isComplete;
 
-  bool _isDownloading = false;
-  bool get isDownloading => _isDownloading;
-
   DownloadableRegion? _downloadableRegion;
   DownloadableRegion get downloadableRegion =>
       _downloadableRegion ?? (throw _notReadyError);
@@ -31,9 +28,10 @@ class DownloadingProvider extends ChangeNotifier {
   Stream<TileEvent> get rawTileEventStream =>
       _rawTileEventsStream ?? (throw _notReadyError);
 
-  late String _storeName;
+  String? _storeName;
+  String? get storeName => _storeName;
 
-  void assignDownload({
+  Future<void> assignDownload({
     required String storeName,
     required DownloadableRegion downloadableRegion,
     required ({
@@ -41,16 +39,20 @@ class DownloadingProvider extends ChangeNotifier {
       Stream<TileEvent> tileEvents
     }) downloadStreams,
   }) {
+    final focused = Completer<void>();
+
     _storeName = storeName;
     _downloadableRegion = downloadableRegion;
-    _isDownloading = true;
 
     _rawTileEventsStream = downloadStreams.tileEvents.asBroadcastStream();
 
     downloadStreams.downloadProgress.listen(
       (evt) {
         // Focus on initial event
-        if (evt.attemptedTilesCount == 0) _isFocused = true;
+        if (evt.attemptedTilesCount == 0) {
+          _isFocused = true;
+          focused.complete();
+        }
 
         // Update stored value
         _latestDownloadProgress = evt;
@@ -67,26 +69,33 @@ class DownloadingProvider extends ChangeNotifier {
       _latestTileEvent = evt;
       notifyListeners();
     });
+
+    return focused.future;
   }
 
   Future<void> pause() async {
-    await FMTCStore(_storeName).download.pause();
+    assert(_storeName != null, 'Download not in progress');
+    await FMTCStore(_storeName!).download.pause();
     _isPaused = true;
     notifyListeners();
   }
 
   void resume() {
-    FMTCStore(_storeName).download.resume();
+    assert(_storeName != null, 'Download not in progress');
+    FMTCStore(_storeName!).download.resume();
     _isPaused = false;
     notifyListeners();
   }
 
-  Future<void> cancel() => FMTCStore(_storeName).download.cancel();
+  Future<void> cancel() {
+    assert(_storeName != null, 'Download not in progress');
+    return FMTCStore(_storeName!).download.cancel();
+  }
 
   void reset() {
     _isFocused = false;
     _isComplete = false;
-    _isDownloading = false;
+    _storeName = null;
     notifyListeners();
   }
 

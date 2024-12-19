@@ -25,7 +25,7 @@ class _MapConfiguratorState extends State<MapConfigurator> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        URLSelector(
+        UrlSelector(
           initialValue: context.select<GeneralProvider, String>(
             (provider) => provider.urlTemplate,
           ),

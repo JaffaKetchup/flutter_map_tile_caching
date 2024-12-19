@@ -7,9 +7,9 @@ import 'components/column_headers_and_inheritable_settings.dart';
 import 'components/export_stores/button.dart';
 import 'components/new_store_button.dart';
 import 'components/no_stores.dart';
-import 'components/store_tiles/root_tile.dart';
-import 'components/store_tiles/store_tile.dart';
-import 'components/store_tiles/unspecified_tile.dart';
+import 'components/tiles/root_tile.dart';
+import 'components/tiles/store_tile/store_tile.dart';
+import 'components/tiles/unspecified_tile.dart';
 import 'state/export_selection_provider.dart';
 
 class StoresList extends StatefulWidget {
@@ -110,7 +110,7 @@ class _StoresListState extends State<StoresList> {
 
               return StoreTile(
                 key: ValueKey(store),
-                store: store,
+                storeName: store.storeName,
                 stats: stats,
                 metadata: metadata,
                 tileImage: tileImage,

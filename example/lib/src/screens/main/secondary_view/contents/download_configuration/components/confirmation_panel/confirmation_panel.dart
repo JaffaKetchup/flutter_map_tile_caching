@@ -249,11 +249,13 @@ class _ConfirmationPanelState extends State<ConfirmationPanel> {
       rateLimit: downloadConfiguration.rateLimit,
     );
 
-    downloadingProvider.assignDownload(
+    await downloadingProvider.assignDownload(
       storeName: downloadConfiguration.selectedStoreName!,
       downloadableRegion: downloadableRegion,
       downloadStreams: downloadStreams,
     );
+
+    await Future.delayed(const Duration(milliseconds: 200));
 
     if (downloadConfiguration.fromRecovery case final recoveryId?) {
       unawaited(FMTCRoot.recovery.cancel(recoveryId));

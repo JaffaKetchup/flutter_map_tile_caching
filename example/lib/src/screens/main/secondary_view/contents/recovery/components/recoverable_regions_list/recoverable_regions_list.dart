@@ -141,7 +141,7 @@ class _RecoverableRegionsListState extends State<RecoverableRegionsList> {
                             height: double.infinity,
                             child: Selector<DownloadingProvider, bool>(
                               selector: (context, provider) =>
-                                  provider.isDownloading,
+                                  provider.storeName != null,
                               builder: (context, isDownloading, _) =>
                                   Selector<RegionSelectionProvider, bool>(
                                 selector: (context, provider) =>

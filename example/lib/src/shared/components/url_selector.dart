@@ -9,8 +9,8 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import '../misc/shared_preferences.dart';
 import '../misc/store_metadata_keys.dart';
 
-class URLSelector extends StatefulWidget {
-  const URLSelector({
+class UrlSelector extends StatefulWidget {
+  const UrlSelector({
     super.key,
     required this.initialValue,
     this.onSelected,
@@ -26,10 +26,10 @@ class URLSelector extends StatefulWidget {
   final void Function()? onUnfocus;
 
   @override
-  State<URLSelector> createState() => _URLSelectorState();
+  State<UrlSelector> createState() => _UrlSelectorState();
 }
 
-class _URLSelectorState extends State<URLSelector> {
+class _UrlSelectorState extends State<UrlSelector> {
   static const _defaultUrlTemplate =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 

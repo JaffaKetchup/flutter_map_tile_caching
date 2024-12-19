@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../../../../../../shared/misc/internal_store_read_write_behaviour.dart';
 import '../../../../../../../../../shared/state/general_provider.dart';
-import 'browse_store_strategy_selector/browse_store_strategy_selector.dart';
+import 'store_tile/components/browse_store_strategy_selector/browse_store_strategy_selector.dart';
 
 class UnspecifiedTile extends StatefulWidget {
   const UnspecifiedTile({
