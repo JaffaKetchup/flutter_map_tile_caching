@@ -75,7 +75,7 @@ abstract interface class FMTCBackendInternalThreadSafe {
     required int id,
     required String storeName,
     required DownloadableRegion region,
-    required int endTile,
+    required int tilesCount,
   });
 
   /// Update the specified recovery entity with the new [RecoveredRegion.start]
