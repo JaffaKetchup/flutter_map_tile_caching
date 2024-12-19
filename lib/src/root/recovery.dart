@@ -37,14 +37,25 @@ part of '../../flutter_map_tile_caching.dart';
 /// > Options set at download time, in [StoreDownload.startForeground], are not
 /// > included.
 class RootRecovery {
-  RootRecovery._() {
-    _instance = this;
-  }
+  // ignore: prefer_const_constructors
+  factory RootRecovery._() => _instance ??= RootRecovery._uninstanced({});
+  const RootRecovery._uninstanced(Set<int> downloadsOngoing)
+      : _downloadsOngoing = downloadsOngoing;
   static RootRecovery? _instance;
 
   /// Determines which downloads are known to be on-going, and therefore
   /// can be ignored when fetching [recoverableRegions]
-  final Set<int> _downloadsOngoing = {};
+  final Set<int> _downloadsOngoing;
+
+  /// {@macro fmtc.backend.watchRecovery}
+  Stream<void> watch({
+    bool triggerImmediately = false,
+  }) async* {
+    final stream = FMTCBackendAccess.internal.watchRecovery(
+      triggerImmediately: triggerImmediately,
+    );
+    yield* stream;
+  }
 
   /// List all recoverable regions, and whether each one has failed
   ///

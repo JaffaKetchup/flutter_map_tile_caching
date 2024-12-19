@@ -6,23 +6,21 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 
 import '../../../flutter_map_tile_caching.dart';
-import '../../misc/obscure_query_params.dart';
 
 /// Represents a tile (which is never directly exposed to the user)
 ///
 /// Note that the relationship between stores and tiles is many-to-many, and
 /// backend implementations should fully support this.
 abstract base class BackendTile {
-  /// The representative URL of the tile
+  /// The storage-suitable UID of the tile
   ///
-  /// This is passed through [obscureQueryParams] before storage here, and so
-  /// may not be the same as the network URL.
+  /// This is the result of [FMTCTileProvider.urlTransformer].
   String get url;
 
   /// The time at which the [bytes] of this tile were last changed
   ///
   /// This must be kept up to date, otherwise unexpected behaviour may occur
-  /// when the [FMTCTileProviderSettings.maxStoreLength] is exceeded.
+  /// when the store's `maxLength` is exceeded.
   DateTime get lastModified;
 
   /// The raw bytes of the image of this tile
