@@ -38,7 +38,7 @@ Future<void> _downloadManager(
   };
 
   // Count number of tiles
-  final maxTiles = input.region.when(
+  final tilesCount = input.region.when(
     rectangle: TileCounters.rectangleTiles,
     circle: TileCounters.circleTiles,
     line: TileCounters.lineTiles,
@@ -145,7 +145,7 @@ Future<void> _downloadManager(
 
   // Start progress tracking
   final initialDownloadProgress = DownloadProgress._initial(
-    maxTilesCount: maxTiles,
+    maxTilesCount: tilesCount,
     tilesPerSecondLimit: input.rateLimit,
     retryFailedRequestTiles: input.retryFailedRequestTiles,
   );
@@ -230,7 +230,7 @@ Future<void> _downloadManager(
       id: recoveryId,
       storeName: input.storeName,
       region: input.region,
-      endTile: min(input.region.end ?? largestInt, maxTiles),
+      tilesCount: tilesCount,
     );
   }
 
@@ -239,7 +239,8 @@ Future<void> _downloadManager(
     if (input.recoveryId case final recoveryId?) {
       input.backend.updateRecovery(
         id: recoveryId,
-        newStartTile: 1 + lastDownloadProgress.flushedTilesCount,
+        newStartTile:
+            input.region.start + lastDownloadProgress.flushedTilesCount,
       );
     }
   }

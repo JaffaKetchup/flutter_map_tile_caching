@@ -151,7 +151,7 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
     required int id,
     required String storeName,
     required DownloadableRegion region,
-    required int endTile,
+    required int tilesCount,
   }) {
     expectInitialisedRoot;
 
@@ -177,7 +177,7 @@ class _ObjectBoxBackendThreadSafeImpl implements FMTCBackendInternalThreadSafe {
               refId: id,
               storeName: storeName,
               region: region,
-              endTile: endTile,
+              endTile: region.end ?? (region.start - 1 + tilesCount),
               target: recursiveWriteRecoveryRegions(region.originalRegion),
             ),
             mode: PutMode.insert,

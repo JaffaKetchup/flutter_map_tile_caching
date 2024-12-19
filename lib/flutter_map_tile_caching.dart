@@ -33,7 +33,6 @@ import 'src/backend/export_internal.dart';
 import 'src/bulk_download/internal/instance.dart';
 import 'src/bulk_download/internal/rate_limited_stream.dart';
 import 'src/bulk_download/internal/tile_loops/shared.dart';
-import 'src/misc/int_extremes.dart';
 import 'src/providers/image_provider/browsing_errors.dart';
 
 export 'src/backend/export_external.dart';

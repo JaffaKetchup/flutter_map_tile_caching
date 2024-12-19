@@ -137,44 +137,48 @@ class TileGenerators {
 
       if (radius == 1) {
         tileCounter++;
-        if (tileCounter < start) continue;
-        if (tileCounter > end) {
-          if (!inMulti) Isolate.exit();
-          return;
-        }
+        if (tileCounter >= start) {
+          if (tileCounter > end) {
+            if (!inMulti) Isolate.exit();
+            return;
+          }
 
-        await requestQueue.next;
-        sendPort.send((centerTile.x, centerTile.y, zoomLvl));
+          await requestQueue.next;
+          sendPort.send((centerTile.x, centerTile.y, zoomLvl));
+        }
 
         tileCounter++;
-        if (tileCounter < start) continue;
-        if (tileCounter > end) {
-          if (!inMulti) Isolate.exit();
-          return;
-        }
+        if (tileCounter >= start) {
+          if (tileCounter > end) {
+            if (!inMulti) Isolate.exit();
+            return;
+          }
 
-        await requestQueue.next;
-        sendPort.send((centerTile.x, centerTile.y - 1, zoomLvl));
+          await requestQueue.next;
+          sendPort.send((centerTile.x, centerTile.y - 1, zoomLvl));
+        }
 
         tileCounter++;
-        if (tileCounter < start) continue;
-        if (tileCounter > end) {
-          if (!inMulti) Isolate.exit();
-          return;
-        }
+        if (tileCounter >= start) {
+          if (tileCounter > end) {
+            if (!inMulti) Isolate.exit();
+            return;
+          }
 
-        await requestQueue.next;
-        sendPort.send((centerTile.x - 1, centerTile.y, zoomLvl));
+          await requestQueue.next;
+          sendPort.send((centerTile.x - 1, centerTile.y, zoomLvl));
+        }
 
         tileCounter++;
-        if (tileCounter < start) continue;
-        if (tileCounter > end) {
-          if (!inMulti) Isolate.exit();
-          return;
-        }
+        if (tileCounter >= start) {
+          if (tileCounter > end) {
+            if (!inMulti) Isolate.exit();
+            return;
+          }
 
-        await requestQueue.next;
-        sendPort.send((centerTile.x - 1, centerTile.y - 1, zoomLvl));
+          await requestQueue.next;
+          sendPort.send((centerTile.x - 1, centerTile.y - 1, zoomLvl));
+        }
 
         continue;
       }
@@ -183,24 +187,26 @@ class TileGenerators {
         final mdx = sqrt(radiusSquared - dy * dy).floor();
         for (int dx = -mdx - 1; dx <= mdx; dx++) {
           tileCounter++;
-          if (tileCounter < start) continue;
-          if (tileCounter > end) {
-            if (!inMulti) Isolate.exit();
-            return;
-          }
+          if (tileCounter >= start) {
+            if (tileCounter > end) {
+              if (!inMulti) Isolate.exit();
+              return;
+            }
 
-          await requestQueue.next;
-          sendPort.send((dx + centerTile.x, dy + centerTile.y, zoomLvl));
+            await requestQueue.next;
+            sendPort.send((dx + centerTile.x, dy + centerTile.y, zoomLvl));
+          }
 
           tileCounter++;
-          if (tileCounter < start) continue;
-          if (tileCounter > end) {
-            if (!inMulti) Isolate.exit();
-            return;
-          }
+          if (tileCounter >= start) {
+            if (tileCounter > end) {
+              if (!inMulti) Isolate.exit();
+              return;
+            }
 
-          await requestQueue.next;
-          sendPort.send((dx + centerTile.x, -dy - 1 + centerTile.y, zoomLvl));
+            await requestQueue.next;
+            sendPort.send((dx + centerTile.x, -dy - 1 + centerTile.y, zoomLvl));
+          }
         }
       }
     }
@@ -342,13 +348,6 @@ class TileGenerators {
         for (int x = straightRectangleNW.x; x <= straightRectangleSE.x; x++) {
           bool foundOverlappingTile = false;
           for (int y = straightRectangleNW.y; y <= straightRectangleSE.y; y++) {
-            tileCounter++;
-            if (tileCounter < start) continue;
-            if (tileCounter > end) {
-              if (!inMulti) Isolate.exit();
-              return;
-            }
-
             final tile = _Polygon(
               Point(x, y),
               Point(x + 1, y),
@@ -368,6 +367,14 @@ class TileGenerators {
             )) {
               generatedTiles.add(tile.hashCode);
               foundOverlappingTile = true;
+
+              tileCounter++;
+              if (tileCounter < start) continue;
+              if (tileCounter > end) {
+                if (!inMulti) Isolate.exit();
+                return;
+              }
+
               await requestQueue.next;
               sendPort.send((x, y, zoomLvl.toInt()));
             } else if (foundOverlappingTile) {
@@ -455,6 +462,13 @@ class TileGenerators {
           final xsMax = xsRawMax - i;
 
           for (int x = xsMin; x <= xsMax; x++) {
+            tileCounter++;
+            if (tileCounter < start) continue;
+            if (tileCounter > end) {
+              if (!inMulti) Isolate.exit();
+              return;
+            }
+
             await requestQueue.next;
             sendPort.send((x, y, zoomLvl.toInt()));
           }
