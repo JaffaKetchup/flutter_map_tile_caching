@@ -88,7 +88,7 @@ class _MainScreenState extends State<MainScreen> {
           return LayoutBuilder(
             builder: (context, constraints) {
               final layoutDirection =
-                  constraints.maxWidth < 1200 ? Axis.vertical : Axis.horizontal;
+                  constraints.maxWidth < 640 ? Axis.vertical : Axis.horizontal;
 
               if (layoutDirection == Axis.vertical) {
                 return _VerticalLayout(

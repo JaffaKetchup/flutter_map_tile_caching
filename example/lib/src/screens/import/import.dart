@@ -84,7 +84,7 @@ class _ImportPopupState extends State<ImportPopup> {
             elevation: 1,
           ),
           body: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 250),
             switchInCurve: Curves.easeInOut,
             switchOutCurve: Curves.easeInOut,
             transitionBuilder: (child, animation) => SlideTransition(
