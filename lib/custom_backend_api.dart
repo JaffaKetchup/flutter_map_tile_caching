@@ -8,7 +8,7 @@
 /// Many of the methods available through this import are exported and visible
 /// via the more friendly interface of the main import and function set.
 ///
-/// > [!CAUTION]
+/// > [!WARNING]
 /// > Use this import/library with caution! Assistance with non-typical usecases
 /// > may be limited. Always use the standard import unless necessary.
 ///
