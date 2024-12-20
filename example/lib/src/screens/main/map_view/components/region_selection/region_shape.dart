@@ -4,6 +4,7 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../../shared/state/general_provider.dart';
 import '../../../../../shared/state/region_selection_provider.dart';
 
 class RegionShape extends StatelessWidget {
@@ -13,7 +14,13 @@ class RegionShape extends StatelessWidget {
   Widget build(BuildContext context) => Consumer<RegionSelectionProvider>(
         builder: (context, provider, _) {
           final ccc = provider.currentConstructingCoordinates;
-          final cnpp = provider.currentNewPointPos;
+          final cnpp = provider.currentNewPointPos ??
+              context
+                  .watch<GeneralProvider>()
+                  .animatedMapController
+                  .mapController
+                  .camera
+                  .center;
 
           late final renderConstructingRegion = provider.currentRegionType ==
                   RegionType.line

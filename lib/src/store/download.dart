@@ -375,8 +375,11 @@ class StoreDownload {
   ///
   /// Does nothing (returns immediately) if there is no ongoing download or the
   /// download is already paused.
-  Future<void> pause({Object instanceId = 0}) async =>
-      await DownloadInstance.get(instanceId)?.requestPause?.call();
+  Future<void> pause({Object instanceId = 0}) async {
+    final instance = DownloadInstance.get(instanceId);
+    if (instance == null || instance.isPaused) return;
+    await instance.requestPause!.call();
+  }
 
   /// Resume (after a [pause]) the ongoing foreground download
   ///
@@ -384,8 +387,11 @@ class StoreDownload {
   ///
   /// Does nothing if there is no ongoing download or the download is already
   /// running.
-  void resume({Object instanceId = 0}) =>
-      DownloadInstance.get(instanceId)?.requestResume?.call();
+  void resume({Object instanceId = 0}) {
+    final instance = DownloadInstance.get(instanceId);
+    if (instance == null || !instance.isPaused) return;
+    instance.requestResume!.call();
+  }
 
   /// Whether the ongoing foreground download is currently paused after a call
   /// to [pause] (and prior to [resume])

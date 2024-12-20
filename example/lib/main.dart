@@ -104,13 +104,15 @@ class _AppContainer extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => DownloadConfigurationProvider(),
+          lazy: true,
         ),
         ChangeNotifierProvider(
           create: (_) => DownloadingProvider(),
-          // cannot be lazy as must persist when user disposed
+          lazy: true,
         ),
         ChangeNotifierProvider(
           create: (_) => RecoverableRegionsProvider(),
+          lazy: true,
         ),
       ],
       child: MaterialApp(

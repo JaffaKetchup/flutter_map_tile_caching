@@ -29,9 +29,9 @@ class RegionSelectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  LatLng _currentNewPointPos = const LatLng(51.509364, -0.128928);
-  LatLng get currentNewPointPos => _currentNewPointPos;
-  set currentNewPointPos(LatLng newPos) {
+  LatLng? _currentNewPointPos;
+  LatLng? get currentNewPointPos => _currentNewPointPos;
+  set currentNewPointPos(LatLng? newPos) {
     _currentNewPointPos = newPos;
     notifyListeners();
   }

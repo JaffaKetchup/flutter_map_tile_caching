@@ -108,7 +108,8 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
 
         final provider = context.read<RegionSelectionProvider>();
 
-        final newPoint = provider.currentNewPointPos;
+        final newPoint = provider.currentNewPointPos ??
+            _mapController.mapController.camera.center;
 
         switch (provider.currentRegionType) {
           case RegionType.rectangle:
@@ -196,7 +197,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                   .latLngToScreenPoint(coords.first)
                   .toOffset();
               final centerPos = _mapController.mapController.camera
-                  .latLngToScreenPoint(provider.currentNewPointPos)
+                  .latLngToScreenPoint(provider.currentNewPointPos!)
                   .toOffset();
               provider.customPolygonSnap = coords.first != coords.last &&
                   sqrt(
