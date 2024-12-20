@@ -15,7 +15,9 @@ import '../../../../../../../shared/state/recoverable_regions_provider.dart';
 import '../../../../../../../shared/state/region_selection_provider.dart';
 import '../../../../../../../shared/state/selected_tab_state.dart';
 import '../../../region_selection/components/shared/to_config_method.dart';
-import 'components/no_regions.dart';
+
+part 'components/no_regions.dart';
+part 'components/tile_resume_button.dart';
 
 class RecoverableRegionsList extends StatefulWidget {
   const RecoverableRegionsList({super.key});
@@ -92,86 +94,69 @@ class _RecoverableRegionsListState extends State<RecoverableRegionsList> {
           UnmodifiableMapView<RecoveredRegion<MultiRegion>, HSLColor>>(
         selector: (context, provider) => provider.failedRegions,
         builder: (context, failedRegions, _) {
-          if (failedRegions.isEmpty) return const NoRegions();
+          if (failedRegions.isEmpty) return const _NoRegions();
 
-          return SliverList.builder(
-            itemCount: failedRegions.length,
-            itemBuilder: (context, index) {
-              final failedRegion = failedRegions.keys.elementAt(index);
-              final color = failedRegions.values.elementAt(index);
+          return SliverPadding(
+            padding: const EdgeInsets.only(top: 16, bottom: 16),
+            sliver: SliverList.builder(
+              itemCount: failedRegions.length,
+              itemBuilder: (context, index) {
+                final failedRegion = failedRegions.keys.elementAt(index);
+                final color = failedRegions.values.elementAt(index);
 
-              return ListTile(
-                leading: Icon(Icons.shape_line, color: color.toColor()),
-                title: Text("To '${failedRegion.storeName}'"),
-                subtitle: Text(
-                  '${failedRegion.time.toLocal()}\n'
-                  '${failedRegion.end - failedRegion.start + 1} remaining tiles',
-                ),
-                isThreeLine: true,
-                trailing: IntrinsicHeight(
-                  child: Selector<DownloadConfigurationProvider, int?>(
-                    selector: (context, provider) => provider.fromRecovery,
-                    builder: (context, fromRecovery, _) {
-                      if (fromRecovery == failedRegion.id) {
-                        return SizedBox(
-                          height: 40,
-                          child: FilledButton.icon(
-                            onPressed: () {
-                              _preventCameraReturnFlag = true;
-                              selectedTabState.value = 1;
-                              prepareDownloadConfigView(context);
-                            },
-                            icon: const Icon(Icons.tune),
-                            label: const Text('View In Configurator'),
-                          ),
-                        );
-                      }
+                return ListTile(
+                  leading: Icon(Icons.shape_line, color: color.toColor()),
+                  title: Text("To '${failedRegion.storeName}'"),
+                  subtitle: Text(
+                    '${failedRegion.time.toLocal()}\n'
+                    '${failedRegion.end - failedRegion.start + 1} remaining '
+                    'tiles',
+                  ),
+                  isThreeLine: true,
+                  trailing: IntrinsicHeight(
+                    child: Selector<DownloadConfigurationProvider, int?>(
+                      selector: (context, provider) => provider.fromRecovery,
+                      builder: (context, fromRecovery, _) {
+                        if (fromRecovery == failedRegion.id) {
+                          return SizedBox(
+                            height: 40,
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                _preventCameraReturnFlag = true;
+                                selectedTabState.value = 1;
+                                prepareDownloadConfigView(context);
+                              },
+                              icon: const Icon(Icons.tune),
+                              label: const Text('View In Configurator'),
+                            ),
+                          );
+                        }
 
-                      return Row(
-                        mainAxisSize: MainAxisSize.min,
-                        spacing: 8,
-                        children: [
-                          IconButton(
-                            onPressed: () =>
-                                FMTCRoot.recovery.cancel(failedRegion.id),
-                            icon: const Icon(Icons.delete_forever),
-                            tooltip: 'Delete',
-                          ),
-                          SizedBox(
-                            height: double.infinity,
-                            child: Selector<DownloadingProvider, bool>(
-                              selector: (context, provider) =>
-                                  provider.storeName != null,
-                              builder: (context, isDownloading, _) =>
-                                  Selector<RegionSelectionProvider, bool>(
-                                selector: (context, provider) =>
-                                    provider.constructedRegions.isNotEmpty,
-                                builder: (context, isConstructingRegion, _) {
-                                  final cannotResume =
-                                      isConstructingRegion || isDownloading;
-                                  final button = FilledButton.tonalIcon(
-                                    onPressed: cannotResume
-                                        ? null
-                                        : () => _resumeDownload(failedRegion),
-                                    icon: const Icon(Icons.download),
-                                    label: const Text('Resume'),
-                                  );
-                                  if (!cannotResume) return button;
-                                  return Tooltip(
-                                    message: 'Cannot start another download',
-                                    child: button,
-                                  );
-                                },
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: 8,
+                          children: [
+                            IconButton(
+                              onPressed: () =>
+                                  FMTCRoot.recovery.cancel(failedRegion.id),
+                              icon: const Icon(Icons.delete_forever),
+                              tooltip: 'Delete',
+                            ),
+                            SizedBox(
+                              height: double.infinity,
+                              child: _ResumeButton(
+                                resumeDownload: () =>
+                                    _resumeDownload(failedRegion),
                               ),
                             ),
-                          ),
-                        ],
-                      );
-                    },
+                          ],
+                        );
+                      },
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         },
       );

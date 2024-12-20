@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+part of '../recoverable_regions_list.dart';
 
-class NoRegions extends StatelessWidget {
-  const NoRegions({super.key});
+class _NoRegions extends StatelessWidget {
+  const _NoRegions();
 
   @override
   Widget build(BuildContext context) => SliverFillRemaining(

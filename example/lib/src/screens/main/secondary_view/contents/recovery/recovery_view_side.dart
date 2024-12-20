@@ -13,13 +13,6 @@ class RecoveryViewSide extends StatelessWidget {
         ),
         width: double.infinity,
         height: double.infinity,
-        child: const CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: EdgeInsets.only(top: 16, bottom: 16),
-              sliver: RecoverableRegionsList(),
-            ),
-          ],
-        ),
+        child: const CustomScrollView(slivers: [RecoverableRegionsList()]),
       );
 }
