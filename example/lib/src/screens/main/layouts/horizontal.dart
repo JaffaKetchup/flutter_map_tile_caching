@@ -115,7 +115,12 @@ class _HorizontalLayoutState extends State<_HorizontalLayout> {
                       ],
                     ),
                   ),
-                  onDestinationSelected: (i) => selectedTabState.value = i,
+                  onDestinationSelected: (i) {
+                    selectedTabState.value = i;
+                    if (!_isSecondaryViewUserExpanded) {
+                      setState(() => _isSecondaryViewUserExpanded = true);
+                    }
+                  },
                 ),
                 SecondaryViewSide(
                   selectedTab: widget.selectedTab,
@@ -132,11 +137,26 @@ class _HorizontalLayoutState extends State<_HorizontalLayout> {
                     child: Stack(
                       children: [
                         Positioned.fill(
-                          child: MapView(
-                            bottomSheetOuterController:
-                                widget._bottomSheetOuterController,
-                            mode: widget.mapMode,
-                            layoutDirection: Axis.horizontal,
+                          child: TweenAnimationBuilder(
+                            tween: Tween<double>(
+                              begin: 0,
+                              end: isScrimVisible ? 8 : 0,
+                            ),
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeInOut,
+                            builder: (context, sigma, child) => ImageFiltered(
+                              imageFilter: ImageFilter.blur(
+                                sigmaX: sigma,
+                                sigmaY: sigma,
+                              ),
+                              child: child,
+                            ),
+                            child: MapView(
+                              bottomSheetOuterController:
+                                  widget._bottomSheetOuterController,
+                              mode: widget.mapMode,
+                              layoutDirection: Axis.horizontal,
+                            ),
                           ),
                         ),
                         Positioned.fill(
