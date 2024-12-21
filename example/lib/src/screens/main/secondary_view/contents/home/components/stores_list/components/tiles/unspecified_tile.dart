@@ -51,14 +51,14 @@ class _UnspecifiedTileState extends State<UnspecifiedTile> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceDim,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                  child: Tooltip(
-                    message: 'Use as fallback only',
+                Tooltip(
+                  message: 'Use as fallback only',
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceDim,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
                     child: Row(
                       children: [
                         const Icon(Icons.last_page),

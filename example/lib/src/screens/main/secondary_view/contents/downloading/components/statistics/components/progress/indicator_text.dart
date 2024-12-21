@@ -79,26 +79,55 @@ class _ProgressIndicatorTextState extends State<ProgressIndicatorText> {
 
     return Column(
       children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: SegmentedButton(
-            segments: const [
-              ButtonSegment(
-                value: false,
-                icon: Icon(Icons.numbers),
-                tooltip: 'Show tile counts',
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          spacing: 12,
+          children: [
+            Tooltip(
+              message: 'Use mask effect',
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6) +
+                    const EdgeInsets.only(left: 6),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceDim,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 8,
+                  children: [
+                    const Icon(Icons.gradient),
+                    Switch.adaptive(
+                      value: context.select<DownloadingProvider, bool>(
+                        (provider) => provider.useMaskEffect,
+                      ),
+                      onChanged: (val) => context
+                          .read<DownloadingProvider>()
+                          .useMaskEffect = val,
+                    ),
+                  ],
+                ),
               ),
-              ButtonSegment(
-                value: true,
-                icon: Icon(Icons.percent),
-                tooltip: 'Show percentages',
-              ),
-            ],
-            selected: {_usePercentages},
-            onSelectionChanged: (v) =>
-                setState(() => _usePercentages = v.single),
-            showSelectedIcon: false,
-          ),
+            ),
+            SegmentedButton(
+              segments: const [
+                ButtonSegment(
+                  value: false,
+                  icon: Icon(Icons.numbers),
+                  tooltip: 'Show tile counts',
+                ),
+                ButtonSegment(
+                  value: true,
+                  icon: Icon(Icons.percent),
+                  tooltip: 'Show percentages',
+                ),
+              ],
+              selected: {_usePercentages},
+              onSelectionChanged: (v) =>
+                  setState(() => _usePercentages = v.single),
+              showSelectedIcon: false,
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         _TextRow(

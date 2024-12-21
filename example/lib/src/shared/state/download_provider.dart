@@ -64,7 +64,7 @@ class DownloadingProvider extends ChangeNotifier {
       },
     );
 
-    downloadStreams.tileEvents.listen((evt) {
+    _rawTileEventsStream!.listen((evt) {
       // Update stored value
       _latestTileEvent = evt;
       notifyListeners();
@@ -96,10 +96,18 @@ class DownloadingProvider extends ChangeNotifier {
     _isFocused = false;
     _isComplete = false;
     _storeName = null;
+    _downloadableRegion = null;
     notifyListeners();
   }
 
   StateError get _notReadyError => StateError(
         'Unsafe to retrieve information before a download has been assigned.',
       );
+
+  bool _useMaskEffect = true;
+  bool get useMaskEffect => _useMaskEffect;
+  set useMaskEffect(bool newState) {
+    _useMaskEffect = newState;
+    notifyListeners();
+  }
 }

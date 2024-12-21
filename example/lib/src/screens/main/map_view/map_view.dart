@@ -1,4 +1,4 @@
-//import 'dart:async';
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -13,12 +13,12 @@ import 'package:provider/provider.dart';
 
 import '../../../shared/misc/shared_preferences.dart';
 import '../../../shared/misc/store_metadata_keys.dart';
-//import '../../../shared/state/download_provider.dart';
+import '../../../shared/state/download_provider.dart';
 import '../../../shared/state/general_provider.dart';
 import '../../../shared/state/region_selection_provider.dart';
 import 'components/additional_overlay/additional_overlay.dart';
 import 'components/debugging_tile_builder/debugging_tile_builder.dart';
-//import 'components/download_progress/download_progress_masker.dart';
+import 'components/download_progress/download_progress_masker.dart';
 import 'components/recovery_regions/recovery_regions.dart';
 import 'components/region_selection/crosshairs.dart';
 import 'components/region_selection/custom_polygon_snapping_indicator.dart';
@@ -334,40 +334,40 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                       ),
             );
 
-            //final isDownloadProgressMaskerVisible = widget.mode ==
-            //        MapViewMode.downloadRegion &&
-            //    context.select<DownloadingProvider, bool>((p) => p.isFocused);
+            final isDownloadProgressMaskerVisible = widget.mode ==
+                    MapViewMode.downloadRegion &&
+                context.select<DownloadingProvider, bool>((p) => p.isFocused);
 
             final map = FlutterMap(
               mapController: _mapController.mapController,
               options: mapOptions,
               children: [
-                /*DownloadProgressMasker(
-                  key: ObjectKey(
-                    isDownloadProgressMaskerVisible
-                        ? context
-                            .select<DownloadingProvider, DownloadableRegion>(
-                            (p) => p.downloadableRegion,
-                          )
-                        : null,
+                DownloadProgressMasker(
+                  key: ValueKey(
+                    context.select<DownloadingProvider, BaseRegion?>(
+                      (p) => p.storeName != null
+                          ? p.downloadableRegion.originalRegion
+                          : null,
+                    ),
                   ),
-                  tileEvents: isDownloadProgressMaskerVisible
-                      ? context.select<DownloadingProvider,
-                          Stream<DownloadProgress>>((p) => p.rawTileEventStream)
-                      : null,
-                  minZoom: isDownloadProgressMaskerVisible
-                      ? context.select<DownloadingProvider, int>(
-                          (p) => p.downloadableRegion.minZoom,
-                        )
-                      : 0,
-                  maxZoom: isDownloadProgressMaskerVisible
-                      ? context.select<DownloadingProvider, int>(
-                          (p) => p.downloadableRegion.maxZoom,
-                        )
-                      : 0,
+                  isVisible: isDownloadProgressMaskerVisible &&
+                      context.select<DownloadingProvider, bool>(
+                        (provider) => provider.useMaskEffect,
+                      ),
+                  tileEvents:
+                      context.select<DownloadingProvider, Stream<TileEvent>?>(
+                    (p) => p.storeName != null ? p.rawTileEventStream : null,
+                  ),
+                  minZoom: context.select<DownloadingProvider, int>(
+                    (p) =>
+                        p.storeName != null ? p.downloadableRegion.minZoom : 0,
+                  ),
+                  maxZoom: context.select<DownloadingProvider, int>(
+                    (p) =>
+                        p.storeName != null ? p.downloadableRegion.maxZoom : 20,
+                  ),
                   child: tileLayer,
-                ),*/
-                tileLayer,
+                ),
                 if (widget.mode == MapViewMode.downloadRegion) ...[
                   const RegionShape(),
                   const CustomPolygonSnappingIndicator(),

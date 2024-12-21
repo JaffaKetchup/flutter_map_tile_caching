@@ -142,16 +142,21 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
 
   @override
   Future<_FMTCImageProvider> obtainKey(ImageConfiguration configuration) =>
-      SynchronousFuture<_FMTCImageProvider>(this);
+      SynchronousFuture(this);
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is _FMTCImageProvider &&
-          other.coords == coords &&
-          other.provider == provider &&
-          other.options == options);
+          other.coords ==
+              coords /*&&
+          other.provider == provider && 
+          other.options == options*/
+      );
 
   @override
-  int get hashCode => Object.hash(coords, provider, options);
+  int get hashCode => coords
+      .hashCode; /*Object.hash(
+        coords, /*, provider, options*/
+      );*/
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -9,11 +10,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
-part 'components/greyscale_masker.dart';
+part 'components/render_object.dart';
 
 class DownloadProgressMasker extends StatefulWidget {
   const DownloadProgressMasker({
     super.key,
+    required this.isVisible,
     required this.tileEvents,
     required this.minZoom,
     required this.maxZoom,
@@ -21,11 +23,14 @@ class DownloadProgressMasker extends StatefulWidget {
     required this.child,
   });
 
+  final bool isVisible;
   final Stream<TileEvent>? tileEvents;
   final int minZoom;
   final int maxZoom;
   final int tileSize;
   final TileLayer child;
+
+  // To reset after a download, the `key` must be changed
 
   @override
   State<DownloadProgressMasker> createState() => _DownloadProgressMaskerState();
@@ -33,14 +38,15 @@ class DownloadProgressMasker extends StatefulWidget {
 
 class _DownloadProgressMaskerState extends State<DownloadProgressMasker> {
   @override
-  Widget build(BuildContext context) {
-    if (widget.tileEvents case final tileEvents?) {
-      return RepaintBoundary(
+  Widget build(BuildContext context) => RepaintBoundary(
         child: StreamBuilder(
-          stream: tileEvents
-              .where((evt) => evt is SuccessfulTileEvent)
+          stream: widget.tileEvents
+              ?.where(
+                (evt) => evt is SuccessfulTileEvent || evt is SkippedTileEvent,
+              )
               .map((evt) => evt.coordinates),
-          builder: (context, coords) => GreyscaleMasker(
+          builder: (context, coords) => DownloadProgressMaskerRenderObject(
+            isVisible: widget.isVisible,
             mapCamera: MapCamera.of(context),
             latestTileCoordinates: coords.data == null
                 ? null
@@ -56,7 +62,4 @@ class _DownloadProgressMaskerState extends State<DownloadProgressMasker> {
           ),
         ),
       );
-    }
-    return widget.child;
-  }
 }

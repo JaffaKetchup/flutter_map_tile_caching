@@ -4,12 +4,18 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../../shared/state/download_provider.dart';
 import '../../../../../shared/state/general_provider.dart';
 import '../../../../../shared/state/region_selection_provider.dart';
 
-class RegionShape extends StatelessWidget {
+class RegionShape extends StatefulWidget {
   const RegionShape({super.key});
 
+  @override
+  State<RegionShape> createState() => _RegionShapeState();
+}
+
+class _RegionShapeState extends State<RegionShape> {
   @override
   Widget build(BuildContext context) => Consumer<RegionSelectionProvider>(
         builder: (context, provider, _) {
@@ -84,51 +90,72 @@ class RegionShape extends StatelessWidget {
         },
       );
 
-  Widget _renderConstructedRegion(BaseRegion region, HSLColor color) =>
-      switch (region) {
-        RectangleRegion(:final bounds) => PolygonLayer(
-            polygons: [
-              Polygon(
-                points: [
-                  bounds.northWest,
-                  bounds.northEast,
-                  bounds.southEast,
-                  bounds.southWest,
-                ],
-                color: color.toColor().withAlpha(255 ~/ 2),
-              ),
-            ],
-          ),
-        CircleRegion(:final center, :final radius) => CircleLayer(
-            circles: [
-              CircleMarker(
-                point: center,
-                radius: radius * 1000,
-                useRadiusInMeter: true,
-                color: color.toColor().withAlpha(255 ~/ 2),
-              ),
-            ],
-          ),
-        LineRegion() => PolygonLayer(
-            polygons: region
-                .toOutlines(1)
-                .map(
-                  (o) => Polygon(
-                    points: o,
-                    color: color.toColor().withAlpha(255 ~/ 2),
-                  ),
-                )
-                .toList(growable: false),
-          ),
-        CustomPolygonRegion(:final outline) => PolygonLayer(
-            polygons: [
-              Polygon(
-                points: outline,
-                color: color.toColor().withAlpha(255 ~/ 2),
-              ),
-            ],
-          ),
-        MultiRegion() =>
-          throw UnsupportedError('Cannot support `MultiRegion`s here'),
-      };
+  Widget _renderConstructedRegion(BaseRegion region, HSLColor color) {
+    final isDownloading =
+        context.watch<DownloadingProvider>().storeName != null;
+
+    return switch (region) {
+      RectangleRegion(:final bounds) => PolygonLayer(
+          polygons: [
+            Polygon(
+              points: [
+                bounds.northWest,
+                bounds.northEast,
+                bounds.southEast,
+                bounds.southWest,
+              ],
+              color: isDownloading
+                  ? Colors.transparent
+                  : color.toColor().withAlpha(255 ~/ 2),
+              borderColor: isDownloading ? Colors.black : Colors.transparent,
+              borderStrokeWidth: 3,
+            ),
+          ],
+        ),
+      CircleRegion(:final center, :final radius) => CircleLayer(
+          circles: [
+            CircleMarker(
+              point: center,
+              radius: radius * 1000,
+              useRadiusInMeter: true,
+              color: isDownloading
+                  ? Colors.transparent
+                  : color.toColor().withAlpha(255 ~/ 2),
+              borderColor: isDownloading ? Colors.black : Colors.transparent,
+              borderStrokeWidth: 3,
+            ),
+          ],
+        ),
+      LineRegion() => PolygonLayer(
+          polygons: region
+              .toOutlines(1)
+              .map(
+                (o) => Polygon(
+                  points: o,
+                  color: isDownloading
+                      ? Colors.transparent
+                      : color.toColor().withAlpha(255 ~/ 2),
+                  borderColor:
+                      isDownloading ? Colors.black : Colors.transparent,
+                  borderStrokeWidth: 3,
+                ),
+              )
+              .toList(growable: false),
+        ),
+      CustomPolygonRegion(:final outline) => PolygonLayer(
+          polygons: [
+            Polygon(
+              points: outline,
+              color: isDownloading
+                  ? Colors.transparent
+                  : color.toColor().withAlpha(255 ~/ 2),
+              borderColor: isDownloading ? Colors.black : Colors.transparent,
+              borderStrokeWidth: 3,
+            ),
+          ],
+        ),
+      MultiRegion() =>
+        throw UnsupportedError('Cannot support `MultiRegion`s here'),
+    };
+  }
 }

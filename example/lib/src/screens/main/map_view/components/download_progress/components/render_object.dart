@@ -1,16 +1,18 @@
 part of '../download_progress_masker.dart';
 
-class GreyscaleMasker extends SingleChildRenderObjectWidget {
-  const GreyscaleMasker({
+class DownloadProgressMaskerRenderObject extends SingleChildRenderObjectWidget {
+  const DownloadProgressMaskerRenderObject({
     super.key,
-    required super.child,
+    required this.isVisible,
     required this.latestTileCoordinates,
     required this.mapCamera,
     required this.minZoom,
     required this.maxZoom,
     required this.tileSize,
+    required super.child,
   });
 
+  final bool isVisible;
   final TileCoordinates? latestTileCoordinates;
   final MapCamera mapCamera;
   final int minZoom;
@@ -19,7 +21,8 @@ class GreyscaleMasker extends SingleChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _GreyscaleMaskerRenderer(
+      _DownloadProgressMaskerRenderer(
+        isVisible: isVisible,
         mapCamera: mapCamera,
         minZoom: minZoom,
         maxZoom: maxZoom,
@@ -30,17 +33,20 @@ class GreyscaleMasker extends SingleChildRenderObjectWidget {
   void updateRenderObject(
     BuildContext context,
     // ignore: library_private_types_in_public_api
-    _GreyscaleMaskerRenderer renderObject,
+    _DownloadProgressMaskerRenderer renderObject,
   ) {
-    renderObject.mapCamera = mapCamera;
+    renderObject
+      ..mapCamera = mapCamera
+      ..isVisible = isVisible;
     if (latestTileCoordinates case final ltc?) renderObject.addTile(ltc);
     // We don't support changing the other properties. They should not change
     // during a download.
   }
 }
 
-class _GreyscaleMaskerRenderer extends RenderProxyBox {
-  _GreyscaleMaskerRenderer({
+class _DownloadProgressMaskerRenderer extends RenderProxyBox {
+  _DownloadProgressMaskerRenderer({
+    required bool isVisible,
     required MapCamera mapCamera,
     required this.minZoom,
     required this.maxZoom,
@@ -50,7 +56,8 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
           'Unable to work with the large numbers that result from handling the '
           'difference of `maxZoom` & `minZoom`',
         ),
-        _mapCamera = mapCamera {
+        _mapCamera = mapCamera,
+        _isVisible = isVisible {
     // Precalculate for more efficient greyscale amount calculations later
     _maxSubtilesCountPerZoomLevel = Uint64List((maxZoom - minZoom) + 1);
     int p = 0;
@@ -63,16 +70,22 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
 
   //! PROPERTIES
 
+  bool _isVisible;
+  bool get isVisible => _isVisible;
+  set isVisible(bool value) {
+    if (value == isVisible) return;
+    _isVisible = value;
+    markNeedsPaint();
+  }
+
   MapCamera _mapCamera;
   MapCamera get mapCamera => _mapCamera;
   set mapCamera(MapCamera value) {
     if (value == mapCamera) return;
     _mapCamera = value;
-    _recompileGreyscalePathCache();
+    _recompileEffectLevelPathCache();
     markNeedsPaint();
   }
-
-  TileCoordinates? _prevTile;
 
   /// Minimum zoom level of the download
   ///
@@ -89,7 +102,13 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
   /// Size of each tile in pixels
   final int tileSize;
 
+  /// Maximum amount of blur effect
+  static const double _maxBlurSigma = 10;
+
   //! STATE
+
+  TileCoordinates? _prevTile;
+  Rect Function()? _mostRecentTile;
 
   /// Maps tiles of a download to a [_TileMappingValue], which contains:
   ///  * the number of subtiles downloaded
@@ -111,19 +130,21 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
   /// The number of subtiles a tile at the zoom level (index) may have
   late final Uint64List _maxSubtilesCountPerZoomLevel;
 
-  /// Cache for a greyscale amount to the path that should be painted with that
-  /// greyscale level
+  /// Cache for effect percentages to the path that should be painted with that
+  /// effect percentage
   ///
-  /// The key is multiplied by 1/[_greyscaleLevelsCount] to give the greyscale
-  /// percentage. This means there are [_greyscaleLevelsCount] levels of
-  /// greyscale available. Because the difference between close greyscales is
-  /// very difficult to percieve with the eye, this is acceptable, and improves
-  /// performance drastically. The ideal amount is calculated and rounded to the
-  /// nearest level.
-  final Map<int, Path> _greyscalePathCache = Map.unmodifiable({
-    for (int i = 0; i <= _greyscaleLevelsCount; i++) i: Path(),
+  /// Effect percentage means both greyscale percentage and blur amount.
+  ///
+  /// The key is multiplied by 1/[_effectLevelsCount] to give the effect
+  /// percentage. This means there are [_effectLevelsCount] levels of
+  /// effects available. Because the difference between close greyscales and
+  /// blurs is very difficult to percieve with the eye, this is acceptable, and
+  /// improves performance drastically. The ideal amount is calculated and
+  /// rounded to the nearest level.
+  final Map<int, Path> _effectLevelPathCache = Map.unmodifiable({
+    for (int i = 0; i <= _effectLevelsCount; i++) i: Path(),
   });
-  static const _greyscaleLevelsCount = 25;
+  static const _effectLevelsCount = 25;
 
   //! GREYSCALE HANDLING
 
@@ -161,9 +182,9 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
   /// Calculate the greyscale level given the number of subtiles actually
   /// downloaded and the possible number of subtiles
   ///
-  /// Multiply by 1/[_greyscaleLevelsCount] to pass to [_generateGreyscaleFilter]
+  /// Multiply by 1/[_effectLevelsCount] to pass to [_generateGreyscaleFilter]
   /// to generate [ColorFilter].
-  int _calculateGreyscaleLevel(int subtilesCount, int maxSubtilesCount) {
+  int _calculateEffectLevel(int subtilesCount, int maxSubtilesCount) {
     assert(
       subtilesCount <= maxSubtilesCount,
       '`subtilesCount` must be less than or equal to `maxSubtilesCount`',
@@ -171,8 +192,8 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
 
     final invGreyscalePercentage =
         (subtilesCount + 1) / (maxSubtilesCount + 1); // +1 to count self
-    return _greyscaleLevelsCount -
-        (invGreyscalePercentage * _greyscaleLevelsCount).round();
+    return _effectLevelsCount -
+        (invGreyscalePercentage * _effectLevelsCount).round();
   }
 
   //! INPUT STREAM HANDLING
@@ -214,13 +235,13 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
   }
 
   /// Handles incoming tiles from the input stream, modifying the [_tileMapping]
-  /// and [_greyscalePathCache] as necessary
+  /// and [_effectLevelPathCache] as necessary
   ///
   /// Tiles are pruned from the tile mapping where the parent tile has maxed out
   /// the number of subtiles (ie. all this tile's neighbours within the quad of
   /// the parent are also downloaded), to save memory space. However, it is
   /// not possible to prune the path cache, so this will slowly become
-  /// out-of-sync and less efficient. See [_recompileGreyscalePathCache]
+  /// out-of-sync and less efficient. See [_recompileEffectLevelPathCache]
   /// for details.
   void addTile(TileCoordinates tile) {
     assert(tile.z >= minZoom, 'Incoming `tile` has zoom level below minimum');
@@ -254,10 +275,12 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
             seCoord: mapCamera.crs
                 .pointToLatLng((tile + const Point(1, 1)) * tileSize, zoom),
           );
+          _mostRecentTile =
+              () => _calculateRectOfCoords(tmv.nwCoord, tmv.seCoord);
         }
 
-        _greyscalePathCache[
-                _calculateGreyscaleLevel(tmv.subtilesCount, maxSubtilesCount)]!
+        _effectLevelPathCache[
+                _calculateEffectLevel(tmv.subtilesCount, maxSubtilesCount)]!
             .addRect(_calculateRectOfCoords(tmv.nwCoord, tmv.seCoord));
 
         late final isParentMaxedOut = _tileMapping[TileCoordinates(
@@ -270,35 +293,34 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
                     intermediateZoomTile.z - 1 - minZoom] -
                 1;
         if (intermediateZoomTile.z != minZoom && isParentMaxedOut) {
-          _tileMapping.remove(intermediateZoomTile); // self
-
-          if (intermediateZoomTile.x.isOdd) {
-            _tileMapping.remove(
+          // Remove adjacent tiles in quad
+          _tileMapping
+            ..remove(intermediateZoomTile) // self
+            ..remove(
               TileCoordinates(
-                intermediateZoomTile.x - 1,
+                intermediateZoomTile.x +
+                    (intermediateZoomTile.x.isOdd ? -1 : 1),
                 intermediateZoomTile.y,
                 intermediateZoomTile.z,
               ),
-            );
-          }
-          if (intermediateZoomTile.y.isOdd) {
-            _tileMapping.remove(
+            )
+            ..remove(
               TileCoordinates(
                 intermediateZoomTile.x,
-                intermediateZoomTile.y - 1,
+                intermediateZoomTile.y +
+                    (intermediateZoomTile.y.isOdd ? -1 : 1),
                 intermediateZoomTile.z,
               ),
-            );
-          }
-          if (intermediateZoomTile.x.isOdd && intermediateZoomTile.y.isOdd) {
-            _tileMapping.remove(
+            )
+            ..remove(
               TileCoordinates(
-                intermediateZoomTile.x - 1,
-                intermediateZoomTile.y - 1,
+                intermediateZoomTile.x +
+                    (intermediateZoomTile.x.isOdd ? -1 : 1),
+                intermediateZoomTile.y +
+                    (intermediateZoomTile.y.isOdd ? -1 : 1),
                 intermediateZoomTile.z,
               ),
             );
-          }
         }
       },
     );
@@ -306,7 +328,7 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
     markNeedsPaint();
   }
 
-  /// Recompile the [_greyscalePathCache] ready for repainting based on the
+  /// Recompile the [_effectLevelPathCache] ready for repainting based on the
   /// single source-of-truth of the [_tileMapping]
   ///
   /// ---
@@ -334,8 +356,8 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
   ///
   /// This method does not call [markNeedsPaint], the caller should perform that
   /// if necessary.
-  void _recompileGreyscalePathCache() {
-    for (final path in _greyscalePathCache.values) {
+  void _recompileEffectLevelPathCache() {
+    for (final path in _effectLevelPathCache.values) {
       path.reset();
     }
 
@@ -343,7 +365,7 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
           key: TileCoordinates(z: tileZoom),
           value: _TileMappingValue(:subtilesCount, :nwCoord, :seCoord),
         ) in _tileMapping.entries) {
-      _greyscalePathCache[_calculateGreyscaleLevel(
+      _effectLevelPathCache[_calculateEffectLevel(
         subtilesCount,
         _maxSubtilesCountPerZoomLevel[tileZoom - minZoom],
       )]!
@@ -363,42 +385,63 @@ class _GreyscaleMaskerRenderer extends RenderProxyBox {
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    // Paint the map in greyscale
+    if (!isVisible) return super.paint(context, offset);
+
+    // Paint the map in full greyscale & blur
     context.pushColorFilter(
       offset,
       _generateGreyscaleFilter(1),
-      (context, offset) => context.paintChild(child!, offset),
+      (context, offset) => context.pushImageFilter(
+        offset,
+        ImageFilter.blur(sigmaX: _maxBlurSigma, sigmaY: _maxBlurSigma),
+        (context, offset) => context.paintChild(child!, offset),
+      ),
     );
 
-    // Then paint, from colorest to greyscalist (high to low zoom level), each
-    // layer using the respective `Path` as a clip ('cut')
+    // Then paint, from lowest effect to highest effect (high to low zoom level),
+    // each layer using the respective `Path` as a clip
     int layerHandleIndex = 0;
-    for (int i = _greyscalePathCache.length - 1; i >= 0; i--) {
-      final MapEntry(key: greyscaleAmount, value: path) =
-          _greyscalePathCache.entries.elementAt(i);
+    for (int i = _effectLevelPathCache.length - 1; i >= 0; i--) {
+      final MapEntry(key: effectLevel, value: path) =
+          _effectLevelPathCache.entries.elementAt(i);
 
-      final greyscalePercentage = greyscaleAmount * 1 / _greyscaleLevelsCount;
+      final effectPercentage = effectLevel / _effectLevelsCount;
 
       _layerHandles.elementAt(layerHandleIndex).layer = context.pushColorFilter(
         offset,
-        _generateGreyscaleFilter(greyscalePercentage),
-        (context, offset) => context.pushClipPath(
-          needsCompositing,
+        _generateGreyscaleFilter(effectPercentage),
+        (context, offset) => context.pushImageFilter(
           offset,
-          Offset.zero & size,
-          path,
-          (context, offset) => context.paintChild(child!, offset),
-          clipBehavior: Clip.hardEdge,
+          ImageFilter.blur(
+            sigmaX: effectPercentage * _maxBlurSigma,
+            sigmaY: effectPercentage * _maxBlurSigma,
+          ),
+          (context, offset) => context.pushClipPath(
+            needsCompositing,
+            offset,
+            Offset.zero & size,
+            path,
+            (context, offset) => context.paintChild(child!, offset),
+            clipBehavior: Clip.hardEdge,
+          ),
         ),
         oldLayer: _layerHandles.elementAt(layerHandleIndex).layer,
       );
 
       layerHandleIndex++;
     }
+
+    // Paint green 50% overlay over latest tile
+    if (_mostRecentTile case final rect?) {
+      context.canvas.drawPath(
+        Path()..addRect(rect()),
+        Paint()..color = Colors.green.withAlpha(255 ~/ 2),
+      );
+    }
   }
 }
 
-/// See [_GreyscaleMaskerRenderer._tileMapping] for documentation
+/// See [_DownloadProgressMaskerRenderer._tileMapping] for documentation
 ///
 /// Is mutable to improve performance.
 class _TileMappingValue {
@@ -411,4 +454,18 @@ class _TileMappingValue {
 
   final LatLng nwCoord;
   final LatLng seCoord;
+}
+
+extension on PaintingContext {
+  ImageFilterLayer pushImageFilter(
+    Offset offset,
+    ImageFilter imageFilter,
+    PaintingContextCallback painter, {
+    ImageFilterLayer? oldLayer,
+  }) {
+    final ImageFilterLayer layer = (oldLayer ?? ImageFilterLayer())
+      ..imageFilter = imageFilter;
+    pushLayer(layer, painter, offset);
+    return layer;
+  }
 }
