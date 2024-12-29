@@ -1,6 +1,9 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
+// TODO: Maybe bad design - do we really want inheritance?
+// ignore_for_file: avoid_equals_and_hash_code_on_mutable_classes
+
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';

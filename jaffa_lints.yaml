@@ -5,14 +5,17 @@ linter:
     - annotate_redeclares
     - avoid_annotating_with_dynamic
     - avoid_bool_literals_in_conditional_expressions
+    - avoid_catches_without_on_clauses
     - avoid_catching_errors
     - avoid_double_and_int_checks
     - avoid_dynamic_calls
     - avoid_empty_else
+    - avoid_equals_and_hash_code_on_mutable_classes
     - avoid_escaping_inner_quotes
     - avoid_field_initializers_in_const_classes
     - avoid_final_parameters
     - avoid_function_literals_in_foreach_calls
+    - avoid_futureor_void
     - avoid_implementing_value_types
     - avoid_init_to_null
     - avoid_js_rounded_ints
@@ -33,6 +36,7 @@ linter:
     - avoid_slow_async_io
     - avoid_type_to_string
     - avoid_types_as_parameter_names
+    - avoid_types_on_closure_parameters
     - avoid_unnecessary_containers
     - avoid_unused_constructor_parameters
     - avoid_void_async
@@ -57,6 +61,7 @@ linter:
     - deprecated_member_use_from_same_package
     - directives_ordering
     - do_not_use_environment
+    - document_ignores
     - empty_catches
     - empty_constructor_bodies
     - empty_statements
@@ -68,14 +73,17 @@ linter:
     - implicit_call_tearoffs
     - implicit_reopen
     - invalid_case_patterns
+    - invalid_runtime_check_with_js_interop_types
     - join_return_with_assignment
     - leading_newlines_in_multiline_strings
     - library_annotations
     - library_names
     - library_prefixes
     - library_private_types_in_public_api
+    - lines_longer_than_80_chars
     - literal_only_boolean_expressions
     - matching_super_parameters
+    - missing_code_block_language_in_doc_comment
     - missing_whitespace_between_adjacent_strings
     - no_adjacent_strings_in_list
     - no_default_cases
@@ -154,6 +162,7 @@ linter:
     - type_init_formals
     - type_literal_in_constant_pattern
     - unawaited_futures
+    - unintended_html_in_doc_comment
     - unnecessary_await_in_return
     - unnecessary_brace_in_string_interps
     - unnecessary_breaks
@@ -163,6 +172,7 @@ linter:
     - unnecessary_lambdas
     - unnecessary_late
     - unnecessary_library_directive
+    - unnecessary_library_name
     - unnecessary_new
     - unnecessary_null_aware_assignments
     - unnecessary_null_aware_operator_on_extension_on_nullable
@@ -179,7 +189,6 @@ linter:
     - unnecessary_to_list_in_spreads
     - unreachable_from_main
     - unrelated_type_equality_checks
-    - unsafe_html
     - use_build_context_synchronously
     - use_colored_box
     - use_decorated_box
@@ -199,5 +208,6 @@ linter:
     - use_super_parameters
     - use_test_throws_matchers
     - use_to_and_as_if_applicable
+    - use_truncating_division
     - valid_regexps
     - void_checks

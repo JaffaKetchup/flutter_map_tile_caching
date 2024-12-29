@@ -107,7 +107,8 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                                 (provider) => provider.urlTemplate,
                               ),
                           helperText:
-                              'In the example app, stores only contain tiles from one source',
+                              'In the example app, stores only contain tiles '
+                              'from one source',
                         );
                       },
                     ),
@@ -132,7 +133,8 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                           validator: (input) {
                             if ((input?.isNotEmpty ?? false) &&
                                 (int.tryParse(input!) ?? -1) < 0) {
-                              return 'Must be empty, or greater than or equal to 0';
+                              return 'Must be empty, or greater than or equal '
+                                  'to 0';
                             }
                             return null;
                           },

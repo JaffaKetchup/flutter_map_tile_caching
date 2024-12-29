@@ -57,8 +57,8 @@ class TileLoadingInterceptorResult {
   /// error/exception thrown whilst loading the tile - which is likely to be an
   /// [FMTCBrowsingError].
   ///
-  /// See [didComplete] for a boolean result. If `null`, see [resultPath] for the
-  /// exact result path.
+  /// See [didComplete] for a boolean result. If `null`, see [resultPath] for
+  /// the exact result path.
   final ({Object error, StackTrace stackTrace})? error;
 
   /// Indicates whether the tile completed loading successfully
@@ -86,11 +86,12 @@ class TileLoadingInterceptorResult {
   ///
   /// Calculated with:
   ///
-  /// ```
+  /// ```txt
   /// `useOtherStoresAsFallbackOnly` &&
   /// `resultPath` == TileLoadingInterceptorResultPath.cacheAsFallback &&
   /// <whether the tile already existed> &&
-  /// <whether the intersection of the specified `storeNames` and `existingStores` is empty>
+  /// <whether the intersection of the specified `storeNames` and
+  /// `existingStores` is empty>
   /// ```
   final bool tileRetrievedFromOtherStoresAsFallback;
 
@@ -98,7 +99,7 @@ class TileLoadingInterceptorResult {
   ///
   /// Calculated with:
   ///
-  /// ```
+  /// ```txt
   /// <whether the tile already existed> &&
   /// (
   ///   `loadingStrategy` == BrowseLoadingStrategy.onlineFirst ||

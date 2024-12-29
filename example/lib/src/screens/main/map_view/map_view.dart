@@ -321,6 +321,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                       recordHitsAndMisses: false,
                       tileLoadingInterceptor: _tileLoadingDebugger,
                       httpClient: _httpClient,
+                      // This is the intended purpose
                       // ignore: invalid_use_of_visible_for_testing_member
                       fakeNetworkDisconnect: provider.fakeNetworkDisconnect,
                     ),

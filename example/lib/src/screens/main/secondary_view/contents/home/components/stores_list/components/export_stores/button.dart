@@ -138,6 +138,7 @@ class ExportStoresButton extends StatelessWidget {
               (await showOverwriteConfirmationDialog(context) ?? false)) {
             return;
           }
+        // We do indeed want a default here
         // ignore: no_default_cases
         default:
           ScaffoldMessenger.maybeOf(context)?.showSnackBar(invalidTypeSnackbar);

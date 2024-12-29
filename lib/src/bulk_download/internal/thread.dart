@@ -100,6 +100,8 @@ Future<void> _singleDownloadThread(
     try {
       response =
           await httpClient.get(Uri.parse(networkUrl), headers: input.headers);
+      // We don't care about the exact error
+      // ignore: avoid_catches_without_on_clauses
     } catch (err) {
       send(
         FailedRequestTileEvent._(

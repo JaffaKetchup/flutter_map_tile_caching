@@ -177,6 +177,8 @@ Future<Uint8List> _internalGetBytes({
               0
           ? null
           : Exception('Image was decodable, but had a width of 0');
+      // We don't care about the exact error
+      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       isValidImageData = e;
     }
@@ -230,7 +232,7 @@ Future<Uint8List> _internalGetBytes({
   // Cache tile to necessary stores
   if (writeTileToIntermediate.isNotEmpty ||
       provider.otherStoresStrategy == BrowseStoreStrategy.readUpdateCreate) {
-    currentTLIR?.storesWriteResult = FMTCBackendAccess.internal.writeTile(
+    final writeOp = FMTCBackendAccess.internal.writeTile(
       storeNames: writeTileToIntermediate,
       writeAllNotIn:
           provider.otherStoresStrategy == BrowseStoreStrategy.readUpdateCreate
@@ -238,8 +240,10 @@ Future<Uint8List> _internalGetBytes({
               : null,
       url: matcherUrl,
       bytes: response.bodyBytes,
-      // ignore: unawaited_futures
-    )..then((result) {
+    );
+    currentTLIR?.storesWriteResult = writeOp;
+    unawaited(
+      writeOp.then((result) {
         final createdIn =
             result.entries.where((e) => e.value).map((e) => e.key);
 
@@ -250,7 +254,8 @@ Future<Uint8List> _internalGetBytes({
         FMTCBackendAccess.internal.removeOldestTilesAboveLimit(
           storeNames: createdIn.toList(growable: false),
         );
-      });
+      }),
+    );
   }
 
   currentTLIR?.resultPath = TileLoadingInterceptorResultPath.fetchedFromNetwork;

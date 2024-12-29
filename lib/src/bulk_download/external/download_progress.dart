@@ -286,8 +286,8 @@ class DownloadProgress {
   ///
   /// The difference between [DownloadableRegion.end] and
   /// [DownloadableRegion.start]. If there is no endpoint set, this is the
-  /// the maximum number of tiles actually available in the region, as determined
-  /// by [StoreDownload.countTiles].
+  /// the maximum number of tiles actually available in the region, as
+  /// determined by [StoreDownload.countTiles].
   final int maxTilesCount;
 
   /// The current elapsed duration of the download

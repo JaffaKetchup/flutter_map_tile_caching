@@ -1,6 +1,9 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
+//
+// ignore_for_file: avoid_futureor_void
+
 import 'dart:async';
 import 'dart:typed_data';
 

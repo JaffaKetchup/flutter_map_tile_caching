@@ -13,6 +13,7 @@ class _ToggleOption extends StatelessWidget {
   final String title;
   final String description;
   final bool value;
+  // Parameter meaning obvious from context, also callback
   // ignore: avoid_positional_boolean_parameters
   final void Function(bool value) onChanged;
 

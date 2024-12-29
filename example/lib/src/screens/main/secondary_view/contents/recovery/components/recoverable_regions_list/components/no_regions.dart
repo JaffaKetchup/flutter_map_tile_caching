@@ -20,8 +20,8 @@ class _NoRegions extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  "If a download fails unexpectedly, it'll appear here! You can "
-                  'then finish the end of the download.',
+                  "If a download fails unexpectedly, it'll appear here! You "
+                  'can then finish the end of the download.',
                   textAlign: TextAlign.center,
                 ),
               ],

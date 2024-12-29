@@ -1,8 +1,6 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-// ignore_for_file: use_late_for_private_fields_and_variables
-
 part of '../../flutter_map_tile_caching.dart';
 
 /// Manages the download recovery of all sub-stores of this [FMTCRoot]
@@ -37,15 +35,13 @@ part of '../../flutter_map_tile_caching.dart';
 /// > Options set at download time, in [StoreDownload.startForeground], are not
 /// > included.
 class RootRecovery {
-  // ignore: prefer_const_constructors
-  factory RootRecovery._() => _instance ??= RootRecovery._uninstanced({});
-  const RootRecovery._uninstanced(Set<int> downloadsOngoing)
-      : _downloadsOngoing = downloadsOngoing;
+  factory RootRecovery._() => _instance ??= RootRecovery._uninstanced();
+  RootRecovery._uninstanced();
   static RootRecovery? _instance;
 
   /// Determines which downloads are known to be on-going, and therefore
   /// can be ignored when fetching [recoverableRegions]
-  final Set<int> _downloadsOngoing;
+  final Set<int> _downloadsOngoing = {};
 
   /// {@macro fmtc.backend.watchRecovery}
   Stream<void> watch({

@@ -43,6 +43,9 @@ Future<void> _worker(
     if (!rootBox.contains(1)) {
       rootBox.put(ObjectBoxRoot(length: 0, size: 0), mode: PutMode.insert);
     }
+    // We don't know what errors may be thrown, we just want to send them all
+    // back
+    // ignore: avoid_catches_without_on_clauses
   } catch (e, s) {
     sendRes(id: 0, data: {'error': e, 'stackTrace': s});
     Isolate.exit();
@@ -837,7 +840,8 @@ Future<void> _worker(
 
         if (streamedOutputSubscriptions[id] == null) {
           throw StateError(
-            'Cannot cancel internal streamed result because none was registered.',
+            'Cannot cancel internal streamed result because none was '
+            'registered.',
           );
         }
 
@@ -986,6 +990,9 @@ Future<void> _worker(
               exportingRoot.close();
               try {
                 workingDir.deleteSync(recursive: true);
+                // If the working dir didn't exist, that's fine
+                // We don't want to spend time checking if exists, as it likely
+                // does
                 // ignore: empty_catches
               } on FileSystemException {}
               Error.throwWithStackTrace(error, stackTrace);
@@ -995,6 +1002,8 @@ Future<void> _worker(
           exportingRoot.close();
           try {
             workingDir.deleteSync(recursive: true);
+            // If the working dir didn't exist, that's fine
+            // We don't want to spend time checking if exists, as it likely does
             // ignore: empty_catches
           } on FileSystemException {}
           Error.throwWithStackTrace(error, stackTrace);
@@ -1047,7 +1056,6 @@ Future<void> _worker(
         }
 
         final StoresToStates storesToStates = {};
-        // ignore: unnecessary_parenthesis
         (switch (strategy) {
           ImportConflictStrategy.skip => importingStoresQuery
               .stream()
@@ -1457,6 +1465,9 @@ Future<void> _worker(
   await receivePort.listen((cmd) {
     try {
       mainHandler(cmd);
+      // We don't know what errors may be thrown, we just want to send them all
+      // back
+      // ignore: avoid_catches_without_on_clauses
     } catch (e, s) {
       cmd as _IncomingCmd;
 

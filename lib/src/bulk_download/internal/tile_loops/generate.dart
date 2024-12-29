@@ -3,13 +3,13 @@
 
 part of 'shared.dart';
 
-/// A set of methods for each type of [BaseRegion] that generates the coordinates
-/// of every tile within the specified [DownloadableRegion]
+/// A set of methods for each type of [BaseRegion] that generates the
+/// coordinates of every tile within the specified [DownloadableRegion]
 ///
 /// These methods must be run within seperate isolates, as they do heavy,
 /// potentially lengthy computation. They do perform multiple-communication,
-/// sending a new coordinate after they recieve a request message only. They will
-/// kill themselves after there are no tiles left to generate.
+/// sending a new coordinate after they recieve a request message only. They
+/// will kill themselves after there are no tiles left to generate.
 ///
 /// See [TileCounters] for methods that do not generate each coordinate, but
 /// just count the number of tiles with a more efficient method.
@@ -221,12 +221,19 @@ class TileGenerators {
     ({SendPort sendPort, DownloadableRegion<LineRegion> region}) input, {
     StreamQueue? multiRequestQueue,
   }) async {
-    // This took some time and is fairly complicated, so this is the overall explanation:
-    // 1. Given 4 `LatLng` points, create a 'straight' rectangle around the 'rotated' rectangle, that can be defined with just 2 `LatLng` points
-    // 2. Convert the straight rectangle into tile numbers, and loop through the same as `rectangleTiles`
-    // 3. For every generated tile number (which represents top-left of the tile), generate the rest of the tile corners
-    // 4. Check whether the square tile overlaps the rotated rectangle from the start, add it to the list if it does
-    // 5. Keep track of the number of overlaps per row: if there was one overlap and now there isn't, skip the rest of the row because we can be sure there are no more tiles
+    // This took some time and is fairly complicated, so this is the overall
+    // explanation:
+    // 1. Given 4 `LatLng` points, create a 'straight' rectangle around the
+    //    'rotated' rectangle, that can be defined with just 2 `LatLng` points
+    // 2. Convert the straight rectangle into tile numbers, and loop through the
+    //    same as `rectangleTiles`
+    // 3. For every generated tile number (which represents top-left of the
+    //    tile), generate the rest of the tile corners
+    // 4. Check whether the square tile overlaps the rotated rectangle from the
+    //    start, add it to the list if it does
+    // 5. Keep track of the number of overlaps per row: if there was one overlap
+    //    and now there isn't, skip the rest of the row because we can be sure
+    //    there are no more tiles
 
     // Overlap algorithm originally in Python, available at https://stackoverflow.com/a/56962827/11846040
     bool overlap(_Polygon a, _Polygon b) {

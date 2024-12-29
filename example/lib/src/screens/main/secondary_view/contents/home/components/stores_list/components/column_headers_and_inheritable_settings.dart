@@ -99,7 +99,7 @@ class ColumnHeadersAndInheritableSettings extends StatelessWidget {
                             )
                             .toList(),
                         value: currentBehaviour,
-                        onChanged: (BrowseStoreStrategy? v) => context
+                        onChanged: (v) => context
                             .read<GeneralProvider>()
                             .inheritableBrowseStoreStrategy = v,
                       ),

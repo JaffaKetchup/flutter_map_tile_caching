@@ -17,7 +17,8 @@ part of '../../../../flutter_map_tile_caching.dart';
 /// Overlaps and intersections are not (yet) compiled into single
 /// [CustomPolygonRegion]s. Therefore, where regions are known to overlap:
 ///
-///  * (particularly where regions are [RectangleRegion]s & [CustomPolygonRegion]s)
+///  * (particularly where regions are [RectangleRegion]s &
+/// [CustomPolygonRegion]s)
 ///    Use ['package:polybool'](https://pub.dev/packages/polybool) (a 3rd party
 ///    package in no way associated with FMTC) to take the `union` all polygons:
 ///    this will remove self-intersections, combine overlapping polygons into

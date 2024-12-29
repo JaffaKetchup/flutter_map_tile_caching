@@ -5,10 +5,11 @@ part of '../../../flutter_map_tile_caching.dart';
 
 /// A specialised [ImageProvider] that uses FMTC internals to enable browse
 /// caching
+@immutable
 class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
   /// Create a specialised [ImageProvider] that uses FMTC internals to enable
   /// browse caching
-  _FMTCImageProvider({
+  const _FMTCImageProvider({
     required this.provider,
     required this.options,
     required this.coords,
@@ -27,8 +28,8 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
 
   /// Function invoked when the image starts loading (not from cache)
   ///
-  /// Used with [finishedLoadingBytes] to safely dispose of the `httpClient` only
-  /// after all tiles have loaded.
+  /// Used with [finishedLoadingBytes] to safely dispose of the `httpClient`
+  /// only after all tiles have loaded.
   final void Function() startedLoading;
 
   /// Function invoked when the image completes loading bytes from the network
@@ -109,8 +110,9 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
             cacheFetchDuration: currentTLIR.cacheFetchDuration,
             networkFetchDuration: currentTLIR.networkFetchDuration,
           )
+          // `Map` is mutable, so must notify manually
           // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
-          ..notifyListeners(); // `Map` is mutable, so must notify manually
+          ..notifyListeners();
       }
     }
 
@@ -144,19 +146,12 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
   Future<_FMTCImageProvider> obtainKey(ImageConfiguration configuration) =>
       SynchronousFuture(this);
 
+  // TODO: Incorporate tile provider & tile layer options
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is _FMTCImageProvider &&
-          other.coords ==
-              coords /*&&
-          other.provider == provider && 
-          other.options == options*/
-      );
+      (other is _FMTCImageProvider && other.coords == coords);
 
   @override
-  int get hashCode => coords
-      .hashCode; /*Object.hash(
-        coords, /*, provider, options*/
-      );*/
+  int get hashCode => coords.hashCode;
 }

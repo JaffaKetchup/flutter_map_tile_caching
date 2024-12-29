@@ -59,6 +59,8 @@ Future<void> _downloadManager(
         ),
         headers: headers,
       );
+      // We don't care about the exact error
+      // ignore: avoid_catches_without_on_clauses
     } catch (_) {
       seaTileBytes = null;
     }
@@ -188,6 +190,7 @@ Future<void> _downloadManager(
         case _DownloadManagerControlCmd.cancel:
           try {
             cancelSignal.complete();
+            // If the signal is already complete, that's fine
             // ignore: avoid_catching_errors, empty_catches
           } on StateError {}
         case _DownloadManagerControlCmd.pause:
@@ -413,6 +416,7 @@ Future<void> _downloadManager(
           onDone: () {
             try {
               cancelSignal.complete();
+              // If the signal is already complete, that's fine
               // ignore: avoid_catching_errors, empty_catches
             } on StateError {}
 

@@ -14,10 +14,10 @@ import '../../export_internal.dart';
 ///
 /// Should implement methods that operate in another isolate/thread to avoid
 /// blocking the normal thread. In this case, [FMTCBackendInternalThreadSafe]
-/// should also be implemented, which should not operate in another thread & must
-/// be sendable between isolates (because it will already be operated in another
-/// thread), and must be suitable for simultaneous initialisation across multiple
-/// threads.
+/// should also be implemented, which should not operate in another thread &
+/// must be sendable between isolates (because it will already be operated in
+/// another thread), and must be suitable for simultaneous initialisation across
+/// multiple threads.
 ///
 /// Should be set in [FMTCBackendAccess] when ready to use, and unset when not.
 /// See documentation on that class for more information.
@@ -144,9 +144,11 @@ abstract interface class FMTCBackendInternal
   });
 
   /// {@template fmtc.backend.getStoreStats}
-  /// Retrieve the following statistics about the specified store (all available):
+  /// Retrieve the following statistics about the specified store (all
+  /// available):
   ///
-  ///  * `size`: total number of KiBs of all tiles' bytes (not 'real total' size)
+  ///  * `size`: total number of KiBs of all tiles' bytes (not 'real total'
+  /// size)
   ///  * `length`: number of tiles belonging
   ///  * `hits`: number of successful tile retrievals when browsing
   ///  * `misses`: number of unsuccessful tile retrievals when browsing
@@ -279,8 +281,9 @@ abstract interface class FMTCBackendInternal
   /// > [!WARNING]
   /// > Any existing value for the specified key will be overwritten.
   ///
-  /// Prefer using [setBulkMetadata] when setting multiple keys. Only one backend
-  /// operation is required to set them all at once, and so is more efficient.
+  /// Prefer using [setBulkMetadata] when setting multiple keys. Only one
+  /// backend operation is required to set them all at once, and so is more
+  /// efficient.
   /// {@endtemplate}
   Future<void> setMetadata({
     required String storeName,

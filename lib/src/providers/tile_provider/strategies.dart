@@ -10,12 +10,12 @@ typedef CacheBehavior = BrowseLoadingStrategy;
 /// Determines whether the network or cache is preferred during browse caching,
 /// and how to fallback
 ///
-/// | `BrowseLoadingStrategy`  | Preferred method       | Fallback method       |
-/// |--------------------------|------------------------|-----------------------|
-/// | `cacheOnly`              | Cache                  | None                  |
-/// | `cacheFirst`             | Cache                  | Network               |
-/// | `onlineFirst`            | Network                | Cache                 |
-/// | *Standard Tile Provider* | *Network*              | *None*                |
+/// | `BrowseLoadingStrategy`  | Preferred method       | Fallback method      |
+/// |--------------------------|------------------------|----------------------|
+/// | `cacheOnly`              | Cache                  | None                 |
+/// | `cacheFirst`             | Cache                  | Network              |
+/// | `onlineFirst`            | Network                | Cache                |
+/// | *Standard Tile Provider* | *Network*              | *None*               |
 enum BrowseLoadingStrategy {
   /// Only fetch tiles from the local cache
   ///

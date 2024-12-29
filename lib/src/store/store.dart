@@ -1,8 +1,6 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-// ignore_for_file: use_late_for_private_fields_and_variables
-
 part of '../../flutter_map_tile_caching.dart';
 
 /// {@template fmtc.fmtcStore}
@@ -14,6 +12,7 @@ part of '../../flutter_map_tile_caching.dart';
 /// > Constructing an instance of this class will not automatically create it.
 /// > To create this store, use [manage] > [StoreManagement.create].
 /// {@endtemplate}
+@immutable
 class FMTCStore {
   /// {@macro fmtc.fmtcStore}
   const FMTCStore(this.storeName);

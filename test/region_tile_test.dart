@@ -1,6 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
+// Printing out is part of the tests and easy without logging packages
 // ignore_for_file: avoid_print
 
 import 'dart:isolate';

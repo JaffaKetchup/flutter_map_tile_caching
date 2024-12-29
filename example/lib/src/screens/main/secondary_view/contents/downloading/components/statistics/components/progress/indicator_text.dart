@@ -134,65 +134,65 @@ class _ProgressIndicatorTextState extends State<ProgressIndicatorText> {
           color: DownloadingProgressIndicatorColors.successfulColor,
           type: 'Successful',
           statistic: _usePercentages
-              ? '${(((successfulFlushedTilesCount + successfulBufferedTilesCount) / maxTilesCount) * 100).toStringAsFixed(1)}% '
-              : '${successfulFlushedTilesCount + successfulBufferedTilesCount} tiles (${(successfulFlushedTilesSize + successfulBufferedTilesSize).asReadableSize})',
+              ? '''${(((successfulFlushedTilesCount + successfulBufferedTilesCount) / maxTilesCount) * 100).toStringAsFixed(1)}% '''
+              : '''${successfulFlushedTilesCount + successfulBufferedTilesCount} tiles (${(successfulFlushedTilesSize + successfulBufferedTilesSize).asReadableSize})''',
         ),
         const SizedBox(height: 4),
         _TextRow(
           type: 'Flushed',
           statistic: _usePercentages
-              ? '${((successfulFlushedTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}% '
-              : '$successfulFlushedTilesCount tiles (${successfulFlushedTilesSize.asReadableSize})',
+              ? '''${((successfulFlushedTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}% '''
+              : '''$successfulFlushedTilesCount tiles (${successfulFlushedTilesSize.asReadableSize})''',
         ),
         const SizedBox(height: 4),
         _TextRow(
           type: 'Buffered',
           statistic: _usePercentages
-              ? '${((successfulBufferedTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
-              : '$successfulBufferedTilesCount tiles (${successfulBufferedTilesSize.asReadableSize})',
+              ? '''${((successfulBufferedTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'''
+              : '''$successfulBufferedTilesCount tiles (${successfulBufferedTilesSize.asReadableSize})''',
         ),
         const SizedBox(height: 4),
         _TextRow(
           color: DownloadingProgressIndicatorColors.skippedColor,
           type: 'Skipped',
           statistic: _usePercentages
-              ? '${(((skippedSeaTilesCount + skippedExistingTilesCount) / maxTilesCount) * 100).toStringAsFixed(1)}%'
-              : '${skippedSeaTilesCount + skippedExistingTilesCount} tiles (${(skippedSeaTilesSize + skippedExistingTilesSize).asReadableSize})',
+              ? '''${(((skippedSeaTilesCount + skippedExistingTilesCount) / maxTilesCount) * 100).toStringAsFixed(1)}%'''
+              : '''${skippedSeaTilesCount + skippedExistingTilesCount} tiles (${(skippedSeaTilesSize + skippedExistingTilesSize).asReadableSize})''',
         ),
         const SizedBox(height: 4),
         _TextRow(
           type: 'Existing',
           statistic: _usePercentages
-              ? '${((skippedExistingTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
-              : '$skippedExistingTilesCount tiles (${skippedExistingTilesSize.asReadableSize})',
+              ? '''${((skippedExistingTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'''
+              : '''$skippedExistingTilesCount tiles (${skippedExistingTilesSize.asReadableSize})''',
         ),
         const SizedBox(height: 4),
         _TextRow(
           type: 'Sea Tiles',
           statistic: _usePercentages
-              ? '${((skippedSeaTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
-              : '$skippedSeaTilesCount tiles (${skippedSeaTilesSize.asReadableSize})',
+              ? '''${((skippedSeaTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'''
+              : '''$skippedSeaTilesCount tiles (${skippedSeaTilesSize.asReadableSize})''',
         ),
         const SizedBox(height: 4),
         _TextRow(
           color: DownloadingProgressIndicatorColors.failedColor,
           type: 'Failed',
           statistic: _usePercentages
-              ? '${(((failedNegativeResponseTilesCount + failedFailedRequestTilesCount) / maxTilesCount) * 100).toStringAsFixed(1)}%'
-              : '${failedNegativeResponseTilesCount + failedFailedRequestTilesCount} tiles',
+              ? '''${(((failedNegativeResponseTilesCount + failedFailedRequestTilesCount) / maxTilesCount) * 100).toStringAsFixed(1)}%'''
+              : '''${failedNegativeResponseTilesCount + failedFailedRequestTilesCount} tiles''',
         ),
         const SizedBox(height: 4),
         _TextRow(
           type: 'Negative Response',
           statistic: _usePercentages
-              ? '${((failedNegativeResponseTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
+              ? '''${((failedNegativeResponseTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'''
               : '$failedNegativeResponseTilesCount tiles',
         ),
         const SizedBox(height: 4),
         _TextRow(
           type: 'Failed Request',
           statistic: _usePercentages
-              ? '${((failedFailedRequestTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
+              ? '''${((failedFailedRequestTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'''
               : '$failedFailedRequestTilesCount tiles',
         ),
         const SizedBox(height: 4),
@@ -200,7 +200,7 @@ class _ProgressIndicatorTextState extends State<ProgressIndicatorText> {
           color: DownloadingProgressIndicatorColors.retryQueueColor,
           type: 'Queued For Retry',
           statistic: _usePercentages
-              ? '${((retryTilesQueuedCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
+              ? '''${((retryTilesQueuedCount / maxTilesCount) * 100).toStringAsFixed(1)}%'''
               : '$retryTilesQueuedCount tiles',
         ),
         const SizedBox(height: 4),
@@ -208,7 +208,7 @@ class _ProgressIndicatorTextState extends State<ProgressIndicatorText> {
           color: DownloadingProgressIndicatorColors.pendingColor,
           type: 'Pending',
           statistic: _usePercentages
-              ? '${((remainingTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'
+              ? '''${((remainingTilesCount / maxTilesCount) * 100).toStringAsFixed(1)}%'''
               : '$remainingTilesCount/$maxTilesCount tiles',
         ),
       ],

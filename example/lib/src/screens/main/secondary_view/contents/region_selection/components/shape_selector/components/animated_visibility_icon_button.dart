@@ -6,6 +6,7 @@ class _AnimatedVisibilityIconButton extends StatelessWidget {
     this.onPressed,
     this.tooltip,
     required this.isVisible,
+    // This is exactly what we want to do
     // ignore: avoid_field_initializers_in_const_classes
   }) : _mode = 0;
 
@@ -14,6 +15,7 @@ class _AnimatedVisibilityIconButton extends StatelessWidget {
     this.onPressed,
     this.tooltip,
     required this.isVisible,
+    // This is exactly what we want to do
     // ignore: avoid_field_initializers_in_const_classes
   }) : _mode = 1;
 
@@ -22,6 +24,7 @@ class _AnimatedVisibilityIconButton extends StatelessWidget {
     this.onPressed,
     this.tooltip,
     required this.isVisible,
+    // This is exactly what we want to do
     // ignore: avoid_field_initializers_in_const_classes
   }) : _mode = 2;
 

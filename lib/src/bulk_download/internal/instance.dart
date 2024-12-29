@@ -22,11 +22,4 @@ class DownloadInstance {
   Future<void> Function()? requestCancel;
   Future<void> Function()? requestPause;
   void Function()? requestResume;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) || (other is DownloadInstance && id == other.id);
-
-  @override
-  int get hashCode => id.hashCode;
 }

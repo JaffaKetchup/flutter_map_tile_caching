@@ -102,7 +102,8 @@ class _ShapeSelectorState extends State<ShapeSelector> {
                     ),
                   ),
                   Text(
-                    '${provider.lineRadius.round().toString().padLeft(4, '0')}m',
+                    '${provider.lineRadius.round().toString().padLeft(4, '0')}'
+                    'm',
                   ),
                   const VerticalDivider(),
                   IconButton.outlined(

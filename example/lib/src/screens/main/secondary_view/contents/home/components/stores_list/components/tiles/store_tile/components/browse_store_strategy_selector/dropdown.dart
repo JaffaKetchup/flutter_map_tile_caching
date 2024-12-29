@@ -16,7 +16,7 @@ class _BrowseStoreStrategySelectorDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: DropdownButton(
+        child: DropdownButton<BrowseStoreStrategy?>(
           items: [null, ...BrowseStoreStrategy.values].map(
             (e) {
               final iconColor = isUnspecifiedSelector
@@ -74,7 +74,7 @@ class _BrowseStoreStrategySelectorDropdown extends StatelessWidget {
           ).toList(),
           value: currentStrategy,
           onChanged: enabled
-              ? (BrowseStoreStrategy? v) {
+              ? (v) {
                   final provider = context.read<GeneralProvider>();
 
                   if (v == null) {

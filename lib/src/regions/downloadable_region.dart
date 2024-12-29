@@ -6,6 +6,7 @@ part of '../../flutter_map_tile_caching.dart';
 /// A downloadable region to be passed to bulk download functions
 ///
 /// Construct via [BaseRegion.toDownloadable].
+@immutable
 class DownloadableRegion<R extends BaseRegion> {
   DownloadableRegion._(
     this.originalRegion, {

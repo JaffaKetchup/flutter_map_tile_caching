@@ -47,6 +47,7 @@ class BrowseStoreStrategySelector extends StatelessWidget {
         unspecifiedStrategy != InternalBrowseStoreStrategy.disable &&
         enabled;
 
+    // Parameter meaning obvious from context, also callback
     // ignore: avoid_positional_boolean_parameters
     void changedInheritCheckbox(bool? value) {
       final provider = context.read<GeneralProvider>();

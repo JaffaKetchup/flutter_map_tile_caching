@@ -32,6 +32,7 @@ class DownloadProgressMaskerRenderObject extends SingleChildRenderObjectWidget {
   @override
   void updateRenderObject(
     BuildContext context,
+    // It will only ever be this private type, called internally by Flutter
     // ignore: library_private_types_in_public_api
     _DownloadProgressMaskerRenderer renderObject,
   ) {
@@ -398,8 +399,8 @@ class _DownloadProgressMaskerRenderer extends RenderProxyBox {
       ),
     );
 
-    // Then paint, from lowest effect to highest effect (high to low zoom level),
-    // each layer using the respective `Path` as a clip
+    // Then paint, from lowest effect to highest effect (high to low zoom
+    // level), each layer using the respective `Path` as a clip
     int layerHandleIndex = 0;
     for (int i = _effectLevelPathCache.length - 1; i >= 0; i--) {
       final MapEntry(key: effectLevel, value: path) =

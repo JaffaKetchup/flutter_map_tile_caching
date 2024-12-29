@@ -39,8 +39,8 @@ final class ImportPathNotExists extends ImportExportError {
 ///
 /// The last bytes of the file must be hex "FF FF 46 4D 54 43" ("**FMTC").
 final class ImportFileNotFMTCStandard extends ImportExportError {
-  /// Indicates that the import file was not of the expected standard, because it
-  /// did not contain the appropriate footer signature
+  /// Indicates that the import file was not of the expected standard, because
+  /// it did not contain the appropriate footer signature
   ///
   /// The last bytes of the file must be hex "FF FF 46 4D 54 43" ("**FMTC").
   ImportFileNotFMTCStandard();
@@ -60,8 +60,8 @@ final class ImportFileNotBackendCompatible extends ImportExportError {
   /// Indicates that the import file was exported from a different FMTC backend,
   /// and is not compatible with the current backend
   ///
-  /// The bytes prior to the footer signature should an identifier (eg. the name)
-  /// of the exporting backend proceeded by hex "FF FF FF FF".
+  /// The bytes prior to the footer signature should an identifier (eg. the
+  /// name) of the exporting backend proceeded by hex "FF FF FF FF".
   ImportFileNotBackendCompatible();
 
   @override

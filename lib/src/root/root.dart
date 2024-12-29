@@ -6,8 +6,8 @@ part of '../../flutter_map_tile_caching.dart';
 /// Provides access to statistics, recovery, migration (and the import
 /// functionality) on the intitialised root.
 ///
-/// Management services are not provided here, instead use methods on the backend
-/// directly.
+/// Management services are not provided here, instead use methods on the
+/// backend directly.
 ///
 /// Note that this does not provide direct access to any [FMTCStore]s.
 abstract class FMTCRoot {

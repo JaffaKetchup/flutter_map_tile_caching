@@ -5,14 +5,15 @@ import 'dart:async';
 
 /// Rate limiting extension, see [rateLimit] for more information
 extension RateLimitedStream<E> on Stream<E> {
-  /// Transforms a series of events to an output stream where a delay of at least
-  /// [minimumSpacing] is inserted between every event
+  /// Transforms a series of events to an output stream where a delay of at
+  /// least [minimumSpacing] is inserted between every event
   ///
   /// The input stream may close before the output stream.
   ///
   /// Illustration of the output stream, where one decimal is 500ms, and
   /// [minimumSpacing] is set to 1s:
-  /// ```
+  ///
+  /// ```txt
   ///  Input: .ABC....DE..F........GH
   /// Output: .A..B..C..D..E..F....G..H
   /// ```

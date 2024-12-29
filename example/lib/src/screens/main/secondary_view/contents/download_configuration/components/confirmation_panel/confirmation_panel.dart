@@ -163,11 +163,10 @@ class _ConfirmationPanelState extends State<ConfirmationPanel> {
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              'Many servers will '
-                              'forbid or heavily restrict this action, as it '
-                              'places extra strain on resources. Be respectful, '
-                              'and note that you use this functionality at your '
-                              'own risk.',
+                              'Many servers will forbid or heavily restrict '
+                              'this action, as it places extra strain on '
+                              'resources. Be respectful, and note that you use '
+                              'this functionality at your own risk.',
                             ),
                           ],
                         ),

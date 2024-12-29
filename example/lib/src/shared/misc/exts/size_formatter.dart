@@ -7,6 +7,7 @@ extension SizeFormatter on num {
     if (this <= 0) return '0 B';
     final List<String> units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
     final int digitGroups = log(this) ~/ log(1024);
-    return '${NumberFormat('#,##0.#').format(this / pow(1024, digitGroups))} ${units[digitGroups]}';
+    return '${NumberFormat('#,##0.#').format(this / pow(1024, digitGroups))} '
+        '${units[digitGroups]}';
   }
 }

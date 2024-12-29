@@ -88,7 +88,8 @@ class StoreDownload {
   /// > [!WARNING]
   /// > Using buffering will mean that an unexpected forceful quit (such as an
   /// > app closure, [cancel] is safe) will result in losing the tiles that are
-  /// > currently in the buffer. It will also increase the memory (RAM) required.
+  /// > currently in the buffer. It will also increase the memory (RAM)
+  /// > required.
   ///
   /// > [!WARNING]
   /// > Skipping sea tiles will not reduce the number of downloads - tiles must
@@ -98,14 +99,14 @@ class StoreDownload {
   /// ---
   ///
   /// Although disabled `null` by default, [rateLimit] can be used to impose a
-  /// limit on the maximum number of tiles that can be attempted per second. This
-  /// is useful to avoid placing too much strain on tile servers and avoid
-  /// external rate limiting. Note that the [rateLimit] is only approximate. Also
-  /// note that all tile attempts are rate limited, even ones that do not need a
-  /// server request.
+  /// limit on the maximum number of tiles that can be attempted per second.
+  /// This is useful to avoid placing too much strain on tile servers and avoid
+  /// external rate limiting. Note that the [rateLimit] is only approximate.
+  /// Also note that all tile attempts are rate limited, even ones that do not
+  /// need a server request.
   ///
-  /// To check whether the current [DownloadProgress.tilesPerSecond] statistic is
-  /// currently limited by [rateLimit], check
+  /// To check whether the current [DownloadProgress.tilesPerSecond] statistic
+  /// is currently limited by [rateLimit], check
   /// [DownloadProgress.isTPSArtificiallyCapped].
   ///
   /// ---

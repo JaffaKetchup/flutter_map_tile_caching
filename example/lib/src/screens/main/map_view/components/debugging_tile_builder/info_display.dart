@@ -36,11 +36,11 @@ class _ResultDisplay extends StatelessWidget {
                 ),
               if (fmtcResult.resultPath case final result?) ...[
                 Text(
-                  '`${result.name}` in ${tile.loadFinishedAt == null || tile.loadStarted == null ? '...' : tile.loadFinishedAt!.difference(tile.loadStarted!).inMilliseconds} ms',
+                  '''`${result.name}` in ${tile.loadFinishedAt == null || tile.loadStarted == null ? '...' : tile.loadFinishedAt!.difference(tile.loadStarted!).inMilliseconds} ms''',
                   textAlign: TextAlign.center,
                 ),
                 Text(
-                  '(${fmtcResult.cacheFetchDuration.inMilliseconds} ms cache${fmtcResult.networkFetchDuration == null ? ')' : ' | ${fmtcResult.networkFetchDuration!.inMilliseconds} ms network)'}\n',
+                  '''(${fmtcResult.cacheFetchDuration.inMilliseconds} ms cache${fmtcResult.networkFetchDuration == null ? ')' : ' | ${fmtcResult.networkFetchDuration!.inMilliseconds} ms network)'}\n''',
                   textAlign: TextAlign.center,
                 ),
                 Row(

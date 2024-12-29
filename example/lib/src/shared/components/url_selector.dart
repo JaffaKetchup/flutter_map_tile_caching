@@ -111,7 +111,7 @@ class _UrlSelectorState extends State<UrlSelector> {
                   dropdownMenuEntries: _constructMenuEntries(snapshot),
                   onSelected: _onSelected,
                   helperText: 'Use standard placeholders & include protocol'
-                      '${widget.helperText != null ? '\n${widget.helperText}' : ''}',
+                      '''${widget.helperText != null ? '\n${widget.helperText}' : ''}''',
                   focusNode: _dropdownMenuFocusNode,
                 ),
               ),

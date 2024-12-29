@@ -9,11 +9,12 @@ part of '../../flutter_map_tile_caching.dart';
 /// Only [id] is used to compare equality.
 ///
 /// See [RootRecovery] for information about the recovery system.
+@immutable
 class RecoveredRegion<R extends BaseRegion> {
   /// Create a wrapper containing recovery information around a
   /// [DownloadableRegion]
   @internal
-  RecoveredRegion({
+  const RecoveredRegion({
     required this.id,
     required this.storeName,
     required this.time,

@@ -26,8 +26,8 @@ class TileCounters {
       min(region.end ?? largestInt, tileCount) -
       min(region.start - 1, tileCount);
 
-  /// Returns the number of tiles within a [DownloadableRegion] with generic type
-  /// [RectangleRegion]
+  /// Returns the number of tiles within a [DownloadableRegion] with generic
+  /// type [RectangleRegion]
   @internal
   static int rectangleTiles(DownloadableRegion<RectangleRegion> region) {
     final northWest = region.originalRegion.bounds.northWest;
@@ -52,8 +52,8 @@ class TileCounters {
     return _trimToRange(region, tileCount);
   }
 
-  /// Returns the number of tiles within a [DownloadableRegion] with generic type
-  /// [CircleRegion]
+  /// Returns the number of tiles within a [DownloadableRegion] with generic
+  /// type [CircleRegion]
   @internal
   static int circleTiles(DownloadableRegion<CircleRegion> region) {
     int tileCount = 0;
@@ -98,8 +98,8 @@ class TileCounters {
     return _trimToRange(region, tileCount);
   }
 
-  /// Returns the number of tiles within a [DownloadableRegion] with generic type
-  /// [LineRegion]
+  /// Returns the number of tiles within a [DownloadableRegion] with generic
+  /// type [LineRegion]
   @internal
   static int lineTiles(DownloadableRegion<LineRegion> region) {
     // Overlap algorithm originally in Python, available at
@@ -238,8 +238,8 @@ class TileCounters {
     return _trimToRange(region, tileCount);
   }
 
-  /// Returns the number of tiles within a [DownloadableRegion] with generic type
-  /// [CustomPolygonRegion]
+  /// Returns the number of tiles within a [DownloadableRegion] with generic
+  /// type [CustomPolygonRegion]
   @internal
   static int customPolygonTiles(
     DownloadableRegion<CustomPolygonRegion> region,
@@ -304,8 +304,8 @@ class TileCounters {
     return _trimToRange(region, tileCount);
   }
 
-  /// Returns the number of tiles within a [DownloadableRegion] with generic type
-  /// [MultiRegion]
+  /// Returns the number of tiles within a [DownloadableRegion] with generic
+  /// type [MultiRegion]
   @internal
   static int multiTiles(DownloadableRegion<MultiRegion> region) =>
       region.originalRegion.regions

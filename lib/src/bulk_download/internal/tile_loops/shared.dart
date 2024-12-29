@@ -18,6 +18,7 @@ import '../../../misc/int_extremes.dart';
 part 'count.dart';
 part 'generate.dart';
 
+@immutable
 class _Polygon {
   _Polygon(Point<int> nw, Point<int> ne, Point<int> se, Point<int> sw)
       : points = [nw, ne, se, sw] {

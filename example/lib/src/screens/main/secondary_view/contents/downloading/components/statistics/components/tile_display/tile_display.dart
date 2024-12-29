@@ -48,8 +48,7 @@ class TileDisplay extends StatelessWidget {
                                   is FailedRequestTileEvent
                               ? Icons
                                   .signal_wifi_connected_no_internet_4_outlined
-                              : Icons
-                                  .signal_cellular_connected_no_internet_4_bar_outlined,
+                              : Icons.broken_image,
                           size: 48,
                           color: Colors.red,
                         ),

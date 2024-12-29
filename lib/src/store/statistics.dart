@@ -1,8 +1,6 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-// ignore_for_file: use_late_for_private_fields_and_variables
-
 part of '../../flutter_map_tile_caching.dart';
 
 /// Provides statistics about an [FMTCStore]
@@ -17,9 +15,9 @@ class StoreStats {
   /// {@macro fmtc.backend.getStoreStats}
   ///
   /// {@template fmtc.frontend.storestats.efficiency}
-  /// Prefer using [all] when multiple statistics are required instead of getting
-  /// them individually. Only one backend operation is required to get all the
-  /// stats, and so is more efficient.
+  /// Prefer using [all] when multiple statistics are required instead of
+  /// getting them individually. Only one backend operation is required to get
+  /// all the stats, and so is more efficient.
   /// {@endtemplate}
   Future<({double size, int length, int hits, int misses})> get all =>
       FMTCBackendAccess.internal.getStoreStats(storeName: _storeName);

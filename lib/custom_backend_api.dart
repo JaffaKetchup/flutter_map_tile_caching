@@ -13,6 +13,6 @@
 /// > may be limited. Always use the standard import unless necessary.
 ///
 /// Importing the standard library will also likely be necessary.
-library flutter_map_tile_caching.custom_backend_api;
+library;
 
 export 'src/backend/export_internal.dart';
