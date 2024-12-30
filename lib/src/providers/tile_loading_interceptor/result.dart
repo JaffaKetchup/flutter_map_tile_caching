@@ -3,8 +3,8 @@
 
 part of '../../../flutter_map_tile_caching.dart';
 
-/// A 'temporary' object that collects information from [_internalGetBytes] to
-/// be used to construct a [TileLoadingInterceptorResult]
+/// A 'temporary' object that collects information from [_internalTileBrowser]
+/// to be used to construct a [TileLoadingInterceptorResult]
 ///
 /// See documentation on [TileLoadingInterceptorResult] for more information
 class _TLIRConstructor {
@@ -24,7 +24,7 @@ class _TLIRConstructor {
 }
 
 /// Information useful to debug and record detailed statistics for the loading
-/// mechanisms and paths of a tile
+/// mechanisms and paths of a browsed tile load
 @immutable
 class TileLoadingInterceptorResult {
   const TileLoadingInterceptorResult._({

@@ -4,7 +4,14 @@
 part of '../../../flutter_map_tile_caching.dart';
 
 /// Alias for [BrowseLoadingStrategy], to ease migration from v9 -> v10
-@Deprecated('`CacheBehavior` has been renamed to `BrowseLoadingStrategy`')
+@Deprecated(
+  'Rename all references to `BrowseLoadingStrategy` instead. '
+  'The new name is less ambiguous in the context of the new '
+  '`BrowseStoreStrategy`, and does not depend on a British or American '
+  'spelling. '
+  'This feature was deprecated in v10, and will be removed in a future '
+  'version.',
+)
 typedef CacheBehavior = BrowseLoadingStrategy;
 
 /// Determines whether the network or cache is preferred during browse caching,

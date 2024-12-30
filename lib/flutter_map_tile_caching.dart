@@ -47,7 +47,7 @@ part 'src/providers/tile_loading_interceptor/result.dart';
 part 'src/providers/tile_loading_interceptor/map_typedef.dart';
 part 'src/providers/tile_loading_interceptor/result_path.dart';
 part 'src/providers/image_provider/image_provider.dart';
-part 'src/providers/image_provider/internal_get_bytes.dart';
+part 'src/providers/image_provider/internal_tile_browser.dart';
 part 'src/providers/tile_provider/custom_user_agent_compat_map.dart';
 part 'src/providers/tile_provider/strategies.dart';
 part 'src/providers/tile_provider/tile_provider.dart';

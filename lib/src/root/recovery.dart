@@ -31,7 +31,7 @@ part of '../../flutter_map_tile_caching.dart';
 /// been successfully downloaded. Therefore, no unnecessary tiles are downloaded
 /// again.
 ///
-/// > [!NOTE]
+/// > [!IMPORTANT]
 /// > Options set at download time, in [StoreDownload.startForeground], are not
 /// > included.
 class RootRecovery {
@@ -46,12 +46,10 @@ class RootRecovery {
   /// {@macro fmtc.backend.watchRecovery}
   Stream<void> watch({
     bool triggerImmediately = false,
-  }) async* {
-    final stream = FMTCBackendAccess.internal.watchRecovery(
-      triggerImmediately: triggerImmediately,
-    );
-    yield* stream;
-  }
+  }) =>
+      FMTCBackendAccess.internal.watchRecovery(
+        triggerImmediately: triggerImmediately,
+      );
 
   /// List all recoverable regions, and whether each one has failed
   ///

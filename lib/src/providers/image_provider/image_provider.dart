@@ -44,7 +44,7 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
     ImageDecoderCallback decode,
   ) =>
       MultiFrameImageStreamCompleter(
-        codec: getBytes(
+        codec: provideTile(
           coords: coords,
           options: options,
           provider: provider,
@@ -59,19 +59,19 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
           final tileUrl = provider.getTileUrl(coords, options);
 
           return [
-            DiagnosticsProperty('Store names', provider.storeNames),
+            DiagnosticsProperty('Stores', provider.stores),
             DiagnosticsProperty('Tile coordinates', coords),
             DiagnosticsProperty('Tile URL', tileUrl),
             DiagnosticsProperty(
               'Tile storage-suitable UID',
-              provider.urlTransformer(tileUrl),
+              provider.urlTransformer?.call(tileUrl) ?? tileUrl,
             ),
           ];
         },
       );
 
-  /// {@macro fmtc.tileProvider.getBytes}
-  static Future<Uint8List> getBytes({
+  /// {@macro fmtc.tileProvider.provideTile}
+  static Future<Uint8List> provideTile({
     required TileCoordinates coords,
     required TileLayer options,
     required FMTCTileProvider provider,
@@ -80,6 +80,8 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
     void Function()? finishedLoadingBytes,
     bool requireValidImage = false,
   }) async {
+    startedLoading?.call();
+
     final currentTLIR =
         provider.tileLoadingInterceptor != null ? _TLIRConstructor._() : null;
 
@@ -116,11 +118,9 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
       }
     }
 
-    startedLoading?.call();
-
     final Uint8List bytes;
     try {
-      bytes = await _internalGetBytes(
+      bytes = await _internalTileBrowser(
         coords: coords,
         options: options,
         provider: provider,
@@ -146,12 +146,13 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
   Future<_FMTCImageProvider> obtainKey(ImageConfiguration configuration) =>
       SynchronousFuture(this);
 
-  // TODO: Incorporate tile provider & tile layer options
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is _FMTCImageProvider && other.coords == coords);
+      (other is _FMTCImageProvider &&
+          other.coords == coords &&
+          other.provider == provider);
 
   @override
-  int get hashCode => coords.hashCode;
+  int get hashCode => Object.hash(coords, provider);
 }

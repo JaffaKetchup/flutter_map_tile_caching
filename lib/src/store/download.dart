@@ -7,7 +7,7 @@ part of '../../flutter_map_tile_caching.dart';
 ///
 /// ---
 ///
-/// {@template num_instances}
+/// {@template fmtc.bulkDownload.numInstances}
 /// By default, only one download is allowed at any one time, across all stores.
 ///
 /// However, if necessary, multiple can be started by setting methods'
@@ -50,10 +50,12 @@ class StoreDownload {
   ///
   /// The first stream (of [DownloadProgress]s) will emit events:
   ///  * once per [TileEvent] emitted on the second stream
-  ///  * at intervals of no longer than [maxReportInterval]
-  ///  * once at the start of the download indicating setup is complete and the
-  ///    first tile is being downloaded
-  ///  * once additionally at the end of the download after the last tile
+  ///  * additionally at intervals of no longer than [maxReportInterval]
+  ///    (defaulting to 1 second, to allow time-based statistics to remain
+  ///    up-to-date if no [TileEvent]s are emitted for a while)
+  ///  * additionally once at the start of the download indicating setup is
+  ///    complete and the first tile is being downloaded
+  ///  * additionally once at the end of the download after the last tile
   ///    setting some final statistics (such as tiles per second to 0)
   ///
   /// Once the stream of [DownloadProgress]s completes/finishes, the download
@@ -122,16 +124,6 @@ class StoreDownload {
   ///
   /// ---
   ///
-  /// A fresh [DownloadProgress] event will always be emitted every
-  /// [maxReportInterval] (if specified), which defaults to every 1 second,
-  /// regardless of whether any more tiles have been attempted/downloaded/failed.
-  /// This is to enable the [DownloadProgress.elapsedDuration] to be accurately
-  /// presented to the end user.
-  ///
-  /// {@macro fmtc.tileevent.extraConsiderations}
-  ///
-  /// ---
-  ///
   /// When this download is started, assuming [disableRecovery] is `false` (as
   /// default), the recovery system will register this download, to allow it to
   /// be recovered if it unexpectedly fails.
@@ -150,7 +142,7 @@ class StoreDownload {
   ///
   /// ---
   ///
-  /// {@macro num_instances}
+  /// {@macro fmtc.bulkDownload.numInstances}
   ({
     Stream<TileEvent> tileEvents,
     Stream<DownloadProgress> downloadProgress,
@@ -203,13 +195,11 @@ class StoreDownload {
     final UrlTransformer resolvedUrlTransformer;
     if (urlTransformer != null) {
       resolvedUrlTransformer = urlTransformer;
+    } else if (region.options.tileProvider
+        case final FMTCTileProvider tileProvider) {
+      resolvedUrlTransformer = tileProvider.urlTransformer ?? (u) => u;
     } else {
-      if (region.options.tileProvider
-          case final FMTCTileProvider tileProvider) {
-        resolvedUrlTransformer = tileProvider.urlTransformer;
-      } else {
-        resolvedUrlTransformer = (u) => u;
-      }
+      resolvedUrlTransformer = (u) => u;
     }
 
     // Create download instance
@@ -346,7 +336,13 @@ class StoreDownload {
   ///
   /// Note that this does not require an existing/ready store, or a sensical
   /// [DownloadableRegion.options].
-  @Deprecated('`check` has been renamed to `countTiles`')
+  @Deprecated(
+    'Use `countTiles()` instead. '
+    'The new name is less ambiguous and aligns better with recommended Dart '
+    'code style. '
+    'This feature was deprecated in v10, and will be removed in a future '
+    'version.',
+  )
   Future<int> check(DownloadableRegion region) => countTiles(region);
 
   /// Cancel the ongoing foreground download and recovery session
@@ -357,7 +353,7 @@ class StoreDownload {
   /// cancel the download immediately, as this would likely cause unwanted
   /// behaviour.
   ///
-  /// {@macro num_instances}
+  /// {@macro fmtc.bulkDownload.numInstances}
   ///
   /// Does nothing (returns immediately) if there is no ongoing download.
   Future<void> cancel({Object instanceId = 0}) async =>
@@ -372,7 +368,7 @@ class StoreDownload {
   /// parallel download threads will be allowed to finish their *current* tile
   /// download. Any buffered tiles are not written.
   ///
-  /// {@macro num_instances}
+  /// {@macro fmtc.bulkDownload.numInstances}
   ///
   /// Does nothing (returns immediately) if there is no ongoing download or the
   /// download is already paused.
@@ -384,7 +380,7 @@ class StoreDownload {
 
   /// Resume (after a [pause]) the ongoing foreground download
   ///
-  /// {@macro num_instances}
+  /// {@macro fmtc.bulkDownload.numInstances}
   ///
   /// Does nothing if there is no ongoing download or the download is already
   /// running.
@@ -397,7 +393,7 @@ class StoreDownload {
   /// Whether the ongoing foreground download is currently paused after a call
   /// to [pause] (and prior to [resume])
   ///
-  /// {@macro num_instances}
+  /// {@macro fmtc.bulkDownload.numInstances}
   ///
   /// Also returns `false` if there is no ongoing download.
   bool isPaused({Object instanceId = 0}) =>

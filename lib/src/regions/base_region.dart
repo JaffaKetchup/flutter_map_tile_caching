@@ -8,12 +8,6 @@ part of '../../flutter_map_tile_caching.dart';
 /// It can be converted to a:
 ///  - [DownloadableRegion] for downloading: [toDownloadable]
 ///  - list of [LatLng]s forming the outline: [toOutline]
-///
-/// Extended/implemented by:
-///  - [RectangleRegion]
-///  - [CircleRegion]
-///  - [LineRegion]
-///  - [CustomPolygonRegion]
 @immutable
 sealed class BaseRegion {
   /// Create a geographical region that forms a particular shape
@@ -21,12 +15,6 @@ sealed class BaseRegion {
   /// It can be converted to a:
   ///  - [DownloadableRegion] for downloading: [toDownloadable]
   ///  - list of [LatLng]s forming the outline: [toOutline]
-  ///
-  /// Extended/implemented by:
-  ///  - [RectangleRegion]
-  ///  - [CircleRegion]
-  ///  - [LineRegion]
-  ///  - [CustomPolygonRegion]
   const BaseRegion();
 
   /// Output a value of type [T] the type of this region
@@ -34,8 +22,12 @@ sealed class BaseRegion {
   /// Requires all region types to have a defined handler. See [maybeWhen] for
   /// the equivalent where this is not required.
   @Deprecated(
-    'Prefer using a pattern matching selection (such as `if case` or '
-    '`switch`). This will be removed in a future version.',
+    'Use a pattern matching selection pattern (such as `if case` or `switch`) '
+    'instead. '
+    'This is now a redundant method as the `BaseRegion` inheritance tree is '
+    'sealed and modern Dart supports the intended purpose of this natively. '
+    'This feature was deprecated in v10, and will be removed in a future '
+    'version.',
   )
   T when<T>({
     required T Function(RectangleRegion rectangle) rectangle,
@@ -57,8 +49,12 @@ sealed class BaseRegion {
   /// If the specified method is not defined for the type of region which this
   /// region is, `null` will be returned.
   @Deprecated(
-    'Prefer using a pattern matching selection (such as `if case` or '
-    '`switch`). This will be removed in a future version.',
+    'Use a pattern matching selection pattern (such as `if case` or `switch`) '
+    'instead. '
+    'This is now a redundant method as the `BaseRegion` inheritance tree is '
+    'sealed and modern Dart supports the intended purpose of this natively. '
+    'This feature was deprecated in v10, and will be removed in a future '
+    'version.',
   )
   T? maybeWhen<T>({
     T Function(RectangleRegion rectangle)? rectangle,

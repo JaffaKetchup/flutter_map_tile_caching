@@ -38,11 +38,17 @@ class FMTCStore {
 
   /// Generate an [FMTCTileProvider] that only specifies this store
   ///
-  /// See other available [FMTCTileProvider] contructors to use multiple stores
-  /// at once. See [FMTCTileProvider] for more info.
+  /// Prefer/migrate to the [FMTCTileProvider.new] constructor.
   ///
-  /// [FMTCTileProvider.fakeNetworkDisconnect] cannot be set through this
-  /// shorthand for [FMTCTileProvider.multipleStores].
+  /// {@macro fmtc.fmtcTileProvider.constructionTip}
+  @Deprecated(
+    'Use the `FMTCTileProvider` default constructor instead. '
+    'This will reduce internal codebase complexity and maximise external '
+    'flexibility, and works toward a potential future decentralised API '
+    'design. '
+    'This feature was deprecated in v10, and will be removed in a future '
+    'version.',
+  )
   FMTCTileProvider getTileProvider({
     BrowseStoreStrategy storeStrategy = BrowseStoreStrategy.readUpdateCreate,
     BrowseStoreStrategy? otherStoresStrategy,
@@ -56,8 +62,8 @@ class FMTCStore {
     Map<String, String>? headers,
     Client? httpClient,
   }) =>
-      FMTCTileProvider.multipleStores(
-        storeNames: {storeName: storeStrategy},
+      FMTCTileProvider(
+        stores: {storeName: storeStrategy},
         otherStoresStrategy: otherStoresStrategy,
         loadingStrategy: loadingStrategy,
         useOtherStoresAsFallbackOnly: useOtherStoresAsFallbackOnly,

@@ -16,6 +16,7 @@ import '../../../shared/misc/store_metadata_keys.dart';
 import '../../../shared/state/download_provider.dart';
 import '../../../shared/state/general_provider.dart';
 import '../../../shared/state/region_selection_provider.dart';
+import '../../../shared/state/selected_tab_state.dart';
 import 'components/additional_overlay/additional_overlay.dart';
 import 'components/debugging_tile_builder/debugging_tile_builder.dart';
 import 'components/download_progress/download_progress_masker.dart';
@@ -312,8 +313,8 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
               maxNativeZoom: 20,
               tileProvider: widget.mode != MapViewMode.standard
                   ? NetworkTileProvider()
-                  : FMTCTileProvider.multipleStores(
-                      storeNames: compiledStoreNames,
+                  : FMTCTileProvider(
+                      stores: compiledStoreNames,
                       otherStoresStrategy: otherStoresStrategy,
                       loadingStrategy: provider.loadingStrategy,
                       useOtherStoresAsFallbackOnly:
@@ -340,6 +341,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                 context.select<DownloadingProvider, bool>((p) => p.isFocused);
 
             final map = FlutterMap(
+              key: ValueKey(selectedTabState.value),
               mapController: _mapController.mapController,
               options: mapOptions,
               children: [

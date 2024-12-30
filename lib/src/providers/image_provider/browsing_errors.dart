@@ -3,7 +3,6 @@
 
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart';
-import 'package:http/io_client.dart';
 import 'package:meta/meta.dart';
 
 import '../../../flutter_map_tile_caching.dart';
@@ -109,11 +108,6 @@ enum FMTCBrowsingErrorType {
   /// Failed to load the tile from the cache or network because it was missing
   /// from the cache and there was an unexpected error when requesting from the
   /// server
-  ///
-  /// Try specifying a normal HTTP/1.1 [IOClient] when using
-  /// [FMTCStore.getTileProvider]. Check that the [TileLayer.urlTemplate] is
-  /// correct, that any necessary authorization data is correctly included, and
-  /// that the server serves the viewed region.
   unknownFetchException(
     'Failed to load the tile from the cache or network because it was missing '
         'from the cache and there was an unexpected error when requesting from '

@@ -1,13 +1,7 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-// TODO: Maybe bad design - do we really want inheritance?
-// ignore_for_file: avoid_equals_and_hash_code_on_mutable_classes
-
 import 'dart:typed_data';
-
-import 'package:meta/meta.dart';
-
 import '../../../flutter_map_tile_caching.dart';
 
 /// Represents a tile (which is never directly exposed to the user)
@@ -28,18 +22,4 @@ abstract base class BackendTile {
 
   /// The raw bytes of the image of this tile
   Uint8List get bytes;
-
-  /// Uses [url] for equality comparisons only (unless the two objects are
-  /// [identical])
-  ///
-  /// Overriding this in an implementation may cause FMTC logic to break, and is
-  /// therefore not recommended.
-  @override
-  @nonVirtual
-  bool operator ==(Object other) =>
-      identical(this, other) || (other is BackendTile && url == other.url);
-
-  @override
-  @nonVirtual
-  int get hashCode => url.hashCode;
 }

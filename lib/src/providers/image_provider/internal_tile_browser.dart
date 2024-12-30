@@ -3,7 +3,7 @@
 
 part of '../../../flutter_map_tile_caching.dart';
 
-Future<Uint8List> _internalGetBytes({
+Future<Uint8List> _internalTileBrowser({
   required TileCoordinates coords,
   required TileLayer options,
   required FMTCTileProvider provider,
@@ -29,7 +29,7 @@ Future<Uint8List> _internalGetBytes({
   }
 
   final networkUrl = provider.getTileUrl(coords, options);
-  final matcherUrl = provider.urlTransformer(networkUrl);
+  final matcherUrl = provider.urlTransformer?.call(networkUrl) ?? networkUrl;
 
   currentTLIR?.networkUrl = networkUrl;
   currentTLIR?.storageSuitableUID = matcherUrl;
@@ -55,7 +55,7 @@ Future<Uint8List> _internalGetBytes({
 
   final tileRetrievableFromOtherStoresAsFallback = existingTile != null &&
       provider.useOtherStoresAsFallbackOnly &&
-      provider.storeNames.keys
+      provider.stores.keys
           .toSet()
           .intersection(allExistingStores.toSet())
           .isEmpty;
@@ -206,7 +206,7 @@ Future<Uint8List> _internalGetBytes({
   // their read/write settings
   // At this point, we've downloaded the tile anyway, so we might as well
   // write the stores that allow it, even if the existing tile hasn't expired
-  final writeTileToSpecified = provider.storeNames.entries
+  final writeTileToSpecified = provider.stores.entries
       .where(
         (e) => switch (e.value) {
           null => false,
@@ -223,7 +223,7 @@ Future<Uint8List> _internalGetBytes({
                   existingTile != null
               ? writeTileToSpecified.followedBy(
                   intersectedExistingStores
-                      .whereNot((e) => provider.storeNames.containsKey(e)),
+                      .whereNot((e) => provider.stores.containsKey(e)),
                 )
               : writeTileToSpecified)
           .toSet()
@@ -236,7 +236,7 @@ Future<Uint8List> _internalGetBytes({
       storeNames: writeTileToIntermediate,
       writeAllNotIn:
           provider.otherStoresStrategy == BrowseStoreStrategy.readUpdateCreate
-              ? provider.storeNames.keys.toList(growable: false)
+              ? provider.stores.keys.toList(growable: false)
               : null,
       url: matcherUrl,
       bytes: response.bodyBytes,

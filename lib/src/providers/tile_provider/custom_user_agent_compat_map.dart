@@ -20,7 +20,7 @@ class _CustomUserAgentCompatMap extends MapView<String, String> {
   ///
   /// The identifying mark is injected to seperate traffic sent via FMTC from
   /// standard flutter_map traffic, as it significantly changes the behaviour of
-  /// tile retrieval, and could generate more traffic.
+  /// tile retrieval.
   @override
   String putIfAbsent(String key, String Function() ifAbsent) {
     if (key != 'User-Agent') return super.putIfAbsent(key, ifAbsent);

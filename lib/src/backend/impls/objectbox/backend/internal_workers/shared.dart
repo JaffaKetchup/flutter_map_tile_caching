@@ -14,13 +14,21 @@ Map<String, bool> _sharedWriteSingleTile({
   final storesBox = root.box<ObjectBoxStore>();
   final rootBox = root.box<ObjectBoxRoot>();
 
+  final availableStoreNames = storesBox.getAll().map((e) => e.name);
+
+  for (final storeName in storeNames) {
+    if (!availableStoreNames.contains(storeName)) {
+      throw StoreNotExists(storeName: storeName);
+    }
+  }
+
   final compiledStoreNames = writeAllNotIn == null
       ? storeNames
       : [
           ...storeNames,
-          ...storesBox.getAll().map((e) => e.name).where(
-                (e) => !writeAllNotIn.contains(e) && !storeNames.contains(e),
-              ),
+          ...availableStoreNames.whereNot(
+            (e) => writeAllNotIn.contains(e) || storeNames.contains(e),
+          ),
         ];
 
   final tilesQuery = tiles.query(ObjectBoxTile_.url.equals(url)).build();

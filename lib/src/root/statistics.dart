@@ -22,7 +22,12 @@ class RootStats {
   Future<int> get length => FMTCBackendAccess.internal.rootLength();
 
   /// {@macro fmtc.backend.watchRecovery}
-  @Deprecated('This has been moved to `FMTCRoot.recovery` & renamed `.watch`')
+  @Deprecated(
+    'Use `FMTCRoot.recovery.watch()` instead. '
+    'This is more suited to the context of the recovery methods. '
+    'This feature was deprecated in v10, and will be removed in a future '
+    'version.',
+  )
   Stream<void> watchRecovery({
     bool triggerImmediately = false,
   }) =>
