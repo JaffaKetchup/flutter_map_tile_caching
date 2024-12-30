@@ -18,16 +18,16 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [10.0.0] - "Better Browsing" - 2024/XX/XX
+## [10.0.0] - "Better Browsing" - 2025/XX/XX
 
 This update builds on v9 to fully embrace the new many-to-many relationship between tiles and stores, which allows for more flexibility when constructing the `FMTCTileProvider`.  
 This allows a new paradigm to be used: stores may now be treated as bulk downloaded regions, and all the regions/stores can be used at once - no more switching between them. This allows huge amounts of flexibility and a better UX in a complex application. Additionally, each store may now have its own `BrowseStoreStrategy` when browsing, which allows more flexibility: for example, stores may now contain more than one URL template/source, but control is retained.
 
 Additionally, vector tiles are now supported in theory, as the internal caching/retrieval logic of the specialised `ImageProvider` has been exposed, although it is out of scope to fully implement support for it.
 
-* Improvements to the browse caching logic and customizability
+* Major changes to browse caching
   * Added support for using multiple stores simultaneously in the `FMTCTileProvider` (through the `FMTCTileProvider.allStores` & `FMTCTileProvider.multipleStores` constructors)
-  * Added `FMTCTileProvider.getBytes` method to expose internal caching mechanisms for external use
+  * Added `FMTCTileProvider.provideTile` method to expose internal browse caching mechanisms for external use
   * Added `BrowseStoreStrategy` for increased control over caching behaviour
   * Added 'tile loading interceptor' feature (`FMTCTileProvider.tileLoadingInterceptor`) to track (eg. for debugging and logging) the internal tile loading mechanisms
   * Added toggle for hit/miss stat recording, to improve performance where these statistics are never read
@@ -39,16 +39,18 @@ Additionally, vector tiles are now supported in theory, as the internal caching/
   * Performance of the internal tile image provider has been significantly improved when fetching images from the network URL  
     > There was a significant time loss due to attempting to handle the network request response as a stream of incoming bytes, which allowed for `chunkEvents` to be reported back to Flutter (allowing it to get progress updates on the state of the tile), but meant the bytes had to be collected and built manually. Removing this functionality allows the network requests to use more streamlined 'package:http' methods, which does not expose a stream of incoming bytes, meaning that bytes no longer have to be treated manually. This can save hundreds of milliseconds on tile loading - a significant time save of potentially up to ~50% in some cases!
 
-* Improvements, additions, and removals for bulk downloadable `BaseRegion`s
-  * Added `MultiRegion`, which contains multiple other `BaseRegion`s
-  * Improved speed (by massive amounts) and accuracy & reduced memory consumption of `CircleRegion`'s tile generation & counting algorithm
-  * Deprecated `BaseRegion.(maybe)When` - this is easy to perform using a standard pattern-matched switch
-
 * Major changes to bulk downloading
   * Added support for retrying failed tiles (that failed because the request could not be made) once at the end of the download
-  * `StoreDownload.startForeground` output stream split into two streams returned as a record, one for `TileEvent`s, one for `DownloadProgress`s
-  * `TileEvents` has been split up into multiple classes and mixins to reduce nullability and uncertainty
-  * `DownloadProgress` has had its contained metrics changed to reflect the failed tiles retry, and `latestTileEvent` removed
+  * Changed result of `StoreDownload.startForeground` into two seperate streams returned as a record, one for `TileEvent`s, one for `DownloadProgress`s
+  * Refactored `TileEvent`s into multiple classes and mixins in a sealed inheritance tree to reduce nullability and uncertainty & promote modern Dart features
+  * Changed `DownloadProgress`' metrics to reflect other changes and renamed methods to improve clarity and consistency with Dart recommended style
+  * Renamed `StoreDownload.check` to `.countTiles`
+
+* Improvements for bulk downloadable `BaseRegion`s
+  * Added `MultiRegion`, which contains multiple other `BaseRegion`s
+  * Improved speed (by massive amounts) and accuracy & reduced memory consumption of `CircleRegion`'s tile generation & counting algorithm
+  * Fixed multiple bugs with respect to `start` and `end` tiles in downloads
+  * Deprecated `BaseRegion.(maybe)When` - this is easy to perform using a standard pattern-matched switch
 
 * Exporting stores is now more stable, and has improved documentation  
   > The method now works in a dedicated temporary environment and attempts to perform two different strategies to move/copy-and-delete the result to the specified directory at the end before failing. Improved documentation covers the potential pitfalls of permissions and now recommends exporting to an app directory, then using the system share functionality on some devices. It now also returns the number of exported tiles.
@@ -57,7 +59,7 @@ Additionally, vector tiles are now supported in theory, as the internal caching/
 
 * Other generic improvements (performance, stability, and documentation)
 
-* Brand new example app to (partially!) showcase the new levels of flexibility and customizability
+* Brand new example app to demonstrate the new levels of flexibility and customizability
 
 ## [9.1.4] - 2024/12/05
 
