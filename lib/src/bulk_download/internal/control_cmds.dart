@@ -7,4 +7,8 @@ enum _DownloadManagerControlCmd {
   cancel,
   resume,
   pause,
+  startEmittingDownloadProgress,
+  stopEmittingDownloadProgress,
+  startEmittingTileEvents,
+  stopEmittingTileEvents,
 }

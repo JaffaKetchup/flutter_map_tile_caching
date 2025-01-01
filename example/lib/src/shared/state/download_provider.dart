@@ -46,12 +46,14 @@ class DownloadingProvider extends ChangeNotifier {
 
     _rawTileEventsStream = downloadStreams.tileEvents.asBroadcastStream();
 
+    bool isFirstEvent = true;
     downloadStreams.downloadProgress.listen(
       (evt) {
         // Focus on initial event
-        if (evt.attemptedTilesCount == 0) {
+        if (isFirstEvent) {
           _isFocused = true;
           focused.complete();
+          isFirstEvent = false;
         }
 
         // Update stored value

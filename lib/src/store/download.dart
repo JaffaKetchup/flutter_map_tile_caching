@@ -34,19 +34,10 @@ class StoreDownload {
   /// Download a specified [DownloadableRegion] in the foreground, with a
   /// recovery session by default
   ///
-  /// > [!TIP]
-  /// > To count the number of tiles in a region before starting a download, use
-  /// > [countTiles].
-  ///
-  /// ---
-  ///
-  /// Outputs two non-broadcast streams.
-  ///
-  /// One emits [DownloadProgress]s which contain stats and info about the whole
-  /// download.
-  ///
-  /// One emits [TileEvent]s which contain info about the most recent tile
-  /// attempted only.
+  /// Outputs two non-broadcast streams. One emits [DownloadProgress]s which
+  /// contain stats and info about the whole download. The other emits
+  /// [TileEvent]s which contain info about the most recent tile attempted only.
+  /// They only emit events when listened to.
   ///
   /// The first stream (of [DownloadProgress]s) will emit events:
   ///  * once per [TileEvent] emitted on the second stream
@@ -57,16 +48,33 @@ class StoreDownload {
   ///    complete and the first tile is being downloaded
   ///  * additionally once at the end of the download after the last tile
   ///    setting some final statistics (such as tiles per second to 0)
+  ///  * additionally when pausing and resuming the download, as well as after
+  ///    listening to the stream
   ///
-  /// Once the stream of [DownloadProgress]s completes/finishes, the download
-  /// has stopped.
+  /// The completion/finish of the [DownloadProgress] stream implies the
+  /// completion of the download, even if the last
+  /// [DownloadProgress.percentageProgress] is not 100(%).
   ///
-  /// Neither output stream respects listen, pause, resume, or cancel events
-  /// when submitted through the stream subscription.
-  /// The download will start when this method is invoked, irrespective of
-  /// whether there are listeners. The download will continue irrespective of
-  /// listeners. The only control methods are via FMTC's [pause], [resume], and
-  /// [cancel] methods.
+  /// The second stream (of [TileEvent]s) will emit events for every tile
+  /// download attempt.
+  ///
+  /// > [!IMPORTANT]
+  /// >
+  /// > An emitted [TileEvent] may refer to a tile for which an event has been
+  /// > emitted previously.
+  /// >
+  /// > This will be the case when [TileEvent.wasRetryAttempt] is `true`, which
+  /// > may occur only if [retryFailedRequestTiles] is enabled.
+  ///
+  /// Listening, pausing, resuming, or cancelling subscriptions to the output
+  /// streams will not start, pause, resume, or cancel the download. It will
+  /// only change the output stream. Not listening to a stream may improve the
+  /// efficiency of the download a negligible amount.
+  ///
+  /// To control the download itself, use [pause], [resume], and [cancel].
+  ///
+  /// The download starts when this method is invoked: it does not wait for
+  /// listneners.
   ///
   /// ---
   ///
@@ -93,7 +101,7 @@ class StoreDownload {
   /// > currently in the buffer. It will also increase the memory (RAM)
   /// > required.
   ///
-  /// > [!WARNING]
+  /// > [!IMPORTANT]
   /// > Skipping sea tiles will not reduce the number of downloads - tiles must
   /// > be downloaded to be compared against the sample sea tile. It is only
   /// > designed to reduce the storage capacity consumed.
@@ -132,10 +140,24 @@ class StoreDownload {
   ///
   /// ---
   ///
-  /// For info about [urlTransformer], see [FMTCTileProvider.urlTransformer].
-  /// If unspecified, and the [region]'s [DownloadableRegion.options] is an
-  /// [FMTCTileProvider], will default to that tile provider's `urlTransformer`
-  /// if specified. Otherwise, will default to the identity function.
+  /// For info about [urlTransformer], see [FMTCTileProvider.urlTransformer] and
+  /// the
+  /// [online documentation](https://fmtc.jaffaketchup.dev/basic-usage/integrating-with-a-map#ensure-tiles-are-resilient-to-url-changes).
+  ///
+  /// > [!WARNING]
+  /// >
+  /// > The callback will be passed to a different isolate: therefore, avoid
+  /// > using any external state that may not be properly captured or cannot be
+  /// > copied to an isolate spawned with [Isolate.spawn] (see [SendPort.send]).
+  /// >
+  /// > Ideally, the callback should be state-indepedent.
+  ///
+  /// If unspecified, and the [region]'s [DownloadableRegion.options]
+  /// [TileLayer.tileProvider] is a [FMTCTileProvider] with a defined
+  /// [FMTCTileProvider.urlTransformer], this will default to that transformer.
+  /// Otherwise, will default to the identity function.
+  ///
+  /// ---
   ///
   /// To set additional headers, set it via [TileProvider.headers] when
   /// constructing the [DownloadableRegion].
@@ -218,10 +240,59 @@ class StoreDownload {
         : Object.hash(instanceId, DateTime.timestamp().millisecondsSinceEpoch);
     if (!disableRecovery) FMTCRoot.recovery._downloadsOngoing.add(recoveryId!);
 
+    // Prepare send port completer
+    // We use a completer to ensure that the user's request is met as soon as
+    // possible and is not dropped if the download has not setup yet
+    final sendPortCompleter = Completer<SendPort>();
+
     // Prepare output streams
-    final tileEventsStreamController = StreamController<TileEvent>();
-    final downloadProgressStreamController =
-        StreamController<DownloadProgress>();
+    // The statuses of the output streams does not control the download itself,
+    // but for efficiency, we don't emit events that the user will not hear
+    // We do not filter in the main thread, for added efficiency, we instead
+    // make the decision directly at source, so copying between Isolates is
+    // avoided if unnecessary
+    // We treat listen & resume and cancel & pause as the same event
+    final downloadProgressStreamController = StreamController<DownloadProgress>(
+      onListen: () async => (await sendPortCompleter.future)
+          .send(_DownloadManagerControlCmd.startEmittingDownloadProgress),
+      onResume: () async => (await sendPortCompleter.future)
+          .send(_DownloadManagerControlCmd.startEmittingDownloadProgress),
+      onPause: () async => (await sendPortCompleter.future)
+          .send(_DownloadManagerControlCmd.stopEmittingDownloadProgress),
+      onCancel: () async => (await sendPortCompleter.future)
+          .send(_DownloadManagerControlCmd.stopEmittingDownloadProgress),
+    );
+    final tileEventsStreamController = StreamController<TileEvent>(
+      onListen: () async => (await sendPortCompleter.future)
+          .send(_DownloadManagerControlCmd.startEmittingTileEvents),
+      onResume: () async => (await sendPortCompleter.future)
+          .send(_DownloadManagerControlCmd.startEmittingTileEvents),
+      onPause: () async => (await sendPortCompleter.future)
+          .send(_DownloadManagerControlCmd.stopEmittingTileEvents),
+      onCancel: () async => (await sendPortCompleter.future)
+          .send(_DownloadManagerControlCmd.stopEmittingTileEvents),
+    );
+
+    // Prepare control mechanisms
+    final cancelCompleter = Completer<void>();
+    Completer<void>? pauseCompleter;
+    sendPortCompleter.future.then(
+      (sp) => instance
+        ..requestCancel = () {
+          sp.send(_DownloadManagerControlCmd.cancel);
+          return cancelCompleter.future;
+        }
+        ..requestPause = () {
+          sp.send(_DownloadManagerControlCmd.pause);
+          // Completed by handler above
+          return (pauseCompleter = Completer()).future
+            ..then((_) => instance.isPaused = true);
+        }
+        ..requestResume = () {
+          sp.send(_DownloadManagerControlCmd.resume);
+          instance.isPaused = false;
+        },
+    );
 
     () async {
       // Start download thread
@@ -247,10 +318,6 @@ class StoreDownload {
         debugName: '[FMTC] Master Bulk Download Thread',
       );
 
-      // Setup control mechanisms (completers)
-      final cancelCompleter = Completer<void>();
-      Completer<void>? pauseCompleter;
-
       await for (final evt in receivePort) {
         // Handle new download progress
         if (evt is DownloadProgress) {
@@ -275,25 +342,11 @@ class StoreDownload {
 
         // Setup control mechanisms (senders)
         if (evt is SendPort) {
-          instance
-            ..requestCancel = () {
-              evt.send(_DownloadManagerControlCmd.cancel);
-              return cancelCompleter.future;
-            }
-            ..requestPause = () {
-              evt.send(_DownloadManagerControlCmd.pause);
-              // Completed by handler above
-              return (pauseCompleter = Completer()).future
-                ..then((_) => instance.isPaused = true);
-            }
-            ..requestResume = () {
-              evt.send(_DownloadManagerControlCmd.resume);
-              instance.isPaused = false;
-            };
+          sendPortCompleter.complete(evt);
           continue;
         }
 
-        throw UnimplementedError('Unrecognised message');
+        throw UnsupportedError('Unrecognised message: $evt');
       }
 
       // Handle shutdown (both normal and cancellation)

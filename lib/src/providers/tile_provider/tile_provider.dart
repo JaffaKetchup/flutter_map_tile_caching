@@ -176,24 +176,16 @@ class FMTCTileProvider extends TileProvider {
 
   /// Method used to create a tile's storage-suitable UID from it's real URL
   ///
+  /// For more information, check the
+  /// [online documentation](https://fmtc.jaffaketchup.dev/basic-usage/integrating-with-a-map#ensure-tiles-are-resilient-to-url-changes).
+  ///
   /// The input string is the tile's URL. The output string should be a unique
   /// string to that tile that will remain as stable as necessary if parts of
   /// the URL not directly related to the tile image change.
   ///
-  /// For more information, see:
-  /// <https://fmtc.jaffaketchup.dev/flutter_map-integration/url-transformer>.
-  ///
   /// [urlTransformerOmitKeyValues] may be used as a transformer to omit entire
   /// key-value pairs from a URL where the key matches one of the specified
   /// keys.
-  ///
-  /// > [!IMPORTANT]
-  /// > The callback will be passed to a different isolate: therefore, avoid
-  /// > using any external state that may not be properly captured or cannot be
-  /// > copied to an isolate spawned with [Isolate.spawn] (see [SendPort.send]).
-  ///
-  /// _Internally, the storage-suitable UID is usually referred to as the tile
-  /// URL (with distinction inferred)._
   ///
   /// By default, the output string is the input string - that is, the
   /// storage-suitable UID is the tile's real URL.
@@ -419,10 +411,13 @@ class FMTCTileProvider extends TileProvider {
     return mutableUrl;
   }
 
-  /// If [stores] contains `null`, returns `null`, otherwise returns all
-  /// non-null names (which cannot be empty)
-  List<String>? _getSpecifiedStoresOrNull() =>
-      otherStoresStrategy != null ? null : stores.keys.toList();
+  // TODO: This does not work correctly. Needs a complex system like writing.
+  List<String>? _getSpecifiedStoresOrNull() => otherStoresStrategy != null
+      ? null
+      : /*stores.keys.toList()*/ stores.entries
+          .where((e) => e.value != null)
+          .map((e) => e.key)
+          .toList();
 
   @override
   bool operator ==(Object other) =>

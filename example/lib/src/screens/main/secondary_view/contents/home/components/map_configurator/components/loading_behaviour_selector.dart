@@ -14,8 +14,17 @@ class LoadingBehaviourSelector extends StatelessWidget {
       Selector<GeneralProvider, BrowseLoadingStrategy>(
         selector: (context, provider) => provider.loadingStrategy,
         builder: (context, loadingStrategy, _) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 18),
+              child: Text(
+                'Preferred Loading Strategy',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ),
+            const SizedBox(height: 4),
             SizedBox(
               width: double.infinity,
               child: SegmentedButton(
@@ -28,12 +37,12 @@ class LoadingBehaviourSelector extends StatelessWidget {
                   ButtonSegment(
                     value: BrowseLoadingStrategy.cacheFirst,
                     icon: Icon(Icons.storage_rounded),
-                    label: Text('Cache'),
+                    label: Text('Cache First'),
                   ),
                   ButtonSegment(
                     value: BrowseLoadingStrategy.onlineFirst,
                     icon: Icon(Icons.public_rounded),
-                    label: Text('Network'),
+                    label: Text('Online First'),
                   ),
                 ],
                 selected: {loadingStrategy},
@@ -46,31 +55,6 @@ class LoadingBehaviourSelector extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            /*Selector<GeneralProvider, bool>(
-              selector: (context, provider) =>
-                  provider.behaviourUpdateFromNetwork,
-              builder: (context, behaviourUpdateFromNetwork, _) => Row(
-                children: [
-                  const SizedBox(width: 8),
-                  const Text('Update cache when network used'),
-                  const Spacer(),
-                  Switch.adaptive(
-                    value: cacheBehavior != null && behaviourUpdateFromNetwork,
-                    onChanged: cacheBehavior == null
-                        ? null
-                        : (value) => context
-                            .read<GeneralProvider>()
-                            .behaviourUpdateFromNetwork = value,
-                    thumbIcon: WidgetStateProperty.resolveWith(
-                      (states) => states.contains(WidgetState.selected)
-                          ? const Icon(Icons.edit)
-                          : const Icon(Icons.edit_off),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ),
-            ),*/
           ],
         ),
       );

@@ -174,7 +174,7 @@ Future<void> _downloadManager(
 
   // Setup two-way communications with root
   final rootReceivePort = ReceivePort();
-  void sendToMain(Object? m) => input.sendPort.send(m);
+  void sendToRoot(Object? m) => input.sendPort.send(m);
 
   // Setup cancel, pause, and resume handling
   Iterable<Completer<void>> generateThreadPausedStates() => Iterable.generate(
@@ -184,47 +184,74 @@ Future<void> _downloadManager(
   final threadPausedStates = generateThreadPausedStates().toList();
   final cancelSignal = Completer<void>();
   var pauseResumeSignal = Completer<void>()..complete();
+
+  // Setup efficient output handling
+  bool shouldEmitDownloadProgress = false;
+  bool shouldEmitTileEvents = false;
+
+  // Setup progress report fallback
+  Timer? fallbackProgressEmitter;
+  void emitLastDownloadProgressUpdated() => sendToRoot(
+        lastDownloadProgress = lastDownloadProgress._updateWithoutTile(
+          elapsedDuration: downloadDuration.elapsed,
+          tilesPerSecond: getCurrentTPS(registerNewTPS: false),
+        ),
+      );
+  void restartFallbackProgressEmitter() {
+    if (input.maxReportInterval case final interval?) {
+      fallbackProgressEmitter = Timer.periodic(
+        interval,
+        (_) => emitLastDownloadProgressUpdated(),
+      );
+    }
+    emitLastDownloadProgressUpdated();
+  }
+
+  // Listen to the root comms port
   rootReceivePort.listen(
     (cmd) async {
+      if (cmd is! _DownloadManagerControlCmd) {
+        throw UnsupportedError('Recieved unknown control cmd: $cmd');
+      }
+
       switch (cmd) {
         case _DownloadManagerControlCmd.cancel:
-          try {
-            cancelSignal.complete();
-            // If the signal is already complete, that's fine
-            // ignore: avoid_catching_errors, empty_catches
-          } on StateError {}
+          if (!cancelSignal.isCompleted) cancelSignal.complete();
+        // We might recieve it more than once if the root requests cancellation
+        // whilst we already are cancelling it
         case _DownloadManagerControlCmd.pause:
+          if (!pauseResumeSignal.isCompleted) {
+            // We might recieve it more than once if the root requests pausing
+            // whilst we already are pausing it
+            break;
+          }
+
           pauseResumeSignal = Completer<void>();
           threadPausedStates.setAll(0, generateThreadPausedStates());
           await Future.wait(threadPausedStates.map((e) => e.future));
+
           downloadDuration.stop();
-          sendToMain(_DownloadManagerControlCmd.pause);
+          fallbackProgressEmitter?.cancel();
+          if (shouldEmitDownloadProgress) emitLastDownloadProgressUpdated();
+
+          sendToRoot(_DownloadManagerControlCmd.pause);
         case _DownloadManagerControlCmd.resume:
-          pauseResumeSignal.complete();
+          if (shouldEmitDownloadProgress) restartFallbackProgressEmitter();
           downloadDuration.start();
-        default:
-          throw UnimplementedError('Recieved unknown control cmd: $cmd');
+          pauseResumeSignal.complete();
+        case _DownloadManagerControlCmd.startEmittingDownloadProgress:
+          shouldEmitDownloadProgress = true;
+          restartFallbackProgressEmitter();
+        case _DownloadManagerControlCmd.stopEmittingDownloadProgress:
+          shouldEmitDownloadProgress = false;
+          fallbackProgressEmitter?.cancel();
+        case _DownloadManagerControlCmd.startEmittingTileEvents:
+          shouldEmitTileEvents = true;
+        case _DownloadManagerControlCmd.stopEmittingTileEvents:
+          shouldEmitTileEvents = false;
       }
     },
   );
-
-  // Setup progress report fallback
-  final fallbackReportTimer = input.maxReportInterval == null
-      ? null
-      : Timer.periodic(
-          input.maxReportInterval!,
-          (_) {
-            if (lastDownloadProgress != initialDownloadProgress &&
-                pauseResumeSignal.isCompleted) {
-              sendToMain(
-                lastDownloadProgress = lastDownloadProgress._updateWithoutTile(
-                  elapsedDuration: downloadDuration.elapsed,
-                  tilesPerSecond: getCurrentTPS(registerNewTPS: false),
-                ),
-              );
-            }
-          },
-        );
 
   // Start recovery system (unless disabled)
   if (input.recoveryId case final recoveryId?) {
@@ -252,10 +279,11 @@ Future<void> _downloadManager(
   final threadBackend = input.backend.duplicate();
 
   // Now it's safe, start accepting communications from the root
-  sendToMain(rootReceivePort.sendPort);
+  sendToRoot(rootReceivePort.sendPort);
 
   // Send an initial progress report to indicate the start of the download
-  sendToMain(initialDownloadProgress);
+  //  if (shouldEmitDownloadProgress) sendToRoot(initialDownloadProgress);
+  // This is done implicitly on listening to the output, so is unnecessary
 
   // Start download threads & wait for download to complete/cancelled
   downloadDuration.start();
@@ -302,8 +330,8 @@ Future<void> _downloadManager(
           (evt) async {
             // Thread is sending tile data
             if (evt is TileEvent) {
-              // Send event to user
-              sendToMain(evt);
+              // Send event to root if necessary
+              if (shouldEmitTileEvents) sendToRoot(evt);
 
               // Queue tiles for retry if failed and not already a retry attempt
               if (input.retryFailedRequestTiles &&
@@ -333,40 +361,43 @@ Future<void> _downloadManager(
                   }
                 }
 
-                final wasBufferFlushed =
-                    evt is SuccessfulTileEvent && evt._wasBufferFlushed;
-
-                sendToMain(
-                  lastDownloadProgress = lastDownloadProgress._updateWithTile(
-                    bufferedTiles: evt is SuccessfulTileEvent
-                        ? (
-                            count: threadBuffersTiles.reduce((a, b) => a + b),
-                            size: threadBuffersSize.reduce((a, b) => a + b) /
-                                1024,
-                          )
-                        : null,
-                    newTileEvent: evt,
-                    elapsedDuration: downloadDuration.elapsed,
-                    tilesPerSecond: getCurrentTPS(registerNewTPS: true),
-                  ),
+                // Update download progress and send to root if necessary
+                lastDownloadProgress = lastDownloadProgress._updateWithTile(
+                  bufferedTiles: evt is SuccessfulTileEvent
+                      ? (
+                          count: threadBuffersTiles.reduce((a, b) => a + b),
+                          size:
+                              threadBuffersSize.reduce((a, b) => a + b) / 1024,
+                        )
+                      : null,
+                  newTileEvent: evt,
+                  elapsedDuration: downloadDuration.elapsed,
+                  tilesPerSecond: getCurrentTPS(registerNewTPS: true),
                 );
+                if (shouldEmitDownloadProgress) {
+                  sendToRoot(lastDownloadProgress);
+                }
 
                 // For efficiency, only update recovery when the buffer is
                 // cleaned
                 // We don't want to update recovery to a tile that isn't cached
                 // (only buffered), because they'll be lost in the events
                 // recovery is designed to recover from
-                if (wasBufferFlushed) updateRecovery();
+                if (evt is SuccessfulTileEvent && evt._wasBufferFlushed) {
+                  updateRecovery();
+                }
               } else {
                 // We do not need to care about buffering, which makes updates
                 // much easier
-                sendToMain(
-                  lastDownloadProgress = lastDownloadProgress._updateWithTile(
-                    newTileEvent: evt,
-                    elapsedDuration: downloadDuration.elapsed,
-                    tilesPerSecond: getCurrentTPS(registerNewTPS: true),
-                  ),
+
+                lastDownloadProgress = lastDownloadProgress._updateWithTile(
+                  newTileEvent: evt,
+                  elapsedDuration: downloadDuration.elapsed,
+                  tilesPerSecond: getCurrentTPS(registerNewTPS: true),
                 );
+                if (shouldEmitDownloadProgress) {
+                  sendToRoot(lastDownloadProgress);
+                }
 
                 updateRecovery();
               }
@@ -433,14 +464,13 @@ Future<void> _downloadManager(
 
   // Send final progress update
   downloadDuration.stop();
-  sendToMain(
-    lastDownloadProgress = lastDownloadProgress._updateToComplete(
-      elapsedDuration: downloadDuration.elapsed,
-    ),
+  lastDownloadProgress = lastDownloadProgress._updateToComplete(
+    elapsedDuration: downloadDuration.elapsed,
   );
+  if (shouldEmitDownloadProgress) sendToRoot(lastDownloadProgress);
 
   // Cleanup resources and shutdown
-  fallbackReportTimer?.cancel();
+  fallbackProgressEmitter?.cancel();
   rootReceivePort.close();
   if (input.recoveryId != null) await input.backend.uninitialise();
   tileIsolate.kill(priority: Isolate.immediate);
