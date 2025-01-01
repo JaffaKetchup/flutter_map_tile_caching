@@ -7,8 +7,7 @@ class DownloadingProvider extends ChangeNotifier {
   bool _isFocused = false;
   bool get isFocused => _isFocused;
 
-  bool _isPaused = false;
-  bool get isPaused => _isPaused;
+  bool get isPaused => FMTCStore(storeName!).download.isPaused();
 
   bool _isComplete = false;
   bool get isComplete => _isComplete;
@@ -78,14 +77,12 @@ class DownloadingProvider extends ChangeNotifier {
   Future<void> pause() async {
     assert(_storeName != null, 'Download not in progress');
     await FMTCStore(_storeName!).download.pause();
-    _isPaused = true;
     notifyListeners();
   }
 
   void resume() {
     assert(_storeName != null, 'Download not in progress');
     FMTCStore(_storeName!).download.resume();
-    _isPaused = false;
     notifyListeners();
   }
 

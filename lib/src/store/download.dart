@@ -284,9 +284,8 @@ class StoreDownload {
         }
         ..requestPause = () {
           sp.send(_DownloadManagerControlCmd.pause);
-          // Completed by handler above
-          return (pauseCompleter = Completer()).future
-            ..then((_) => instance.isPaused = true);
+          // Completed by handler below
+          return (pauseCompleter = Completer()).future;
         }
         ..requestResume = () {
           sp.send(_DownloadManagerControlCmd.resume);
@@ -417,38 +416,82 @@ class StoreDownload {
   /// Use [resume] to resume the download. It is also safe to use [cancel]
   /// without resuming first.
   ///
-  /// Will return once the pause operation is complete. Note that all running
-  /// parallel download threads will be allowed to finish their *current* tile
-  /// download. Any buffered tiles are not written.
+  /// Note that all running parallel download threads will be allowed to finish
+  /// their *current* tile download before pausing.
+  ///
+  /// It is not usually necessary to use the result. Returns `null` if there is
+  /// no ongoing download or the download is already paused or pausing.
+  /// Otherwise returns whether the download was paused (`false` if [resume] is
+  /// called whilst the download is being paused).
+  ///
+  /// Any buffered tiles are not flushed.
+  ///
+  /// ---
   ///
   /// {@macro fmtc.bulkDownload.numInstances}
-  ///
-  /// Does nothing (returns immediately) if there is no ongoing download or the
-  /// download is already paused.
-  Future<void> pause({Object instanceId = 0}) async {
+  Future<bool?> pause({Object instanceId = 0}) {
     final instance = DownloadInstance.get(instanceId);
-    if (instance == null || instance.isPaused) return;
-    await instance.requestPause!.call();
+    if (instance == null ||
+        instance.isPaused ||
+        !instance.pausingCompleter.isCompleted ||
+        instance.requestPause == null) {
+      return SynchronousFuture(null);
+    }
+
+    instance
+      ..pausingCompleter = Completer()
+      ..resumingAfterPause = Completer();
+
+    instance.requestPause!().then((_) {
+      instance.pausingCompleter.complete(true);
+      if (!instance.resumingAfterPause!.isCompleted) instance.isPaused = true;
+      instance.resumingAfterPause = null;
+    });
+
+    return Future.any(
+      [instance.resumingAfterPause!.future, instance.pausingCompleter.future],
+    );
   }
 
   /// Resume (after a [pause]) the ongoing foreground download
   ///
-  /// {@macro fmtc.bulkDownload.numInstances}
+  /// It is not usually necessary to use the result. Returns `null` if there is
+  /// no ongoing download or the download is already running. Returns `true` if
+  /// the download was paused. Returns `false` if the download was paus*ing* (
+  /// in which case the download will not be paused).
   ///
-  /// Does nothing if there is no ongoing download or the download is already
-  /// running.
-  void resume({Object instanceId = 0}) {
+  /// ---
+  ///
+  /// {@macro fmtc.bulkDownload.numInstances}
+  bool? resume({Object instanceId = 0}) {
     final instance = DownloadInstance.get(instanceId);
-    if (instance == null || !instance.isPaused) return;
-    instance.requestResume!.call();
+    if (instance == null ||
+        (!instance.isPaused && instance.resumingAfterPause == null) ||
+        instance.requestResume == null) {
+      return null;
+    }
+
+    if (instance.pausingCompleter.isCompleted) {
+      instance.requestResume!();
+      return true;
+    }
+
+    if (!instance.resumingAfterPause!.isCompleted) {
+      instance
+        ..resumingAfterPause!.complete(false)
+        ..pausingCompleter.future.then((_) => instance.requestResume!());
+    }
+    return false;
   }
 
   /// Whether the ongoing foreground download is currently paused after a call
   /// to [pause] (and prior to [resume])
   ///
-  /// {@macro fmtc.bulkDownload.numInstances}
-  ///
   /// Also returns `false` if there is no ongoing download.
+  ///
+  /// ---
+  ///
+  /// {@macro fmtc.bulkDownload.numInstances}
   bool isPaused({Object instanceId = 0}) =>
       DownloadInstance.get(instanceId)?.isPaused ?? false;
 }

@@ -1,6 +1,8 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
+import 'dart:async';
+
 import 'package:meta/meta.dart';
 
 @internal
@@ -16,6 +18,8 @@ class DownloadInstance {
   final Object id;
 
   bool isPaused = false;
+  Completer<bool>? resumingAfterPause;
+  Completer<bool> pausingCompleter = Completer()..complete(true);
 
   // The following callbacks are defined by the `StoreDownload.startForeground`
   // method, when a download is started, and are tied to that download operation

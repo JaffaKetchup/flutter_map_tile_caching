@@ -216,15 +216,12 @@ Future<void> _downloadManager(
 
       switch (cmd) {
         case _DownloadManagerControlCmd.cancel:
+          // We might recieve it more than once if the root requests
+          // cancellation whilst we already are cancelling it
           if (!cancelSignal.isCompleted) cancelSignal.complete();
-        // We might recieve it more than once if the root requests cancellation
-        // whilst we already are cancelling it
         case _DownloadManagerControlCmd.pause:
-          if (!pauseResumeSignal.isCompleted) {
-            // We might recieve it more than once if the root requests pausing
-            // whilst we already are pausing it
-            break;
-          }
+          // We are already pausing or paused
+          if (!pauseResumeSignal.isCompleted) return;
 
           pauseResumeSignal = Completer<void>();
           threadPausedStates.setAll(0, generateThreadPausedStates());
