@@ -6,12 +6,14 @@ class _BrowseStoreStrategySelectorDropdown extends StatelessWidget {
     required this.currentStrategy,
     required this.enabled,
     required this.isUnspecifiedSelector,
+    required this.isExplicitlyExcluded,
   });
 
   final String storeName;
   final BrowseStoreStrategy? currentStrategy;
   final bool enabled;
   final bool isUnspecifiedSelector;
+  final bool isExplicitlyExcluded;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -36,25 +38,37 @@ class _BrowseStoreStrategySelectorDropdown extends StatelessWidget {
                       .select<GeneralProvider, InternalBrowseStoreStrategy?>(
                     (provider) => provider.currentStores['(unspecified)'],
                   )) {
-                    InternalBrowseStoreStrategy.read => const Icon(
+                    InternalBrowseStoreStrategy.read => Icon(
                         Icons.visibility,
-                        color: BrowseStoreStrategySelector
-                            ._unspecifiedSelectorColor,
+                        color: isExplicitlyExcluded
+                            ? BrowseStoreStrategySelector
+                                ._unspecifiedSelectorExcludedColor
+                            : BrowseStoreStrategySelector
+                                ._unspecifiedSelectorColor,
                       ),
-                    InternalBrowseStoreStrategy.readUpdate => const Icon(
+                    InternalBrowseStoreStrategy.readUpdate => Icon(
                         Icons.edit,
-                        color: BrowseStoreStrategySelector
-                            ._unspecifiedSelectorColor,
+                        color: isExplicitlyExcluded
+                            ? BrowseStoreStrategySelector
+                                ._unspecifiedSelectorExcludedColor
+                            : BrowseStoreStrategySelector
+                                ._unspecifiedSelectorColor,
                       ),
-                    InternalBrowseStoreStrategy.readUpdateCreate => const Icon(
+                    InternalBrowseStoreStrategy.readUpdateCreate => Icon(
                         Icons.add,
-                        color: BrowseStoreStrategySelector
-                            ._unspecifiedSelectorColor,
+                        color: isExplicitlyExcluded
+                            ? BrowseStoreStrategySelector
+                                ._unspecifiedSelectorExcludedColor
+                            : BrowseStoreStrategySelector
+                                ._unspecifiedSelectorColor,
                       ),
-                    _ => const Icon(
+                    _ => Icon(
                         Icons.disabled_by_default_rounded,
-                        color: BrowseStoreStrategySelector
-                            ._unspecifiedSelectorColor,
+                        color: isExplicitlyExcluded
+                            ? BrowseStoreStrategySelector
+                                ._unspecifiedSelectorExcludedColor
+                            : BrowseStoreStrategySelector
+                                ._unspecifiedSelectorColor,
                       ),
                   },
                 BrowseStoreStrategy.read =>

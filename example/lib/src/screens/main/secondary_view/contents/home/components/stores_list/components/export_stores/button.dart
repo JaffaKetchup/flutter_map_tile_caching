@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../state/export_selection_provider.dart';
+import 'example_app_limitations_text.dart';
 
 part 'name_input_dialog.dart';
 part 'progress_dialog.dart';
@@ -48,10 +49,7 @@ class ExportStoresButton extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Within the example app, for simplicity, each store contains '
-              'tiles from a single URL template. Additionally, only one tile '
-              'layer with a single URL template can be used at any one time. '
-              'These are not limitations with FMTC.',
+              exampleAppLimitationsText,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.labelSmall,
             ),

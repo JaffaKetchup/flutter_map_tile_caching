@@ -23,6 +23,7 @@ class BrowseStoreStrategySelector extends StatelessWidget {
   final bool useCompactLayout;
 
   static const _unspecifiedSelectorColor = Colors.pinkAccent;
+  static const _unspecifiedSelectorExcludedColor = Colors.purple;
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +31,11 @@ class BrowseStoreStrategySelector extends StatelessWidget {
         context.select<GeneralProvider, InternalBrowseStoreStrategy?>(
       (provider) => provider.currentStores[storeName],
     );
-    final unspecifiedStrategy =
-        context.select<GeneralProvider, InternalBrowseStoreStrategy?>(
-      (provider) => provider.currentStores['(unspecified)'],
-    );
+    final unspecifiedStrategy = context
+        .select<GeneralProvider, InternalBrowseStoreStrategy?>(
+          (provider) => provider.currentStores['(unspecified)'],
+        )
+        ?.toBrowseStoreStrategy();
     final inheritableStrategy = inheritable
         ? context.select<GeneralProvider, BrowseStoreStrategy?>(
             (provider) => provider.inheritableBrowseStoreStrategy,
@@ -44,8 +46,16 @@ class BrowseStoreStrategySelector extends StatelessWidget {
         ? inheritableStrategy
         : currentStrategy.toBrowseStoreStrategy(inheritableStrategy);
     final isUsingUnselectedStrategy = resolvedCurrentStrategy == null &&
-        unspecifiedStrategy != InternalBrowseStoreStrategy.disable &&
+        unspecifiedStrategy != null &&
         enabled;
+
+    final showExplicitExcludeCheckbox =
+        resolvedCurrentStrategy == null && isUsingUnselectedStrategy;
+
+    final isExplicitlyExcluded = showExplicitExcludeCheckbox &&
+        context.select<GeneralProvider, bool>(
+          (provider) => provider.explicitlyExcludedStores.contains(storeName),
+        );
 
     // Parameter meaning obvious from context, also callback
     // ignore: avoid_positional_boolean_parameters
@@ -61,10 +71,66 @@ class BrowseStoreStrategySelector extends StatelessWidget {
         ..changedCurrentStores();
     }
 
+    // Parameter meaning obvious from context, also callback
+    // ignore: avoid_positional_boolean_parameters
+    void changedExplicitlyExcludeCheckbox(bool? value) {
+      final provider = context.read<GeneralProvider>();
+
+      if (value!) {
+        provider.explicitlyExcludedStores.add(storeName);
+      } else {
+        provider.explicitlyExcludedStores.remove(storeName);
+      }
+
+      provider.changedExplicitlyExcludedStores();
+    }
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (inheritable) ...[
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceDim,
+              borderRadius: BorderRadius.circular(99),
+            ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 150),
+              transitionBuilder: (child, animation) => SizeTransition(
+                sizeFactor: Tween<double>(begin: 0, end: 1).animate(animation),
+                axis: Axis.horizontal,
+                axisAlignment: 1,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: showExplicitExcludeCheckbox
+                  ? Tooltip(
+                      message: 'Explicitly disable',
+                      child: Padding(
+                        padding: const EdgeInsets.all(4) +
+                            const EdgeInsets.symmetric(horizontal: 4),
+                        child: Row(
+                          spacing: 6,
+                          children: [
+                            const Icon(Icons.disabled_by_default_rounded),
+                            Checkbox.adaptive(
+                              value: isExplicitlyExcluded,
+                              onChanged: changedExplicitlyExcludeCheckbox,
+                              activeColor: BrowseStoreStrategySelector
+                                  ._unspecifiedSelectorExcludedColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ),
           Checkbox.adaptive(
             value: currentStrategy == InternalBrowseStoreStrategy.inherit ||
                 currentStrategy == null,
@@ -80,6 +146,7 @@ class BrowseStoreStrategySelector extends StatelessWidget {
             currentStrategy: resolvedCurrentStrategy,
             enabled: enabled,
             isUnspecifiedSelector: storeName == '(unspecified)',
+            isExplicitlyExcluded: isExplicitlyExcluded,
           )
         else
           Stack(
@@ -87,18 +154,21 @@ class BrowseStoreStrategySelector extends StatelessWidget {
               Transform.translate(
                 offset: const Offset(2, 0),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 100),
+                  duration: const Duration(milliseconds: 150),
                   decoration: BoxDecoration(
-                    color: BrowseStoreStrategySelector._unspecifiedSelectorColor
-                        .withValues(alpha: 0.75),
+                    color: isExplicitlyExcluded
+                        ? BrowseStoreStrategySelector
+                            ._unspecifiedSelectorExcludedColor
+                            .withAlpha(255 ~/ 2)
+                        : BrowseStoreStrategySelector._unspecifiedSelectorColor
+                            .withValues(alpha: 0.75),
                     borderRadius: BorderRadius.circular(99),
                   ),
                   width: isUsingUnselectedStrategy
                       ? switch (unspecifiedStrategy) {
-                          InternalBrowseStoreStrategy.read => 40,
-                          InternalBrowseStoreStrategy.readUpdate => 85,
-                          InternalBrowseStoreStrategy.readUpdateCreate => 128,
-                          _ => 0,
+                          BrowseStoreStrategy.read => 40,
+                          BrowseStoreStrategy.readUpdate => 85,
+                          BrowseStoreStrategy.readUpdateCreate => 128,
                         }
                       : 0,
                 ),

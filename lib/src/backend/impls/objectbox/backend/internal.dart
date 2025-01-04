@@ -376,7 +376,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   @override
   Future<bool> tileExists({
     required String url,
-    List<String>? storeNames,
+    required ({bool includeOrExclude, List<String> storeNames}) storeNames,
   }) async =>
       (await _sendCmdOneShot(
         type: _CmdType.tileExists,
@@ -391,7 +391,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         List<String> allStoreNames,
       })> readTile({
     required String url,
-    List<String>? storeNames,
+    required ({bool includeOrExclude, List<String> storeNames}) storeNames,
   }) async {
     final res = (await _sendCmdOneShot(
       type: _CmdType.readTile,
@@ -441,13 +441,21 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       ))!['wasOrphan'];
 
   @override
-  Future<void> registerHitOrMiss({
-    required List<String>? storeNames,
-    required bool hit,
+  Future<void> incrementStoreHits({
+    required List<String> storeNames,
   }) =>
       _sendCmdOneShot(
-        type: _CmdType.registerHitOrMiss,
-        args: {'storeNames': storeNames, 'hit': hit},
+        type: _CmdType.incrementStoreHits,
+        args: {'storeNames': storeNames},
+      );
+
+  @override
+  Future<void> incrementStoreMisses({
+    required ({bool includeOrExclude, List<String> storeNames}) storeNames,
+  }) =>
+      _sendCmdOneShot(
+        type: _CmdType.incrementStoreMisses,
+        args: {'storeNames': storeNames},
       );
 
   @override

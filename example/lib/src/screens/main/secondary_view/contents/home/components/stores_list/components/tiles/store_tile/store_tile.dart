@@ -93,45 +93,6 @@ class _StoreTileState extends State<StoreTile> {
                     visualDensity:
                         widget.useCompactLayout ? VisualDensity.compact : null,
                   ),
-                /*FutureBuilder(
-                  future: widget.stats,
-                  builder: (context, statsSnapshot) {
-                    if (statsSnapshot.data?.length == 0) {
-                      return IconButton(
-                        onPressed: _deleteStore,
-                        icon: const Icon(
-                          Icons.delete_forever,
-                          color: Colors.red,
-                        ),
-                        visualDensity: widget.useCompactLayout
-                            ? VisualDensity.compact
-                            : null,
-                      );
-                    }
-
-                    if (_toolsEmptyLoading) {
-                      return const IconButton(
-                        onPressed: null,
-                        icon: SizedBox.square(
-                          dimension: 18,
-                          child: Center(
-                            child: CircularProgressIndicator.adaptive(
-                              strokeWidth: 3,
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-
-                    return IconButton(
-                      onPressed: _emptyStore,
-                      icon: const Icon(Icons.delete),
-                      visualDensity: widget.useCompactLayout
-                          ? VisualDensity.compact
-                          : null,
-                    );
-                  },
-                ),*/
                 const SizedBox(width: 4),
               ];
 

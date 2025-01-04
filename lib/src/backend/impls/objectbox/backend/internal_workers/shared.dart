@@ -3,6 +3,28 @@
 
 part of '../backend.dart';
 
+List<String> _resolveReadableStoresFormat(
+  ({bool includeOrExclude, List<String> storeNames}) readableStores, {
+  required Store root,
+}) {
+  final availableStoreNames =
+      root.box<ObjectBoxStore>().getAll().map((e) => e.name);
+
+  if (!readableStores.includeOrExclude) {
+    return availableStoreNames
+        .whereNot((e) => readableStores.storeNames.contains(e))
+        .toList(growable: false);
+  }
+
+  for (final storeName in readableStores.storeNames) {
+    if (!availableStoreNames.contains(storeName)) {
+      throw StoreNotExists(storeName: storeName);
+    }
+  }
+
+  return readableStores.storeNames;
+}
+
 Map<String, bool> _sharedWriteSingleTile({
   required Store root,
   required List<String> storeNames,

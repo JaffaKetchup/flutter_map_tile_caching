@@ -37,7 +37,7 @@ class _UnspecifiedTileState extends State<UnspecifiedTile> {
         color: Colors.transparent,
         child: ListTile(
           title: const Text(
-            'All disabled',
+            'All unspecified',
             maxLines: 2,
             overflow: TextOverflow.fade,
             style: TextStyle(fontStyle: FontStyle.italic),
@@ -65,9 +65,9 @@ class _UnspecifiedTileState extends State<UnspecifiedTile> {
                       borderRadius: BorderRadius.circular(99),
                     ),
                     child: Row(
+                      spacing: 4,
                       children: [
                         const Icon(Icons.last_page),
-                        const SizedBox(width: 4),
                         Switch.adaptive(
                           value: !isAllUnselectedDisabled &&
                               context.select<GeneralProvider, bool>(

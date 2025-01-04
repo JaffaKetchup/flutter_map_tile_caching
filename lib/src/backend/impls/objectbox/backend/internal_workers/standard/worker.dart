@@ -424,17 +424,18 @@ Future<void> _worker(
         tilesQuery.close();
       case _CmdType.tileExists:
         final url = cmd.args['url']! as String;
-        final storeNames = cmd.args['storeNames']! as List<String>?;
+        final storeNames = cmd.args['storeNames']! as ({
+          bool includeOrExclude,
+          List<String> storeNames,
+        });
 
-        final stores = root.box<ObjectBoxTile>();
-
-        final queryPart = stores.query(ObjectBoxTile_.url.equals(url));
-        final query = storeNames == null
-            ? queryPart.build()
-            : (queryPart
+        final query =
+            (root.box<ObjectBoxTile>().query(ObjectBoxTile_.url.equals(url))
                   ..linkMany(
                     ObjectBoxTile_.stores,
-                    ObjectBoxStore_.name.oneOf(storeNames),
+                    ObjectBoxStore_.name.oneOf(
+                      _resolveReadableStoresFormat(storeNames, root: root),
+                    ),
                   ))
                 .build();
 
@@ -443,18 +444,19 @@ Future<void> _worker(
         query.close();
       case _CmdType.readTile:
         final url = cmd.args['url']! as String;
-        final storeNames = cmd.args['storeNames'] as List<String>?;
+        final storeNames = cmd.args['storeNames'] as ({
+          bool includeOrExclude,
+          List<String> storeNames,
+        });
 
-        final stores = root.box<ObjectBoxTile>();
-        final specifiedStores = storeNames?.isNotEmpty ?? false;
+        final resolvedStores =
+            _resolveReadableStoresFormat(storeNames, root: root);
 
-        final queryPart = stores.query(ObjectBoxTile_.url.equals(url));
-        final query = !specifiedStores
-            ? queryPart.build()
-            : (queryPart
+        final query =
+            (root.box<ObjectBoxTile>().query(ObjectBoxTile_.url.equals(url))
                   ..linkMany(
                     ObjectBoxTile_.stores,
-                    ObjectBoxStore_.name.oneOf(storeNames!),
+                    ObjectBoxStore_.name.oneOf(resolvedStores),
                   ))
                 .build();
 
@@ -471,19 +473,18 @@ Future<void> _worker(
             },
           );
         } else {
-          final tileStores = tile.stores.map((s) => s.name);
-          final listTileStores = tileStores.toList(growable: false);
+          final listTileStores =
+              tile.stores.map((s) => s.name).toList(growable: false);
+          final intersectedStoreNames = listTileStores
+              .where(resolvedStores.contains)
+              .toList(growable: false);
 
           sendRes(
             id: cmd.id,
             data: {
               'tile': tile,
               'allStoreNames': listTileStores,
-              'intersectedStoreNames': !specifiedStores
-                  ? listTileStores
-                  : SplayTreeSet<String>.from(tileStores)
-                      .intersection(SplayTreeSet<String>.from(storeNames!))
-                      .toList(growable: false),
+              'intersectedStoreNames': intersectedStoreNames,
             },
           );
         }
@@ -541,40 +542,56 @@ Future<void> _worker(
 
         storesQuery.close();
         tilesQuery.close();
-      case _CmdType.registerHitOrMiss:
-        final storeNames = cmd.args['storeNames'] as List<String>?;
-        final hit = cmd.args['hit']! as bool;
+      case _CmdType.incrementStoreHits:
+        final storeNames = cmd.args['storeNames'] as List<String>;
 
         final storesBox = root.box<ObjectBoxStore>();
-        final specifiedStores = storeNames?.isNotEmpty ?? false;
 
-        late final Query<ObjectBoxStore> query;
-        if (specifiedStores) {
-          query =
-              storesBox.query(ObjectBoxStore_.name.oneOf(storeNames!)).build();
-        }
+        final query =
+            storesBox.query(ObjectBoxStore_.name.oneOf(storeNames)).build();
 
         root.runInTransaction(
           TxMode.write,
           () {
-            final stores = specifiedStores ? query.find() : storesBox.getAll();
-            if (specifiedStores) {
-              if (stores.length != storeNames!.length) {
-                return StoreNotExists(
-                  storeName:
-                      storeNames.toSet().difference(stores.toSet()).join('; '),
-                );
-              }
+            final stores = query.find();
 
-              query.close();
+            if (stores.length != storeNames.length) {
+              return StoreNotExists(
+                storeName: storeNames
+                    .toSet()
+                    .difference(stores.map((s) => s.name).toSet())
+                    .join('; '),
+              );
             }
 
             for (final store in stores) {
-              storesBox.put(
-                store
-                  ..hits += hit ? 1 : 0
-                  ..misses += hit ? 0 : 1,
-              );
+              storesBox.put(store..hits += 1);
+            }
+          },
+        );
+
+        sendRes(id: cmd.id);
+      case _CmdType.incrementStoreMisses:
+        final storeNames = cmd.args['storeNames'] as ({
+          bool includeOrExclude,
+          List<String> storeNames,
+        });
+
+        final resolvedStoreNames =
+            _resolveReadableStoresFormat(storeNames, root: root);
+
+        final storesBox = root.box<ObjectBoxStore>();
+
+        final query = storesBox
+            .query(ObjectBoxStore_.name.oneOf(resolvedStoreNames))
+            .build();
+
+        root.runInTransaction(
+          TxMode.write,
+          () {
+            final stores = query.find();
+            for (final store in stores) {
+              storesBox.put(store..misses += 1);
             }
           },
         );

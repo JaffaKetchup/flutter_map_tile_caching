@@ -44,6 +44,9 @@ class GeneralProvider extends ChangeNotifier {
   final Map<String, InternalBrowseStoreStrategy> currentStores = {};
   void changedCurrentStores() => notifyListeners();
 
+  final Set<String> explicitlyExcludedStores = {};
+  void changedExplicitlyExcludedStores() => notifyListeners();
+
   String _urlTemplate =
       sharedPrefs.getString(SharedPrefsKeys.urlTemplate.name) ??
           (() {

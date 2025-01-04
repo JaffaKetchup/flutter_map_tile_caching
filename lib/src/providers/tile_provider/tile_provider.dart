@@ -369,7 +369,7 @@ class FMTCTileProvider extends TileProvider {
   }) {
     final networkUrl = getTileUrl(coords, options);
     return FMTCBackendAccess.internal.tileExists(
-      storeNames: _getSpecifiedStoresOrNull(),
+      storeNames: _compileReadableStores(),
       url: urlTransformer?.call(networkUrl) ?? networkUrl,
     );
   }
@@ -411,13 +411,18 @@ class FMTCTileProvider extends TileProvider {
     return mutableUrl;
   }
 
-  // TODO: This does not work correctly. Needs a complex system like writing.
-  List<String>? _getSpecifiedStoresOrNull() => otherStoresStrategy != null
-      ? null
-      : /*stores.keys.toList()*/ stores.entries
-          .where((e) => e.value != null)
-          .map((e) => e.key)
-          .toList();
+  /// Compile the [FMTCTileProvider.stores] &
+  /// [FMTCTileProvider.otherStoresStrategy] into a format which can be resolved
+  /// by the backend once all available stores are known
+  ({List<String> storeNames, bool includeOrExclude}) _compileReadableStores() {
+    final excludeOrInclude = otherStoresStrategy != null;
+    final storeNames = (excludeOrInclude
+            ? stores.entries.where((e) => e.value == null)
+            : stores.entries.where((e) => e.value != null))
+        .map((e) => e.key)
+        .toList(growable: false);
+    return (storeNames: storeNames, includeOrExclude: !excludeOrInclude);
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -436,19 +441,17 @@ class FMTCTileProvider extends TileProvider {
           mapEquals(other.headers, headers));
 
   @override
-  int get hashCode => Object.hashAllUnordered(
-        [
-          otherStoresStrategy,
-          loadingStrategy,
-          useOtherStoresAsFallbackOnly,
-          recordHitsAndMisses,
-          cachedValidDuration,
-          urlTransformer,
-          errorHandler,
-          tileLoadingInterceptor,
-          httpClient,
-          ...stores.entries.map((e) => (e.key, e.value)),
-          ...headers.entries.map((e) => (e.key, e.value)),
-        ],
-      );
+  int get hashCode => Object.hashAllUnordered([
+        otherStoresStrategy,
+        loadingStrategy,
+        useOtherStoresAsFallbackOnly,
+        recordHitsAndMisses,
+        cachedValidDuration,
+        urlTransformer,
+        errorHandler,
+        tileLoadingInterceptor,
+        httpClient,
+        ...stores.entries.map((e) => (e.key, e.value)),
+        ...headers.entries.map((e) => (e.key, e.value)),
+      ]);
 }

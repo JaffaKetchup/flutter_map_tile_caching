@@ -157,22 +157,26 @@ abstract interface class FMTCBackendInternal
     required String storeName,
   });
 
-  /// Check whether the specified tile exists in any of the specified stores (or
-  /// any store is [storeNames] is `null`)
+  /// Check whether the specified tile exists in any of the specified stores
+  ///
+  /// {@template fmtc.backend._readableStoresFormat}
+  /// [storeNames] uses the "readable stores" format. If `includeOrExclude` is
+  /// `true`, the operation will apply to all stores included only in
+  /// `storeNames`. Otherwise, the operation will apply to all existing stores
+  /// NOT included in `storeNames`. This should reflect the settings of an
+  /// [FMTCTileProvider] (see [FMTCTileProvider._compileReadableStores]).
+  /// {@endtemplate}
   Future<bool> tileExists({
     required String url,
-    List<String>? storeNames,
+    required ({List<String> storeNames, bool includeOrExclude}) storeNames,
   });
 
-  /// Retrieve a raw `tile` from any of the specified [storeNames] (or all store
-  /// names if `null` or empty) by the specified URL
+  /// Retrieve a raw `tile` by URL from any of the specified stores
   ///
-  /// Returns the list of store names the tile belongs to - `allStoreNames` -
-  /// and were present in [storeNames] if specified - `intersectedStoreNames`.
+  /// {@macro fmtc.backend._readableStoresFormat}
   ///
-  /// If [storeNames] is `null` or empty, tiles may be retrieved from any store
-  /// (which may be slower depending on the size of the root, as queries may
-  /// be unconstrained).
+  /// Returns the list of store names the tile belongs to (`allStoreNames`),
+  /// and were present in the resolved stores (`intersectedStoreNames`).
   ///
   /// `intersectedStoreNames` & `allStoreNames` will be empty if `tile` is
   /// `null`.
@@ -183,7 +187,7 @@ abstract interface class FMTCBackendInternal
         List<String> allStoreNames,
       })> readTile({
     required String url,
-    List<String>? storeNames,
+    required ({List<String> storeNames, bool includeOrExclude}) storeNames,
   });
 
   /// {@template fmtc.backend.readLatestTile}
@@ -223,11 +227,16 @@ abstract interface class FMTCBackendInternal
     required String url,
   });
 
-  /// Register a cache hit or miss on the specified stores, or all stores if
-  /// null or empty
-  Future<void> registerHitOrMiss({
-    required List<String>? storeNames,
-    required bool hit,
+  /// Add a cache hit to all specified stores
+  Future<void> incrementStoreHits({
+    required List<String> storeNames,
+  });
+
+  /// Add a cache miss to all specified stores
+  ///
+  /// {@macro fmtc.backend._readableStoresFormat}
+  Future<void> incrementStoreMisses({
+    required ({List<String> storeNames, bool includeOrExclude}) storeNames,
   });
 
   /// Remove tiles in excess of the specified limit in each specified store,

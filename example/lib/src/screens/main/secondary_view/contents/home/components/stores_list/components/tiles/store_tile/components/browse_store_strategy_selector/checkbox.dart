@@ -57,9 +57,9 @@ class _BrowseStoreStrategySelectorCheckbox extends StatelessWidget {
         activeColor: isUnspecifiedSelector
             ? BrowseStoreStrategySelector._unspecifiedSelectorColor
             : null,
-        fillColor: WidgetStateProperty.resolveWith((states) {
+        /*fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.isEmpty) return Theme.of(context).colorScheme.surface;
           return null;
-        }),
+        }),*/
       );
 }

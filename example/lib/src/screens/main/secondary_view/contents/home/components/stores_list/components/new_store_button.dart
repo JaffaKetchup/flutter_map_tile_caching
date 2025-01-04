@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../../import/import.dart';
 import '../../../../../../../store_editor/store_editor.dart';
+import 'export_stores/example_app_limitations_text.dart';
 
 class NewStoreButton extends StatelessWidget {
   const NewStoreButton({super.key});
@@ -36,10 +37,7 @@ class NewStoreButton extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Within the example app, for simplicity, each store contains '
-              'tiles from a single URL template. Additionally, only one tile '
-              'layer with a single URL template can be used at any one time. '
-              'These are not limitations with FMTC.',
+              exampleAppLimitationsText,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.labelSmall,
             ),

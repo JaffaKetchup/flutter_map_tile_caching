@@ -10,21 +10,20 @@ Future<Uint8List> _internalTileBrowser({
   required bool requireValidImage,
   required _TLIRConstructor? currentTLIR,
 }) async {
+  late final compiledReadableStores = provider._compileReadableStores();
+
   void registerHit(List<String> storeNames) {
     currentTLIR?.hitOrMiss = true;
     if (provider.recordHitsAndMisses) {
-      FMTCBackendAccess.internal
-          .registerHitOrMiss(storeNames: storeNames, hit: true);
+      FMTCBackendAccess.internal.incrementStoreHits(storeNames: storeNames);
     }
   }
 
   void registerMiss() {
     currentTLIR?.hitOrMiss = false;
     if (provider.recordHitsAndMisses) {
-      FMTCBackendAccess.internal.registerHitOrMiss(
-        storeNames: provider._getSpecifiedStoresOrNull(),
-        hit: false,
-      );
+      FMTCBackendAccess.internal
+          .incrementStoreMisses(storeNames: compiledReadableStores);
     }
   }
 
@@ -43,7 +42,7 @@ Future<Uint8List> _internalTileBrowser({
     allStoreNames: allExistingStores,
   ) = await FMTCBackendAccess.internal.readTile(
     url: matcherUrl,
-    storeNames: provider._getSpecifiedStoresOrNull(),
+    storeNames: compiledReadableStores,
   );
 
   currentTLIR?.cacheFetchDuration =
@@ -202,6 +201,7 @@ Future<Uint8List> _internalTileBrowser({
     }
   }
 
+  // TODO: This isn't resolving properly!
   // Find the stores that need to have this tile written to, depending on
   // their read/write settings
   // At this point, we've downloaded the tile anyway, so we might as well

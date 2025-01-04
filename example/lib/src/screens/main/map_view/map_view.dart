@@ -18,6 +18,7 @@ import '../../../shared/state/general_provider.dart';
 import '../../../shared/state/region_selection_provider.dart';
 import '../../../shared/state/selected_tab_state.dart';
 import 'components/additional_overlay/additional_overlay.dart';
+import 'components/attribution.dart';
 import 'components/debugging_tile_builder/debugging_tile_builder.dart';
 import 'components/download_progress/download_progress_masker.dart';
 import 'components/recovery_regions/recovery_regions.dart';
@@ -264,6 +265,9 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
           builder: (context, provider, _) {
             final urlTemplate = provider.urlTemplate;
 
+            final otherStoresStrategy = provider.currentStores['(unspecified)']
+                ?.toBrowseStoreStrategy();
+
             final compiledStoreNames =
                 Map<String, BrowseStoreStrategy?>.fromEntries([
               ...stores.entries.where((e) => e.value == urlTemplate).map((e) {
@@ -276,36 +280,30 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                 if (behaviour == null) return null;
                 return MapEntry(e.key, behaviour);
               }).nonNulls,
-              ...stores.entries
-                  .where((e) => e.value != urlTemplate)
-                  .map((e) => MapEntry(e.key, null)),
+              ...stores.entries.where(
+                (e) {
+                  if (e.value != urlTemplate) return true;
+
+                  final internalBehaviour = provider.currentStores[e.key];
+                  final behaviour = internalBehaviour == null
+                      ? provider.inheritableBrowseStoreStrategy
+                      : internalBehaviour.toBrowseStoreStrategy(
+                          provider.inheritableBrowseStoreStrategy,
+                        );
+
+                  return provider.explicitlyExcludedStores.contains(e.key) &&
+                      behaviour == null &&
+                      otherStoresStrategy != null;
+                },
+              ).map((e) => MapEntry(e.key, null)),
             ]);
 
-            final attribution = RichAttributionWidget(
-              alignment: AttributionAlignment.bottomLeft,
-              popupInitialDisplayDuration: const Duration(seconds: 3),
-              popupBorderRadius: BorderRadius.circular(12),
-              attributions: [
-                TextSourceAttribution(Uri.parse(urlTemplate).host),
-                const TextSourceAttribution(
-                  'For demonstration purposes only',
-                  prependCopyright: false,
-                  textStyle: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const TextSourceAttribution(
-                  'Offline mapping made with FMTC',
-                  prependCopyright: false,
-                  textStyle: TextStyle(fontStyle: FontStyle.italic),
-                ),
-                LogoSourceAttribution(
-                  Image.asset('assets/icons/ProjectIcon.png'),
-                  tooltip: 'flutter_map_tile_caching',
-                ),
-              ],
+            final attribution = Attribution(
+              urlTemplate: urlTemplate,
+              mode: widget.mode,
+              stores: compiledStoreNames,
+              otherStoresStrategy: otherStoresStrategy,
             );
-
-            final otherStoresStrategy = provider.currentStores['(unspecified)']
-                ?.toBrowseStoreStrategy();
 
             final tileLayer = TileLayer(
               urlTemplate: urlTemplate,
