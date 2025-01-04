@@ -53,6 +53,8 @@ Map<String, bool> _sharedWriteSingleTile({
           ),
         ];
 
+  if (compiledStoreNames.isEmpty) return const {};
+
   final tilesQuery = tiles.query(ObjectBoxTile_.url.equals(url)).build();
   final storeQuery =
       storesBox.query(ObjectBoxStore_.name.oneOf(compiledStoreNames)).build();

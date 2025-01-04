@@ -201,7 +201,6 @@ Future<Uint8List> _internalTileBrowser({
     }
   }
 
-  // TODO: This isn't resolving properly!
   // Find the stores that need to have this tile written to, depending on
   // their read/write settings
   // At this point, we've downloaded the tile anyway, so we might as well
