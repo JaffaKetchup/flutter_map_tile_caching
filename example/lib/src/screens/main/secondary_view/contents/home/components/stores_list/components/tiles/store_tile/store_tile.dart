@@ -1,15 +1,18 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../../../../../../shared/misc/exts/size_formatter.dart';
 import '../../../../../../../../../../shared/misc/store_metadata_keys.dart';
+import '../../../../../../../../../../shared/state/download_provider.dart';
 import '../../../../../../../../../../shared/state/general_provider.dart';
 import '../../../../../../../../../store_editor/store_editor.dart';
-import '../../../state/export_selection_provider.dart';
 import 'components/browse_store_strategy_selector/browse_store_strategy_selector.dart';
-import 'components/store_empty_deletion_dialog.dart';
+import 'components/custom_single_slidable_action.dart';
 
 part 'components/trailing.dart';
 
@@ -21,6 +24,7 @@ class StoreTile extends StatefulWidget {
     required this.metadata,
     required this.tileImage,
     required this.useCompactLayout,
+    this.isFirstStore = false,
   });
 
   final String storeName;
@@ -28,177 +32,268 @@ class StoreTile extends StatefulWidget {
   final Future<Map<String, String>> metadata;
   final Future<Image?> tileImage;
   final bool useCompactLayout;
+  final bool isFirstStore;
 
   @override
   State<StoreTile> createState() => _StoreTileState();
 }
 
-class _StoreTileState extends State<StoreTile> {
-  bool _isToolsVisible = false;
+class _StoreTileState extends State<StoreTile>
+    with SingleTickerProviderStateMixin {
+  static const _dismissThreshold = 0.25;
+
+  late final _slidableController = SlidableController(this);
+
   bool _isEmptying = false;
-  bool _isDeleting = false;
-  Timer? _toolsAutoHiderTimer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.isFirstStore) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => Future.delayed(const Duration(seconds: 1), _hintTools),
+      );
+    }
+  }
 
   @override
   void dispose() {
-    _toolsAutoHiderTimer?.cancel();
+    _slidableController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
-        child: Material(
-          color: Colors.transparent,
-          child: FutureBuilder(
-            future: widget.metadata,
-            builder: (context, metadataSnapshot) {
-              final matchesUrl = metadataSnapshot.data != null &&
-                  context.select<GeneralProvider, String>(
-                        (provider) => provider.urlTemplate,
-                      ) ==
-                      metadataSnapshot.data![StoreMetadataKeys.urlTemplate.key];
-
-              final toolsChildren = [
-                const SizedBox(width: 4),
-                IconButton(
-                  onPressed: _exportStore,
-                  icon: const Icon(Icons.send_and_archive),
-                  visualDensity:
-                      widget.useCompactLayout ? VisualDensity.compact : null,
-                ),
-                const SizedBox(width: 4),
-                IconButton(
-                  onPressed: _editStore,
-                  icon: const Icon(Icons.edit),
-                  visualDensity:
-                      widget.useCompactLayout ? VisualDensity.compact : null,
-                ),
-                const SizedBox(width: 4),
-                if (_isEmptying)
-                  const IconButton(
-                    onPressed: null,
-                    icon: SizedBox.square(
-                      dimension: 18,
-                      child: Center(
-                        child: CircularProgressIndicator.adaptive(
-                          strokeWidth: 3,
-                        ),
+        child: ClipRect(
+          child: LayoutBuilder(
+            builder: (context, outerConstraints) => Slidable(
+              key: ValueKey(widget.storeName),
+              controller: _slidableController,
+              closeOnScroll: false,
+              enabled: !_isEmptying,
+              startActionPane: ActionPane(
+                motion: const BehindMotion(),
+                extentRatio: double.minPositive,
+                dismissible: DismissiblePane(
+                  dismissThreshold: _dismissThreshold,
+                  onDismissed: () {},
+                  confirmDismiss: () async {
+                    unawaited(
+                      Navigator.of(context).pushNamed(
+                        StoreEditorPopup.route,
+                        arguments: widget.storeName,
                       ),
-                    ),
-                  )
-                else
-                  IconButton(
-                    onPressed: _emptyDeleteStore,
-                    icon: const Icon(Icons.delete),
-                    visualDensity:
-                        widget.useCompactLayout ? VisualDensity.compact : null,
+                    );
+                    return false;
+                  },
+                  closeOnCancel: true,
+                ),
+                children: [
+                  CustomSingleSlidableAction(
+                    key: ValueKey('${widget.storeName} edit'),
+                    unconfirmedIcon: Icons.edit_outlined,
+                    confirmedIcon: Icons.edit,
+                    color: Colors.blue,
+                    alignment: Alignment.centerLeft,
+                    dismissThreshold:
+                        outerConstraints.maxWidth * _dismissThreshold,
                   ),
-                const SizedBox(width: 4),
-              ];
-
-              return InkWell(
-                onSecondaryTap: _showTools,
-                child: ListTile(
-                  title: Text(
-                    widget.storeName,
-                    maxLines: 1,
-                    overflow: TextOverflow.fade,
-                    softWrap: false,
-                  ),
-                  subtitle: FutureBuilder(
+                ],
+              ),
+              endActionPane: ActionPane(
+                motion: const BehindMotion(),
+                extentRatio: double.minPositive,
+                dismissible: DismissiblePane(
+                  dismissThreshold: _dismissThreshold,
+                  onDismissed: () {},
+                  confirmDismiss: () =>
+                      _emptyOrDelete(outerConstraints: outerConstraints),
+                  closeOnCancel: true,
+                ),
+                children: [
+                  FutureBuilder(
                     future: widget.stats,
-                    builder: (context, statsSnapshot) {
-                      if (statsSnapshot.data case final stats?) {
-                        return Text(
-                          '${(stats.size * 1024).asReadableSize} | '
-                          '${stats.length} tiles',
+                    builder: (context, snapshot) {
+                      final length = snapshot.data?.length;
+                      if (length == null || length > 0) {
+                        return CustomSingleSlidableAction(
+                          key: ValueKey('${widget.storeName} empty'),
+                          unconfirmedIcon: Icons.layers_clear_outlined,
+                          confirmedIcon: Icons.layers_clear,
+                          color: Colors.deepOrange,
+                          alignment: Alignment.centerRight,
+                          dismissThreshold:
+                              outerConstraints.maxWidth * _dismissThreshold,
+                          showLoader: _isEmptying,
                         );
                       }
-                      return const Text('Loading stats...');
+
+                      return CustomSingleSlidableAction(
+                        key: ValueKey('${widget.storeName} delete'),
+                        unconfirmedIcon: Icons.delete_forever_outlined,
+                        confirmedIcon: Icons.delete_forever,
+                        color: Colors.red,
+                        alignment: Alignment.centerRight,
+                        dismissThreshold:
+                            outerConstraints.maxWidth * _dismissThreshold,
+                      );
                     },
                   ),
-                  leading: AspectRatio(
-                    aspectRatio: 1,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: RepaintBoundary(
-                        child: FutureBuilder(
-                          future: widget.tileImage,
-                          builder: (context, snapshot) {
-                            if (snapshot.data case final data?) return data;
-                            return const Icon(Icons.filter_none);
-                          },
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onSecondaryTap: _hintTools,
+                  onLongPress: _hintTools,
+                  mouseCursor: SystemMouseCursors.basic,
+                  child: ListTile(
+                    title: Text(
+                      widget.storeName,
+                      maxLines: 1,
+                      overflow: TextOverflow.fade,
+                      softWrap: false,
+                    ),
+                    subtitle: FutureBuilder(
+                      future: widget.stats,
+                      builder: (context, statsSnapshot) {
+                        if (statsSnapshot.data case final stats?) {
+                          return Text(
+                            '${(stats.size * 1024).asReadableSize} | '
+                            '${stats.length} tiles',
+                          );
+                        }
+                        return const Text('Loading stats...');
+                      },
+                    ),
+                    leading: AspectRatio(
+                      aspectRatio: 1,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: RepaintBoundary(
+                          child: FutureBuilder(
+                            future: widget.tileImage,
+                            builder: (context, snapshot) {
+                              if (snapshot.data case final data?) return data;
+                              return const Icon(Icons.filter_none);
+                            },
+                          ),
                         ),
                       ),
                     ),
+                    trailing: FutureBuilder(
+                      future: widget.metadata,
+                      builder: (context, snapshot) => _Trailing(
+                        storeName: widget.storeName,
+                        matchesUrl: snapshot.data != null &&
+                            context.select<GeneralProvider, String>(
+                                  (provider) => provider.urlTemplate,
+                                ) ==
+                                snapshot
+                                    .data![StoreMetadataKeys.urlTemplate.key],
+                        useCompactLayout: widget.useCompactLayout,
+                      ),
+                    ),
                   ),
-                  trailing: _Trailing(
-                    storeName: widget.storeName,
-                    matchesUrl: matchesUrl,
-                    isToolsVisible: _isToolsVisible,
-                    isDeleting: _isDeleting,
-                    useCompactLayout: widget.useCompactLayout,
-                    toolsChildren: toolsChildren,
-                  ),
-                  onLongPress: _showTools,
-                  onTap: _hideTools,
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ),
       );
 
-  Future<void> _exportStore() async {
-    context.read<ExportSelectionProvider>().addSelectedStore(widget.storeName);
-    await _hideTools();
+  Future<void> _hintTools() async {
+    await _slidableController.openTo(
+      0,
+      curve: Curves.easeOut,
+    );
+    await _slidableController.openTo(
+      -(_dismissThreshold - 0.01),
+      curve: Curves.easeOut,
+    );
+    await Future.delayed(const Duration(milliseconds: 400));
+    await _slidableController.openTo(
+      0,
+      curve: Curves.easeIn,
+    );
+    await _slidableController.openTo(
+      _dismissThreshold - 0.01,
+      curve: Curves.easeOut,
+    );
+    await Future.delayed(const Duration(milliseconds: 400));
+    await _slidableController.openTo(
+      0,
+      curve: Curves.easeIn,
+    );
   }
 
-  Future<void> _editStore() async {
-    await Navigator.of(context).pushNamed(
-      StoreEditorPopup.route,
-      arguments: widget.storeName,
-    );
-    await _hideTools();
-  }
+  Future<bool> _emptyOrDelete({
+    required BoxConstraints outerConstraints,
+  }) async {
+    if ((await widget.stats).length == 0) {
+      if (!mounted) return false;
 
-  Future<void> _emptyDeleteStore() async {
-    _toolsAutoHiderTimer?.cancel();
+      if (context.read<DownloadingProvider>().storeName == widget.storeName) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cannot delete store whilst download is in progress'),
+          ),
+        );
+        return false;
+      }
 
-    final result = await showDialog<({Future<void> future, bool isDeleting})>(
-      context: context,
-      builder: (context) =>
-          StoreEmptyDeletionDialog(storeName: widget.storeName),
-    );
+      unawaited(
+        () async {
+          await Future.delayed(const Duration(milliseconds: 500));
 
-    if (result == null) {
-      setState(() => _isToolsVisible = false);
-      return;
-    }
+          final deletedRecoveryRegions = await FMTCRoot
+              .recovery.recoverableRegions
+              .then(
+                (regions) => regions.failedOnly
+                    .where((region) => region.storeName == widget.storeName)
+                    .map((region) => region.id),
+              )
+              .then((ids) => Future.wait(ids.map(FMTCRoot.recovery.cancel)));
 
-    if (result.isDeleting) {
-      setState(() => _isDeleting = true);
-      await result.future;
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Deleted ${widget.storeName}')),
+          await FMTCStore(widget.storeName).manage.delete();
+
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Deleted ${widget.storeName}'
+                '${deletedRecoveryRegions.isEmpty ? '' : ' and associated '
+                    'recovery regions'}',
+              ),
+            ),
+          );
+        }(),
       );
-      return;
+
+      return true;
     }
+
+    unawaited(
+      _slidableController.openTo(
+        -max(
+          _dismissThreshold,
+          104 / outerConstraints.maxWidth,
+        ),
+        curve: Curves.easeOut,
+      ),
+    );
 
     setState(() => _isEmptying = true);
-    await result.future;
-    setState(() => _isEmptying = false);
-  }
 
-  Future<void> _hideTools() async {
-    setState(() => _isToolsVisible = false);
-    _toolsAutoHiderTimer?.cancel();
-    return Future.delayed(const Duration(milliseconds: 150));
-  }
+    await FMTCStore(widget.storeName).manage.reset();
 
-  void _showTools() {
-    setState(() => _isToolsVisible = true);
-    _toolsAutoHiderTimer = Timer(const Duration(seconds: 5), _hideTools);
+    Future.delayed(
+      const Duration(milliseconds: 200),
+      () => setState(() => _isEmptying = false),
+    );
+
+    return false;
   }
 }

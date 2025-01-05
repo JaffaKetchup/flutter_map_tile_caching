@@ -5,7 +5,12 @@ import '../../../../../../../store_editor/store_editor.dart';
 import 'export_stores/example_app_limitations_text.dart';
 
 class NoStores extends StatelessWidget {
-  const NoStores({super.key});
+  const NoStores({
+    super.key,
+    required this.newStoreName,
+  });
+
+  final void Function(String) newStoreName;
 
   @override
   Widget build(BuildContext context) => SliverFillRemaining(
@@ -33,8 +38,11 @@ class NoStores extends StatelessWidget {
                   height: 42,
                   width: double.infinity,
                   child: FilledButton.icon(
-                    onPressed: () =>
-                        Navigator.of(context).pushNamed(StoreEditorPopup.route),
+                    onPressed: () async {
+                      final result = await Navigator.of(context)
+                          .pushNamed(StoreEditorPopup.route);
+                      if (result is String) newStoreName(result);
+                    },
                     icon: const Icon(Icons.create_new_folder),
                     label: const Text('Create new store'),
                   ),

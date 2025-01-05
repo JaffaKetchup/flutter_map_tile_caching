@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:provider/provider.dart';
 
 import '../../../../../../../shared/misc/exts/size_formatter.dart';
 import 'components/column_headers_and_inheritable_settings.dart';
-import 'components/export_stores/button.dart';
 import 'components/new_store_button.dart';
 import 'components/no_stores.dart';
 import 'components/tiles/root_tile.dart';
 import 'components/tiles/store_tile/store_tile.dart';
 import 'components/tiles/unspecified_tile.dart';
-import 'state/export_selection_provider.dart';
 
 class StoresList extends StatefulWidget {
   const StoresList({
@@ -25,6 +22,8 @@ class StoresList extends StatefulWidget {
 }
 
 class _StoresListState extends State<StoresList> {
+  String? _firstStoreName;
+
   late Future<String> _rootLength;
   late Future<String> _rootSize;
   late Future<String> _rootRealSizeAdditional;
@@ -70,7 +69,9 @@ class _StoresListState extends State<StoresList> {
 
           final stores = snapshot.data!;
 
-          if (stores.isEmpty) return const NoStores();
+          if (stores.isEmpty) {
+            return NoStores(newStoreName: (store) => _firstStoreName = store);
+          }
 
           return SliverList.separated(
             itemCount: stores.length + 4,
@@ -93,14 +94,7 @@ class _StoresListState extends State<StoresList> {
                 );
               }
               if (index - 3 == stores.length) {
-                return Builder(
-                  builder: (context) =>
-                      context.select<ExportSelectionProvider, bool>(
-                    (p) => p.selectedStores.isEmpty,
-                  )
-                          ? const NewStoreButton()
-                          : const ExportStoresButton(),
-                );
+                return const NewStoreButton();
               }
 
               final store = stores.keys.elementAt(index - 1);
@@ -109,12 +103,13 @@ class _StoresListState extends State<StoresList> {
               final tileImage = stores.values.elementAt(index - 1).tileImage;
 
               return StoreTile(
-                key: ValueKey(store),
+                key: ValueKey(store.storeName),
                 storeName: store.storeName,
                 stats: stats,
                 metadata: metadata,
                 tileImage: tileImage,
                 useCompactLayout: widget.useCompactLayout,
+                isFirstStore: _firstStoreName == store.storeName,
               );
             },
             separatorBuilder: (context, index) => index - 3 == stores.length - 1

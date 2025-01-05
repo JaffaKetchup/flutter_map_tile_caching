@@ -19,6 +19,7 @@ dependencies:
   flutter_map:
   flutter_map_animations: ^0.8.0
   flutter_map_tile_caching:
+  flutter_slidable: ^3.1.2
   google_fonts: ^6.2.1
   gpx: ^2.3.0
   http: ^1.2.2

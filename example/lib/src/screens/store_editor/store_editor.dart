@@ -88,6 +88,7 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
                         initialValue: existingStoreName,
                         textCapitalization: TextCapitalization.words,
                         textInputAction: TextInputAction.next,
+                        autofocus: true,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -190,7 +191,8 @@ class _StoreEditorPopupState extends State<StoreEditorPopup> {
             }
 
             if (!context.mounted) return;
-            Navigator.of(context).pop();
+            Navigator.of(context)
+                .pop(existingStoreName == null ? newName : null);
           },
           child: existingStoreName == null
               ? const Icon(Icons.save)

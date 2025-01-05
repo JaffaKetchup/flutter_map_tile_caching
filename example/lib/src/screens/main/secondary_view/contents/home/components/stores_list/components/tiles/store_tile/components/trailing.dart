@@ -4,18 +4,12 @@ class _Trailing extends StatelessWidget {
   const _Trailing({
     required this.storeName,
     required this.matchesUrl,
-    required this.isToolsVisible,
-    required this.isDeleting,
     required this.useCompactLayout,
-    required this.toolsChildren,
   });
 
   final String storeName;
   final bool matchesUrl;
-  final bool isToolsVisible;
-  final bool isDeleting;
   final bool useCompactLayout;
-  final List<Widget> toolsChildren;
 
   @override
   Widget build(BuildContext context) {
@@ -53,85 +47,6 @@ class _Trailing extends StatelessWidget {
       ),
     );
 
-    final tools = AnimatedOpacity(
-      opacity: isToolsVisible ? 1 : 0,
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.easeInOut,
-      child: IgnorePointer(
-        ignoring: !isToolsVisible,
-        child: SizedBox.expand(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceDim,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 4,
-              ),
-              child: isDeleting
-                  ? const Center(
-                      child: SizedBox.square(
-                        dimension: 25,
-                        child: Center(
-                          child: CircularProgressIndicator.adaptive(),
-                        ),
-                      ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: toolsChildren,
-                    ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    final exportCheckbox = Selector<ExportSelectionProvider, List<String>>(
-      selector: (context, provider) => provider.selectedStores,
-      builder: (context, selectedStores, _) => AnimatedOpacity(
-        opacity: selectedStores.isNotEmpty ? 1 : 0,
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeInOut,
-        child: IgnorePointer(
-          ignoring: selectedStores.isEmpty,
-          child: SizedBox.expand(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceDim,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.note_add),
-                    const SizedBox(width: 12),
-                    Checkbox.adaptive(
-                      value: selectedStores.contains(storeName),
-                      onChanged: (v) {
-                        if (v!) {
-                          context
-                              .read<ExportSelectionProvider>()
-                              .addSelectedStore(storeName);
-                        } else if (!v) {
-                          context
-                              .read<ExportSelectionProvider>()
-                              .removeSelectedStore(storeName);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -152,8 +67,6 @@ class _Trailing extends StatelessWidget {
                 ),
               ),
               urlMismatch,
-              tools,
-              exportCheckbox,
             ],
           ),
         ),
