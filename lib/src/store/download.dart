@@ -142,7 +142,7 @@ class StoreDownload {
   ///
   /// For info about [urlTransformer], see [FMTCTileProvider.urlTransformer] and
   /// the
-  /// [online documentation](https://fmtc.jaffaketchup.dev/basic-usage/integrating-with-a-map#ensure-tiles-are-resilient-to-url-changes).
+  /// [online documentation](https://fmtc.jaffaketchup.dev/usage/integrating-with-a-map#ensure-tiles-are-resilient-to-url-changes).
   ///
   /// > [!WARNING]
   /// >

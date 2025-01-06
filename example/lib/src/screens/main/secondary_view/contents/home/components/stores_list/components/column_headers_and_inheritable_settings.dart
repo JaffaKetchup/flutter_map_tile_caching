@@ -102,9 +102,7 @@ class ColumnHeadersAndInheritableSettings extends StatelessWidget {
                                     value: e,
                                     alignment: Alignment.center,
                                     child: switch (e) {
-                                      null => const Icon(
-                                          Icons.disabled_by_default_rounded,
-                                        ),
+                                      null => const Icon(Icons.close),
                                       BrowseStoreStrategy.read =>
                                         const Icon(Icons.visibility),
                                       BrowseStoreStrategy.readUpdate =>

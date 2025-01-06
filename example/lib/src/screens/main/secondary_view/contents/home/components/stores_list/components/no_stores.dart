@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../../import/import.dart';
 import '../../../../../../../store_editor/store_editor.dart';
-import 'export_stores/example_app_limitations_text.dart';
+import 'example_app_limitations_text.dart';
 
 class NoStores extends StatelessWidget {
   const NoStores({

@@ -81,7 +81,6 @@ class _ImportPopupState extends State<ImportPopup> {
           appBar: AppBar(
             title: const Text('Import Archive'),
             automaticallyImplyLeading: stage != 3,
-            elevation: 1,
           ),
           body: AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),

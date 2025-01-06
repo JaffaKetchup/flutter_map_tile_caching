@@ -160,13 +160,19 @@ class _ConfirmationPanelState extends State<ConfirmationPanel> {
                             Text(
                               "You must abide by your tile server's Terms of "
                               'Service when bulk downloading.',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
                             ),
                             Text(
                               'Many servers will forbid or heavily restrict '
                               'this action, as it places extra strain on '
                               'resources. Be respectful, and note that you use '
                               'this functionality at your own risk.',
+                              style: TextStyle(
+                                color: Colors.black,
+                              ),
                             ),
                           ],
                         ),

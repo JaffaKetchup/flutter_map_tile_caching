@@ -22,25 +22,22 @@ class _Trailing extends StatelessWidget {
         child: SizedBox.expand(
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color:
-                  Theme.of(context).colorScheme.error.withValues(alpha: 0.75),
+              color: Colors.red.withValues(alpha: 0.75),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Icon(
-                  Icons.link_off,
-                  color: Colors.white,
-                ),
-                Text(
-                  'URL mismatch',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                spacing: 8,
+                children: [
+                  Icon(Icons.link_off, color: Colors.white),
+                  Text(
+                    'URL mismatch',
+                    style: TextStyle(color: Colors.white, fontSize: 14),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

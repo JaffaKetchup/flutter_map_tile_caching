@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../../../export/export.dart';
 import '../../../../../../../import/import.dart';
 import '../../../../../../../store_editor/store_editor.dart';
-import 'export_stores/example_app_limitations_text.dart';
+import 'example_app_limitations_text.dart';
 
 class NewStoreButton extends StatefulWidget {
   const NewStoreButton({super.key});
@@ -57,7 +58,8 @@ class _NewStoreButtonState extends State<NewStoreButton> {
                           child: SizedBox(
                             height: 38,
                             child: OutlinedButton.icon(
-                              onPressed: () {},
+                              onPressed: () => Navigator.of(context)
+                                  .pushNamed(ExportPopup.route),
                               icon: const Icon(Icons.send_and_archive),
                               label: const Text('Export'),
                             ),

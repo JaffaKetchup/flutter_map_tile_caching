@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class CustomSingleSlidableAction extends StatefulWidget {
@@ -48,7 +47,7 @@ class _CustomSingleSlidableActionState extends State<CustomSingleSlidableAction>
   }
 
   final _scaleTween = Tween<double>(begin: 1, end: 1.15);
-  final _rotationTween = Tween<double>(begin: 0, end: 0.06);
+  final _rotationTween = Tween<double>(begin: 0, end: 0.05);
 
   double _prevMaxWidth = 0;
 
@@ -72,16 +71,8 @@ class _CustomSingleSlidableActionState extends State<CustomSingleSlidableAction>
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 final box = _inkWellKey.currentContext!.findRenderObject()!
                     as RenderBox;
-                final position = box.localToGlobal(
-                  Offset(
-                    lerpDouble(
-                      0,
-                      box.size.width,
-                      (widget.alignment.x.clamp(-1, 1) + 1) / 2,
-                    )!,
-                    box.size.height / 2,
-                  ),
-                );
+                final localPosition = Offset(12 + 16, box.size.height / 2);
+                final globalPosition = box.localToGlobal(localPosition);
 
                 _inkWellKey.currentContext!.visitChildElements((element) {
                   assert(
@@ -97,11 +88,8 @@ class _CustomSingleSlidableActionState extends State<CustomSingleSlidableAction>
                   // Shenanigans
                   // ignore: avoid_dynamic_calls
                   inkResponseState.handleTapDown(
-                    TapDownDetails(globalPosition: position),
+                    TapDownDetails(globalPosition: globalPosition),
                   );
-                  // Shenanigans
-                  // ignore: avoid_dynamic_calls
-                  inkResponseState.handleLongPress();
                 });
               });
             }
@@ -187,33 +175,41 @@ class _CustomSingleSlidableActionState extends State<CustomSingleSlidableAction>
 
             return Material(
               color: Colors.transparent,
-              child: InkWell(
-                key: _inkWellKey,
-                radius: innerConstraints.maxWidth,
-                splashFactory: InkSparkle.splashFactory,
-                canRequestFocus: false,
-                child: TweenAnimationBuilder(
-                  tween: ColorTween(
-                    begin: widget.color.withAlpha(204),
-                    end: willAct ? widget.color : widget.color.withAlpha(204),
-                  ),
-                  duration: const Duration(milliseconds: 120),
-                  curve: Curves.easeIn,
-                  builder: (context, color, child) => Ink(
-                    color: color,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    height: double.infinity,
-                    child: child,
-                  ),
-                  child: Opacity(
-                    opacity: innerConstraints.maxWidth.clamp(0, 56) / 56,
-                    child: Row(
-                      mainAxisAlignment: widget.alignment.x > 0
-                          ? MainAxisAlignment.end
-                          : MainAxisAlignment.start,
-                      children: widget.alignment.x > 0
-                          ? [icon, loader]
-                          : [loader, icon],
+              child: Transform.flip(
+                flipX: widget.alignment.x > 0,
+                child: InkWell(
+                  key: _inkWellKey,
+                  radius: innerConstraints.maxWidth,
+                  splashFactory: InkSparkle.splashFactory,
+                  canRequestFocus: false,
+                  child: Transform.flip(
+                    flipX: widget.alignment.x > 0,
+                    child: TweenAnimationBuilder(
+                      tween: ColorTween(
+                        begin: widget.color.withAlpha(204),
+                        end: willAct
+                            ? widget.color
+                            : widget.color.withAlpha(204),
+                      ),
+                      duration: const Duration(milliseconds: 120),
+                      curve: Curves.easeIn,
+                      builder: (context, color, child) => Ink(
+                        color: color,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        height: double.infinity,
+                        child: child,
+                      ),
+                      child: Opacity(
+                        opacity: innerConstraints.maxWidth.clamp(0, 56) / 56,
+                        child: Row(
+                          mainAxisAlignment: widget.alignment.x > 0
+                              ? MainAxisAlignment.end
+                              : MainAxisAlignment.start,
+                          children: widget.alignment.x > 0
+                              ? [icon, loader]
+                              : [loader, icon],
+                        ),
+                      ),
                     ),
                   ),
                 ),

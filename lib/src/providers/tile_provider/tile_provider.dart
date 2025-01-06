@@ -177,7 +177,7 @@ class FMTCTileProvider extends TileProvider {
   /// Method used to create a tile's storage-suitable UID from it's real URL
   ///
   /// For more information, check the
-  /// [online documentation](https://fmtc.jaffaketchup.dev/basic-usage/integrating-with-a-map#ensure-tiles-are-resilient-to-url-changes).
+  /// [online documentation](https://fmtc.jaffaketchup.dev/usage/integrating-with-a-map#ensure-tiles-are-resilient-to-url-changes).
   ///
   /// The input string is the tile's URL. The output string should be a unique
   /// string to that tile that will remain as stable as necessary if parts of

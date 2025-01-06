@@ -95,7 +95,7 @@ class _ImportSelectionStageState extends State<ImportSelectionStage> {
                               children: [
                                 Icon(icon),
                                 const SizedBox(width: 12),
-                                Text(text),
+                                Expanded(child: Text(text)),
                               ],
                             ),
                           );
