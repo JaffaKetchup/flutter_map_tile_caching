@@ -5,8 +5,8 @@
 #define MyAppPublisher "JaffaKetchup Development"
 #define MyAppURL "https://github.com/JaffaKetchup/flutter_map_tile_caching"
 #define MyAppSupportURL "https://github.com/JaffaKetchup/flutter_map_tile_caching/issues"
-#define MyAppExeName "example.exe"
-#define MyAppAssocName "Map Cache Store"
+#define MyAppExeName "fmtc_demo.exe"
+#define MyAppAssocName "FMTC Archive"
 #define MyAppAssocExt ".fmtc"
 #define MyAppAssocKey StringChange(MyAppAssocName, " ", "") + MyAppAssocExt
 
@@ -63,12 +63,13 @@ Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
-; Specify all files within 'build/windows/runner/Release' except 'example.exe'
+; Specify all files within 'build/windows/runner/Release' except 'fmtc_demo.exe'
 [Files]
 Source: "example\build\windows\x64\runner\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "example\build\windows\x64\runner\Release\flutter_windows.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "example\build\windows\x64\runner\Release\objectbox_flutter_libs_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "example\build\windows\x64\runner\Release\objectbox.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "example\build\windows\x64\runner\Release\share_plus_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "example\build\windows\x64\runner\Release\data\*"; DestDir: "{app}\data"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Registry]
