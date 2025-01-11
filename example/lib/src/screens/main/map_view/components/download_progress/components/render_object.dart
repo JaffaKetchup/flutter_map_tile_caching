@@ -230,9 +230,9 @@ class _DownloadProgressMaskerRenderer extends RenderProxyBox {
 
   /// Project specified coordinates to a screen space [Rect]
   Rect _calculateRectOfCoords(LatLng nwCoord, LatLng seCoord) {
-    final nwScreen = mapCamera.latLngToScreenPoint(nwCoord);
-    final seScreen = mapCamera.latLngToScreenPoint(seCoord);
-    return Rect.fromPoints(nwScreen.toOffset(), seScreen.toOffset());
+    final nwScreen = mapCamera.latLngToScreenOffset(nwCoord);
+    final seScreen = mapCamera.latLngToScreenOffset(seCoord);
+    return Rect.fromPoints(nwScreen, seScreen);
   }
 
   /// Handles incoming tiles from the input stream, modifying the [_tileMapping]
@@ -272,9 +272,20 @@ class _DownloadProgressMaskerRenderer extends RenderProxyBox {
         } else {
           final zoom = tile.z.toDouble();
           _tileMapping[intermediateZoomTile] = tmv = _TileMappingValue.newTile(
-            nwCoord: mapCamera.crs.pointToLatLng(tile * tileSize, zoom),
-            seCoord: mapCamera.crs
-                .pointToLatLng((tile + const Point(1, 1)) * tileSize, zoom),
+            nwCoord: mapCamera.crs.offsetToLatLng(
+              Offset(
+                (tile.x * tileSize).toDouble(),
+                (tile.y * tileSize).toDouble(),
+              ),
+              zoom,
+            ),
+            seCoord: mapCamera.crs.offsetToLatLng(
+              Offset(
+                ((tile.x + 1) * tileSize).toDouble(),
+                ((tile.y + 1) * tileSize).toDouble(),
+              ),
+              zoom,
+            ),
           );
           _mostRecentTile =
               () => _calculateRectOfCoords(tmv.nwCoord, tmv.seCoord);
