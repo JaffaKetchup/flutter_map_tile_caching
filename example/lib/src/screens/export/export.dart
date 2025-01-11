@@ -295,7 +295,7 @@ class _ExportPopupState extends State<ExportPopup> {
 
     final file = File(path);
     try {
-      await file.create();
+      await file.create(recursive: true);
       await file.delete();
     } on FileSystemException {
       return errorOut();
