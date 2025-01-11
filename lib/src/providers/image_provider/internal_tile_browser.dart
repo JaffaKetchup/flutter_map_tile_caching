@@ -241,6 +241,7 @@ Future<Uint8List> _internalTileBrowser({
       bytes: response.bodyBytes,
     );
     currentTLIR?.storesWriteResult = writeOp;
+
     unawaited(
       writeOp.then((result) {
         final createdIn =
@@ -250,6 +251,7 @@ Future<Uint8List> _internalTileBrowser({
         // We only need to even attempt this if the number of tiles has changed
         if (createdIn.isEmpty) return;
 
+        // Internally debounced, so we don't need to debounce here
         FMTCBackendAccess.internal.removeOldestTilesAboveLimit(
           storeNames: createdIn.toList(growable: false),
         );

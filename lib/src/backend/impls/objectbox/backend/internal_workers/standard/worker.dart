@@ -110,14 +110,14 @@ Future<void> _worker(
         final queriedStores = storesQuery.property(ObjectBoxStore_.name).find();
         if (queriedStores.isEmpty) return 0;
 
-        final tileCount =
-            min(limitTiles ?? double.infinity, tilesQuery.count());
-        if (tileCount == 0) return 0;
+        for (int offset = 0;; offset += tilesChunkSize) {
+          final limit = limitTiles == null
+              ? tilesChunkSize
+              : min(tilesChunkSize, limitTiles - offset);
 
-        for (int offset = 0; offset < tileCount; offset += tilesChunkSize) {
           final tilesChunk = (tilesQuery
                 ..offset = offset
-                ..limit = tilesChunkSize)
+                ..limit = limit)
               .find();
 
           // For each store, remove it from the tile if requested
@@ -142,6 +142,8 @@ Future<void> _worker(
             rootDeltaSize -= tile.bytes.lengthInBytes;
             tilesToRemove.add(tile.id);
           }
+
+          if (tilesChunk.length < tilesChunkSize) break;
         }
 
         if (!hadTilesToUpdate && tilesToRemove.isEmpty) return 0;
