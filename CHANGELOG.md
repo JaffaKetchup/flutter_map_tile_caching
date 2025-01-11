@@ -18,7 +18,7 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [10.0.0] - "Better Browsing" - 2025/XX/XX
+## [10.0.0] - "Better Browsing" - 2025/01/11
 
 This update builds on v9 to fully embrace the new many-to-many relationship between tiles and stores, which allows for more flexibility when constructing the `FMTCTileProvider`.  
 This allows a new paradigm to be used: stores may now be treated as bulk downloaded regions, and all the regions/stores can be used at once - no more switching between them. This allows huge amounts of flexibility and a better UX in a complex application. Additionally, each store may now have its own `BrowseStoreStrategy` when browsing, which allows more flexibility: for example, stores may now contain more than one URL template/source, but control is retained.
