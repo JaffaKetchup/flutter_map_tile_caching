@@ -25,39 +25,37 @@ class _VerticalLayout extends StatelessWidget {
           controller: _bottomSheetOuterController,
         ),
         floatingActionButton: selectedTab == 1 &&
-                context
-                    .watch<RegionSelectionProvider>()
-                    .constructedRegions
-                    .isNotEmpty
+                context.select<RegionSelectionProvider, bool>(
+                  (provider) =>
+                      provider.constructedRegions.isNotEmpty &&
+                      !provider.isDownloadSetupPanelVisible,
+                )
             ? DelayedControllerAttachmentBuilder(
                 listenable: _bottomSheetOuterController,
-                builder: (context, _) => AnimatedBuilder(
-                  animation: _bottomSheetOuterController,
-                  builder: (context, _) {
-                    final pixels = _bottomSheetOuterController.isAttached
-                        ? _bottomSheetOuterController.pixels
-                        : 0;
-                    return FloatingActionButton(
-                      onPressed: () async {
-                        await _bottomSheetOuterController.animateTo(
-                          2 / 3,
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOut,
-                        );
-                        if (!context.mounted) return;
-                        prepareDownloadConfigView(
-                          context,
-                          shouldShowConfig: pixels > 33,
-                        );
-                      },
-                      tooltip:
-                          pixels <= 33 ? 'Show regions' : 'Configure download',
-                      child: pixels <= 33
-                          ? const Icon(Icons.library_add_check)
-                          : const Icon(Icons.tune),
-                    );
-                  },
-                ),
+                builder: (context, _) {
+                  final pixels = _bottomSheetOuterController.isAttached
+                      ? _bottomSheetOuterController.pixels
+                      : 0;
+                  return FloatingActionButton(
+                    onPressed: () async {
+                      await _bottomSheetOuterController.animateTo(
+                        2 / 3,
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOut,
+                      );
+                      if (!context.mounted) return;
+                      prepareDownloadConfigView(
+                        context,
+                        shouldShowConfig: pixels > 33,
+                      );
+                    },
+                    tooltip:
+                        pixels <= 33 ? 'Show regions' : 'Configure download',
+                    child: pixels <= 33
+                        ? const Icon(Icons.library_add_check)
+                        : const Icon(Icons.tune),
+                  );
+                },
               )
             : null,
         bottomNavigationBar: NavigationBar(

@@ -2,8 +2,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../../shared/state/download_provider.dart';
 import '../../../../../shared/state/region_selection_provider.dart';
 import '../../contents/download_configuration/download_configuration_view_bottom_sheet.dart';
+import '../../contents/downloading/downloading_view_bottom_sheet.dart';
 import '../../contents/home/home_view_bottom_sheet.dart';
 import '../../contents/recovery/recovery_view_bottom_sheet.dart';
 import '../../contents/region_selection/region_selection_view_bottom_sheet.dart';
@@ -95,11 +97,15 @@ class _SecondaryViewBottomSheetState extends State<SecondaryViewBottomSheet> {
                     width: double.infinity,
                     child: switch (widget.selectedTab) {
                       0 => const HomeViewBottomSheet(),
-                      1 => context.select<RegionSelectionProvider, bool>(
-                          (p) => p.isDownloadSetupPanelVisible,
+                      1 => context.select<DownloadingProvider, bool>(
+                          (p) => p.isFocused,
                         )
-                            ? const DownloadConfigurationViewBottomSheet()
-                            : const RegionSelectionViewBottomSheet(),
+                            ? const DownloadingViewBottomSheet()
+                            : context.select<RegionSelectionProvider, bool>(
+                                (p) => p.isDownloadSetupPanelVisible,
+                              )
+                                ? const DownloadConfigurationViewBottomSheet()
+                                : const RegionSelectionViewBottomSheet(),
                       2 => const RecoveryViewBottomSheet(),
                       _ => Placeholder(key: ValueKey(widget.selectedTab)),
                     },

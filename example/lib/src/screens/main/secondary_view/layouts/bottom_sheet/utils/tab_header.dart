@@ -86,7 +86,7 @@ class TabHeader extends StatelessWidget {
                         return Row(
                           children: [
                             SizedBox(width: calc(40), child: child),
-                            SizedBox(width: calc(16)),
+                            SizedBox(width: calc(8)),
                             Text(
                               title,
                               style: Theme.of(context).textTheme.titleLarge,

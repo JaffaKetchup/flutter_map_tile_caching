@@ -101,7 +101,7 @@ class _DownloadingViewSideState extends State<DownloadingViewSide> {
               child: SingleChildScrollView(
                 child: Padding(
                   padding: EdgeInsets.all(16),
-                  child: DownloadStatistics(),
+                  child: DownloadStatistics(showTitle: true),
                 ),
               ),
             ),

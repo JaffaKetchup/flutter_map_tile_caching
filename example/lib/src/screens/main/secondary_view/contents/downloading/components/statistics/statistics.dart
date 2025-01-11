@@ -7,21 +7,29 @@ import 'components/timing/timing.dart';
 import 'components/title_bar/title_bar.dart';
 
 class DownloadStatistics extends StatelessWidget {
-  const DownloadStatistics({super.key});
+  const DownloadStatistics({
+    super.key,
+    required this.showTitle,
+  });
+
+  final bool showTitle;
 
   @override
-  Widget build(BuildContext context) => const Column(
+  Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TitleBar(),
-          SizedBox(height: 24),
-          TimingStats(),
-          SizedBox(height: 24),
-          ProgressIndicatorBars(),
-          SizedBox(height: 16),
-          ProgressIndicatorText(),
-          SizedBox(height: 24),
-          TileDisplay(),
+          if (showTitle) ...[
+            const TitleBar(),
+            const SizedBox(height: 24),
+          ] else
+            const SizedBox(height: 6),
+          const TimingStats(),
+          const SizedBox(height: 24),
+          const ProgressIndicatorBars(),
+          const SizedBox(height: 16),
+          const ProgressIndicatorText(),
+          const SizedBox(height: 24),
+          const TileDisplay(),
         ],
       );
 }

@@ -48,14 +48,10 @@ class AdditionalOverlay extends StatelessWidget {
                   listenable: bottomSheetOuterController,
                   builder: (context, child) {
                     if (!bottomSheetOuterController.isAttached) return child!;
-                    return AnimatedBuilder(
-                      animation: bottomSheetOuterController,
-                      builder: (context, child) => _HeightZero(
-                        useChildHeight: showShapeSelector &&
-                            bottomSheetOuterController.pixels <= 33,
-                        child: child!,
-                      ),
-                      child: child,
+                    return _HeightZero(
+                      useChildHeight: showShapeSelector &&
+                          bottomSheetOuterController.pixels <= 33,
+                      child: child!,
                     );
                   },
                   child: Container(
