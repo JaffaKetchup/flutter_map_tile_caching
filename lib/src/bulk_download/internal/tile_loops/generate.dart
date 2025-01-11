@@ -49,16 +49,19 @@ class TileGenerators {
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
         zoomLvl++) {
-      final nwPoint = (region.crs.latLngToPoint(northWest, zoomLvl) /
-              region.options.tileSize)
-          .floor();
-      final sePoint = (region.crs.latLngToPoint(southEast, zoomLvl) /
-                  region.options.tileSize)
-              .ceil() -
-          const Point(1, 1);
+      final intZoomLvl = zoomLvl.toInt();
+      final scaleLvl = region.crs.scale(zoomLvl);
 
-      for (int x = nwPoint.x; x <= sePoint.x; x++) {
-        for (int y = nwPoint.y; y <= sePoint.y; y++) {
+      final nw = region.crs.latLngToXY(northWest, scaleLvl);
+      final nwX = (nw.$1 / region.options.tileDimension).floor();
+      final nwY = (nw.$2 / region.options.tileDimension).floor();
+
+      final se = region.crs.latLngToXY(southEast, scaleLvl);
+      final seX = (se.$1 / region.options.tileDimension).ceil() - 1;
+      final seY = (se.$2 / region.options.tileDimension).ceil() - 1;
+
+      for (int x = nwX; x <= seX; x++) {
+        for (int y = nwY; y <= seY; y++) {
           tileCounter++;
           if (tileCounter < start) continue;
           if (tileCounter > end) {
@@ -67,7 +70,7 @@ class TileGenerators {
           }
 
           await requestQueue.next;
-          sendPort.send((x, y, zoomLvl.toInt()));
+          sendPort.send((x, y, intZoomLvl));
         }
       }
     }
@@ -105,19 +108,21 @@ class TileGenerators {
       0,
     );
 
-    for (int zoomLvl = region.minZoom; zoomLvl <= region.maxZoom; zoomLvl++) {
-      final centerTile = (region.crs.latLngToPoint(
-                region.originalRegion.center,
-                zoomLvl.toDouble(),
-              ) /
-              region.options.tileSize)
-          .floor();
+    for (double zoomLvl = region.minZoom.toDouble();
+        zoomLvl <= region.maxZoom;
+        zoomLvl++) {
+      final intZoomLvl = zoomLvl.toInt();
+      final scaleLvl = region.crs.scale(zoomLvl);
 
-      final radius = centerTile.y -
-          (region.crs.latLngToPoint(edgeTile, zoomLvl.toDouble()) /
-                  region.options.tileSize)
-              .floor()
-              .y;
+      final centerTile =
+          (region.crs.latLngToXY(region.originalRegion.center, scaleLvl) /
+                  region.options.tileDimension)
+              .floor();
+
+      final radius = centerTile.$2 -
+          (region.crs.latLngToXY(edgeTile, scaleLvl).$2 /
+                  region.options.tileDimension)
+              .floor();
 
       final radiusSquared = radius * radius;
 
@@ -130,7 +135,7 @@ class TileGenerators {
         }
 
         await requestQueue.next;
-        sendPort.send((centerTile.x, centerTile.y, zoomLvl));
+        sendPort.send((centerTile.$1, centerTile.$2, intZoomLvl));
 
         continue;
       }
@@ -144,7 +149,7 @@ class TileGenerators {
           }
 
           await requestQueue.next;
-          sendPort.send((centerTile.x, centerTile.y, zoomLvl));
+          sendPort.send((centerTile.$1, centerTile.$2, intZoomLvl));
         }
 
         tileCounter++;
@@ -155,7 +160,7 @@ class TileGenerators {
           }
 
           await requestQueue.next;
-          sendPort.send((centerTile.x, centerTile.y - 1, zoomLvl));
+          sendPort.send((centerTile.$1, centerTile.$2 - 1, intZoomLvl));
         }
 
         tileCounter++;
@@ -166,7 +171,7 @@ class TileGenerators {
           }
 
           await requestQueue.next;
-          sendPort.send((centerTile.x - 1, centerTile.y, zoomLvl));
+          sendPort.send((centerTile.$1 - 1, centerTile.$2, intZoomLvl));
         }
 
         tileCounter++;
@@ -177,7 +182,7 @@ class TileGenerators {
           }
 
           await requestQueue.next;
-          sendPort.send((centerTile.x - 1, centerTile.y - 1, zoomLvl));
+          sendPort.send((centerTile.$1 - 1, centerTile.$2 - 1, intZoomLvl));
         }
 
         continue;
@@ -194,7 +199,7 @@ class TileGenerators {
             }
 
             await requestQueue.next;
-            sendPort.send((dx + centerTile.x, dy + centerTile.y, zoomLvl));
+            sendPort.send((dx + centerTile.$1, dy + centerTile.$2, intZoomLvl));
           }
 
           tileCounter++;
@@ -205,7 +210,9 @@ class TileGenerators {
             }
 
             await requestQueue.next;
-            sendPort.send((dx + centerTile.x, -dy - 1 + centerTile.y, zoomLvl));
+            sendPort.send(
+              (dx + centerTile.$1, -dy - 1 + centerTile.$2, intZoomLvl),
+            );
           }
         }
       }
@@ -245,12 +252,12 @@ class TileGenerators {
           final p1 = polygon.points[i1];
           final p2 = polygon.points[i2];
 
-          final normal = Point(p2.y - p1.y, p1.x - p2.x);
+          final normal = Point(p2.$2 - p1.$2, p1.$1 - p2.$1);
 
           var minA = largestInt;
           var maxA = smallestInt;
           for (final p in a.points) {
-            final projected = normal.x * p.x + normal.y * p.y;
+            final projected = normal.x * p.$1 + normal.y * p.$2;
             if (projected < minA) minA = projected;
             if (projected > maxA) maxA = projected;
           }
@@ -258,7 +265,7 @@ class TileGenerators {
           var minB = largestInt;
           var maxB = smallestInt;
           for (final p in b.points) {
-            final projected = normal.x * p.x + normal.y * p.y;
+            final projected = normal.x * p.$1 + normal.y * p.$2;
             if (projected < minB) minB = projected;
             if (projected > maxB) maxB = projected;
           }
@@ -292,6 +299,9 @@ class TileGenerators {
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
         zoomLvl++) {
+      final intZoomLvl = zoomLvl.toInt();
+      final scaleLvl = region.crs.scale(zoomLvl);
+
       final generatedTiles = <int>[];
 
       for (final rect in lineOutline) {
@@ -316,51 +326,49 @@ class TileGenerators {
         ];
 
         final rotatedRectangleNW =
-            (region.crs.latLngToPoint(rotatedRectangle.topLeft, zoomLvl) /
-                    region.options.tileSize)
+            (region.crs.latLngToXY(rotatedRectangle.topLeft, scaleLvl) /
+                    region.options.tileDimension)
                 .floor();
         final rotatedRectangleNE =
-            (region.crs.latLngToPoint(rotatedRectangle.topRight, zoomLvl) /
-                        region.options.tileSize)
+            (region.crs.latLngToXY(rotatedRectangle.topRight, scaleLvl) /
+                        region.options.tileDimension)
                     .ceil() -
-                const Point(1, 0);
+                (1, 0);
         final rotatedRectangleSW =
-            (region.crs.latLngToPoint(rotatedRectangle.bottomLeft, zoomLvl) /
-                        region.options.tileSize)
+            (region.crs.latLngToXY(rotatedRectangle.bottomLeft, scaleLvl) /
+                        region.options.tileDimension)
                     .ceil() -
-                const Point(0, 1);
+                (0, 1);
         final rotatedRectangleSE =
-            (region.crs.latLngToPoint(rotatedRectangle.bottomRight, zoomLvl) /
-                        region.options.tileSize)
+            (region.crs.latLngToXY(rotatedRectangle.bottomRight, scaleLvl) /
+                        region.options.tileDimension)
                     .ceil() -
-                const Point(1, 1);
+                (1, 1);
 
-        final straightRectangleNW = (region.crs.latLngToPoint(
+        final straightRectangleNW = (region.crs.latLngToXY(
                   LatLng(rotatedRectangleLats.max, rotatedRectangleLngs.min),
-                  zoomLvl,
+                  scaleLvl,
                 ) /
-                region.options.tileSize)
+                region.options.tileDimension)
             .floor();
-        final straightRectangleSE = (region.crs.latLngToPoint(
+        final straightRectangleSE = (region.crs.latLngToXY(
                       LatLng(
                         rotatedRectangleLats.min,
                         rotatedRectangleLngs.max,
                       ),
-                      zoomLvl,
+                      scaleLvl,
                     ) /
-                    region.options.tileSize)
+                    region.options.tileDimension)
                 .ceil() -
-            const Point(1, 1);
+            (1, 1);
 
-        for (int x = straightRectangleNW.x; x <= straightRectangleSE.x; x++) {
+        for (int x = straightRectangleNW.$1; x <= straightRectangleSE.$1; x++) {
           bool foundOverlappingTile = false;
-          for (int y = straightRectangleNW.y; y <= straightRectangleSE.y; y++) {
-            final tile = _Polygon(
-              Point(x, y),
-              Point(x + 1, y),
-              Point(x + 1, y + 1),
-              Point(x, y + 1),
-            );
+          for (int y = straightRectangleNW.$2;
+              y <= straightRectangleSE.$2;
+              y++) {
+            final tile =
+                _Polygon((x, y), (x + 1, y), (x + 1, y + 1), (x, y + 1));
             if (generatedTiles.contains(tile.hashCode)) continue;
 
             if (overlap(
@@ -383,7 +391,7 @@ class TileGenerators {
               }
 
               await requestQueue.next;
-              sendPort.send((x, y, zoomLvl.toInt()));
+              sendPort.send((x, y, intZoomLvl));
             } else if (foundOverlappingTile) {
               break;
             }
@@ -425,35 +433,44 @@ class TileGenerators {
     for (double zoomLvl = region.minZoom.toDouble();
         zoomLvl <= region.maxZoom;
         zoomLvl++) {
-      final allOutlineTiles = <Point<int>>{};
+      final intZoomLvl = zoomLvl.toInt();
+      final scaleLvl = region.crs.scale(zoomLvl);
+
+      final allOutlineTiles = <(int, int)>{};
 
       final pointsOutline = region.originalRegion.outline
-          .map((e) => region.crs.latLngToPoint(e, zoomLvl).floor());
+          .map((e) => region.crs.latLngToXY(e, scaleLvl).floorToDouble());
 
-      for (final triangle in Earcut.triangulateFromPoints(
-        pointsOutline.map((e) => e.toDoublePoint()),
+      for (final triangle in Earcut.triangulateRaw(
+        List.generate(
+          pointsOutline.length * 2,
+          (i) => i.isEven
+              ? pointsOutline.elementAt(i ~/ 2).$1
+              : pointsOutline.elementAt(i ~/ 2).$2,
+          growable: false,
+        ),
       ).map(pointsOutline.elementAt).slices(3)) {
         final outlineTiles = {
           ..._bresenhamsLGA(
-            Point(triangle[0].x, triangle[0].y),
-            Point(triangle[1].x, triangle[1].y),
-            unscaleBy: region.options.tileSize,
+            triangle[0],
+            triangle[1],
+            unscaleBy: region.options.tileDimension,
           ),
           ..._bresenhamsLGA(
-            Point(triangle[1].x, triangle[1].y),
-            Point(triangle[2].x, triangle[2].y),
-            unscaleBy: region.options.tileSize,
+            triangle[1],
+            triangle[2],
+            unscaleBy: region.options.tileDimension,
           ),
           ..._bresenhamsLGA(
-            Point(triangle[2].x, triangle[2].y),
-            Point(triangle[0].x, triangle[0].y),
-            unscaleBy: region.options.tileSize,
+            triangle[2],
+            triangle[0],
+            unscaleBy: region.options.tileDimension,
           ),
         };
         allOutlineTiles.addAll(outlineTiles);
 
         final byY = <int, Set<int>>{};
-        for (final Point(:x, :y) in outlineTiles) {
+        for (final (x, y) in outlineTiles) {
           (byY[y] ??= {}).add(x);
         }
 
@@ -477,12 +494,12 @@ class TileGenerators {
             }
 
             await requestQueue.next;
-            sendPort.send((x, y, zoomLvl.toInt()));
+            sendPort.send((x, y, intZoomLvl));
           }
         }
       }
 
-      for (final Point(:x, :y) in allOutlineTiles) {
+      for (final (x, y) in allOutlineTiles) {
         tileCounter++;
         if (tileCounter < start) continue;
         if (tileCounter > end) {
@@ -491,7 +508,7 @@ class TileGenerators {
         }
 
         await requestQueue.next;
-        sendPort.send((x, y, zoomLvl.toInt()));
+        sendPort.send((x, y, intZoomLvl));
       }
     }
 

@@ -29,11 +29,12 @@ environment:
 dependencies:
   async: ^2.11.0
   collection: ^1.18.0
-  dart_earcut: ^1.1.0
+  dart_earcut: ^1.2.0
   flat_buffers: ^23.5.26
   flutter:
     sdk: flutter
-  flutter_map: ^7.0.2
+  flutter_map:
+    git: https://github.com/fleaflet/flutter_map.git
   http: ^1.2.2
   latlong2: ^0.9.1
   meta: ^1.15.0
