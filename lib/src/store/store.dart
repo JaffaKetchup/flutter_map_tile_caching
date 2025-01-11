@@ -3,21 +3,6 @@
 
 part of '../../flutter_map_tile_caching.dart';
 
-/// Equivalent to [FMTCStore], provided to ease migration only
-///
-/// The name refers to earlier versions of this library where the filesystem
-/// was used for storage, instead of a database.
-///
-/// This deprecation typedef will be removed in a future release: migrate to
-/// [FMTCStore].
-@Deprecated(
-  '''
-Migrate to `FMTCStore`. This deprecation typedef is provided to ease migration 
-only. It will be removed in a future version.
-''',
-)
-typedef StoreDirectory = FMTCStore;
-
 /// {@template fmtc.fmtcStore}
 /// Provides access to management, statistics, metadata, bulk download,
 /// the tile provider (and the export functionality) on the store named
@@ -27,6 +12,7 @@ typedef StoreDirectory = FMTCStore;
 /// > Constructing an instance of this class will not automatically create it.
 /// > To create this store, use [manage] > [StoreManagement.create].
 /// {@endtemplate}
+@immutable
 class FMTCStore {
   /// {@macro fmtc.fmtcStore}
   const FMTCStore(this.storeName);
@@ -50,17 +36,45 @@ class FMTCStore {
   /// Provides bulk downloading functionality
   StoreDownload get download => StoreDownload._(storeName);
 
-  /// Generate a [TileProvider] that connects to FMTC internals
+  /// Generate an [FMTCTileProvider] that only specifies this store
   ///
-  /// [settings] defaults to the current ambient
-  /// [FMTCTileProviderSettings.instance], which defaults to the initial
-  /// configuration if no other instance has been set.
+  /// Prefer/migrate to the [FMTCTileProvider.new] constructor.
+  ///
+  /// {@macro fmtc.fmtcTileProvider.constructionTip}
+  @Deprecated(
+    'Use the `FMTCTileProvider` default constructor instead. '
+    'This will reduce internal codebase complexity and maximise external '
+    'flexibility, and works toward a potential future decentralised API '
+    'design. '
+    'This feature was deprecated in v10, and will be removed in a future '
+    'version.',
+  )
   FMTCTileProvider getTileProvider({
-    FMTCTileProviderSettings? settings,
+    BrowseStoreStrategy storeStrategy = BrowseStoreStrategy.readUpdateCreate,
+    BrowseStoreStrategy? otherStoresStrategy,
+    BrowseLoadingStrategy loadingStrategy = BrowseLoadingStrategy.cacheFirst,
+    bool useOtherStoresAsFallbackOnly = false,
+    bool recordHitsAndMisses = true,
+    Duration cachedValidDuration = Duration.zero,
+    UrlTransformer? urlTransformer,
+    BrowsingExceptionHandler? errorHandler,
+    ValueNotifier<TileLoadingInterceptorMap>? tileLoadingInterceptor,
     Map<String, String>? headers,
-    http.Client? httpClient,
+    Client? httpClient,
   }) =>
-      FMTCTileProvider._(storeName, settings, headers, httpClient);
+      FMTCTileProvider(
+        stores: {storeName: storeStrategy},
+        otherStoresStrategy: otherStoresStrategy,
+        loadingStrategy: loadingStrategy,
+        useOtherStoresAsFallbackOnly: useOtherStoresAsFallbackOnly,
+        recordHitsAndMisses: recordHitsAndMisses,
+        cachedValidDuration: cachedValidDuration,
+        urlTransformer: urlTransformer,
+        errorHandler: errorHandler,
+        tileLoadingInterceptor: tileLoadingInterceptor,
+        headers: headers,
+        httpClient: httpClient,
+      );
 
   @override
   bool operator ==(Object other) =>

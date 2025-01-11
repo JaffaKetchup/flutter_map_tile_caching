@@ -1,8 +1,6 @@
 // Copyright © Luka S (JaffaKetchup) under GPL-v3
 // A full license can be found at .\LICENSE
 
-// ignore_for_file: use_late_for_private_fields_and_variables
-
 part of '../../flutter_map_tile_caching.dart';
 
 /// Provides statistics about an [FMTCStore]
@@ -16,10 +14,10 @@ class StoreStats {
 
   /// {@macro fmtc.backend.getStoreStats}
   ///
-  /// {@template fmtc.frontend.storestats.efficiency}
-  /// Prefer using [all] when multiple statistics are required instead of getting
-  /// them individually. Only one backend operation is required to get all the
-  /// stats, and so is more efficient.
+  /// {@template fmtc.storeStats.efficiency}
+  /// Prefer using [all] when multiple statistics are required instead of
+  /// getting them individually. Only one backend operation is required to get
+  /// all the stats, and so is more efficient.
   /// {@endtemplate}
   Future<({double size, int length, int hits, int misses})> get all =>
       FMTCBackendAccess.internal.getStoreStats(storeName: _storeName);
@@ -27,22 +25,27 @@ class StoreStats {
   /// Retrieve the total number of KiBs of all tiles' bytes (not 'real total'
   /// size)
   ///
-  /// {@macro fmtc.frontend.storestats.efficiency}
+  /// {@macro fmtc.storeStats.efficiency}
   Future<double> get size => all.then((a) => a.size);
 
   /// Retrieve the number of tiles belonging to this store
   ///
-  /// {@macro fmtc.frontend.storestats.efficiency}
+  /// {@macro fmtc.storeStats.efficiency}
   Future<int> get length => all.then((a) => a.length);
 
   /// Retrieve the number of successful tile retrievals when browsing
   ///
-  /// {@macro fmtc.frontend.storestats.efficiency}
+  /// A hit is only counted when an unexpired tile is retrieved from the store.
+  ///
+  /// {@macro fmtc.storeStats.efficiency}
   Future<int> get hits => all.then((a) => a.hits);
 
   /// Retrieve the number of unsuccessful tile retrievals when browsing
   ///
-  /// {@macro fmtc.frontend.storestats.efficiency}
+  /// A miss is counted whenever a tile is retrieved anywhere else but from this
+  /// store, or is retrieved from this store, but only as a fallback.
+  ///
+  /// {@macro fmtc.storeStats.efficiency}
   Future<int> get misses => all.then((a) => a.misses);
 
   /// {@macro fmtc.backend.watchStores}

@@ -27,15 +27,15 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   SendPort? _sendPort;
   final _workerResOneShot = <int, Completer<Map<String, dynamic>?>>{};
   final _workerResStreamed = <int, StreamSink<Map<String, dynamic>?>>{};
-  int _workerId = 0;
+  int _workerId = smallestInt;
   late Completer<void> _workerComplete;
   late StreamSubscription<dynamic> _workerHandler;
 
   // `removeOldestTilesAboveLimit` tracking & debouncing
 
   Timer? _rotalDebouncer;
-  String? _rotalStore;
-  Completer<int>? _rotalResultCompleter;
+  int? _rotalStoresHash;
+  Completer<Map<String, int>>? _rotalResultCompleter;
 
   // Define communicators
 
@@ -88,27 +88,22 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         controller.sink; // Will be inserted into by direct handler
     _sendPort!.send((id: id, type: type, args: args)); // Send cmd
 
-    try {
-      // Not using yield* as it doesn't allow for correct error handling
-      // (because result must be 'evaluated' here, instead of a direct
-      // passthrough)
-      await for (final evt in controller.stream) {
-        // Listen to responses
-        yield evt;
-      }
-    } catch (err, stackTrace) {
-      yield Error.throwWithStackTrace(
+    // Efficienctly forward resulting stream, but add extra debug info to any
+    // errors
+    yield* controller.stream.handleError(
+      (err, stackTrace) => Error.throwWithStackTrace(
         err,
         StackTrace.fromString(
-          '$stackTrace<asynchronous suspension>\n#+      [FMTC]      Unable to '
-          'attach final `StackTrace` when streaming results\n<asynchronous '
-          'suspension>\n#+      [FMTC]      (Debug Info) $type: $args\n',
+          '$stackTrace<asynchronous suspension>\n#+      [FMTC Debug Info]     '
+          ' Unable to attach final `StackTrace` when streaming results\n'
+          '<asynchronous suspension>\n#+      [FMTC Debug Info]      '
+          '$type: $args\n',
         ),
-      );
-    } finally {
-      // Goto `onCancel` once output listening cancelled
-      await controller.close();
-    }
+      ),
+    );
+
+    // Goto `onCancel` once output listening cancelled
+    await controller.close();
   }
 
   // Lifecycle implementations
@@ -207,27 +202,33 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     );
 
     // Spawn worker isolate
-    await Isolate.spawn(
-      _worker,
-      (
-        sendPort: receivePort.sendPort,
-        rootDirectory: this.rootDirectory,
-        maxDatabaseSize: maxDatabaseSize,
-        macosApplicationGroup: macosApplicationGroup,
-        rootIsolateToken: rootIsolateToken,
-      ),
-      onExit: receivePort.sendPort,
-      debugName: '[FMTC] ObjectBox Backend Worker',
-    );
+    try {
+      await Isolate.spawn(
+        _worker,
+        (
+          sendPort: receivePort.sendPort,
+          rootDirectory: this.rootDirectory,
+          maxDatabaseSize: maxDatabaseSize,
+          macosApplicationGroup: macosApplicationGroup,
+          rootIsolateToken: rootIsolateToken,
+        ),
+        onExit: receivePort.sendPort,
+        debugName: '[FMTC] ObjectBox Backend Worker',
+      );
+    } catch (e) {
+      receivePort.close();
+      _sendPort = null;
+      rethrow;
+    }
 
     // Check whether initialisation was successful after initial response
     if (await workerInitialRes case (:final err, :final stackTrace)) {
       Error.throwWithStackTrace(err, stackTrace);
-    } else {
-      FMTCBackendAccess.internal = this;
-      FMTCBackendAccessThreadSafe.internal =
-          _ObjectBoxBackendThreadSafeImpl._(rootDirectory: this.rootDirectory);
     }
+
+    FMTCBackendAccess.internal = this;
+    FMTCBackendAccessThreadSafe.internal =
+        _ObjectBoxBackendThreadSafeImpl._(rootDirectory: this.rootDirectory);
   }
 
   Future<void> uninitialise({
@@ -268,7 +269,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     _workerResStreamed.clear();
     _rotalDebouncer?.cancel();
     _rotalDebouncer = null;
-    _rotalStore = null;
+    _rotalStoresHash = null;
     _rotalResultCompleter?.completeError(RootUnavailable());
     _rotalResultCompleter = null;
 
@@ -295,6 +296,25 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       (await _sendCmdOneShot(type: _CmdType.listStores))!['stores'];
 
   @override
+  Future<int?> storeGetMaxLength({
+    required String storeName,
+  }) async =>
+      (await _sendCmdOneShot(
+        type: _CmdType.storeGetMaxLength,
+        args: {'storeName': storeName},
+      ))!['maxLength'];
+
+  @override
+  Future<void> storeSetMaxLength({
+    required String storeName,
+    required int? newMaxLength,
+  }) =>
+      _sendCmdOneShot(
+        type: _CmdType.storeSetMaxLength,
+        args: {'storeName': storeName, 'newMaxLength': newMaxLength},
+      );
+
+  @override
   Future<bool> storeExists({
     required String storeName,
   }) async =>
@@ -306,10 +326,11 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   @override
   Future<void> createStore({
     required String storeName,
+    required int? maxLength,
   }) =>
       _sendCmdOneShot(
         type: _CmdType.createStore,
-        args: {'storeName': storeName},
+        args: {'storeName': storeName, 'maxLength': maxLength},
       );
 
   @override
@@ -353,24 +374,35 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       ))!['stats'];
 
   @override
-  Future<bool> tileExistsInStore({
-    required String storeName,
+  Future<bool> tileExists({
     required String url,
+    required ({bool includeOrExclude, List<String> storeNames}) storeNames,
   }) async =>
       (await _sendCmdOneShot(
-        type: _CmdType.tileExistsInStore,
-        args: {'storeName': storeName, 'url': url},
+        type: _CmdType.tileExists,
+        args: {'url': url, 'storeNames': storeNames},
       ))!['exists'];
 
   @override
-  Future<ObjectBoxTile?> readTile({
+  Future<
+      ({
+        BackendTile? tile,
+        List<String> intersectedStoreNames,
+        List<String> allStoreNames,
+      })> readTile({
     required String url,
-    String? storeName,
-  }) async =>
-      (await _sendCmdOneShot(
-        type: _CmdType.readTile,
-        args: {'url': url, 'storeName': storeName},
-      ))!['tile'];
+    required ({bool includeOrExclude, List<String> storeNames}) storeNames,
+  }) async {
+    final res = (await _sendCmdOneShot(
+      type: _CmdType.readTile,
+      args: {'url': url, 'storeNames': storeNames},
+    ))!;
+    return (
+      tile: res['tile'] as BackendTile?,
+      intersectedStoreNames: res['intersectedStoreNames'] as List<String>,
+      allStoreNames: res['allStoreNames'] as List<String>,
+    );
+  }
 
   @override
   Future<ObjectBoxTile?> readLatestTile({
@@ -382,15 +414,21 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       ))!['tile'];
 
   @override
-  Future<void> writeTile({
-    required String storeName,
+  Future<Map<String, bool>> writeTile({
     required String url,
     required Uint8List bytes,
-  }) =>
-      _sendCmdOneShot(
+    required List<String> storeNames,
+    required List<String>? writeAllNotIn,
+  }) async =>
+      (await _sendCmdOneShot(
         type: _CmdType.writeTile,
-        args: {'storeName': storeName, 'url': url, 'bytes': bytes},
-      );
+        args: {
+          'storeNames': storeNames,
+          'writeAllNotIn': writeAllNotIn,
+          'url': url,
+          'bytes': bytes,
+        },
+      ))!['result'];
 
   @override
   Future<bool?> deleteTile({
@@ -403,36 +441,43 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       ))!['wasOrphan'];
 
   @override
-  Future<void> registerHitOrMiss({
-    required String storeName,
-    required bool hit,
+  Future<void> incrementStoreHits({
+    required List<String> storeNames,
   }) =>
       _sendCmdOneShot(
-        type: _CmdType.registerHitOrMiss,
-        args: {'storeName': storeName, 'hit': hit},
+        type: _CmdType.incrementStoreHits,
+        args: {'storeNames': storeNames},
       );
 
   @override
-  Future<int> removeOldestTilesAboveLimit({
-    required String storeName,
-    required int tilesLimit,
+  Future<void> incrementStoreMisses({
+    required ({bool includeOrExclude, List<String> storeNames}) storeNames,
+  }) =>
+      _sendCmdOneShot(
+        type: _CmdType.incrementStoreMisses,
+        args: {'storeNames': storeNames},
+      );
+
+  @override
+  Future<Map<String, int>> removeOldestTilesAboveLimit({
+    required List<String> storeNames,
   }) async {
     // By sharing a single completer, all invocations of this method during the
     // debounce period will return the same result at the same time
     if (_rotalResultCompleter?.isCompleted ?? true) {
-      _rotalResultCompleter = Completer<int>();
+      _rotalResultCompleter = Completer<Map<String, int>>();
     }
     void sendCmdAndComplete() => _rotalResultCompleter!.complete(
           _sendCmdOneShot(
             type: _CmdType.removeOldestTilesAboveLimit,
-            args: {'storeName': storeName, 'tilesLimit': tilesLimit},
-          ).then((v) => v!['numOrphans']),
+            args: {'storeNames': storeNames},
+          ).then((v) => v!['orphansCounts']),
         );
 
     // If the store has changed, failing to reset the batch/queue will mean
     // tiles are removed from the wrong store
-    if (_rotalStore != storeName) {
-      _rotalStore = storeName;
+    if (_rotalStoresHash != storeNames.hashCode) {
+      _rotalStoresHash = storeNames.hashCode;
       if (_rotalDebouncer?.isActive ?? false) {
         _rotalDebouncer!.cancel();
         sendCmdAndComplete();
@@ -460,7 +505,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       (await _sendCmdOneShot(
         type: _CmdType.removeTilesOlderThan,
         args: {'storeName': storeName, 'expiry': expiry},
-      ))!['numOrphans'];
+      ))!['orphansCount'];
 
   @override
   Future<Map<String, String>> readMetadata({
@@ -478,8 +523,11 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
     required String value,
   }) =>
       _sendCmdOneShot(
-        type: _CmdType.setMetadata,
-        args: {'storeName': storeName, 'key': key, 'value': value},
+        type: _CmdType.setBulkMetadata,
+        args: {
+          'storeName': storeName,
+          'kvs': {key: value},
+        },
       );
 
   @override
@@ -554,7 +602,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       );
 
   @override
-  Future<void> exportStores({
+  Future<int> exportStores({
     required List<String> storeNames,
     required String path,
   }) async {
@@ -567,10 +615,10 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
       throw ImportExportPathNotFile();
     }
 
-    await _sendCmdOneShot(
+    return (await _sendCmdOneShot(
       type: _CmdType.exportStores,
       args: {'storeNames': storeNames, 'outputPath': path},
-    );
+    ))!['numExportedTiles'];
   }
 
   @override

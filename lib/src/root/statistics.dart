@@ -8,29 +8,30 @@ class RootStats {
   const RootStats._();
 
   /// {@macro fmtc.backend.listStores}
-  Future<List<FMTCStore>> get storesAvailable async =>
-      FMTCBackendAccess.internal
-          .listStores()
-          .then((s) => s.map(FMTCStore.new).toList());
+  Future<List<FMTCStore>> get storesAvailable => FMTCBackendAccess.internal
+      .listStores()
+      .then((s) => s.map(FMTCStore.new).toList());
 
   /// {@macro fmtc.backend.realSize}
-  Future<double> get realSize async => FMTCBackendAccess.internal.realSize();
+  Future<double> get realSize => FMTCBackendAccess.internal.realSize();
 
   /// {@macro fmtc.backend.rootSize}
-  Future<double> get size async => FMTCBackendAccess.internal.rootSize();
+  Future<double> get size => FMTCBackendAccess.internal.rootSize();
 
   /// {@macro fmtc.backend.rootLength}
-  Future<int> get length async => FMTCBackendAccess.internal.rootLength();
+  Future<int> get length => FMTCBackendAccess.internal.rootLength();
 
   /// {@macro fmtc.backend.watchRecovery}
+  @Deprecated(
+    'Use `FMTCRoot.recovery.watch()` instead. '
+    'This is more suited to the context of the recovery methods. '
+    'This feature was deprecated in v10, and will be removed in a future '
+    'version.',
+  )
   Stream<void> watchRecovery({
     bool triggerImmediately = false,
-  }) async* {
-    final stream = FMTCBackendAccess.internal.watchRecovery(
-      triggerImmediately: triggerImmediately,
-    );
-    yield* stream;
-  }
+  }) =>
+      FMTCRoot.recovery.watch(triggerImmediately: triggerImmediately);
 
   /// {@macro fmtc.backend.watchStores}
   ///

@@ -15,6 +15,7 @@ import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
 import '../../../../../../src/backend/impls/objectbox/models/src/recovery.dart';
+import '../../../../../../src/backend/impls/objectbox/models/src/recovery_region.dart';
 import '../../../../../../src/backend/impls/objectbox/models/src/root.dart';
 import '../../../../../../src/backend/impls/objectbox/models/src/store.dart';
 import '../../../../../../src/backend/impls/objectbox/models/src/tile.dart';
@@ -25,7 +26,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
       id: const obx_int.IdUid(1, 5472631385587455945),
       name: 'ObjectBoxRecovery',
-      lastPropertyId: const obx_int.IdUid(21, 3590067577930145922),
+      lastPropertyId: const obx_int.IdUid(22, 2247444187089993412),
       flags: 0,
       properties: <obx_int.ModelProperty>[
         obx_int.ModelProperty(
@@ -70,77 +71,19 @@ final _entities = <obx_int.ModelEntity>[
             type: 6,
             flags: 0),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(9, 7217406424708558740),
-            name: 'typeId',
-            type: 6,
-            flags: 0),
-        obx_int.ModelProperty(
-            id: const obx_int.IdUid(10, 5971465387225017460),
-            name: 'rectNwLat',
-            type: 8,
-            flags: 0),
-        obx_int.ModelProperty(
-            id: const obx_int.IdUid(11, 6703340231106164623),
-            name: 'rectNwLng',
-            type: 8,
-            flags: 0),
-        obx_int.ModelProperty(
-            id: const obx_int.IdUid(12, 741105584939284321),
-            name: 'rectSeLat',
-            type: 8,
-            flags: 0),
-        obx_int.ModelProperty(
-            id: const obx_int.IdUid(13, 2939837278126242427),
-            name: 'rectSeLng',
-            type: 8,
-            flags: 0),
-        obx_int.ModelProperty(
-            id: const obx_int.IdUid(14, 2393337671661697697),
-            name: 'circleCenterLat',
-            type: 8,
-            flags: 0),
-        obx_int.ModelProperty(
-            id: const obx_int.IdUid(15, 8055510540122966413),
-            name: 'circleCenterLng',
-            type: 8,
-            flags: 0),
-        obx_int.ModelProperty(
-            id: const obx_int.IdUid(16, 9110709438555760246),
-            name: 'circleRadius',
-            type: 8,
-            flags: 0),
-        obx_int.ModelProperty(
-            id: const obx_int.IdUid(17, 8363656194353400366),
-            name: 'lineLats',
-            type: 29,
-            flags: 0),
-        obx_int.ModelProperty(
-            id: const obx_int.IdUid(18, 7008680868853575786),
-            name: 'lineLngs',
-            type: 29,
-            flags: 0),
-        obx_int.ModelProperty(
-            id: const obx_int.IdUid(19, 7670007285707179405),
-            name: 'lineRadius',
-            type: 8,
-            flags: 0),
-        obx_int.ModelProperty(
-            id: const obx_int.IdUid(20, 490933261424375687),
-            name: 'customPolygonLats',
-            type: 29,
-            flags: 0),
-        obx_int.ModelProperty(
-            id: const obx_int.IdUid(21, 3590067577930145922),
-            name: 'customPolygonLngs',
-            type: 29,
-            flags: 0)
+            id: const obx_int.IdUid(22, 2247444187089993412),
+            name: 'regionId',
+            type: 11,
+            flags: 520,
+            indexId: const obx_int.IdUid(5, 2172676985778936605),
+            relationTarget: 'ObjectBoxRecoveryRegion')
       ],
       relations: <obx_int.ModelRelation>[],
       backlinks: <obx_int.ModelBacklink>[]),
   obx_int.ModelEntity(
       id: const obx_int.IdUid(2, 632249766926720928),
       name: 'ObjectBoxStore',
-      lastPropertyId: const obx_int.IdUid(7, 7028109958959828879),
+      lastPropertyId: const obx_int.IdUid(8, 3489822621946254204),
       flags: 0,
       properties: <obx_int.ModelProperty>[
         obx_int.ModelProperty(
@@ -178,6 +121,11 @@ final _entities = <obx_int.ModelEntity>[
             id: const obx_int.IdUid(7, 7028109958959828879),
             name: 'metadataJson',
             type: 9,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(8, 3489822621946254204),
+            name: 'maxLength',
+            type: 6,
             flags: 0)
       ],
       relations: <obx_int.ModelRelation>[],
@@ -244,6 +192,90 @@ final _entities = <obx_int.ModelEntity>[
             flags: 0)
       ],
       relations: <obx_int.ModelRelation>[],
+      backlinks: <obx_int.ModelBacklink>[]),
+  obx_int.ModelEntity(
+      id: const obx_int.IdUid(5, 5692106664767803360),
+      name: 'ObjectBoxRecoveryRegion',
+      lastPropertyId: const obx_int.IdUid(14, 2380085283533950474),
+      flags: 0,
+      properties: <obx_int.ModelProperty>[
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(1, 4629353002259573678),
+            name: 'id',
+            type: 6,
+            flags: 1),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(2, 1116094237557270575),
+            name: 'typeId',
+            type: 6,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(3, 8476920990388836149),
+            name: 'rectNwLat',
+            type: 8,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(4, 3015129163086269263),
+            name: 'rectNwLng',
+            type: 8,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(5, 8302525711584098439),
+            name: 'rectSeLat',
+            type: 8,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(6, 1939082009138163489),
+            name: 'rectSeLng',
+            type: 8,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(7, 5260761364748928203),
+            name: 'circleCenterLat',
+            type: 8,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(8, 3329863004721648966),
+            name: 'circleCenterLng',
+            type: 8,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(9, 8471244801699851283),
+            name: 'circleRadius',
+            type: 8,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(10, 5745879403192313286),
+            name: 'lineLats',
+            type: 29,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(11, 4679809662196927204),
+            name: 'lineLngs',
+            type: 29,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(12, 8730805542251345960),
+            name: 'lineRadius',
+            type: 8,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(13, 1607230668161719129),
+            name: 'customPolygonLats',
+            type: 29,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(14, 2380085283533950474),
+            name: 'customPolygonLngs',
+            type: 29,
+            flags: 0)
+      ],
+      relations: <obx_int.ModelRelation>[
+        obx_int.ModelRelation(
+            id: const obx_int.IdUid(2, 6378075033578405480),
+            name: 'multiLinkedRegions',
+            targetId: const obx_int.IdUid(5, 5692106664767803360))
+      ],
       backlinks: <obx_int.ModelBacklink>[])
 ];
 
@@ -282,13 +314,27 @@ Future<obx.Store> openStore(
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
       entities: _entities,
-      lastEntityId: const obx_int.IdUid(4, 8718814737097934474),
-      lastIndexId: const obx_int.IdUid(4, 4857742396480146668),
-      lastRelationId: const obx_int.IdUid(1, 7496298295217061586),
+      lastEntityId: const obx_int.IdUid(5, 5692106664767803360),
+      lastIndexId: const obx_int.IdUid(5, 2172676985778936605),
+      lastRelationId: const obx_int.IdUid(2, 6378075033578405480),
       lastSequenceId: const obx_int.IdUid(0, 0),
       retiredEntityUids: const [],
       retiredIndexUids: const [],
-      retiredPropertyUids: const [],
+      retiredPropertyUids: const [
+        7217406424708558740,
+        5971465387225017460,
+        6703340231106164623,
+        741105584939284321,
+        2939837278126242427,
+        2393337671661697697,
+        8055510540122966413,
+        9110709438555760246,
+        8363656194353400366,
+        7008680868853575786,
+        7670007285707179405,
+        490933261424375687,
+        3590067577930145922
+      ],
       retiredRelationUids: const [],
       modelVersion: 5,
       modelVersionParserMinimum: 5,
@@ -297,7 +343,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
   final bindings = <Type, obx_int.EntityDefinition>{
     ObjectBoxRecovery: obx_int.EntityDefinition<ObjectBoxRecovery>(
         model: _entities[0],
-        toOneRelations: (ObjectBoxRecovery object) => [],
+        toOneRelations: (ObjectBoxRecovery object) => [object.region],
         toManyRelations: (ObjectBoxRecovery object) => {},
         getId: (ObjectBoxRecovery object) => object.id,
         setId: (ObjectBoxRecovery object, int id) {
@@ -305,19 +351,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         },
         objectToFB: (ObjectBoxRecovery object, fb.Builder fbb) {
           final storeNameOffset = fbb.writeString(object.storeName);
-          final lineLatsOffset = object.lineLats == null
-              ? null
-              : fbb.writeListFloat64(object.lineLats!);
-          final lineLngsOffset = object.lineLngs == null
-              ? null
-              : fbb.writeListFloat64(object.lineLngs!);
-          final customPolygonLatsOffset = object.customPolygonLats == null
-              ? null
-              : fbb.writeListFloat64(object.customPolygonLats!);
-          final customPolygonLngsOffset = object.customPolygonLngs == null
-              ? null
-              : fbb.writeListFloat64(object.customPolygonLngs!);
-          fbb.startTable(22);
+          fbb.startTable(23);
           fbb.addInt64(0, object.id);
           fbb.addInt64(1, object.refId);
           fbb.addOffset(2, storeNameOffset);
@@ -326,19 +360,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           fbb.addInt64(5, object.maxZoom);
           fbb.addInt64(6, object.startTile);
           fbb.addInt64(7, object.endTile);
-          fbb.addInt64(8, object.typeId);
-          fbb.addFloat64(9, object.rectNwLat);
-          fbb.addFloat64(10, object.rectNwLng);
-          fbb.addFloat64(11, object.rectSeLat);
-          fbb.addFloat64(12, object.rectSeLng);
-          fbb.addFloat64(13, object.circleCenterLat);
-          fbb.addFloat64(14, object.circleCenterLng);
-          fbb.addFloat64(15, object.circleRadius);
-          fbb.addOffset(16, lineLatsOffset);
-          fbb.addOffset(17, lineLngsOffset);
-          fbb.addFloat64(18, object.lineRadius);
-          fbb.addOffset(19, customPolygonLatsOffset);
-          fbb.addOffset(20, customPolygonLngsOffset);
+          fbb.addInt64(21, object.region.targetId);
           fbb.finish(fbb.endTable());
           return object.id;
         },
@@ -351,8 +373,6 @@ obx_int.ModelDefinition getObjectBoxModel() {
               .vTableGet(buffer, rootOffset, 8, '');
           final creationTimeParam = DateTime.fromMillisecondsSinceEpoch(
               const fb.Int64Reader().vTableGet(buffer, rootOffset, 10, 0));
-          final typeIdParam =
-              const fb.Int64Reader().vTableGet(buffer, rootOffset, 20, 0);
           final minZoomParam =
               const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0);
           final maxZoomParam =
@@ -361,57 +381,20 @@ obx_int.ModelDefinition getObjectBoxModel() {
               const fb.Int64Reader().vTableGet(buffer, rootOffset, 16, 0);
           final endTileParam =
               const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0);
-          final rectNwLatParam = const fb.Float64Reader()
-              .vTableGetNullable(buffer, rootOffset, 22);
-          final rectNwLngParam = const fb.Float64Reader()
-              .vTableGetNullable(buffer, rootOffset, 24);
-          final rectSeLatParam = const fb.Float64Reader()
-              .vTableGetNullable(buffer, rootOffset, 26);
-          final rectSeLngParam = const fb.Float64Reader()
-              .vTableGetNullable(buffer, rootOffset, 28);
-          final circleCenterLatParam = const fb.Float64Reader()
-              .vTableGetNullable(buffer, rootOffset, 30);
-          final circleCenterLngParam = const fb.Float64Reader()
-              .vTableGetNullable(buffer, rootOffset, 32);
-          final circleRadiusParam = const fb.Float64Reader()
-              .vTableGetNullable(buffer, rootOffset, 34);
-          final lineLatsParam =
-              const fb.ListReader<double>(fb.Float64Reader(), lazy: false)
-                  .vTableGetNullable(buffer, rootOffset, 36);
-          final lineLngsParam =
-              const fb.ListReader<double>(fb.Float64Reader(), lazy: false)
-                  .vTableGetNullable(buffer, rootOffset, 38);
-          final lineRadiusParam = const fb.Float64Reader()
-              .vTableGetNullable(buffer, rootOffset, 40);
-          final customPolygonLatsParam =
-              const fb.ListReader<double>(fb.Float64Reader(), lazy: false)
-                  .vTableGetNullable(buffer, rootOffset, 42);
-          final customPolygonLngsParam =
-              const fb.ListReader<double>(fb.Float64Reader(), lazy: false)
-                  .vTableGetNullable(buffer, rootOffset, 44);
+          final regionParam = obx.ToOne<ObjectBoxRecoveryRegion>(
+              targetId:
+                  const fb.Int64Reader().vTableGet(buffer, rootOffset, 46, 0));
           final object = ObjectBoxRecovery(
               refId: refIdParam,
               storeName: storeNameParam,
               creationTime: creationTimeParam,
-              typeId: typeIdParam,
               minZoom: minZoomParam,
               maxZoom: maxZoomParam,
               startTile: startTileParam,
               endTile: endTileParam,
-              rectNwLat: rectNwLatParam,
-              rectNwLng: rectNwLngParam,
-              rectSeLat: rectSeLatParam,
-              rectSeLng: rectSeLngParam,
-              circleCenterLat: circleCenterLatParam,
-              circleCenterLng: circleCenterLngParam,
-              circleRadius: circleRadiusParam,
-              lineLats: lineLatsParam,
-              lineLngs: lineLngsParam,
-              lineRadius: lineRadiusParam,
-              customPolygonLats: customPolygonLatsParam,
-              customPolygonLngs: customPolygonLngsParam)
+              region: regionParam)
             ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
-
+          object.region.attach(store);
           return object;
         }),
     ObjectBoxStore: obx_int.EntityDefinition<ObjectBoxStore>(
@@ -428,7 +411,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         objectToFB: (ObjectBoxStore object, fb.Builder fbb) {
           final nameOffset = fbb.writeString(object.name);
           final metadataJsonOffset = fbb.writeString(object.metadataJson);
-          fbb.startTable(8);
+          fbb.startTable(9);
           fbb.addInt64(0, object.id);
           fbb.addOffset(1, nameOffset);
           fbb.addInt64(2, object.length);
@@ -436,6 +419,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           fbb.addInt64(4, object.hits);
           fbb.addInt64(5, object.misses);
           fbb.addOffset(6, metadataJsonOffset);
+          fbb.addInt64(7, object.maxLength);
           fbb.finish(fbb.endTable());
           return object.id;
         },
@@ -444,6 +428,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
           final rootOffset = buffer.derefObject(0);
           final nameParam = const fb.StringReader(asciiOptimization: true)
               .vTableGet(buffer, rootOffset, 6, '');
+          final maxLengthParam =
+              const fb.Int64Reader().vTableGetNullable(buffer, rootOffset, 18);
           final lengthParam =
               const fb.Int64Reader().vTableGet(buffer, rootOffset, 8, 0);
           final sizeParam =
@@ -457,6 +443,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
                   .vTableGet(buffer, rootOffset, 16, '');
           final object = ObjectBoxStore(
               name: nameParam,
+              maxLength: maxLengthParam,
               length: lengthParam,
               size: sizeParam,
               hits: hitsParam,
@@ -533,6 +520,104 @@ obx_int.ModelDefinition getObjectBoxModel() {
             ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
 
           return object;
+        }),
+    ObjectBoxRecoveryRegion: obx_int.EntityDefinition<ObjectBoxRecoveryRegion>(
+        model: _entities[4],
+        toOneRelations: (ObjectBoxRecoveryRegion object) => [],
+        toManyRelations: (ObjectBoxRecoveryRegion object) => {
+              obx_int.RelInfo<ObjectBoxRecoveryRegion>.toMany(2, object.id):
+                  object.multiLinkedRegions
+            },
+        getId: (ObjectBoxRecoveryRegion object) => object.id,
+        setId: (ObjectBoxRecoveryRegion object, int id) {
+          object.id = id;
+        },
+        objectToFB: (ObjectBoxRecoveryRegion object, fb.Builder fbb) {
+          final lineLatsOffset = object.lineLats == null
+              ? null
+              : fbb.writeListFloat64(object.lineLats!);
+          final lineLngsOffset = object.lineLngs == null
+              ? null
+              : fbb.writeListFloat64(object.lineLngs!);
+          final customPolygonLatsOffset = object.customPolygonLats == null
+              ? null
+              : fbb.writeListFloat64(object.customPolygonLats!);
+          final customPolygonLngsOffset = object.customPolygonLngs == null
+              ? null
+              : fbb.writeListFloat64(object.customPolygonLngs!);
+          fbb.startTable(15);
+          fbb.addInt64(0, object.id);
+          fbb.addInt64(1, object.typeId);
+          fbb.addFloat64(2, object.rectNwLat);
+          fbb.addFloat64(3, object.rectNwLng);
+          fbb.addFloat64(4, object.rectSeLat);
+          fbb.addFloat64(5, object.rectSeLng);
+          fbb.addFloat64(6, object.circleCenterLat);
+          fbb.addFloat64(7, object.circleCenterLng);
+          fbb.addFloat64(8, object.circleRadius);
+          fbb.addOffset(9, lineLatsOffset);
+          fbb.addOffset(10, lineLngsOffset);
+          fbb.addFloat64(11, object.lineRadius);
+          fbb.addOffset(12, customPolygonLatsOffset);
+          fbb.addOffset(13, customPolygonLngsOffset);
+          fbb.finish(fbb.endTable());
+          return object.id;
+        },
+        objectFromFB: (obx.Store store, ByteData fbData) {
+          final buffer = fb.BufferContext(fbData);
+          final rootOffset = buffer.derefObject(0);
+          final typeIdParam =
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 6, 0);
+          final rectNwLatParam =
+              const fb.Float64Reader().vTableGetNullable(buffer, rootOffset, 8);
+          final rectNwLngParam = const fb.Float64Reader()
+              .vTableGetNullable(buffer, rootOffset, 10);
+          final rectSeLatParam = const fb.Float64Reader()
+              .vTableGetNullable(buffer, rootOffset, 12);
+          final rectSeLngParam = const fb.Float64Reader()
+              .vTableGetNullable(buffer, rootOffset, 14);
+          final circleCenterLatParam = const fb.Float64Reader()
+              .vTableGetNullable(buffer, rootOffset, 16);
+          final circleCenterLngParam = const fb.Float64Reader()
+              .vTableGetNullable(buffer, rootOffset, 18);
+          final circleRadiusParam = const fb.Float64Reader()
+              .vTableGetNullable(buffer, rootOffset, 20);
+          final lineLatsParam =
+              const fb.ListReader<double>(fb.Float64Reader(), lazy: false)
+                  .vTableGetNullable(buffer, rootOffset, 22);
+          final lineLngsParam =
+              const fb.ListReader<double>(fb.Float64Reader(), lazy: false)
+                  .vTableGetNullable(buffer, rootOffset, 24);
+          final lineRadiusParam = const fb.Float64Reader()
+              .vTableGetNullable(buffer, rootOffset, 26);
+          final customPolygonLatsParam =
+              const fb.ListReader<double>(fb.Float64Reader(), lazy: false)
+                  .vTableGetNullable(buffer, rootOffset, 28);
+          final customPolygonLngsParam =
+              const fb.ListReader<double>(fb.Float64Reader(), lazy: false)
+                  .vTableGetNullable(buffer, rootOffset, 30);
+          final multiLinkedRegionsParam = obx.ToMany<ObjectBoxRecoveryRegion>();
+          final object = ObjectBoxRecoveryRegion(
+              typeId: typeIdParam,
+              rectNwLat: rectNwLatParam,
+              rectNwLng: rectNwLngParam,
+              rectSeLat: rectSeLatParam,
+              rectSeLng: rectSeLngParam,
+              circleCenterLat: circleCenterLatParam,
+              circleCenterLng: circleCenterLngParam,
+              circleRadius: circleRadiusParam,
+              lineLats: lineLatsParam,
+              lineLngs: lineLngsParam,
+              lineRadius: lineRadiusParam,
+              customPolygonLats: customPolygonLatsParam,
+              customPolygonLngs: customPolygonLngsParam,
+              multiLinkedRegions: multiLinkedRegionsParam)
+            ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
+          obx_int.InternalToManyAccess.setRelInfo<ObjectBoxRecoveryRegion>(
+              object.multiLinkedRegions,
+              store,
+              obx_int.RelInfo<ObjectBoxRecoveryRegion>.toMany(2, object.id));
+          return object;
         })
   };
 
@@ -573,59 +658,10 @@ class ObjectBoxRecovery_ {
   static final endTile =
       obx.QueryIntegerProperty<ObjectBoxRecovery>(_entities[0].properties[7]);
 
-  /// See [ObjectBoxRecovery.typeId].
-  static final typeId =
-      obx.QueryIntegerProperty<ObjectBoxRecovery>(_entities[0].properties[8]);
-
-  /// See [ObjectBoxRecovery.rectNwLat].
-  static final rectNwLat =
-      obx.QueryDoubleProperty<ObjectBoxRecovery>(_entities[0].properties[9]);
-
-  /// See [ObjectBoxRecovery.rectNwLng].
-  static final rectNwLng =
-      obx.QueryDoubleProperty<ObjectBoxRecovery>(_entities[0].properties[10]);
-
-  /// See [ObjectBoxRecovery.rectSeLat].
-  static final rectSeLat =
-      obx.QueryDoubleProperty<ObjectBoxRecovery>(_entities[0].properties[11]);
-
-  /// See [ObjectBoxRecovery.rectSeLng].
-  static final rectSeLng =
-      obx.QueryDoubleProperty<ObjectBoxRecovery>(_entities[0].properties[12]);
-
-  /// See [ObjectBoxRecovery.circleCenterLat].
-  static final circleCenterLat =
-      obx.QueryDoubleProperty<ObjectBoxRecovery>(_entities[0].properties[13]);
-
-  /// See [ObjectBoxRecovery.circleCenterLng].
-  static final circleCenterLng =
-      obx.QueryDoubleProperty<ObjectBoxRecovery>(_entities[0].properties[14]);
-
-  /// See [ObjectBoxRecovery.circleRadius].
-  static final circleRadius =
-      obx.QueryDoubleProperty<ObjectBoxRecovery>(_entities[0].properties[15]);
-
-  /// See [ObjectBoxRecovery.lineLats].
-  static final lineLats = obx.QueryDoubleVectorProperty<ObjectBoxRecovery>(
-      _entities[0].properties[16]);
-
-  /// See [ObjectBoxRecovery.lineLngs].
-  static final lineLngs = obx.QueryDoubleVectorProperty<ObjectBoxRecovery>(
-      _entities[0].properties[17]);
-
-  /// See [ObjectBoxRecovery.lineRadius].
-  static final lineRadius =
-      obx.QueryDoubleProperty<ObjectBoxRecovery>(_entities[0].properties[18]);
-
-  /// See [ObjectBoxRecovery.customPolygonLats].
-  static final customPolygonLats =
-      obx.QueryDoubleVectorProperty<ObjectBoxRecovery>(
-          _entities[0].properties[19]);
-
-  /// See [ObjectBoxRecovery.customPolygonLngs].
-  static final customPolygonLngs =
-      obx.QueryDoubleVectorProperty<ObjectBoxRecovery>(
-          _entities[0].properties[20]);
+  /// See [ObjectBoxRecovery.region].
+  static final region =
+      obx.QueryRelationToOne<ObjectBoxRecovery, ObjectBoxRecoveryRegion>(
+          _entities[0].properties[8]);
 }
 
 /// [ObjectBoxStore] entity fields to define ObjectBox queries.
@@ -657,6 +693,10 @@ class ObjectBoxStore_ {
   /// See [ObjectBoxStore.metadataJson].
   static final metadataJson =
       obx.QueryStringProperty<ObjectBoxStore>(_entities[1].properties[6]);
+
+  /// See [ObjectBoxStore.maxLength].
+  static final maxLength =
+      obx.QueryIntegerProperty<ObjectBoxStore>(_entities[1].properties[7]);
 }
 
 /// [ObjectBoxTile] entity fields to define ObjectBox queries.
@@ -695,4 +735,74 @@ class ObjectBoxRoot_ {
   /// See [ObjectBoxRoot.size].
   static final size =
       obx.QueryIntegerProperty<ObjectBoxRoot>(_entities[3].properties[2]);
+}
+
+/// [ObjectBoxRecoveryRegion] entity fields to define ObjectBox queries.
+class ObjectBoxRecoveryRegion_ {
+  /// See [ObjectBoxRecoveryRegion.id].
+  static final id = obx.QueryIntegerProperty<ObjectBoxRecoveryRegion>(
+      _entities[4].properties[0]);
+
+  /// See [ObjectBoxRecoveryRegion.typeId].
+  static final typeId = obx.QueryIntegerProperty<ObjectBoxRecoveryRegion>(
+      _entities[4].properties[1]);
+
+  /// See [ObjectBoxRecoveryRegion.rectNwLat].
+  static final rectNwLat = obx.QueryDoubleProperty<ObjectBoxRecoveryRegion>(
+      _entities[4].properties[2]);
+
+  /// See [ObjectBoxRecoveryRegion.rectNwLng].
+  static final rectNwLng = obx.QueryDoubleProperty<ObjectBoxRecoveryRegion>(
+      _entities[4].properties[3]);
+
+  /// See [ObjectBoxRecoveryRegion.rectSeLat].
+  static final rectSeLat = obx.QueryDoubleProperty<ObjectBoxRecoveryRegion>(
+      _entities[4].properties[4]);
+
+  /// See [ObjectBoxRecoveryRegion.rectSeLng].
+  static final rectSeLng = obx.QueryDoubleProperty<ObjectBoxRecoveryRegion>(
+      _entities[4].properties[5]);
+
+  /// See [ObjectBoxRecoveryRegion.circleCenterLat].
+  static final circleCenterLat =
+      obx.QueryDoubleProperty<ObjectBoxRecoveryRegion>(
+          _entities[4].properties[6]);
+
+  /// See [ObjectBoxRecoveryRegion.circleCenterLng].
+  static final circleCenterLng =
+      obx.QueryDoubleProperty<ObjectBoxRecoveryRegion>(
+          _entities[4].properties[7]);
+
+  /// See [ObjectBoxRecoveryRegion.circleRadius].
+  static final circleRadius = obx.QueryDoubleProperty<ObjectBoxRecoveryRegion>(
+      _entities[4].properties[8]);
+
+  /// See [ObjectBoxRecoveryRegion.lineLats].
+  static final lineLats =
+      obx.QueryDoubleVectorProperty<ObjectBoxRecoveryRegion>(
+          _entities[4].properties[9]);
+
+  /// See [ObjectBoxRecoveryRegion.lineLngs].
+  static final lineLngs =
+      obx.QueryDoubleVectorProperty<ObjectBoxRecoveryRegion>(
+          _entities[4].properties[10]);
+
+  /// See [ObjectBoxRecoveryRegion.lineRadius].
+  static final lineRadius = obx.QueryDoubleProperty<ObjectBoxRecoveryRegion>(
+      _entities[4].properties[11]);
+
+  /// See [ObjectBoxRecoveryRegion.customPolygonLats].
+  static final customPolygonLats =
+      obx.QueryDoubleVectorProperty<ObjectBoxRecoveryRegion>(
+          _entities[4].properties[12]);
+
+  /// See [ObjectBoxRecoveryRegion.customPolygonLngs].
+  static final customPolygonLngs =
+      obx.QueryDoubleVectorProperty<ObjectBoxRecoveryRegion>(
+          _entities[4].properties[13]);
+
+  /// see [ObjectBoxRecoveryRegion.multiLinkedRegions]
+  static final multiLinkedRegions =
+      obx.QueryRelationToMany<ObjectBoxRecoveryRegion, ObjectBoxRecoveryRegion>(
+          _entities[4].relations[0]);
 }

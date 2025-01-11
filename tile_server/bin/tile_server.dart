@@ -22,7 +22,8 @@ Future<void> main(List<String> _) async {
     ..setTextStyle()
     ..write('© Luka S (JaffaKetchup)\n')
     ..write(
-      "Miniature fake tile server designed to test FMTC's throughput and download speeds\n\n",
+      "Miniature fake tile server designed to test FMTC's throughput and "
+      'download speeds\n\n',
     );
 
   // Monitor requests per second measurement (tps)
@@ -47,7 +48,9 @@ Future<void> main(List<String> _) async {
       final requestTime = ctx.at;
       requestTimestamps.add(requestTime);
       console.write(
-        '[$requestTime] ${ctx.method} ${ctx.path}: ${ctx.response.statusCode}\t\t$servedSeaTiles sea tiles this session\t\t\t$lastRate tps  -  ${currentArtificialDelay.inMilliseconds} ms delay\n',
+        '[$requestTime] ${ctx.method} ${ctx.path}: ${ctx.response.statusCode}\t'
+        '\t$servedSeaTiles sea tiles this session\t\t\t$lastRate tps  -  '
+        '${currentArtificialDelay.inMilliseconds} ms delay\n',
       );
     },
     port: 7070,
@@ -143,7 +146,8 @@ Future<void> main(List<String> _) async {
     ..write('Now serving tiles at 127.0.0.1:7070/{z}/{x}/{y}\n\n')
     ..write("Press 'q' to kill server\n")
     ..write(
-      'Press UP or DOWN to manipulate artificial delay by ${artificialDelayChangeAmount.inMilliseconds} ms\n\n',
+      'Press UP or DOWN to manipulate artificial delay by '
+      '${artificialDelayChangeAmount.inMilliseconds} ms\n\n',
     )
     ..setTextStyle()
     ..write('----------\n');

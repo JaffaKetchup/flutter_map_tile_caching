@@ -14,10 +14,10 @@ import '../../export_internal.dart';
 ///
 /// Should implement methods that operate in another isolate/thread to avoid
 /// blocking the normal thread. In this case, [FMTCBackendInternalThreadSafe]
-/// should also be implemented, which should not operate in another thread & must
-/// be sendable between isolates (because it will already be operated in another
-/// thread), and must be suitable for simultaneous initialisation across multiple
-/// threads.
+/// should also be implemented, which should not operate in another thread &
+/// must be sendable between isolates (because it will already be operated in
+/// another thread), and must be suitable for simultaneous initialisation across
+/// multiple threads.
 ///
 /// Should be set in [FMTCBackendAccess] when ready to use, and unset when not.
 /// See documentation on that class for more information.
@@ -60,6 +60,31 @@ abstract interface class FMTCBackendInternal
   /// {@endtemplate}
   Future<List<String>> listStores();
 
+  /// {@template fmtc.backend.storeGetMaxLength}
+  /// Retrieve the maximum allowable number of tiles within the specified store
+  ///
+  /// This limit is enforced automatically when browse caching, but not when
+  /// bulk downloading.
+  ///
+  /// `null` means there is no configured limit.
+  /// {@endtemplate}
+  Future<int?> storeGetMaxLength({
+    required String storeName,
+  });
+
+  /// {@template fmtc.backend.storeSetMaxLength}
+  /// Set the maximum allowable number of tiles within the specified store
+  ///
+  /// This limit is enforced automatically when browse caching, but not when
+  /// bulk downloading.
+  ///
+  /// Set `null` to disable the limit.
+  /// {@endtemplate}
+  Future<void> storeSetMaxLength({
+    required String storeName,
+    required int? newMaxLength,
+  });
+
   /// {@template fmtc.backend.storeExists}
   /// Check whether the specified store currently exists
   /// {@endtemplate}
@@ -70,10 +95,15 @@ abstract interface class FMTCBackendInternal
   /// {@template fmtc.backend.createStore}
   /// Create a new store with the specified name
   ///
+  /// If set, [maxLength] will be the maximum allowed number of tiles in the
+  /// store. This limit is enforced automatically when browse caching, but not
+  /// when bulk downloading. Defaults to `null`: unlimited.
+  ///
   /// Does nothing if the store already exists.
   /// {@endtemplate}
   Future<void> createStore({
     required String storeName,
+    required int? maxLength,
   });
 
   /// {@template fmtc.backend.deleteStore}
@@ -114,9 +144,11 @@ abstract interface class FMTCBackendInternal
   });
 
   /// {@template fmtc.backend.getStoreStats}
-  /// Retrieve the following statistics about the specified store (all available):
+  /// Retrieve the following statistics about the specified store (all
+  /// available):
   ///
-  ///  * `size`: total number of KiBs of all tiles' bytes (not 'real total' size)
+  ///  * `size`: total number of KiBs of all tiles' bytes (not 'real total'
+  /// size)
   ///  * `length`: number of tiles belonging
   ///  * `hits`: number of successful tile retrievals when browsing
   ///  * `misses`: number of unsuccessful tile retrievals when browsing
@@ -125,19 +157,37 @@ abstract interface class FMTCBackendInternal
     required String storeName,
   });
 
-  /// Check whether the specified tile exists in the specified store
-  Future<bool> tileExistsInStore({
-    required String storeName,
+  /// Check whether the specified tile exists in any of the specified stores
+  ///
+  /// {@template fmtc.backend._readableStoresFormat}
+  /// [storeNames] uses the "readable stores" format. If `includeOrExclude` is
+  /// `true`, the operation will apply to all stores included only in
+  /// `storeNames`. Otherwise, the operation will apply to all existing stores
+  /// NOT included in `storeNames`. This should reflect the settings of an
+  /// [FMTCTileProvider] (see [FMTCTileProvider._compileReadableStores]).
+  /// {@endtemplate}
+  Future<bool> tileExists({
     required String url,
+    required ({List<String> storeNames, bool includeOrExclude}) storeNames,
   });
 
-  /// Retrieve a raw tile by the specified URL
+  /// Retrieve a raw `tile` by URL from any of the specified stores
   ///
-  /// If [storeName] is specified, the tile will be limited to the specified
-  /// store - if it exists in another store, it will not be returned.
-  Future<BackendTile?> readTile({
+  /// {@macro fmtc.backend._readableStoresFormat}
+  ///
+  /// Returns the list of store names the tile belongs to (`allStoreNames`),
+  /// and were present in the resolved stores (`intersectedStoreNames`).
+  ///
+  /// `intersectedStoreNames` & `allStoreNames` will be empty if `tile` is
+  /// `null`.
+  Future<
+      ({
+        BackendTile? tile,
+        List<String> intersectedStoreNames,
+        List<String> allStoreNames,
+      })> readTile({
     required String url,
-    String? storeName,
+    required ({List<String> storeNames, bool includeOrExclude}) storeNames,
   });
 
   /// {@template fmtc.backend.readLatestTile}
@@ -150,10 +200,14 @@ abstract interface class FMTCBackendInternal
 
   /// Create or update a tile (given a [url] and its [bytes]) in the specified
   /// store
-  Future<void> writeTile({
-    required String storeName,
+  ///
+  /// Returns all the stores that were written to, along with whether that tile
+  /// was new to that store (not updated).
+  Future<Map<String, bool>> writeTile({
     required String url,
     required Uint8List bytes,
+    required List<String> storeNames,
+    required List<String>? writeAllNotIn,
   });
 
   /// Remove the tile from the specified store, deleting it if was orphaned
@@ -173,27 +227,35 @@ abstract interface class FMTCBackendInternal
     required String url,
   });
 
-  /// Register a cache hit or miss on the specified store
-  Future<void> registerHitOrMiss({
-    required String storeName,
-    required bool hit,
+  /// Add a cache hit to all specified stores
+  Future<void> incrementStoreHits({
+    required List<String> storeNames,
   });
 
-  /// Remove tiles in excess of the specified limit from the specified store,
-  /// oldest first
+  /// Add a cache miss to all specified stores
+  ///
+  /// {@macro fmtc.backend._readableStoresFormat}
+  Future<void> incrementStoreMisses({
+    required ({List<String> storeNames, bool includeOrExclude}) storeNames,
+  });
+
+  /// Remove tiles in excess of the specified limit in each specified store,
+  /// oldest tile first
   ///
   /// Should internally debounce, as this is a repeatedly invoked & potentially
   /// expensive operation, that will have no effect when the number of tiles in
   /// the store is below the limit.
   ///
   /// Returns the number of tiles that were actually deleted (they were
-  /// orphaned (see [deleteTile] for more info)).
+  /// orphaned (see [deleteTile] for more info)) for each store.
   ///
-  /// Throws [RootUnavailable] if the root is uninitialised whilst the
+  /// If a store does not appear in the output, but was inputted, the store
+  /// likely did not have a tile limit, in which case no tiles were removed.
+  ///
+  /// May throw [RootUnavailable] if the root is uninitialised whilst the
   /// debouncing mechanism is running.
-  Future<int> removeOldestTilesAboveLimit({
-    required String storeName,
-    required int tilesLimit,
+  Future<Map<String, int>> removeOldestTilesAboveLimit({
+    required List<String> storeNames,
   });
 
   /// {@template fmtc.backend.removeTilesOlderThan}
@@ -228,8 +290,9 @@ abstract interface class FMTCBackendInternal
   /// > [!WARNING]
   /// > Any existing value for the specified key will be overwritten.
   ///
-  /// Prefer using [setBulkMetadata] when setting multiple keys. Only one backend
-  /// operation is required to set them all at once, and so is more efficient.
+  /// Prefer using [setBulkMetadata] when setting multiple keys. Only one
+  /// backend operation is required to set them all at once, and so is more
+  /// efficient.
   /// {@endtemplate}
   Future<void> setMetadata({
     required String storeName,
@@ -322,7 +385,9 @@ abstract interface class FMTCBackendInternal
   ///
   /// See [RootExternal] for more information about expected behaviour and
   /// errors.
-  Future<void> exportStores({
+  ///
+  /// Returns the number of exported tiles.
+  Future<int> exportStores({
     required String path,
     required List<String> storeNames,
   });

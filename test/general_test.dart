@@ -311,7 +311,8 @@ void main() {
         'Write tile (A64) to "store1"',
         () async {
           await FMTCBackendAccess.internal.writeTile(
-            storeName: 'store1',
+            storeNames: ['store1'],
+            writeAllNotIn: null,
             url: tileA64.url,
             bytes: tileA64.bytes,
           );
@@ -334,7 +335,8 @@ void main() {
         'Write tile (A64) again to "store1"',
         () async {
           await FMTCBackendAccess.internal.writeTile(
-            storeName: 'store1',
+            storeNames: ['store1'],
+            writeAllNotIn: null,
             url: tileA64.url,
             bytes: tileA64.bytes,
           );
@@ -357,7 +359,8 @@ void main() {
         'Write tile (A128) to "store1"',
         () async {
           await FMTCBackendAccess.internal.writeTile(
-            storeName: 'store1',
+            storeNames: ['store1'],
+            writeAllNotIn: null,
             url: tileA128.url,
             bytes: tileA128.bytes,
           );
@@ -380,7 +383,8 @@ void main() {
         'Write tile (B64) to "store1"',
         () async {
           await FMTCBackendAccess.internal.writeTile(
-            storeName: 'store1',
+            storeNames: ['store1'],
+            writeAllNotIn: null,
             url: tileB64.url,
             bytes: tileB64.bytes,
           );
@@ -403,7 +407,8 @@ void main() {
         'Write tile (B128) to "store1"',
         () async {
           await FMTCBackendAccess.internal.writeTile(
-            storeName: 'store1',
+            storeNames: ['store1'],
+            writeAllNotIn: null,
             url: tileB128.url,
             bytes: tileB128.bytes,
           );
@@ -426,7 +431,8 @@ void main() {
         'Write tile (B64) again to "store1"',
         () async {
           await FMTCBackendAccess.internal.writeTile(
-            storeName: 'store1',
+            storeNames: ['store1'],
+            writeAllNotIn: null,
             url: tileB64.url,
             bytes: tileB64.bytes,
           );
@@ -471,7 +477,8 @@ void main() {
         'Write tile (A64) to "store2"',
         () async {
           await FMTCBackendAccess.internal.writeTile(
-            storeName: 'store2',
+            storeNames: ['store2'],
+            writeAllNotIn: null,
             url: tileA64.url,
             bytes: tileA64.bytes,
           );
@@ -504,7 +511,8 @@ void main() {
         'Write tile (A128) to "store2"',
         () async {
           await FMTCBackendAccess.internal.writeTile(
-            storeName: 'store2',
+            storeNames: ['store2'],
+            writeAllNotIn: null,
             url: tileA128.url,
             bytes: tileA128.bytes,
           );
@@ -564,7 +572,8 @@ void main() {
         'Write tile (B64) to "store2"',
         () async {
           await FMTCBackendAccess.internal.writeTile(
-            storeName: 'store2',
+            storeNames: ['store2'],
+            writeAllNotIn: null,
             url: tileB64.url,
             bytes: tileB64.bytes,
           );
@@ -597,7 +606,8 @@ void main() {
         'Write tile (A64) to "store2"',
         () async {
           await FMTCBackendAccess.internal.writeTile(
-            storeName: 'store2',
+            storeNames: ['store2'],
+            writeAllNotIn: null,
             url: tileA64.url,
             bytes: tileA64.bytes,
           );
@@ -627,16 +637,41 @@ void main() {
       );
 
       test(
-        'Reset "store2"',
+        'Reset stores',
         () async {
+          await const FMTCStore('store1').manage.reset();
           await const FMTCStore('store2').manage.reset();
+          expect(
+            await const FMTCStore('store1').stats.all,
+            (length: 0, size: 0, hits: 0, misses: 0),
+          );
+          expect(
+            await const FMTCStore('store2').stats.all,
+            (length: 0, size: 0, hits: 0, misses: 0),
+          );
+          expect(await FMTCRoot.stats.length, 0);
+          expect(await FMTCRoot.stats.size, 0);
+          expect(await const FMTCStore('store1').stats.tileImage(), null);
+          expect(await const FMTCStore('store2').stats.tileImage(), null);
+        },
+      );
+
+      test(
+        'Write tile (A64) to "store1" & "store2"',
+        () async {
+          await FMTCBackendAccess.internal.writeTile(
+            storeNames: ['store1', 'store2'],
+            writeAllNotIn: null,
+            url: tileA64.url,
+            bytes: tileA64.bytes,
+          );
           expect(
             await const FMTCStore('store1').stats.all,
             (length: 1, size: 0.0625, hits: 0, misses: 0),
           );
           expect(
             await const FMTCStore('store2').stats.all,
-            (length: 0, size: 0, hits: 0, misses: 0),
+            (length: 1, size: 0.0625, hits: 0, misses: 0),
           );
           expect(await FMTCRoot.stats.length, 1);
           expect(await FMTCRoot.stats.size, 0.0625);
@@ -646,7 +681,112 @@ void main() {
                 ?.bytes,
             tileA64.bytes,
           );
-          expect(await const FMTCStore('store2').stats.tileImage(), null);
+          expect(
+            ((await const FMTCStore('store2').stats.tileImage())?.image
+                    as MemoryImage?)
+                ?.bytes,
+            tileA64.bytes,
+          );
+        },
+      );
+
+      test(
+        'Write tile (A128) to "store1" & "store2"',
+        () async {
+          await FMTCBackendAccess.internal.writeTile(
+            storeNames: ['store1', 'store2'],
+            writeAllNotIn: null,
+            url: tileA128.url,
+            bytes: tileA128.bytes,
+          );
+          expect(
+            await const FMTCStore('store1').stats.all,
+            (length: 1, size: 0.125, hits: 0, misses: 0),
+          );
+          expect(
+            await const FMTCStore('store2').stats.all,
+            (length: 1, size: 0.125, hits: 0, misses: 0),
+          );
+          expect(await FMTCRoot.stats.length, 1);
+          expect(await FMTCRoot.stats.size, 0.125);
+          expect(
+            ((await const FMTCStore('store1').stats.tileImage())?.image
+                    as MemoryImage?)
+                ?.bytes,
+            tileA128.bytes,
+          );
+          expect(
+            ((await const FMTCStore('store2').stats.tileImage())?.image
+                    as MemoryImage?)
+                ?.bytes,
+            tileA128.bytes,
+          );
+        },
+      );
+
+      test(
+        'Write tile (B128) to "store1" & "store2"',
+        () async {
+          await FMTCBackendAccess.internal.writeTile(
+            storeNames: ['store1', 'store2'],
+            writeAllNotIn: null,
+            url: tileB128.url,
+            bytes: tileB128.bytes,
+          );
+          expect(
+            await const FMTCStore('store1').stats.all,
+            (length: 2, size: 0.25, hits: 0, misses: 0),
+          );
+          expect(
+            await const FMTCStore('store2').stats.all,
+            (length: 2, size: 0.25, hits: 0, misses: 0),
+          );
+          expect(await FMTCRoot.stats.length, 2);
+          expect(await FMTCRoot.stats.size, 0.25);
+          expect(
+            ((await const FMTCStore('store1').stats.tileImage())?.image
+                    as MemoryImage?)
+                ?.bytes,
+            tileB128.bytes,
+          );
+          expect(
+            ((await const FMTCStore('store2').stats.tileImage())?.image
+                    as MemoryImage?)
+                ?.bytes,
+            tileB128.bytes,
+          );
+        },
+      );
+
+      test(
+        'Delete tile (A(128)) from "store1"',
+        () async {
+          await FMTCBackendAccess.internal.deleteTile(
+            storeName: 'store1',
+            url: tileA128.url,
+          );
+          expect(
+            await const FMTCStore('store1').stats.all,
+            (length: 1, size: 0.125, hits: 0, misses: 0),
+          );
+          expect(
+            await const FMTCStore('store2').stats.all,
+            (length: 2, size: 0.25, hits: 0, misses: 0),
+          );
+          expect(await FMTCRoot.stats.length, 2);
+          expect(await FMTCRoot.stats.size, 0.25);
+          expect(
+            ((await const FMTCStore('store1').stats.tileImage())?.image
+                    as MemoryImage?)
+                ?.bytes,
+            tileB128.bytes,
+          );
+          expect(
+            ((await const FMTCStore('store2').stats.tileImage())?.image
+                    as MemoryImage?)
+                ?.bytes,
+            tileB128.bytes,
+          );
         },
       );
 

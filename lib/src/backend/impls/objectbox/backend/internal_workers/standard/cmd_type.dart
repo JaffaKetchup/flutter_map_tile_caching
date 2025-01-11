@@ -3,6 +3,8 @@
 
 part of '../../backend.dart';
 
+typedef _IncomingCmd = ({int id, _CmdType type, Map<String, dynamic> args});
+
 enum _CmdType {
   initialise_, // Only valid as a request
   destroy,
@@ -10,22 +12,24 @@ enum _CmdType {
   rootSize,
   rootLength,
   listStores,
+  storeGetMaxLength,
+  storeSetMaxLength,
   storeExists,
   createStore,
   resetStore,
   renameStore,
   deleteStore,
   getStoreStats,
-  tileExistsInStore,
+  tileExists,
   readTile,
   readLatestTile,
   writeTile,
   deleteTile,
-  registerHitOrMiss,
+  incrementStoreHits,
+  incrementStoreMisses,
   removeOldestTilesAboveLimit,
   removeTilesOlderThan,
   readMetadata,
-  setMetadata,
   setBulkMetadata,
   removeMetadata,
   resetMetadata,

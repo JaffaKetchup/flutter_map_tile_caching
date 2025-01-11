@@ -6,6 +6,7 @@ part of '../../flutter_map_tile_caching.dart';
 /// A downloadable region to be passed to bulk download functions
 ///
 /// Construct via [BaseRegion.toDownloadable].
+@immutable
 class DownloadableRegion<R extends BaseRegion> {
   DownloadableRegion._(
     this.originalRegion, {
@@ -29,9 +30,6 @@ class DownloadableRegion<R extends BaseRegion> {
   }
 
   /// A copy of the [BaseRegion] used to form this object
-  ///
-  /// To make decisions based on the type of this region, prefer [when] over
-  /// switching on [R] manually.
   final R originalRegion;
 
   /// The minimum zoom level to fetch tiles for
@@ -63,8 +61,10 @@ class DownloadableRegion<R extends BaseRegion> {
   final Crs crs;
 
   /// Cast [originalRegion] from [R] to [N]
+  ///
+  /// Throws if uncastable.
   @optionalTypeArgs
-  DownloadableRegion<N> _cast<N extends BaseRegion>() => DownloadableRegion._(
+  DownloadableRegion<N> cast<N extends BaseRegion>() => DownloadableRegion._(
         originalRegion as N,
         minZoom: minZoom,
         maxZoom: maxZoom,
@@ -75,6 +75,9 @@ class DownloadableRegion<R extends BaseRegion> {
       );
 
   /// Output a value of type [T] dependent on [originalRegion] and its type [R]
+  ///
+  /// Requires all region types to have a defined handler. See [maybeWhen] for
+  /// the equivalent where this is not required.
   T when<T>({
     required T Function(DownloadableRegion<RectangleRegion> rectangle)
         rectangle,
@@ -82,12 +85,34 @@ class DownloadableRegion<R extends BaseRegion> {
     required T Function(DownloadableRegion<LineRegion> line) line,
     required T Function(DownloadableRegion<CustomPolygonRegion> customPolygon)
         customPolygon,
+    required T Function(DownloadableRegion<MultiRegion> multi) multi,
+  }) =>
+      maybeWhen(
+        rectangle: rectangle,
+        circle: circle,
+        line: line,
+        customPolygon: customPolygon,
+        multi: multi,
+      )!;
+
+  /// Output a value of type [T] dependent on [originalRegion] and its type [R]
+  ///
+  /// If the specified method is not defined for the type of region which this
+  /// region is, `null` will be returned.
+  T? maybeWhen<T>({
+    T Function(DownloadableRegion<RectangleRegion> rectangle)? rectangle,
+    T Function(DownloadableRegion<CircleRegion> circle)? circle,
+    T Function(DownloadableRegion<LineRegion> line)? line,
+    T Function(DownloadableRegion<CustomPolygonRegion> customPolygon)?
+        customPolygon,
+    T Function(DownloadableRegion<MultiRegion> multi)? multi,
   }) =>
       switch (originalRegion) {
-        RectangleRegion() => rectangle(_cast()),
-        CircleRegion() => circle(_cast()),
-        LineRegion() => line(_cast()),
-        CustomPolygonRegion() => customPolygon(_cast()),
+        RectangleRegion() => rectangle?.call(cast()),
+        CircleRegion() => circle?.call(cast()),
+        LineRegion() => line?.call(cast()),
+        CustomPolygonRegion() => customPolygon?.call(cast()),
+        MultiRegion() => multi?.call(cast()),
       };
 
   @override
@@ -97,7 +122,7 @@ class DownloadableRegion<R extends BaseRegion> {
           other.originalRegion == originalRegion &&
           other.minZoom == minZoom &&
           other.maxZoom == maxZoom &&
-          other.options == options &&
+          other.options == options && //! Will never be equal
           other.start == start &&
           other.end == end &&
           other.crs == crs);

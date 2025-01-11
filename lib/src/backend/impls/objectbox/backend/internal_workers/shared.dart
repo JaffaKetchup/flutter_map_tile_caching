@@ -3,36 +3,81 @@
 
 part of '../backend.dart';
 
-void _sharedWriteSingleTile({
+List<String> _resolveReadableStoresFormat(
+  ({bool includeOrExclude, List<String> storeNames}) readableStores, {
   required Store root,
-  required String storeName,
+}) {
+  final availableStoreNames =
+      root.box<ObjectBoxStore>().getAll().map((e) => e.name);
+
+  if (!readableStores.includeOrExclude) {
+    return availableStoreNames
+        .whereNot((e) => readableStores.storeNames.contains(e))
+        .toList(growable: false);
+  }
+
+  for (final storeName in readableStores.storeNames) {
+    if (!availableStoreNames.contains(storeName)) {
+      throw StoreNotExists(storeName: storeName);
+    }
+  }
+
+  return readableStores.storeNames;
+}
+
+Map<String, bool> _sharedWriteSingleTile({
+  required Store root,
+  required List<String> storeNames,
   required String url,
   required Uint8List bytes,
+  List<String>? writeAllNotIn,
 }) {
   final tiles = root.box<ObjectBoxTile>();
-  final stores = root.box<ObjectBoxStore>();
+  final storesBox = root.box<ObjectBoxStore>();
   final rootBox = root.box<ObjectBoxRoot>();
+
+  final availableStoreNames = storesBox.getAll().map((e) => e.name);
+
+  for (final storeName in storeNames) {
+    if (!availableStoreNames.contains(storeName)) {
+      throw StoreNotExists(storeName: storeName);
+    }
+  }
+
+  final compiledStoreNames = writeAllNotIn == null
+      ? storeNames
+      : [
+          ...storeNames,
+          ...availableStoreNames.whereNot(
+            (e) => writeAllNotIn.contains(e) || storeNames.contains(e),
+          ),
+        ];
+
+  if (compiledStoreNames.isEmpty) return const {};
 
   final tilesQuery = tiles.query(ObjectBoxTile_.url.equals(url)).build();
   final storeQuery =
-      stores.query(ObjectBoxStore_.name.equals(storeName)).build();
+      storesBox.query(ObjectBoxStore_.name.oneOf(compiledStoreNames)).build();
 
   final storesToUpdate = <String, ObjectBoxStore>{};
-  // If tile exists in this store, just update size, otherwise
-  // length and size
-  // Also update size of all related stores
-  bool didContainAlready = false;
+
+  final result = {for (final storeName in compiledStoreNames) storeName: false};
 
   root.runInTransaction(
     TxMode.write,
     () {
       final existingTile = tilesQuery.findUnique();
-      final store = storeQuery.findUnique() ??
-          (throw StoreNotExists(storeName: storeName));
+      final stores = storeQuery.find(); // Assumed not empty
 
       if (existingTile != null) {
+        // If tile exists in this store, just update size, otherwise
+        // length and size
+        // Also update size of all related stores
+        final didContainAlready = <String>{};
+
         for (final relatedStore in existingTile.stores) {
-          if (relatedStore.name == storeName) didContainAlready = true;
+          didContainAlready
+              .addAll(compiledStoreNames.where((s) => s == relatedStore.name));
 
           storesToUpdate[relatedStore.name] =
               (storesToUpdate[relatedStore.name] ?? relatedStore)
@@ -45,6 +90,20 @@ void _sharedWriteSingleTile({
             ..size += -existingTile.bytes.lengthInBytes + bytes.lengthInBytes,
           mode: PutMode.update,
         );
+
+        storesToUpdate.addEntries(
+          stores.whereNot((s) => didContainAlready.contains(s.name)).map(
+            (s) {
+              result[s.name] = true;
+              return MapEntry(
+                s.name,
+                s
+                  ..length += 1
+                  ..size += bytes.lengthInBytes,
+              );
+            },
+          ),
+        );
       } else {
         rootBox.put(
           rootBox.get(1)!
@@ -52,12 +111,20 @@ void _sharedWriteSingleTile({
             ..size += bytes.lengthInBytes,
           mode: PutMode.update,
         );
-      }
 
-      if (!didContainAlready || existingTile == null) {
-        storesToUpdate[storeName] = store
-          ..length += 1
-          ..size += bytes.lengthInBytes;
+        storesToUpdate.addEntries(
+          stores.map(
+            (s) {
+              result[s.name] = true;
+              return MapEntry(
+                s.name,
+                s
+                  ..length += 1
+                  ..size += bytes.lengthInBytes,
+              );
+            },
+          ),
+        );
       }
 
       tiles.put(
@@ -65,12 +132,14 @@ void _sharedWriteSingleTile({
           url: url,
           lastModified: DateTime.timestamp(),
           bytes: bytes,
-        )..stores.addAll({store, ...?existingTile?.stores}),
+        )..stores.addAll({...stores, ...?existingTile?.stores}),
       );
-      stores.putMany(storesToUpdate.values.toList(), mode: PutMode.update);
+      storesBox.putMany(storesToUpdate.values.toList(), mode: PutMode.update);
     },
   );
 
   tilesQuery.close();
   storeQuery.close();
+
+  return result;
 }
