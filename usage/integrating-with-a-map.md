@@ -25,7 +25,7 @@ Where & how you choose to construct the `FMTCTileProvider` object has a major im
 Minimize reconstructions of this provider by constructing it outside of the `build` method of a widget wherever possible. Because it is not a `const`ant constructor, and it will be in a non-`const`ant context (`TileLayer`), every rebuild will trigger a potentially expensive reconstruction.
 
 However, in many cases, such as where one or more properties (as described in following stages) depends on inherited data (ie. via an `InheritedWidget`, `Provider`, etc.), this is not possible.\
-In this case, read the tip in the [API documentation](https://pub.dev/documentation/flutter_map_tile_caching/10.0.0-dev.7/flutter_map_tile_caching/FMTCTileProvider-class.html) carefully. In summary, you should construct as many arguments as possible outside of the `build` method, particularly a HTTP `Client` and any objects or callbacks which do not have a useful equality/hash code themselves.
+In this case, read the tip in the [API documentation](https://pub.dev/documentation/flutter_map_tile_caching/latest/flutter_map_tile_caching/FMTCTileProvider-class.html) carefully. In summary, you should construct as many arguments as possible outside of the `build` method, particularly a HTTP `Client` and any objects or callbacks which do not have a useful equality/hash code themselves.
 {% endstep %}
 
 {% step %}
@@ -220,7 +220,7 @@ class _...State extends State<...> {
     stores: const {'mapStore': BrowseStoreStrategy.readUpdateCreate},
     loadingStrategy: BrowseLoadingStrategy.onlineFirst,
   );
-  // and if `mapStore` is the only store name, this could also be written as
+  // and if "mapStore" is the only store, this could also be written as
   final _tileProvider = FMTCTileProvider.allStores(
     allStoresStrategy: BrowseStoreStrategy.readUpdateCreate,
     loadingStrategy: BrowseLoadingStrategy.onlineFirst,
@@ -332,7 +332,7 @@ class _...State extends State<...> {
       'store 1': BrowseStoreStrategy.readUpdateCreate,
       'store 2': BrowseStoreStrategy.read,
       // 'store 3' implicitly gets `.readUpdate`,
-      'store 4': null,
+      'store 4': null, // disabled
     },
     otherStoresStrategy: BrowseStoreStrategy.readUpdate,
   );

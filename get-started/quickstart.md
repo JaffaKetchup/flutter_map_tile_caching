@@ -22,6 +22,8 @@ flutter pub add flutter_map_tile_caching
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 ```
 
+Depending on your platform, some additional setup may be neccessary (particularly on macOS).
+
 ## 2. [Initialise](../usage/initialisation.md)
 
 Perform the startup procedure to allow usage of FMTC's APIs and allow FMTC to spin-up the underlying connections & systems.
