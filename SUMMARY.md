@@ -10,8 +10,8 @@
 
 * [Quickstart](get-started/quickstart.md)
 * [Installation](get-started/installation.md)
-* [Example Application](get-started/example-application.md)
-* [v9 -> v10 Migration](get-started/v8-v9-migration.md)
+* [Example Application](get-started/example.md)
+* [v9 -> v10 Migration](get-started/v9-v10-migration.md)
 
 ## Usage
 

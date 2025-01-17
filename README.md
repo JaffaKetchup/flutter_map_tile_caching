@@ -25,7 +25,7 @@ layout:
 {% hint style="success" %}
 **Welcome to v10**
 
-If you're coming from v9, it might help to see the [migration info](get-started/v8-v9-migration.md). Or, if you'd like to stay on v9 for the time being, that [documentation is still available](https://app.gitbook.com/o/1aKKbSpe255wyVNDoFYc/s/wSfoTlC2MsQfysSkR14N/)!
+If you're coming from v9, it might help to see the [migration info](get-started/v9-v10-migration.md). Or, if you'd like to stay on v9 for the time being, that [documentation is still available](https://app.gitbook.com/o/1aKKbSpe255wyVNDoFYc/s/wSfoTlC2MsQfysSkR14N/)!
 {% endhint %}
 
 ## Highlights
