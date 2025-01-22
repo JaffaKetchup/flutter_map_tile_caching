@@ -4,7 +4,7 @@
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
 
-import '../../../../flutter_map_tile_caching.dart';
+import '../../../../../flutter_map_tile_caching.dart';
 
 /// Implementation of [FMTCBackend] that uses ObjectBox as the storage database
 ///

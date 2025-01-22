@@ -15,9 +15,9 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
-import '../../../../../flutter_map_tile_caching.dart';
-import '../../../../misc/int_extremes.dart';
-import '../../../export_internal.dart';
+import '../../../../../../flutter_map_tile_caching.dart';
+import '../../../../../misc/int_extremes.dart';
+import '../../../../export_internal.dart';
 import '../models/generated/objectbox.g.dart';
 import '../models/src/recovery.dart';
 import '../models/src/recovery_region.dart';

@@ -5,7 +5,7 @@ import 'dart:typed_data';
 
 import 'package:objectbox/objectbox.dart';
 
-import '../../../../interfaces/models.dart';
+import '../../../../../interfaces/models.dart';
 import 'store.dart';
 
 /// ObjectBox-specific implementation of [BackendTile]

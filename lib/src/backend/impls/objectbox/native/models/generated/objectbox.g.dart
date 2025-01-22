@@ -14,11 +14,11 @@ import 'package:objectbox/internal.dart'
 import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
-import '../../../../../../src/backend/impls/objectbox/models/src/recovery.dart';
-import '../../../../../../src/backend/impls/objectbox/models/src/recovery_region.dart';
-import '../../../../../../src/backend/impls/objectbox/models/src/root.dart';
-import '../../../../../../src/backend/impls/objectbox/models/src/store.dart';
-import '../../../../../../src/backend/impls/objectbox/models/src/tile.dart';
+import '../../../../../../../src/backend/impls/objectbox/native/models/src/recovery.dart';
+import '../../../../../../../src/backend/impls/objectbox/native/models/src/recovery_region.dart';
+import '../../../../../../../src/backend/impls/objectbox/native/models/src/root.dart';
+import '../../../../../../../src/backend/impls/objectbox/native/models/src/store.dart';
+import '../../../../../../../src/backend/impls/objectbox/native/models/src/tile.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
 

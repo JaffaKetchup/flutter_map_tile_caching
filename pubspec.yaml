@@ -50,4 +50,4 @@ dev_dependencies:
 flutter: null
 
 objectbox:
-  output_dir: src/backend/impls/objectbox/models/generated
+  output_dir: src/backend/impls/objectbox/native/models/generated
