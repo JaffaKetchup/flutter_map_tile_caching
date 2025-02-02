@@ -18,7 +18,7 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [10.1.0] - 2025/XX/XX
+## [10.1.0] - 2025/02/02
 
 * Added support for flutter_map v8
 
