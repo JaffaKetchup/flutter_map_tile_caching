@@ -171,8 +171,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
             final coords = provider.currentConstructingCoordinates;
             if (coords.length > 1) {
               final newPointPos = _mapController.mapController.camera
-                  .latLngToScreenPoint(coords.first)
-                  .toOffset();
+                  .latLngToScreenOffset(coords.first);
               provider.customPolygonSnap = coords.first != coords.last &&
                   sqrt(
                         pow(newPointPos.dx - evt.localPosition.dx, 2) +
@@ -196,11 +195,9 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
             final coords = provider.currentConstructingCoordinates;
             if (coords.length > 1) {
               final newPointPos = _mapController.mapController.camera
-                  .latLngToScreenPoint(coords.first)
-                  .toOffset();
+                  .latLngToScreenOffset(coords.first);
               final centerPos = _mapController.mapController.camera
-                  .latLngToScreenPoint(provider.currentNewPointPos!)
-                  .toOffset();
+                  .latLngToScreenOffset(provider.currentNewPointPos!);
               provider.customPolygonSnap = coords.first != coords.last &&
                   sqrt(
                         pow(newPointPos.dx - centerPos.dx, 2) +

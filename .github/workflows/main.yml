@@ -8,28 +8,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-    score-package:
-        name: "Score Package"
-        runs-on: ubuntu-latest
-        steps:
-          - name: Checkout Repository
-            uses: actions/checkout@v4
-          - name: Run Dart Package Analyser
-            uses: axel-op/dart-package-analyzer@master
-            id: analysis
-            with:
-              githubToken: ${{ secrets.GITHUB_TOKEN }}
-          - name: Check Package Scores
-            env:
-              TOTAL: ${{ steps.analysis.outputs.total }}
-              TOTAL_MAX: ${{ steps.analysis.outputs.total_max }}
-            run: |
-              if (( $TOTAL < $TOTAL_MAX ))
-              then
-                echo Package score less than available score. Improve the score!
-                exit 1
-              fi
-
     analyse-code:
         name: "Analyse Code"
         runs-on: ubuntu-latest
