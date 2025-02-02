@@ -300,9 +300,7 @@ class FMTCTileProvider extends TileProvider {
   }
 
   /// {@template fmtc.tileProvider.provideTile}
-  /// Use FMTC's caching logic to get the bytes of the specific tile (at
-  /// [coords]) with the specified [TileLayer] options and [FMTCTileProvider]
-  /// provider
+  /// Use FMTC's caching logic to get the bytes of the tile at [networkUrl]
   ///
   /// > [!IMPORTANT]
   /// > Note that this will actuate the cache writing mechanism as if a normal
@@ -320,6 +318,10 @@ class FMTCTileProvider extends TileProvider {
   /// > [TileProvider]) to integrate FMTC caching for vector tiles.
   ///
   /// ---
+  ///
+  /// [coords] is required to enable functioning of
+  /// [FMTCTileProvider.tileLoadingInterceptor]. If the tile loading interceptor
+  /// is not in use, providing coordinates is not necessary.
   ///
   /// [key] is used to control the [ImageCache], and should be set when in a
   /// context where [ImageProvider.obtainKey] is available.
@@ -342,8 +344,8 @@ class FMTCTileProvider extends TileProvider {
   /// to be decoded (now or at a later time).
   /// {@endtemplate}
   Future<Uint8List> provideTile({
-    required TileCoordinates coords,
-    required TileLayer options,
+    required String networkUrl,
+    TileCoordinates? coords,
     Object? key,
     void Function()? startedLoading,
     void Function()? finishedLoadingBytes,
@@ -351,7 +353,7 @@ class FMTCTileProvider extends TileProvider {
   }) =>
       _FMTCImageProvider.provideTile(
         coords: coords,
-        options: options,
+        networkUrl: networkUrl,
         provider: this,
         key: key,
         startedLoading: startedLoading,

@@ -46,7 +46,7 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
       MultiFrameImageStreamCompleter(
         codec: provideTile(
           coords: coords,
-          options: options,
+          networkUrl: provider.getTileUrl(coords, options),
           provider: provider,
           key: key,
           finishedLoadingBytes: finishedLoadingBytes,
@@ -72,9 +72,9 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
 
   /// {@macro fmtc.tileProvider.provideTile}
   static Future<Uint8List> provideTile({
-    required TileCoordinates coords,
-    required TileLayer options,
+    required String networkUrl,
     required FMTCTileProvider provider,
+    TileCoordinates? coords,
     Object? key,
     void Function()? startedLoading,
     void Function()? finishedLoadingBytes,
@@ -92,7 +92,7 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
         scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(key));
       }
 
-      if (currentTLIR != null) {
+      if (currentTLIR != null && coords != null) {
         currentTLIR.error = error;
 
         provider.tileLoadingInterceptor!
@@ -121,8 +121,7 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
     final Uint8List bytes;
     try {
       bytes = await _internalTileBrowser(
-        coords: coords,
-        options: options,
+        networkUrl: networkUrl,
         provider: provider,
         requireValidImage: requireValidImage,
         currentTLIR: currentTLIR,
