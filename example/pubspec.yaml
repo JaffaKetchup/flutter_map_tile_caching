@@ -1,7 +1,7 @@
 name: fmtc_demo
 description: The demo app for 'flutter_map_tile_caching', showcasing its functionality and use-cases.
 publish_to: "none"
-version: 10.1.0
+version: 10.1.1
 
 environment:
   sdk: ">=3.6.0 <4.0.0"
@@ -32,8 +32,9 @@ dependencies:
   stream_transform: ^2.1.0
 
 dependency_overrides:
-  flutter_map:
-    git: https://github.com/fleaflet/flutter_map.git
+  flutter_map_animations:
+    git:
+      url: https://github.com/TesteurManiak/flutter_map_animations
   flutter_map_tile_caching:
     path: ../
 
