@@ -18,6 +18,10 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [10.1.0] - 2025/02/02
+
+* Added support for flutter_map v8
+
 ## [10.0.0] - "Better Browsing" - 2025/01/11
 
 This update builds on v9 to fully embrace the new many-to-many relationship between tiles and stores, which allows for more flexibility when constructing the `FMTCTileProvider`.  
