@@ -97,7 +97,6 @@ Future<void> _worker(
     const tilesChunkSize = 200;
 
     final stores = root.box<ObjectBoxStore>();
-    final tiles = root.box<ObjectBoxTile>();
 
     final modifyStoreQuery =
         stores.query(ObjectBoxStore_.name.equals('')).build();
@@ -144,24 +143,28 @@ Future<void> _worker(
 
         if (!hadTilesToUpdate && tilesToRemove.isEmpty) return 0;
 
-        tiles.removeMany(tilesToRemove);
+        root.box<ObjectBoxTile>().removeMany(tilesToRemove);
 
         updateRootStatistics(
           deltaLength: -tilesToRemove.length,
           deltaSize: rootDeltaSize,
         );
 
-        for (final MapEntry(key: storeName, value: deltaSize)
-            in storeDeltaSize.entries) {
-          modifyStoreQuery.param(ObjectBoxStore_.name).value = storeName;
+        stores.putMany(
+          storeDeltaSize.entries.map(
+            (entry) {
+              final storeName = entry.key;
+              final deltaSize = entry.value;
+              final deltaLength = storeDeltaLength[storeName]!;
 
-          stores.put(
-            modifyStoreQuery.findUnique()!
-              ..size += deltaSize
-              ..length += storeDeltaLength[storeName]!,
-            mode: PutMode.update,
-          );
-        }
+              modifyStoreQuery.param(ObjectBoxStore_.name).value = storeName;
+              return modifyStoreQuery.findUnique()!
+                ..size += deltaSize
+                ..length += deltaLength;
+            },
+          ).toList(growable: false),
+          mode: PutMode.update,
+        );
       },
     );
 
@@ -1420,17 +1423,22 @@ Future<void> _worker(
           },
         );
 
-        for (final MapEntry(key: storeName, value: deltaSize)
-            in storeDeltaSize.entries) {
-          specificStoresQuery.param(ObjectBoxStore_.name).value = storeName;
+        root.box<ObjectBoxStore>().putMany(
+              storeDeltaSize.entries.map(
+                (entry) {
+                  final storeName = entry.key;
+                  final deltaSize = entry.value;
+                  final deltaLength = storeDeltaLength[storeName] ?? 0;
 
-          root.box<ObjectBoxStore>().put(
-                specificStoresQuery.findUnique()!
-                  ..size += deltaSize
-                  ..length += storeDeltaLength[storeName] ?? 0,
-                mode: PutMode.update,
-              );
-        }
+                  specificStoresQuery.param(ObjectBoxStore_.name).value =
+                      storeName;
+                  return specificStoresQuery.findUnique()!
+                    ..size += deltaSize
+                    ..length += deltaLength;
+                },
+              ).toList(growable: false),
+              mode: PutMode.update,
+            );
 
         updateRootStatistics(
           deltaLength: rootDeltaLength,
@@ -1528,7 +1536,6 @@ extension _ChunkedFind<T> on Query<T> {
                 : min(chunkSize, limitTiles - offset)))
           .find();
 
-      if (chunk.isEmpty) return;
       yield* chunk;
       if (chunk.length < chunkSize) return;
     }
