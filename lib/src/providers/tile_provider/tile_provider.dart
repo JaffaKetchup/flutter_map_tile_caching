@@ -278,9 +278,9 @@ class FMTCTileProvider extends TileProvider {
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>
       _FMTCImageProvider(
-        provider: this,
-        options: options,
+        networkUrl: getTileUrl(coordinates, options),
         coords: coordinates,
+        provider: this,
         startedLoading: () => _tilesInProgress[coordinates] = Completer(),
         finishedLoadingBytes: () {
           _tilesInProgress[coordinates]?.complete();
@@ -352,8 +352,8 @@ class FMTCTileProvider extends TileProvider {
     bool requireValidImage = false,
   }) =>
       _FMTCImageProvider.provideTile(
-        coords: coords,
         networkUrl: networkUrl,
+        coords: coords,
         provider: this,
         key: key,
         startedLoading: startedLoading,

@@ -10,21 +10,27 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
   /// Create a specialised [ImageProvider] that uses FMTC internals to enable
   /// browse caching
   const _FMTCImageProvider({
-    required this.provider,
-    required this.options,
+    required this.networkUrl,
     required this.coords,
+    required this.provider,
     required this.startedLoading,
     required this.finishedLoadingBytes,
   });
 
-  /// An instance of the [FMTCTileProvider] in use
-  final FMTCTileProvider provider;
-
-  /// An instance of the [TileLayer] in use
-  final TileLayer options;
+  /// The network URL of the tile at [coords], determined by
+  /// [FMTCTileProvider.getTileUrl]
+  final String networkUrl;
 
   /// The coordinates of the tile to be fetched
+  ///
+  /// Must be set when using the image provider - acts as a key for
+  /// [FMTCTileProvider.tileLoadingInterceptor], and is used for some debug
+  /// info. Optional when [provideTile] is used directly, if
+  /// `tileLoadingInterceptor` functionality is not used.
   final TileCoordinates coords;
+
+  /// An instance of the [FMTCTileProvider] in use
+  final FMTCTileProvider provider;
 
   /// Function invoked when the image starts loading (not from cache)
   ///
@@ -46,7 +52,7 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
       MultiFrameImageStreamCompleter(
         codec: provideTile(
           coords: coords,
-          networkUrl: provider.getTileUrl(coords, options),
+          networkUrl: networkUrl,
           provider: provider,
           key: key,
           finishedLoadingBytes: finishedLoadingBytes,
@@ -55,19 +61,15 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
         ).then(ImmutableBuffer.fromUint8List).then((v) => decode(v)),
         scale: 1,
         debugLabel: coords.toString(),
-        informationCollector: () {
-          final tileUrl = provider.getTileUrl(coords, options);
-
-          return [
-            DiagnosticsProperty('Stores', provider.stores),
-            DiagnosticsProperty('Tile coordinates', coords),
-            DiagnosticsProperty('Tile URL', tileUrl),
-            DiagnosticsProperty(
-              'Tile storage-suitable UID',
-              provider.urlTransformer?.call(tileUrl) ?? tileUrl,
-            ),
-          ];
-        },
+        informationCollector: () => [
+          DiagnosticsProperty('Stores', provider.stores),
+          DiagnosticsProperty('Tile coordinates', coords),
+          DiagnosticsProperty('Tile URL', networkUrl),
+          DiagnosticsProperty(
+            'Tile storage-suitable UID',
+            provider.urlTransformer?.call(networkUrl) ?? networkUrl,
+          ),
+        ],
       );
 
   /// {@macro fmtc.tileProvider.provideTile}
@@ -149,6 +151,7 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is _FMTCImageProvider &&
+          other.networkUrl == networkUrl &&
           other.coords == coords &&
           other.provider == provider);
 
