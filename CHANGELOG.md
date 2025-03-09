@@ -18,11 +18,17 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [11.0.0-dev.1] - 2025/03/09
+## [11.0.0-dev.2] - 2025/03/09
 
 * Change `FMTCTileProvider.provideTile` arguments  
   Require a tile's URL & optional coordinates; instead of required coordinates and required `TileLayer`
 * Fixed overly-aggressive Flutter-side tile image caching which prevented changes to `TileLayer.urlTemplate` from updating the displayed tiles
+
+## [10.1.1] - 2025/03/09
+
+* Fixed bug where import operation fatally crashed on some iOS devices  
+  This appears to be an [ObjectBox issue](https://github.com/objectbox/objectbox-dart/issues/654) where streaming the results of a database query caused the crash. Instead, FMTC now uses a custom chunking system to avoid streaming and also avoid loading potentially many tiles into memory.
+* Improved performance of import operation
 
 ## [10.1.0] - 2025/02/02
 

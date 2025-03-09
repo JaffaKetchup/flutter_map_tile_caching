@@ -39,7 +39,7 @@ dependencies:
   meta: ^1.15.0
   objectbox: ^4.1.0
   objectbox_flutter_libs: ^4.1.0
-  path: ^1.9.0
+  path: ^1.9.1
   path_provider: ^2.1.5
 
 dev_dependencies:
