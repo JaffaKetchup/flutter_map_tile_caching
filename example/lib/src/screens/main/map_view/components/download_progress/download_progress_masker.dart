@@ -28,7 +28,7 @@ class DownloadProgressMasker extends StatefulWidget {
   final int minZoom;
   final int maxZoom;
   final int tileSize;
-  final TileLayer child;
+  final Widget child;
 
   // To reset after a download, the `key` must be changed
 
