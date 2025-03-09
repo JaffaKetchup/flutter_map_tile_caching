@@ -114,32 +114,35 @@ Future<void> _worker(
         final queriedStores = storesQuery.property(ObjectBoxStore_.name).find();
         if (queriedStores.isEmpty) return 0;
 
-        // For each store, remove it from the tile if requested
-        // For each store & if removed, update that store's stats
-        for (final tile in tilesQuery.chunked(
+        tilesQuery.chunkedMultiTransaction(
           chunkSize: tilesChunkSize,
           limitTiles: limitTiles,
-        )) {
-          tile.stores.removeWhere((store) {
-            if (!queriedStores.contains(store.name)) return false;
+          root: root,
 
-            storeDeltaLength[store.name] =
-                (storeDeltaLength[store.name] ?? 0) - 1;
-            storeDeltaSize[store.name] =
-                (storeDeltaSize[store.name] ?? 0) - tile.bytes.lengthInBytes;
+          // For each store, remove it from the tile if requested
+          // For each store & if removed, update that store's stats
+          runInTransaction: (tile) {
+            tile.stores.removeWhere((store) {
+              if (!queriedStores.contains(store.name)) return false;
 
-            return true;
-          });
+              storeDeltaLength[store.name] =
+                  (storeDeltaLength[store.name] ?? 0) - 1;
+              storeDeltaSize[store.name] =
+                  (storeDeltaSize[store.name] ?? 0) - tile.bytes.lengthInBytes;
 
-          if (tile.stores.isNotEmpty) {
-            tile.stores.applyToDb(mode: PutMode.update);
-            hadTilesToUpdate = true;
-            continue;
-          }
+              return true;
+            });
 
-          rootDeltaSize -= tile.bytes.lengthInBytes;
-          tilesToRemove.add(tile.id);
-        }
+            if (tile.stores.isNotEmpty) {
+              tile.stores.applyToDb(mode: PutMode.update);
+              hadTilesToUpdate = true;
+              return;
+            }
+
+            rootDeltaSize -= tile.bytes.lengthInBytes;
+            tilesToRemove.add(tile.id);
+          },
+        );
 
         if (!hadTilesToUpdate && tilesToRemove.isEmpty) return 0;
 
@@ -1233,7 +1236,6 @@ Future<void> _worker(
                 ObjectBoxStore_.name.oneOf(compiledImportStores),
               ))
             .build();
-        final importingTiles = importingTilesQuery.chunked(chunkSize: 300);
 
         final existingStoresQuery = root
             .box<ObjectBoxStore>()
@@ -1314,112 +1316,106 @@ Future<void> _worker(
           importingStoresQuery.close();
         }
 
-        final numImportedTiles = root.runInTransaction(
-          TxMode.write,
-          () {
-            int sum = 0;
+        int numImportedTiles = 0;
+        importingTilesQuery.chunkedMultiTransaction(
+          chunkSize: 300,
+          root: root,
+          runInTransaction: (tile) {
+            final convertedRelatedStores = convertToExistingStores(tile.stores);
 
-            for (final tile in importingTiles) {
-              final convertedRelatedStores =
-                  convertToExistingStores(tile.stores);
+            final existingTile = (existingTilesQuery
+                  ..param(ObjectBoxTile_.url).value = tile.url)
+                .findUnique();
 
-              final existingTile = (existingTilesQuery
-                    ..param(ObjectBoxTile_.url).value = tile.url)
-                  .findUnique();
-
-              if (existingTile == null) {
-                root.box<ObjectBoxTile>().put(
-                      ObjectBoxTile(
-                        url: tile.url,
-                        bytes: tile.bytes,
-                        lastModified: tile.lastModified,
-                      )..stores.addAll(convertedRelatedStores),
-                      mode: PutMode.insert,
-                    );
-
-                // No need to modify store stats, because if tile didn't already
-                // exist, then was not present in an existing store that needs
-                // changing, and all importing stores are brand new and already
-                // contain accurate stats. EXCEPT in merge mode - importing
-                // stores may not be new.
-                if (strategy == ImportConflictStrategy.merge) {
-                  // No need to worry if it was brand new, we use the same
-                  // logic, treating it as an existing related store, because
-                  // when we created it, we made it empty.
-                  for (final convertedRelatedStore in convertedRelatedStores) {
-                    storeDeltaLength[convertedRelatedStore.name] =
-                        (storeDeltaLength[convertedRelatedStore.name] ?? 0) + 1;
-                    storeDeltaSize[convertedRelatedStore.name] =
-                        (storeDeltaSize[convertedRelatedStore.name] ?? 0) +
-                            tile.bytes.lengthInBytes;
-                  }
-                }
-
-                rootDeltaLength++;
-                rootDeltaSize += tile.bytes.lengthInBytes;
-
-                sum++;
-                continue;
-              }
-
-              final existingTileIsNewer =
-                  existingTile.lastModified.isAfter(tile.lastModified) ||
-                      existingTile.lastModified == tile.lastModified;
-
-              final relations = {
-                ...existingTile.stores,
-                ...convertedRelatedStores,
-              };
-
+            if (existingTile == null) {
               root.box<ObjectBoxTile>().put(
                     ObjectBoxTile(
                       url: tile.url,
-                      bytes:
-                          existingTileIsNewer ? existingTile.bytes : tile.bytes,
-                      lastModified: existingTileIsNewer
-                          ? existingTile.lastModified
-                          : tile.lastModified,
-                    )
-                      ..stores.addAll(relations)
-                      ..id = existingTile.id,
-                    mode: PutMode.update,
+                      bytes: tile.bytes,
+                      lastModified: tile.lastModified,
+                    )..stores.addAll(convertedRelatedStores),
+                    mode: PutMode.insert,
                   );
 
+              // No need to modify store stats, because if tile didn't already
+              // exist, then was not present in an existing store that needs
+              // changing, and all importing stores are brand new and already
+              // contain accurate stats. EXCEPT in merge mode - importing
+              // stores may not be new.
               if (strategy == ImportConflictStrategy.merge) {
-                for (final newConvertedRelatedStore in convertedRelatedStores) {
-                  if (existingTile.stores
-                      .map((e) => e.name)
-                      .contains(newConvertedRelatedStore.name)) {
-                    continue;
-                  }
-
-                  storeDeltaLength[newConvertedRelatedStore.name] =
-                      (storeDeltaLength[newConvertedRelatedStore.name] ?? 0) +
-                          1;
-                  storeDeltaSize[newConvertedRelatedStore.name] =
-                      (storeDeltaSize[newConvertedRelatedStore.name] ?? 0) +
-                          (existingTileIsNewer ? existingTile : tile)
-                              .bytes
-                              .lengthInBytes;
+                // No need to worry if it was brand new, we use the same
+                // logic, treating it as an existing related store, because
+                // when we created it, we made it empty.
+                for (final convertedRelatedStore in convertedRelatedStores) {
+                  storeDeltaLength[convertedRelatedStore.name] =
+                      (storeDeltaLength[convertedRelatedStore.name] ?? 0) + 1;
+                  storeDeltaSize[convertedRelatedStore.name] =
+                      (storeDeltaSize[convertedRelatedStore.name] ?? 0) +
+                          tile.bytes.lengthInBytes;
                 }
               }
 
-              if (existingTileIsNewer) continue;
+              rootDeltaLength++;
+              rootDeltaSize += tile.bytes.lengthInBytes;
 
-              for (final existingTileStore in existingTile.stores) {
-                storeDeltaSize[existingTileStore.name] =
-                    (storeDeltaSize[existingTileStore.name] ?? 0) -
-                        existingTile.bytes.lengthInBytes +
-                        tile.bytes.lengthInBytes;
-              }
-
-              rootDeltaSize +=
-                  -existingTile.bytes.lengthInBytes + tile.bytes.lengthInBytes;
-
-              sum++;
+              numImportedTiles++;
+              return;
             }
 
-            return sum;
+            final existingTileIsNewer =
+                existingTile.lastModified.isAfter(tile.lastModified) ||
+                    existingTile.lastModified == tile.lastModified;
+
+            final relations = {
+              ...existingTile.stores,
+              ...convertedRelatedStores,
+            };
+
+            root.box<ObjectBoxTile>().put(
+                  ObjectBoxTile(
+                    url: tile.url,
+                    bytes:
+                        existingTileIsNewer ? existingTile.bytes : tile.bytes,
+                    lastModified: existingTileIsNewer
+                        ? existingTile.lastModified
+                        : tile.lastModified,
+                  )
+                    ..stores.addAll(relations)
+                    ..id = existingTile.id,
+                  mode: PutMode.update,
+                );
+
+            if (strategy == ImportConflictStrategy.merge) {
+              for (final newConvertedRelatedStore in convertedRelatedStores) {
+                if (existingTile.stores
+                    .map((e) => e.name)
+                    .contains(newConvertedRelatedStore.name)) {
+                  continue;
+                }
+
+                storeDeltaLength[newConvertedRelatedStore.name] =
+                    (storeDeltaLength[newConvertedRelatedStore.name] ?? 0) + 1;
+                storeDeltaSize[newConvertedRelatedStore.name] =
+                    (storeDeltaSize[newConvertedRelatedStore.name] ?? 0) +
+                        (existingTileIsNewer ? existingTile : tile)
+                            .bytes
+                            .lengthInBytes;
+              }
+            }
+
+            if (existingTileIsNewer) return;
+
+            for (final existingTileStore in existingTile.stores) {
+              storeDeltaSize[existingTileStore.name] =
+                  (storeDeltaSize[existingTileStore.name] ?? 0) -
+                      existingTile.bytes.lengthInBytes +
+                      tile.bytes.lengthInBytes;
+            }
+
+            rootDeltaSize +=
+                -existingTile.bytes.lengthInBytes + tile.bytes.lengthInBytes;
+
+            numImportedTiles++;
           },
         );
 
@@ -1524,20 +1520,28 @@ Future<void> _worker(
 }
 
 extension _ChunkedFind<T> on Query<T> {
-  Iterable<T> chunked({
+  void chunkedMultiTransaction({
+    required Store root,
+    required void Function(T e) runInTransaction,
     required int chunkSize,
     int? limitTiles,
-  }) sync* {
+    TxMode transactionMode = TxMode.write,
+  }) {
     for (int offset = 0;; offset += chunkSize) {
-      final chunk = (this
-            ..offset = offset
-            ..limit = (limitTiles == null
-                ? chunkSize
-                : min(chunkSize, limitTiles - offset)))
-          .find();
-
-      yield* chunk;
-      if (chunk.length < chunkSize) return;
+      final exit = root.runInTransaction(
+        transactionMode,
+        () {
+          final chunk = (this
+                ..offset = offset
+                ..limit = (limitTiles == null
+                    ? chunkSize
+                    : min(chunkSize, limitTiles - offset)))
+              .find()
+            ..forEach(runInTransaction);
+          return chunk.length < chunkSize;
+        },
+      );
+      if (exit) return;
     }
   }
 }
