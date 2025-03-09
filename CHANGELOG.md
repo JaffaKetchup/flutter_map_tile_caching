@@ -18,6 +18,12 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [11.0.0-dev.1] - 2025/03/09
+
+* Change `FMTCTileProvider.provideTile` arguments  
+  Require a tile's URL & optional coordinates; instead of required coordinates and required `TileLayer`
+* Fixed overly-aggressive Flutter-side tile image caching which prevented changes to `TileLayer.urlTemplate` from updating the displayed tiles
+
 ## [10.1.0] - 2025/02/02
 
 * Added support for flutter_map v8

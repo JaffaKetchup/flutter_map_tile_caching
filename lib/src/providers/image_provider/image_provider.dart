@@ -74,8 +74,8 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
 
   /// {@macro fmtc.tileProvider.provideTile}
   static Future<Uint8List> provideTile({
-    required String networkUrl,
     required FMTCTileProvider provider,
+    required String networkUrl,
     TileCoordinates? coords,
     Object? key,
     void Function()? startedLoading,

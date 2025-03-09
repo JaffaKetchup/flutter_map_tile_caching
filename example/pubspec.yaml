@@ -1,7 +1,7 @@
 name: fmtc_demo
 description: The demo app for 'flutter_map_tile_caching', showcasing its functionality and use-cases.
 publish_to: "none"
-version: 10.1.0
+version: 11.0.0
 
 environment:
   sdk: ">=3.6.0 <4.0.0"
