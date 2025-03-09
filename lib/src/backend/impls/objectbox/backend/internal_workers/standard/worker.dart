@@ -900,142 +900,117 @@ Future<void> _worker(
           rethrow;
         }
 
-        final storesQuery = root
-            .box<ObjectBoxStore>()
-            .query(ObjectBoxStore_.name.oneOf(storeNames))
-            .build();
+        try {
+          final storesQuery = root
+              .box<ObjectBoxStore>()
+              .query(ObjectBoxStore_.name.oneOf(storeNames))
+              .build();
+          final tilesQuery = (root.box<ObjectBoxTile>().query()
+                ..linkMany(
+                  ObjectBoxTile_.stores,
+                  ObjectBoxStore_.name.oneOf(storeNames),
+                ))
+              .build();
 
-        final tilesQuery = (root.box<ObjectBoxTile>().query()
-              ..linkMany(
-                ObjectBoxTile_.stores,
-                ObjectBoxStore_.name.oneOf(storeNames),
-              ))
-            .build();
-
-        final storesObjectsForRelations = <String, ObjectBoxStore>{};
-
-        final exportingStores = root.runInTransaction(
-          TxMode.read,
-          storesQuery.stream,
-        );
-
-        exportingRoot
-            .runInTransaction(
-              TxMode.write,
-              () => exportingStores.map(
-                (exportingStore) {
-                  exportingRoot.box<ObjectBoxStore>().put(
-                        storesObjectsForRelations[exportingStore.name] =
-                            ObjectBoxStore(
-                          name: exportingStore.name,
-                          maxLength: exportingStore.maxLength,
-                          length: exportingStore.length,
-                          size: exportingStore.size,
-                          hits: exportingStore.hits,
-                          misses: exportingStore.misses,
-                          metadataJson: exportingStore.metadataJson,
-                        ),
-                        mode: PutMode.insert,
-                      );
-                },
-              ),
-            )
-            .length
-            .then(
-          (numExportedStores) {
-            if (numExportedStores == 0) throw StateError('Unpossible');
-
-            final exportingTiles = root.runInTransaction(
-              TxMode.read,
-              tilesQuery.stream,
+          // Copy all stores to external root
+          // Then, to make sure relations work 100%, we go through the stores
+          // just copied to the external root and add them to the map below
+          final storesToExport = storesQuery.find();
+          if (!listEquals(
+            storesToExport.map((s) => s.name).toList(growable: false),
+            storeNames,
+          )) {
+            throw ArgumentError(
+              'Specified stores did not match the resolved existing stores',
+              'storeNames',
             );
+          }
+          final storesObjectsForRelations =
+              Map<String, ObjectBoxStore>.fromEntries(
+            (exportingRoot.box<ObjectBoxStore>()
+                  ..putMany(
+                    storesQuery
+                        .find()
+                        .map(
+                          (store) => ObjectBoxStore(
+                            name: store.name,
+                            maxLength: store.maxLength,
+                            length: store.length,
+                            size: store.size,
+                            hits: store.hits,
+                            misses: store.misses,
+                            metadataJson: store.metadataJson,
+                          ),
+                        )
+                        .toList(growable: false),
+                    mode: PutMode.insert,
+                  ))
+                .getAll()
+                .map((s) => MapEntry(s.name, s)),
+          );
 
-            exportingRoot
-                .runInTransaction(
-                  TxMode.write,
-                  () => exportingTiles.map(
-                    (exportingTile) {
-                      exportingRoot.box<ObjectBoxTile>().put(
-                            ObjectBoxTile(
-                              url: exportingTile.url,
-                              bytes: exportingTile.bytes,
-                              lastModified: exportingTile.lastModified,
-                            )..stores.addAll(
-                                exportingTile.stores
-                                    .map(
-                                      (s) => storesObjectsForRelations[s.name],
-                                    )
-                                    .nonNulls,
-                              ),
-                            mode: PutMode.insert,
-                          );
-                    },
-                  ),
-                )
-                .length
-                .then(
-              (numExportedTiles) {
-                if (numExportedTiles == 0) {
-                  throw ArgumentError(
-                    'Specified stores must include at least one tile total',
-                    'storeNames',
+          // Copy all tiles to external root
+          int numExportedTiles = 0;
+          tilesQuery.chunkedMultiTransaction(
+            chunkSize: 300,
+            root: root,
+            runInTransaction: (tile) {
+              exportingRoot.box<ObjectBoxTile>().put(
+                    ObjectBoxTile(
+                      url: tile.url,
+                      bytes: tile.bytes,
+                      lastModified: tile.lastModified,
+                    )..stores.addAll(
+                        tile.stores
+                            .map((s) => storesObjectsForRelations[s.name])
+                            .nonNulls,
+                      ),
+                    mode: PutMode.insert,
                   );
-                }
+              numExportedTiles++;
+            },
+          );
 
-                storesQuery.close();
-                tilesQuery.close();
-                exportingRoot.close();
-
-                final dbFile =
-                    File(path.join(workingDir.absolute.path, 'data.mdb'));
-
-                final ram = dbFile.openSync(mode: FileMode.writeOnlyAppend);
-                try {
-                  ram
-                    ..writeFromSync(List.filled(4, 255))
-                    ..writeStringSync('ObjectBox') // Backend identifier
-                    ..writeByteSync(255)
-                    ..writeByteSync(255)
-                    ..writeStringSync('FMTC'); // Signature
-                } finally {
-                  ram.closeSync();
-                }
-
-                try {
-                  dbFile.renameSync(outputPath);
-                } on FileSystemException {
-                  dbFile.copySync(outputPath);
-                } finally {
-                  workingDir.deleteSync(recursive: true);
-                }
-
-                sendRes(
-                  id: cmd.id,
-                  data: {'numExportedTiles': numExportedTiles},
-                );
-              },
-            ).catchError((error, stackTrace) {
-              exportingRoot.close();
-              try {
-                workingDir.deleteSync(recursive: true);
-                // If the working dir didn't exist, that's fine
-                // We don't want to spend time checking if exists, as it likely
-                // does
-                // ignore: empty_catches
-              } on FileSystemException {}
-              Error.throwWithStackTrace(error, stackTrace);
-            });
-          },
-        ).catchError((error, stackTrace) {
+          storesQuery.close();
+          tilesQuery.close();
           exportingRoot.close();
+
+          final dbFile = File(path.join(workingDir.absolute.path, 'data.mdb'));
+
+          final ram = dbFile.openSync(mode: FileMode.writeOnlyAppend);
           try {
+            ram
+              ..writeFromSync(List.filled(4, 255))
+              ..writeStringSync('ObjectBox') // Backend identifier
+              ..writeByteSync(255)
+              ..writeByteSync(255)
+              ..writeStringSync('FMTC'); // Signature
+          } finally {
+            ram.closeSync();
+          }
+
+          try {
+            dbFile.renameSync(outputPath);
+          } on FileSystemException {
+            dbFile.copySync(outputPath);
+          } finally {
             workingDir.deleteSync(recursive: true);
-            // If the working dir didn't exist, that's fine
-            // We don't want to spend time checking if exists, as it likely does
-            // ignore: empty_catches
-          } on FileSystemException {}
-          Error.throwWithStackTrace(error, stackTrace);
-        });
+          }
+
+          sendRes(
+            id: cmd.id,
+            data: {'numExportedTiles': numExportedTiles},
+          );
+
+          // We don't care what type, we always need to clean up and rethrow
+          // ignore: avoid_catches_without_on_clauses
+        } catch (e) {
+          exportingRoot.close();
+          if (workingDir.existsSync()) {
+            workingDir.deleteSync(recursive: true);
+          }
+          rethrow;
+        }
       case _CmdType.importStores:
         final importPath = cmd.args['path']! as String;
         final strategy = cmd.args['strategy'] as ImportConflictStrategy;
