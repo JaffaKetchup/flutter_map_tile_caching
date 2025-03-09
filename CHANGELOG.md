@@ -18,6 +18,12 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [10.1.1] - 2025/02/03
+
+* Fixed bug where import operation fatally crashed on some iOS devices  
+  This appears to be an [ObjectBox issue](https://github.com/objectbox/objectbox-dart/issues/654) where streaming the results of a database query caused the crash. Instead, FMTC now uses a custom chunking system to avoid streaming and also avoid loading potentially many tiles into memory.
+* Improved performance of import operation
+
 ## [10.1.0] - 2025/02/02
 
 * Added support for flutter_map v8
