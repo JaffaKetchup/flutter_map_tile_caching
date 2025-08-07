@@ -461,7 +461,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
   @override
   Future<Map<String, int>> removeOldestTilesAboveLimit({
     required List<String> storeNames,
-  }) async {
+  }) {
     // By sharing a single completer, all invocations of this method during the
     // debounce period will return the same result at the same time
     if (_rotalResultCompleter?.isCompleted ?? true) {

@@ -58,7 +58,7 @@ class RootRecovery {
   ///
   /// {@macro fmtc.rootRecovery.failedDefinition}
   Future<Iterable<({bool isFailed, RecoveredRegion region})>>
-      get recoverableRegions async =>
+      get recoverableRegions =>
           FMTCBackendAccess.internal.listRecoverableRegions().then(
                 (rs) => rs.map(
                   (r) =>
@@ -79,7 +79,7 @@ class RootRecovery {
   }
 
   /// {@macro fmtc.backend.cancelRecovery}
-  Future<void> cancel(int id) async =>
+  Future<void> cancel(int id) =>
       FMTCBackendAccess.internal.cancelRecovery(id: id);
 }
 
