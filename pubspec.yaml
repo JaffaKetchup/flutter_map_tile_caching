@@ -47,6 +47,12 @@ dev_dependencies:
   objectbox_generator: ^4.1.0
   test: ^1.25.15
 
+dependency_overrides:
+  flutter_map:
+    git:
+      url: https://github.com/fleaflet/flutter_map
+      ref: modern-tile-layer
+
 flutter: null
 
 objectbox:
