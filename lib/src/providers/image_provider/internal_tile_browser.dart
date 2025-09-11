@@ -4,8 +4,7 @@
 part of '../../../flutter_map_tile_caching.dart';
 
 Future<Uint8List> _internalTileBrowser({
-  required TileCoordinates coords,
-  required TileLayer options,
+  required String networkUrl,
   required FMTCTileProvider provider,
   required bool requireValidImage,
   required _TLIRConstructor? currentTLIR,
@@ -27,7 +26,6 @@ Future<Uint8List> _internalTileBrowser({
     }
   }
 
-  final networkUrl = provider.getTileUrl(coords, options);
   final matcherUrl = provider.urlTransformer?.call(networkUrl) ?? networkUrl;
 
   currentTLIR?.networkUrl = networkUrl;

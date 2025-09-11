@@ -6,8 +6,6 @@ class _AnimatedVisibilityIconButton extends StatelessWidget {
     this.onPressed,
     this.tooltip,
     required this.isVisible,
-    // This is exactly what we want to do
-    // ignore: avoid_field_initializers_in_const_classes
   }) : _mode = 0;
 
   const _AnimatedVisibilityIconButton.filledTonal({
@@ -15,8 +13,6 @@ class _AnimatedVisibilityIconButton extends StatelessWidget {
     this.onPressed,
     this.tooltip,
     required this.isVisible,
-    // This is exactly what we want to do
-    // ignore: avoid_field_initializers_in_const_classes
   }) : _mode = 1;
 
   const _AnimatedVisibilityIconButton.filled({
@@ -24,8 +20,6 @@ class _AnimatedVisibilityIconButton extends StatelessWidget {
     this.onPressed,
     this.tooltip,
     required this.isVisible,
-    // This is exactly what we want to do
-    // ignore: avoid_field_initializers_in_const_classes
   }) : _mode = 2;
 
   final Icon icon;
