@@ -95,7 +95,7 @@ class _UrlSelectorState extends State<UrlSelector> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: DropdownMenu<String?>(
+                child: DropdownMenu<String>(
                   controller: _urlTextController,
                   expandedInsets: EdgeInsets.zero, // full width
                   requestFocusOnTap: true,
@@ -132,8 +132,8 @@ class _UrlSelectorState extends State<UrlSelector> {
         },
       );
 
-  void _onSelected(String? v) {
-    if (v == null) {
+  void _onSelected(String? val) {
+    if (val == '' || val == null) {
       sharedPrefs.setStringList(
         SharedPrefsKeys.customNonStoreUrls.name,
         (sharedPrefs.getStringList(SharedPrefsKeys.customNonStoreUrls.name) ??
@@ -144,15 +144,16 @@ class _UrlSelectorState extends State<UrlSelector> {
       _selectableEntriesManualRefreshStream.add(null);
     }
 
-    widget.onSelected!(v ?? _urlTextController.text);
+    widget
+        .onSelected!(val == '' || val == null ? _urlTextController.text : val);
     _dropdownMenuFocusNode?.unfocus();
   }
 
-  List<DropdownMenuEntry<String?>> _constructMenuEntries(
+  List<DropdownMenuEntry<String>> _constructMenuEntries(
     AsyncSnapshot<Map<String, List<String>>> snapshot,
   ) =>
       snapshot.data!.entries
-          .map<DropdownMenuEntry<String?>>(
+          .map(
             (e) => DropdownMenuEntry(
               value: e.key,
               label: e.key,
@@ -189,7 +190,7 @@ class _UrlSelectorState extends State<UrlSelector> {
           .toList()
         ..add(
           const DropdownMenuEntry(
-            value: null,
+            value: '',
             label:
                 'To use another URL (without using it in a store),\nenter it, '
                 'then hit enter/done/add',
