@@ -18,6 +18,10 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [10.1.2] - 2025/11/17
+
+* Upgraded ObjectBox dependencies to permit v5.0.0 - fixes [issue #194](https://github.com/JaffaKetchup/flutter_map_tile_caching/issues/194)
+
 ## [10.1.1] - 2025/02/03
 
 * Fixed bug where import operation fatally crashed on some iOS devices  
