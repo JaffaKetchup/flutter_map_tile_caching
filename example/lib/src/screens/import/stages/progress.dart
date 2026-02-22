@@ -62,13 +62,9 @@ class _ImportProgressStageState extends State<ImportProgressStage> {
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             const Text(
-              'This could take a while.\n'
-              "We don't recommend leaving this screen. The import will "
-              'continue, but performance could be affected.\n'
-              'Closing the app will stop the import operation in an '
-              'indeterminate (but stable) state.',
+              "This could take a while. Don't leave this screen.",
               textAlign: TextAlign.center,
             ),
           ],
