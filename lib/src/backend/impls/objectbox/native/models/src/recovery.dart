@@ -4,7 +4,7 @@
 import 'package:meta/meta.dart';
 import 'package:objectbox/objectbox.dart';
 
-import '../../../../../../flutter_map_tile_caching.dart';
+import '../../../../../../../flutter_map_tile_caching.dart';
 import 'recovery_region.dart';
 
 /// Represents a [RecoveredRegion]

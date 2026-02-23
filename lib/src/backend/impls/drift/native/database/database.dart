@@ -1,0 +1,36 @@
+import 'package:drift/drift.dart';
+
+import 'database.drift.dart';
+import 'models/recovery.dart';
+import 'models/recovery_region.dart';
+import 'models/root.dart';
+import 'models/store.dart';
+import 'models/store_tile.dart';
+import 'models/tile.dart';
+
+@DriftDatabase(
+  tables: [
+    DriftTile,
+    DriftStore,
+    DriftStoreTile,
+    DriftRoot,
+    DriftRecovery,
+    DriftRecoveryRegion,
+  ],
+)
+
+/// The main Drift database class for FMTC's native SQLite backend
+class DriftFMTCDatabase extends $DriftFMTCDatabase {
+  /// Creates a [DriftFMTCDatabase] using the given [connection]
+  DriftFMTCDatabase(super.e);
+
+  @override
+  int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        beforeOpen: (details) async {
+          await customStatement('PRAGMA foreign_keys = ON');
+        },
+      );
+}

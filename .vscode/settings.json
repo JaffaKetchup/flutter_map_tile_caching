@@ -1,0 +1,17 @@
+{
+    "yaml.schemas": {
+        "https://json.schemastore.org/dart-build": [
+            "build.yaml",
+            "*.build.yaml",
+            "build.*.yaml"
+        ]
+    },
+    "[dart]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit",
+            "source.fixAll": "explicit"
+        }
+    },
+}
