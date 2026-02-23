@@ -37,8 +37,36 @@ abstract class $DriftFMTCDatabase extends i0.GeneratedDatabase {
         driftRoot,
         driftRecovery,
         driftRecoveryRegion,
-        i1.lastModified
+        i1.lastModified,
+        i3.idxStoreTileTile
       ];
+  @override
+  i0.StreamQueryUpdateRules get streamUpdateRules =>
+      const i0.StreamQueryUpdateRules(
+        [
+          i0.WritePropagation(
+            on: i0.TableUpdateQuery.onTableName('drift_store',
+                limitUpdateKind: i0.UpdateKind.delete),
+            result: [
+              i0.TableUpdate('drift_store_tile', kind: i0.UpdateKind.delete),
+            ],
+          ),
+          i0.WritePropagation(
+            on: i0.TableUpdateQuery.onTableName('drift_store',
+                limitUpdateKind: i0.UpdateKind.update),
+            result: [
+              i0.TableUpdate('drift_store_tile', kind: i0.UpdateKind.update),
+            ],
+          ),
+          i0.WritePropagation(
+            on: i0.TableUpdateQuery.onTableName('drift_tile',
+                limitUpdateKind: i0.UpdateKind.delete),
+            result: [
+              i0.TableUpdate('drift_store_tile', kind: i0.UpdateKind.delete),
+            ],
+          ),
+        ],
+      );
   @override
   i0.DriftDatabaseOptions get options =>
       const i0.DriftDatabaseOptions(storeDateTimeAsText: true);

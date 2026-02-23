@@ -14,6 +14,7 @@ typedef $$DriftRecoveryRegionTableCreateCompanionBuilder
     = i1.DriftRecoveryRegionCompanion Function({
   i0.Value<int> id,
   required int recovery,
+  i0.Value<int?> parentRegionId,
   required int typeId,
   i0.Value<double?> rectNwLat,
   i0.Value<double?> rectNwLng,
@@ -32,6 +33,7 @@ typedef $$DriftRecoveryRegionTableUpdateCompanionBuilder
     = i1.DriftRecoveryRegionCompanion Function({
   i0.Value<int> id,
   i0.Value<int> recovery,
+  i0.Value<int?> parentRegionId,
   i0.Value<int> typeId,
   i0.Value<double?> rectNwLat,
   i0.Value<double?> rectNwLng,
@@ -93,6 +95,10 @@ class $$DriftRecoveryRegionTableFilterComposer
   });
   i0.ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => i0.ColumnFilters(column));
+
+  i0.ColumnFilters<int> get parentRegionId => $composableBuilder(
+      column: $table.parentRegionId,
+      builder: (column) => i0.ColumnFilters(column));
 
   i0.ColumnFilters<int> get typeId => $composableBuilder(
       column: $table.typeId, builder: (column) => i0.ColumnFilters(column));
@@ -172,6 +178,10 @@ class $$DriftRecoveryRegionTableOrderingComposer
   });
   i0.ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => i0.ColumnOrderings(column));
+
+  i0.ColumnOrderings<int> get parentRegionId => $composableBuilder(
+      column: $table.parentRegionId,
+      builder: (column) => i0.ColumnOrderings(column));
 
   i0.ColumnOrderings<int> get typeId => $composableBuilder(
       column: $table.typeId, builder: (column) => i0.ColumnOrderings(column));
@@ -256,6 +266,9 @@ class $$DriftRecoveryRegionTableAnnotationComposer
   });
   i0.GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  i0.GeneratedColumn<int> get parentRegionId => $composableBuilder(
+      column: $table.parentRegionId, builder: (column) => column);
 
   i0.GeneratedColumn<int> get typeId =>
       $composableBuilder(column: $table.typeId, builder: (column) => column);
@@ -347,6 +360,7 @@ class $$DriftRecoveryRegionTableTableManager extends i0.RootTableManager<
           updateCompanionCallback: ({
             i0.Value<int> id = const i0.Value.absent(),
             i0.Value<int> recovery = const i0.Value.absent(),
+            i0.Value<int?> parentRegionId = const i0.Value.absent(),
             i0.Value<int> typeId = const i0.Value.absent(),
             i0.Value<double?> rectNwLat = const i0.Value.absent(),
             i0.Value<double?> rectNwLng = const i0.Value.absent(),
@@ -364,6 +378,7 @@ class $$DriftRecoveryRegionTableTableManager extends i0.RootTableManager<
               i1.DriftRecoveryRegionCompanion(
             id: id,
             recovery: recovery,
+            parentRegionId: parentRegionId,
             typeId: typeId,
             rectNwLat: rectNwLat,
             rectNwLng: rectNwLng,
@@ -381,6 +396,7 @@ class $$DriftRecoveryRegionTableTableManager extends i0.RootTableManager<
           createCompanionCallback: ({
             i0.Value<int> id = const i0.Value.absent(),
             required int recovery,
+            i0.Value<int?> parentRegionId = const i0.Value.absent(),
             required int typeId,
             i0.Value<double?> rectNwLat = const i0.Value.absent(),
             i0.Value<double?> rectNwLng = const i0.Value.absent(),
@@ -398,6 +414,7 @@ class $$DriftRecoveryRegionTableTableManager extends i0.RootTableManager<
               i1.DriftRecoveryRegionCompanion.insert(
             id: id,
             recovery: recovery,
+            parentRegionId: parentRegionId,
             typeId: typeId,
             rectNwLat: rectNwLat,
             rectNwLng: rectNwLng,
@@ -495,12 +512,18 @@ class $DriftRecoveryRegionTable extends i2.DriftRecoveryRegion
       requiredDuringInsert: true,
       defaultConstraints: i0.GeneratedColumn.constraintIsAlways(
           'REFERENCES drift_recovery (id)'));
+  static const i0.VerificationMeta _parentRegionIdMeta =
+      const i0.VerificationMeta('parentRegionId');
+  @override
+  late final i0.GeneratedColumn<int> parentRegionId = i0.GeneratedColumn<int>(
+      'parent_region_id', aliasedName, true,
+      type: i0.DriftSqlType.int, requiredDuringInsert: false);
   static const i0.VerificationMeta _typeIdMeta =
       const i0.VerificationMeta('typeId');
   @override
   late final i0.GeneratedColumn<int> typeId = i0.GeneratedColumn<int>(
       'type_id', aliasedName, false,
-      check: () => i3.ComparableExpr(typeId).isBetweenValues(0, 3),
+      check: () => i3.ComparableExpr(typeId).isBetweenValues(0, 4),
       type: i0.DriftSqlType.int,
       requiredDuringInsert: true);
   static const i0.VerificationMeta _rectNwLatMeta =
@@ -579,6 +602,7 @@ class $DriftRecoveryRegionTable extends i2.DriftRecoveryRegion
   List<i0.GeneratedColumn> get $columns => [
         id,
         recovery,
+        parentRegionId,
         typeId,
         rectNwLat,
         rectNwLng,
@@ -612,6 +636,12 @@ class $DriftRecoveryRegionTable extends i2.DriftRecoveryRegion
           recovery.isAcceptableOrUnknown(data['recovery']!, _recoveryMeta));
     } else if (isInserting) {
       context.missing(_recoveryMeta);
+    }
+    if (data.containsKey('parent_region_id')) {
+      context.handle(
+          _parentRegionIdMeta,
+          parentRegionId.isAcceptableOrUnknown(
+              data['parent_region_id']!, _parentRegionIdMeta));
     }
     if (data.containsKey('type_id')) {
       context.handle(_typeIdMeta,
@@ -701,6 +731,8 @@ class $DriftRecoveryRegionTable extends i2.DriftRecoveryRegion
           .read(i0.DriftSqlType.int, data['${effectivePrefix}id'])!,
       recovery: attachedDatabase.typeMapping
           .read(i0.DriftSqlType.int, data['${effectivePrefix}recovery'])!,
+      parentRegionId: attachedDatabase.typeMapping.read(
+          i0.DriftSqlType.int, data['${effectivePrefix}parent_region_id']),
       typeId: attachedDatabase.typeMapping
           .read(i0.DriftSqlType.int, data['${effectivePrefix}type_id'])!,
       rectNwLat: attachedDatabase.typeMapping
@@ -745,6 +777,9 @@ class DriftRecoveryRegionData extends i0.DataClass
     implements i0.Insertable<i1.DriftRecoveryRegionData> {
   final int id;
   final int recovery;
+
+  /// For MultiRegion sub-regions, references the parent DriftRecoveryRegion.id
+  final int? parentRegionId;
   final int typeId;
   final double? rectNwLat;
   final double? rectNwLng;
@@ -761,6 +796,7 @@ class DriftRecoveryRegionData extends i0.DataClass
   const DriftRecoveryRegionData(
       {required this.id,
       required this.recovery,
+      this.parentRegionId,
       required this.typeId,
       this.rectNwLat,
       this.rectNwLng,
@@ -779,6 +815,9 @@ class DriftRecoveryRegionData extends i0.DataClass
     final map = <String, i0.Expression>{};
     map['id'] = i0.Variable<int>(id);
     map['recovery'] = i0.Variable<int>(recovery);
+    if (!nullToAbsent || parentRegionId != null) {
+      map['parent_region_id'] = i0.Variable<int>(parentRegionId);
+    }
     map['type_id'] = i0.Variable<int>(typeId);
     if (!nullToAbsent || rectNwLat != null) {
       map['rect_nw_lat'] = i0.Variable<double>(rectNwLat);
@@ -823,6 +862,9 @@ class DriftRecoveryRegionData extends i0.DataClass
     return i1.DriftRecoveryRegionCompanion(
       id: i0.Value(id),
       recovery: i0.Value(recovery),
+      parentRegionId: parentRegionId == null && nullToAbsent
+          ? const i0.Value.absent()
+          : i0.Value(parentRegionId),
       typeId: i0.Value(typeId),
       rectNwLat: rectNwLat == null && nullToAbsent
           ? const i0.Value.absent()
@@ -869,6 +911,7 @@ class DriftRecoveryRegionData extends i0.DataClass
     return DriftRecoveryRegionData(
       id: serializer.fromJson<int>(json['id']),
       recovery: serializer.fromJson<int>(json['recovery']),
+      parentRegionId: serializer.fromJson<int?>(json['parentRegionId']),
       typeId: serializer.fromJson<int>(json['typeId']),
       rectNwLat: serializer.fromJson<double?>(json['rectNwLat']),
       rectNwLng: serializer.fromJson<double?>(json['rectNwLng']),
@@ -892,6 +935,7 @@ class DriftRecoveryRegionData extends i0.DataClass
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'recovery': serializer.toJson<int>(recovery),
+      'parentRegionId': serializer.toJson<int?>(parentRegionId),
       'typeId': serializer.toJson<int>(typeId),
       'rectNwLat': serializer.toJson<double?>(rectNwLat),
       'rectNwLng': serializer.toJson<double?>(rectNwLng),
@@ -911,6 +955,7 @@ class DriftRecoveryRegionData extends i0.DataClass
   i1.DriftRecoveryRegionData copyWith(
           {int? id,
           int? recovery,
+          i0.Value<int?> parentRegionId = const i0.Value.absent(),
           int? typeId,
           i0.Value<double?> rectNwLat = const i0.Value.absent(),
           i0.Value<double?> rectNwLng = const i0.Value.absent(),
@@ -927,6 +972,8 @@ class DriftRecoveryRegionData extends i0.DataClass
       i1.DriftRecoveryRegionData(
         id: id ?? this.id,
         recovery: recovery ?? this.recovery,
+        parentRegionId:
+            parentRegionId.present ? parentRegionId.value : this.parentRegionId,
         typeId: typeId ?? this.typeId,
         rectNwLat: rectNwLat.present ? rectNwLat.value : this.rectNwLat,
         rectNwLng: rectNwLng.present ? rectNwLng.value : this.rectNwLng,
@@ -955,6 +1002,9 @@ class DriftRecoveryRegionData extends i0.DataClass
     return DriftRecoveryRegionData(
       id: data.id.present ? data.id.value : this.id,
       recovery: data.recovery.present ? data.recovery.value : this.recovery,
+      parentRegionId: data.parentRegionId.present
+          ? data.parentRegionId.value
+          : this.parentRegionId,
       typeId: data.typeId.present ? data.typeId.value : this.typeId,
       rectNwLat: data.rectNwLat.present ? data.rectNwLat.value : this.rectNwLat,
       rectNwLng: data.rectNwLng.present ? data.rectNwLng.value : this.rectNwLng,
@@ -987,6 +1037,7 @@ class DriftRecoveryRegionData extends i0.DataClass
     return (StringBuffer('DriftRecoveryRegionData(')
           ..write('id: $id, ')
           ..write('recovery: $recovery, ')
+          ..write('parentRegionId: $parentRegionId, ')
           ..write('typeId: $typeId, ')
           ..write('rectNwLat: $rectNwLat, ')
           ..write('rectNwLng: $rectNwLng, ')
@@ -1008,6 +1059,7 @@ class DriftRecoveryRegionData extends i0.DataClass
   int get hashCode => Object.hash(
       id,
       recovery,
+      parentRegionId,
       typeId,
       rectNwLat,
       rectNwLng,
@@ -1027,6 +1079,7 @@ class DriftRecoveryRegionData extends i0.DataClass
       (other is i1.DriftRecoveryRegionData &&
           other.id == this.id &&
           other.recovery == this.recovery &&
+          other.parentRegionId == this.parentRegionId &&
           other.typeId == this.typeId &&
           other.rectNwLat == this.rectNwLat &&
           other.rectNwLng == this.rectNwLng &&
@@ -1046,6 +1099,7 @@ class DriftRecoveryRegionCompanion
     extends i0.UpdateCompanion<i1.DriftRecoveryRegionData> {
   final i0.Value<int> id;
   final i0.Value<int> recovery;
+  final i0.Value<int?> parentRegionId;
   final i0.Value<int> typeId;
   final i0.Value<double?> rectNwLat;
   final i0.Value<double?> rectNwLng;
@@ -1062,6 +1116,7 @@ class DriftRecoveryRegionCompanion
   const DriftRecoveryRegionCompanion({
     this.id = const i0.Value.absent(),
     this.recovery = const i0.Value.absent(),
+    this.parentRegionId = const i0.Value.absent(),
     this.typeId = const i0.Value.absent(),
     this.rectNwLat = const i0.Value.absent(),
     this.rectNwLng = const i0.Value.absent(),
@@ -1079,6 +1134,7 @@ class DriftRecoveryRegionCompanion
   DriftRecoveryRegionCompanion.insert({
     this.id = const i0.Value.absent(),
     required int recovery,
+    this.parentRegionId = const i0.Value.absent(),
     required int typeId,
     this.rectNwLat = const i0.Value.absent(),
     this.rectNwLng = const i0.Value.absent(),
@@ -1097,6 +1153,7 @@ class DriftRecoveryRegionCompanion
   static i0.Insertable<i1.DriftRecoveryRegionData> custom({
     i0.Expression<int>? id,
     i0.Expression<int>? recovery,
+    i0.Expression<int>? parentRegionId,
     i0.Expression<int>? typeId,
     i0.Expression<double>? rectNwLat,
     i0.Expression<double>? rectNwLng,
@@ -1114,6 +1171,7 @@ class DriftRecoveryRegionCompanion
     return i0.RawValuesInsertable({
       if (id != null) 'id': id,
       if (recovery != null) 'recovery': recovery,
+      if (parentRegionId != null) 'parent_region_id': parentRegionId,
       if (typeId != null) 'type_id': typeId,
       if (rectNwLat != null) 'rect_nw_lat': rectNwLat,
       if (rectNwLng != null) 'rect_nw_lng': rectNwLng,
@@ -1133,6 +1191,7 @@ class DriftRecoveryRegionCompanion
   i1.DriftRecoveryRegionCompanion copyWith(
       {i0.Value<int>? id,
       i0.Value<int>? recovery,
+      i0.Value<int?>? parentRegionId,
       i0.Value<int>? typeId,
       i0.Value<double?>? rectNwLat,
       i0.Value<double?>? rectNwLng,
@@ -1149,6 +1208,7 @@ class DriftRecoveryRegionCompanion
     return i1.DriftRecoveryRegionCompanion(
       id: id ?? this.id,
       recovery: recovery ?? this.recovery,
+      parentRegionId: parentRegionId ?? this.parentRegionId,
       typeId: typeId ?? this.typeId,
       rectNwLat: rectNwLat ?? this.rectNwLat,
       rectNwLng: rectNwLng ?? this.rectNwLng,
@@ -1173,6 +1233,9 @@ class DriftRecoveryRegionCompanion
     }
     if (recovery.present) {
       map['recovery'] = i0.Variable<int>(recovery.value);
+    }
+    if (parentRegionId.present) {
+      map['parent_region_id'] = i0.Variable<int>(parentRegionId.value);
     }
     if (typeId.present) {
       map['type_id'] = i0.Variable<int>(typeId.value);
@@ -1221,6 +1284,7 @@ class DriftRecoveryRegionCompanion
     return (StringBuffer('DriftRecoveryRegionCompanion(')
           ..write('id: $id, ')
           ..write('recovery: $recovery, ')
+          ..write('parentRegionId: $parentRegionId, ')
           ..write('typeId: $typeId, ')
           ..write('rectNwLat: $rectNwLat, ')
           ..write('rectNwLng: $rectNwLng, ')

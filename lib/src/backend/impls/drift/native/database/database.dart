@@ -18,8 +18,11 @@ import 'models/tile.dart';
     DriftRecoveryRegion,
   ],
 )
+
+/// The main Drift database class for FMTC's native SQLite backend
 class DriftFMTCDatabase extends $DriftFMTCDatabase {
-  DriftFMTCDatabase(QueryExecutor connection) : super(connection);
+  /// Creates a [DriftFMTCDatabase] using the given [connection]
+  DriftFMTCDatabase(super.connection);
 
   @override
   int get schemaVersion => 1;

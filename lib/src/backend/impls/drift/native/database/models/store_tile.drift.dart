@@ -347,6 +347,8 @@ typedef $$DriftStoreTileTableProcessedTableManager = i0.ProcessedTableManager<
     (i1.DriftStoreTileData, i1.$$DriftStoreTileTableReferences),
     i1.DriftStoreTileData,
     i0.PrefetchHooks Function({bool store, bool tile})>;
+i0.Index get idxStoreTileTile => i0.Index('idx_store_tile_tile',
+    'CREATE INDEX idx_store_tile_tile ON drift_store_tile (tile)');
 
 class $DriftStoreTileTable extends i2.DriftStoreTile
     with i0.TableInfo<$DriftStoreTileTable, i1.DriftStoreTileData> {
@@ -361,8 +363,8 @@ class $DriftStoreTileTable extends i2.DriftStoreTile
       'store', aliasedName, false,
       type: i0.DriftSqlType.string,
       requiredDuringInsert: true,
-      defaultConstraints: i0.GeneratedColumn.constraintIsAlways(
-          'REFERENCES drift_store (name)'));
+      $customConstraints:
+          'REFERENCES drift_store(name) ON UPDATE CASCADE ON DELETE CASCADE NOT NULL');
   static const i0.VerificationMeta _tileMeta =
       const i0.VerificationMeta('tile');
   @override
@@ -370,8 +372,8 @@ class $DriftStoreTileTable extends i2.DriftStoreTile
       'tile', aliasedName, false,
       type: i0.DriftSqlType.string,
       requiredDuringInsert: true,
-      defaultConstraints:
-          i0.GeneratedColumn.constraintIsAlways('REFERENCES drift_tile (uid)'));
+      $customConstraints:
+          'REFERENCES drift_tile(uid) ON DELETE CASCADE NOT NULL');
   @override
   List<i0.GeneratedColumn> get $columns => [store, tile];
   @override

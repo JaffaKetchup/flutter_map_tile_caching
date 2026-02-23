@@ -10,9 +10,7 @@ import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -28,11 +26,11 @@ import '../models/src/tile.dart';
 
 export 'package:objectbox/objectbox.dart' show StorageException;
 
+part 'internal.dart';
+part 'internal_workers/shared.dart';
 part 'internal_workers/standard/cmd_type.dart';
 part 'internal_workers/standard/worker.dart';
-part 'internal_workers/shared.dart';
 part 'internal_workers/thread_safe.dart';
-part 'internal.dart';
 
 /// Implementation of [FMTCBackend] that uses ObjectBox as the storage database
 ///
