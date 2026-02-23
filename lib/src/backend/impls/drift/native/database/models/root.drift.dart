@@ -231,8 +231,13 @@ class $DriftRootTable extends i2.DriftRoot
 
 class DriftRootData extends i0.DataClass
     implements i0.Insertable<i1.DriftRootData> {
+  /// Singleton row ID (always 0)
   final int id;
+
+  /// Total number of tiles across all stores
   final int length;
+
+  /// Total size in bytes across all stores
   final int size;
   const DriftRootData(
       {required this.id, required this.length, required this.size});

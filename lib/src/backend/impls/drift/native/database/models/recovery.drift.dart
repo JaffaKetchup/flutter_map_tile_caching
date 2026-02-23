@@ -474,12 +474,25 @@ class $DriftRecoveryTable extends i2.DriftRecovery
 
 class DriftRecoveryData extends i0.DataClass
     implements i0.Insertable<i1.DriftRecoveryData> {
+  /// Unique ID for the recovery session
   final int id;
+
+  /// The name of the store being downloaded when the failure occurred
   final String store;
+
+  /// The time the recovery session was created
   final DateTime creationTime;
+
+  /// Minimum zoom level of the download
   final int minZoom;
+
+  /// Maximum zoom level of the download
   final int maxZoom;
+
+  /// The tile index the download started from
   final int startTile;
+
+  /// The tile index the download ended at
   final int endTile;
   const DriftRecoveryData(
       {required this.id,

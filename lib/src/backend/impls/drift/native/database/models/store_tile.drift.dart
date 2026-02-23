@@ -428,7 +428,10 @@ class $DriftStoreTileTable extends i2.DriftStoreTile
 
 class DriftStoreTileData extends i0.DataClass
     implements i0.Insertable<i1.DriftStoreTileData> {
+  /// Foreign key to [DriftStore] with cascade on update/delete
   final String store;
+
+  /// Foreign key to [DriftTile] with cascade on delete
   final String tile;
   const DriftStoreTileData({required this.store, required this.tile});
   @override

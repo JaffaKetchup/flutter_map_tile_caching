@@ -244,8 +244,13 @@ class $DriftTileTable extends i3.DriftTile
 
 class DriftTileData extends i0.DataClass
     implements i0.Insertable<i1.DriftTileData> {
+  /// The URL of the tile, used as a unique identifier
   final String uid;
+
+  /// The raw image bytes of the tile
   final i2.Uint8List bytes;
+
+  /// The time the tile was last written or updated
   final DateTime lastModified;
   const DriftTileData(
       {required this.uid, required this.bytes, required this.lastModified});

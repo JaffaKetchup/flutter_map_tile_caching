@@ -775,23 +775,52 @@ class $DriftRecoveryRegionTable extends i2.DriftRecoveryRegion
 
 class DriftRecoveryRegionData extends i0.DataClass
     implements i0.Insertable<i1.DriftRecoveryRegionData> {
+  /// Auto-incremented primary key
   final int id;
+
+  /// The recovery session this region belongs to
   final int recovery;
 
   /// For MultiRegion sub-regions, references the parent DriftRecoveryRegion.id
   final int? parentRegionId;
+
+  /// Integer discriminator identifying the region type (0–4)
   final int typeId;
+
+  /// North-west latitude of a rectangular region
   final double? rectNwLat;
+
+  /// North-west longitude of a rectangular region
   final double? rectNwLng;
+
+  /// South-east latitude of a rectangular region
   final double? rectSeLat;
+
+  /// South-east longitude of a rectangular region
   final double? rectSeLng;
+
+  /// Center latitude of a circular region
   final double? circleCenterLat;
+
+  /// Center longitude of a circular region
   final double? circleCenterLng;
+
+  /// Radius in meters of a circular region
   final double? circleRadius;
+
+  /// JSON-encoded list of latitudes for a line region
   final String? lineLats;
+
+  /// JSON-encoded list of longitudes for a line region
   final String? lineLngs;
+
+  /// Buffer radius in meters for a line region
   final double? lineRadius;
+
+  /// JSON-encoded list of latitudes for a custom polygon region
   final String? customPolygonLats;
+
+  /// JSON-encoded list of longitudes for a custom polygon region
   final String? customPolygonLngs;
   const DriftRecoveryRegionData(
       {required this.id,

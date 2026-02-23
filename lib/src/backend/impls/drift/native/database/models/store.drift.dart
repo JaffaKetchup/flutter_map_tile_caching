@@ -354,12 +354,25 @@ class $DriftStoreTable extends i2.DriftStore
 
 class DriftStoreData extends i0.DataClass
     implements i0.Insertable<i1.DriftStoreData> {
+  /// The unique name of the store
   final String name;
+
+  /// Maximum number of tiles allowed in the store (null = unlimited)
   final int? maxLength;
+
+  /// Current number of tiles in the store
   final int length;
+
+  /// Total size of all tiles in bytes
   final int size;
+
+  /// Number of cache hits recorded for this store
   final int hits;
+
+  /// Number of cache misses recorded for this store
   final int misses;
+
+  /// JSON-encoded key-value metadata for this store
   final String metadataJson;
   const DriftStoreData(
       {required this.name,
