@@ -22,7 +22,7 @@ import 'models/tile.dart';
 /// The main Drift database class for FMTC's native SQLite backend
 class DriftFMTCDatabase extends $DriftFMTCDatabase {
   /// Creates a [DriftFMTCDatabase] using the given [connection]
-  DriftFMTCDatabase(super.connection);
+  DriftFMTCDatabase(super.e);
 
   @override
   int get schemaVersion => 1;
