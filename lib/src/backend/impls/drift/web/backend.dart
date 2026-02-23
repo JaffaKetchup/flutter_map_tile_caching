@@ -127,11 +127,9 @@ class _FMTCDriftBackendInternalWeb implements FMTCDriftBackendInternal {
 
   // Root stats
 
+  // On web, realSize isn't meaningful (no file on disk). Return rootSize.
   @override
-  Future<double> realSize() async {
-    // On web, realSize isn't meaningful (no file on disk). Return rootSize.
-    return rootSize();
-  }
+  Future<double> realSize() => rootSize();
 
   @override
   Future<double> rootSize() async {
