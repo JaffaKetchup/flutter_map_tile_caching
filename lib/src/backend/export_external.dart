@@ -2,7 +2,8 @@
 // A full license can be found at .\LICENSE
 
 export 'errors/errors.dart';
-export 'impls/drift/native/backend/backend.dart';
+export 'impls/drift/web/backend.dart'
+    if (dart.library.ffi) 'impls/drift/native/backend/backend.dart';
 export 'impls/objectbox/web_noop/backend.dart'
     if (dart.library.ffi) 'impls/objectbox/native/backend/backend.dart';
 export 'interfaces/backend/backend.dart';
