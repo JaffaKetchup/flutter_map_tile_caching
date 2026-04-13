@@ -2,20 +2,6 @@
 description: A plugin for 'flutter_map' providing advanced offline functionality
 cover: .gitbook/assets/FMTC Banner.png
 coverY: 0
-layout:
-  cover:
-    visible: true
-    size: full
-  title:
-    visible: true
-  description:
-    visible: false
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # flutter\_map\_tile\_caching
@@ -109,6 +95,18 @@ If you're developing an application that isn't licensed under GPL, this affects 
 {% content-ref url="proprietary-licensing.md" %}
 [proprietary-licensing.md](proprietary-licensing.md)
 {% endcontent-ref %}
+
+***
+
+{% hint style="warning" %}
+ObjectBox has a complex license model - the build time dependency is open-source, whilst the native library _runtime only_ dependency is under a closed-source (but relatively relaxed) [license](https://objectbox.io/0209-ob-binary-license/) (that is liable to change at ObjectBox's will).
+
+This is not an issue for the majority of applications. However, ObjectBox is known to be (rightly or wrongly) banned as a dependency from apps on F-Droid (last checked September 2024).
+
+Future updates to FMTC will implement alternative backends using other libraries, and the default/preferred backend may indeed change in future.
+
+For more information, please see: [https://github.com/JaffaKetchup/flutter\_map\_tile\_caching/issues/167](https://github.com/JaffaKetchup/flutter_map_tile_caching/issues/167).
+{% endhint %}
 
 ## Get Help
 
