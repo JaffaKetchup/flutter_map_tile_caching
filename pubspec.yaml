@@ -39,8 +39,6 @@ dependencies:
   http: ^1.6.0
   latlong2: ^0.9.1
   meta: ^1.17.0
-  objectbox: ^5.2.0
-  objectbox_flutter_libs: ^5.2.0
   path: ^1.9.1
   path_provider: ^2.1.5
   sqlite3: ^2.7.5
@@ -48,7 +46,6 @@ dependencies:
 dev_dependencies:
   build_runner: ^2.11.1
   drift_dev: ^2.31.0
-  objectbox_generator: ^5.2.0
   pigeon_generator: ^3.1.1
   test: ^1.29.0
 
