@@ -6,9 +6,6 @@ import 'package:flutter_map_tile_caching/src/backend/impls/drift/native/database
 import 'package:flutter_map_tile_caching/src/backend/impls/drift/native/database/models/recovery_region.dart'
     as i2;
 import 'package:drift/src/runtime/query_builder/query_builder.dart' as i3;
-import 'package:flutter_map_tile_caching/src/backend/impls/drift/native/database/models/recovery.drift.dart'
-    as i4;
-import 'package:drift/internal/modular.dart' as i5;
 
 typedef $$DriftRecoveryRegionTableCreateCompanionBuilder
     = i1.DriftRecoveryRegionCompanion Function({
@@ -49,41 +46,6 @@ typedef $$DriftRecoveryRegionTableUpdateCompanionBuilder
   i0.Value<String?> customPolygonLngs,
 });
 
-final class $$DriftRecoveryRegionTableReferences extends i0.BaseReferences<
-    i0.GeneratedDatabase,
-    i1.$DriftRecoveryRegionTable,
-    i1.DriftRecoveryRegionData> {
-  $$DriftRecoveryRegionTableReferences(
-      super.$_db, super.$_table, super.$_typedResult);
-
-  static i4.$DriftRecoveryTable _recoveryTable(i0.GeneratedDatabase db) =>
-      i5.ReadDatabaseContainer(db)
-          .resultSet<i4.$DriftRecoveryTable>('drift_recovery')
-          .createAlias(i0.$_aliasNameGenerator(
-              i5.ReadDatabaseContainer(db)
-                  .resultSet<i1.$DriftRecoveryRegionTable>(
-                      'drift_recovery_region')
-                  .recovery,
-              i5.ReadDatabaseContainer(db)
-                  .resultSet<i4.$DriftRecoveryTable>('drift_recovery')
-                  .id));
-
-  i4.$$DriftRecoveryTableProcessedTableManager get recovery {
-    final $_column = $_itemColumn<int>('recovery')!;
-
-    final manager = i4
-        .$$DriftRecoveryTableTableManager(
-            $_db,
-            i5.ReadDatabaseContainer($_db)
-                .resultSet<i4.$DriftRecoveryTable>('drift_recovery'))
-        .filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_recoveryTable($_db));
-    if (item == null) return manager;
-    return i0.ProcessedTableManager(
-        manager.$state.copyWith(prefetchedData: [item]));
-  }
-}
-
 class $$DriftRecoveryRegionTableFilterComposer
     extends i0.Composer<i0.GeneratedDatabase, i1.$DriftRecoveryRegionTable> {
   $$DriftRecoveryRegionTableFilterComposer({
@@ -95,6 +57,9 @@ class $$DriftRecoveryRegionTableFilterComposer
   });
   i0.ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => i0.ColumnFilters(column));
+
+  i0.ColumnFilters<int> get recovery => $composableBuilder(
+      column: $table.recovery, builder: (column) => i0.ColumnFilters(column));
 
   i0.ColumnFilters<int> get parentRegionId => $composableBuilder(
       column: $table.parentRegionId,
@@ -143,28 +108,6 @@ class $$DriftRecoveryRegionTableFilterComposer
   i0.ColumnFilters<String> get customPolygonLngs => $composableBuilder(
       column: $table.customPolygonLngs,
       builder: (column) => i0.ColumnFilters(column));
-
-  i4.$$DriftRecoveryTableFilterComposer get recovery {
-    final i4.$$DriftRecoveryTableFilterComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.recovery,
-        referencedTable: i5.ReadDatabaseContainer($db)
-            .resultSet<i4.$DriftRecoveryTable>('drift_recovery'),
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            i4.$$DriftRecoveryTableFilterComposer(
-              $db: $db,
-              $table: i5.ReadDatabaseContainer($db)
-                  .resultSet<i4.$DriftRecoveryTable>('drift_recovery'),
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
 }
 
 class $$DriftRecoveryRegionTableOrderingComposer
@@ -178,6 +121,9 @@ class $$DriftRecoveryRegionTableOrderingComposer
   });
   i0.ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => i0.ColumnOrderings(column));
+
+  i0.ColumnOrderings<int> get recovery => $composableBuilder(
+      column: $table.recovery, builder: (column) => i0.ColumnOrderings(column));
 
   i0.ColumnOrderings<int> get parentRegionId => $composableBuilder(
       column: $table.parentRegionId,
@@ -231,28 +177,6 @@ class $$DriftRecoveryRegionTableOrderingComposer
   i0.ColumnOrderings<String> get customPolygonLngs => $composableBuilder(
       column: $table.customPolygonLngs,
       builder: (column) => i0.ColumnOrderings(column));
-
-  i4.$$DriftRecoveryTableOrderingComposer get recovery {
-    final i4.$$DriftRecoveryTableOrderingComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.recovery,
-        referencedTable: i5.ReadDatabaseContainer($db)
-            .resultSet<i4.$DriftRecoveryTable>('drift_recovery'),
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            i4.$$DriftRecoveryTableOrderingComposer(
-              $db: $db,
-              $table: i5.ReadDatabaseContainer($db)
-                  .resultSet<i4.$DriftRecoveryTable>('drift_recovery'),
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
 }
 
 class $$DriftRecoveryRegionTableAnnotationComposer
@@ -266,6 +190,9 @@ class $$DriftRecoveryRegionTableAnnotationComposer
   });
   i0.GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  i0.GeneratedColumn<int> get recovery =>
+      $composableBuilder(column: $table.recovery, builder: (column) => column);
 
   i0.GeneratedColumn<int> get parentRegionId => $composableBuilder(
       column: $table.parentRegionId, builder: (column) => column);
@@ -308,28 +235,6 @@ class $$DriftRecoveryRegionTableAnnotationComposer
 
   i0.GeneratedColumn<String> get customPolygonLngs => $composableBuilder(
       column: $table.customPolygonLngs, builder: (column) => column);
-
-  i4.$$DriftRecoveryTableAnnotationComposer get recovery {
-    final i4.$$DriftRecoveryTableAnnotationComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.recovery,
-        referencedTable: i5.ReadDatabaseContainer($db)
-            .resultSet<i4.$DriftRecoveryTable>('drift_recovery'),
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            i4.$$DriftRecoveryTableAnnotationComposer(
-              $db: $db,
-              $table: i5.ReadDatabaseContainer($db)
-                  .resultSet<i4.$DriftRecoveryTable>('drift_recovery'),
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
 }
 
 class $$DriftRecoveryRegionTableTableManager extends i0.RootTableManager<
@@ -341,9 +246,13 @@ class $$DriftRecoveryRegionTableTableManager extends i0.RootTableManager<
     i1.$$DriftRecoveryRegionTableAnnotationComposer,
     $$DriftRecoveryRegionTableCreateCompanionBuilder,
     $$DriftRecoveryRegionTableUpdateCompanionBuilder,
-    (i1.DriftRecoveryRegionData, i1.$$DriftRecoveryRegionTableReferences),
+    (
+      i1.DriftRecoveryRegionData,
+      i0.BaseReferences<i0.GeneratedDatabase, i1.$DriftRecoveryRegionTable,
+          i1.DriftRecoveryRegionData>
+    ),
     i1.DriftRecoveryRegionData,
-    i0.PrefetchHooks Function({bool recovery})> {
+    i0.PrefetchHooks Function()> {
   $$DriftRecoveryRegionTableTableManager(
       i0.GeneratedDatabase db, i1.$DriftRecoveryRegionTable table)
       : super(i0.TableManagerState(
@@ -430,47 +339,9 @@ class $$DriftRecoveryRegionTableTableManager extends i0.RootTableManager<
             customPolygonLngs: customPolygonLngs,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (
-                    e.readTable(table),
-                    i1.$$DriftRecoveryRegionTableReferences(db, table, e)
-                  ))
+              .map((e) => (e.readTable(table), i0.BaseReferences(db, table, e)))
               .toList(),
-          prefetchHooksCallback: ({recovery = false}) {
-            return i0.PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins: <
-                  T extends i0.TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic>>(state) {
-                if (recovery) {
-                  state = state.withJoin(
-                    currentTable: table,
-                    currentColumn: table.recovery,
-                    referencedTable: i1.$$DriftRecoveryRegionTableReferences
-                        ._recoveryTable(db),
-                    referencedColumn: i1.$$DriftRecoveryRegionTableReferences
-                        ._recoveryTable(db)
-                        .id,
-                  ) as T;
-                }
-
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
+          prefetchHooksCallback: null,
         ));
 }
 
@@ -484,9 +355,13 @@ typedef $$DriftRecoveryRegionTableProcessedTableManager
         i1.$$DriftRecoveryRegionTableAnnotationComposer,
         $$DriftRecoveryRegionTableCreateCompanionBuilder,
         $$DriftRecoveryRegionTableUpdateCompanionBuilder,
-        (i1.DriftRecoveryRegionData, i1.$$DriftRecoveryRegionTableReferences),
+        (
+          i1.DriftRecoveryRegionData,
+          i0.BaseReferences<i0.GeneratedDatabase, i1.$DriftRecoveryRegionTable,
+              i1.DriftRecoveryRegionData>
+        ),
         i1.DriftRecoveryRegionData,
-        i0.PrefetchHooks Function({bool recovery})>;
+        i0.PrefetchHooks Function()>;
 
 class $DriftRecoveryRegionTable extends i2.DriftRecoveryRegion
     with i0.TableInfo<$DriftRecoveryRegionTable, i1.DriftRecoveryRegionData> {
@@ -508,10 +383,7 @@ class $DriftRecoveryRegionTable extends i2.DriftRecoveryRegion
   @override
   late final i0.GeneratedColumn<int> recovery = i0.GeneratedColumn<int>(
       'recovery', aliasedName, false,
-      type: i0.DriftSqlType.int,
-      requiredDuringInsert: true,
-      defaultConstraints: i0.GeneratedColumn.constraintIsAlways(
-          'REFERENCES drift_recovery (id)'));
+      type: i0.DriftSqlType.int, requiredDuringInsert: true);
   static const i0.VerificationMeta _parentRegionIdMeta =
       const i0.VerificationMeta('parentRegionId');
   @override

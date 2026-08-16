@@ -6,9 +6,6 @@ import 'package:flutter_map_tile_caching/src/backend/impls/drift/native/database
 import 'package:flutter_map_tile_caching/src/backend/impls/drift/native/database/models/recovery.dart'
     as i2;
 import 'package:drift/src/runtime/query_builder/query_builder.dart' as i3;
-import 'package:flutter_map_tile_caching/src/backend/impls/drift/native/database/models/store.drift.dart'
-    as i4;
-import 'package:drift/internal/modular.dart' as i5;
 
 typedef $$DriftRecoveryTableCreateCompanionBuilder = i1.DriftRecoveryCompanion
     Function({
@@ -31,38 +28,6 @@ typedef $$DriftRecoveryTableUpdateCompanionBuilder = i1.DriftRecoveryCompanion
   i0.Value<int> endTile,
 });
 
-final class $$DriftRecoveryTableReferences extends i0.BaseReferences<
-    i0.GeneratedDatabase, i1.$DriftRecoveryTable, i1.DriftRecoveryData> {
-  $$DriftRecoveryTableReferences(
-      super.$_db, super.$_table, super.$_typedResult);
-
-  static i4.$DriftStoreTable _storeTable(i0.GeneratedDatabase db) =>
-      i5.ReadDatabaseContainer(db)
-          .resultSet<i4.$DriftStoreTable>('drift_store')
-          .createAlias(i0.$_aliasNameGenerator(
-              i5.ReadDatabaseContainer(db)
-                  .resultSet<i1.$DriftRecoveryTable>('drift_recovery')
-                  .store,
-              i5.ReadDatabaseContainer(db)
-                  .resultSet<i4.$DriftStoreTable>('drift_store')
-                  .name));
-
-  i4.$$DriftStoreTableProcessedTableManager get store {
-    final $_column = $_itemColumn<String>('store')!;
-
-    final manager = i4
-        .$$DriftStoreTableTableManager(
-            $_db,
-            i5.ReadDatabaseContainer($_db)
-                .resultSet<i4.$DriftStoreTable>('drift_store'))
-        .filter((f) => f.name.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_storeTable($_db));
-    if (item == null) return manager;
-    return i0.ProcessedTableManager(
-        manager.$state.copyWith(prefetchedData: [item]));
-  }
-}
-
 class $$DriftRecoveryTableFilterComposer
     extends i0.Composer<i0.GeneratedDatabase, i1.$DriftRecoveryTable> {
   $$DriftRecoveryTableFilterComposer({
@@ -74,6 +39,9 @@ class $$DriftRecoveryTableFilterComposer
   });
   i0.ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => i0.ColumnFilters(column));
+
+  i0.ColumnFilters<String> get store => $composableBuilder(
+      column: $table.store, builder: (column) => i0.ColumnFilters(column));
 
   i0.ColumnFilters<DateTime> get creationTime => $composableBuilder(
       column: $table.creationTime,
@@ -90,28 +58,6 @@ class $$DriftRecoveryTableFilterComposer
 
   i0.ColumnFilters<int> get endTile => $composableBuilder(
       column: $table.endTile, builder: (column) => i0.ColumnFilters(column));
-
-  i4.$$DriftStoreTableFilterComposer get store {
-    final i4.$$DriftStoreTableFilterComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.store,
-        referencedTable: i5.ReadDatabaseContainer($db)
-            .resultSet<i4.$DriftStoreTable>('drift_store'),
-        getReferencedColumn: (t) => t.name,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            i4.$$DriftStoreTableFilterComposer(
-              $db: $db,
-              $table: i5.ReadDatabaseContainer($db)
-                  .resultSet<i4.$DriftStoreTable>('drift_store'),
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
 }
 
 class $$DriftRecoveryTableOrderingComposer
@@ -125,6 +71,9 @@ class $$DriftRecoveryTableOrderingComposer
   });
   i0.ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => i0.ColumnOrderings(column));
+
+  i0.ColumnOrderings<String> get store => $composableBuilder(
+      column: $table.store, builder: (column) => i0.ColumnOrderings(column));
 
   i0.ColumnOrderings<DateTime> get creationTime => $composableBuilder(
       column: $table.creationTime,
@@ -142,28 +91,6 @@ class $$DriftRecoveryTableOrderingComposer
 
   i0.ColumnOrderings<int> get endTile => $composableBuilder(
       column: $table.endTile, builder: (column) => i0.ColumnOrderings(column));
-
-  i4.$$DriftStoreTableOrderingComposer get store {
-    final i4.$$DriftStoreTableOrderingComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.store,
-        referencedTable: i5.ReadDatabaseContainer($db)
-            .resultSet<i4.$DriftStoreTable>('drift_store'),
-        getReferencedColumn: (t) => t.name,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            i4.$$DriftStoreTableOrderingComposer(
-              $db: $db,
-              $table: i5.ReadDatabaseContainer($db)
-                  .resultSet<i4.$DriftStoreTable>('drift_store'),
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
 }
 
 class $$DriftRecoveryTableAnnotationComposer
@@ -177,6 +104,9 @@ class $$DriftRecoveryTableAnnotationComposer
   });
   i0.GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  i0.GeneratedColumn<String> get store =>
+      $composableBuilder(column: $table.store, builder: (column) => column);
 
   i0.GeneratedColumn<DateTime> get creationTime => $composableBuilder(
       column: $table.creationTime, builder: (column) => column);
@@ -192,28 +122,6 @@ class $$DriftRecoveryTableAnnotationComposer
 
   i0.GeneratedColumn<int> get endTile =>
       $composableBuilder(column: $table.endTile, builder: (column) => column);
-
-  i4.$$DriftStoreTableAnnotationComposer get store {
-    final i4.$$DriftStoreTableAnnotationComposer composer = $composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.store,
-        referencedTable: i5.ReadDatabaseContainer($db)
-            .resultSet<i4.$DriftStoreTable>('drift_store'),
-        getReferencedColumn: (t) => t.name,
-        builder: (joinBuilder,
-                {$addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer}) =>
-            i4.$$DriftStoreTableAnnotationComposer(
-              $db: $db,
-              $table: i5.ReadDatabaseContainer($db)
-                  .resultSet<i4.$DriftStoreTable>('drift_store'),
-              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-              joinBuilder: joinBuilder,
-              $removeJoinBuilderFromRootComposer:
-                  $removeJoinBuilderFromRootComposer,
-            ));
-    return composer;
-  }
 }
 
 class $$DriftRecoveryTableTableManager extends i0.RootTableManager<
@@ -225,9 +133,13 @@ class $$DriftRecoveryTableTableManager extends i0.RootTableManager<
     i1.$$DriftRecoveryTableAnnotationComposer,
     $$DriftRecoveryTableCreateCompanionBuilder,
     $$DriftRecoveryTableUpdateCompanionBuilder,
-    (i1.DriftRecoveryData, i1.$$DriftRecoveryTableReferences),
+    (
+      i1.DriftRecoveryData,
+      i0.BaseReferences<i0.GeneratedDatabase, i1.$DriftRecoveryTable,
+          i1.DriftRecoveryData>
+    ),
     i1.DriftRecoveryData,
-    i0.PrefetchHooks Function({bool store})> {
+    i0.PrefetchHooks Function()> {
   $$DriftRecoveryTableTableManager(
       i0.GeneratedDatabase db, i1.$DriftRecoveryTable table)
       : super(i0.TableManagerState(
@@ -276,46 +188,9 @@ class $$DriftRecoveryTableTableManager extends i0.RootTableManager<
             endTile: endTile,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (
-                    e.readTable(table),
-                    i1.$$DriftRecoveryTableReferences(db, table, e)
-                  ))
+              .map((e) => (e.readTable(table), i0.BaseReferences(db, table, e)))
               .toList(),
-          prefetchHooksCallback: ({store = false}) {
-            return i0.PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins: <
-                  T extends i0.TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic>>(state) {
-                if (store) {
-                  state = state.withJoin(
-                    currentTable: table,
-                    currentColumn: table.store,
-                    referencedTable:
-                        i1.$$DriftRecoveryTableReferences._storeTable(db),
-                    referencedColumn:
-                        i1.$$DriftRecoveryTableReferences._storeTable(db).name,
-                  ) as T;
-                }
-
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
+          prefetchHooksCallback: null,
         ));
 }
 
@@ -328,9 +203,13 @@ typedef $$DriftRecoveryTableProcessedTableManager = i0.ProcessedTableManager<
     i1.$$DriftRecoveryTableAnnotationComposer,
     $$DriftRecoveryTableCreateCompanionBuilder,
     $$DriftRecoveryTableUpdateCompanionBuilder,
-    (i1.DriftRecoveryData, i1.$$DriftRecoveryTableReferences),
+    (
+      i1.DriftRecoveryData,
+      i0.BaseReferences<i0.GeneratedDatabase, i1.$DriftRecoveryTable,
+          i1.DriftRecoveryData>
+    ),
     i1.DriftRecoveryData,
-    i0.PrefetchHooks Function({bool store})>;
+    i0.PrefetchHooks Function()>;
 
 class $DriftRecoveryTable extends i2.DriftRecovery
     with i0.TableInfo<$DriftRecoveryTable, i1.DriftRecoveryData> {
@@ -348,10 +227,7 @@ class $DriftRecoveryTable extends i2.DriftRecovery
   @override
   late final i0.GeneratedColumn<String> store = i0.GeneratedColumn<String>(
       'store', aliasedName, false,
-      type: i0.DriftSqlType.string,
-      requiredDuringInsert: true,
-      defaultConstraints: i0.GeneratedColumn.constraintIsAlways(
-          'REFERENCES drift_store (name)'));
+      type: i0.DriftSqlType.string, requiredDuringInsert: true);
   static const i0.VerificationMeta _creationTimeMeta =
       const i0.VerificationMeta('creationTime');
   @override
