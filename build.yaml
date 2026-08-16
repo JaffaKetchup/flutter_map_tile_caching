@@ -1,6 +1,10 @@
 targets:
   $default:
     builders:
+      objectbox_generator:resolver:
+        enabled: true
+        generate_for:
+          - lib/**
       drift_dev:
         enabled: false
       drift_dev:analyzer:
