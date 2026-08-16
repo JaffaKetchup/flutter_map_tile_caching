@@ -102,7 +102,7 @@ class _FMTCDriftBackendInternal implements FMTCDriftBackendInternal {
 
     // Ensure the singleton root stats row exists
     await _db!.into(_db!.driftRoot).insertOnConflictUpdate(
-          DriftRootCompanion.insert(),
+          DriftRootCompanion.insert(id: const Value(0)),
         );
 
     FMTCBackendAccess.internal = this;
