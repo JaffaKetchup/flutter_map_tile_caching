@@ -50,7 +50,3 @@ dev_dependencies:
   test: ^1.29.0
 
 flutter: null
-
-objectbox:
-  output_dir: src/backend/impls/objectbox/native/models/generated
-
