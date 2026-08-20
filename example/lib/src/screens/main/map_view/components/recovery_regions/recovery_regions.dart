@@ -38,7 +38,9 @@ class RecoveryRegions extends StatelessWidget {
                             borderColor: e.key.toColor(),
                             borderStrokeWidth: 2,
                             label: region.label,
-                            labelPlacement: PolygonLabelPlacement.polylabel,
+                            labelPlacementCalculator:
+                                const PolygonLabelPlacementCalculator
+                                    .polylabel(),
                           ),
                         ),
                       )

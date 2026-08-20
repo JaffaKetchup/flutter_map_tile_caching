@@ -23,7 +23,7 @@ void main() async {
 
   Object? initErr;
   try {
-    await FMTCObjectBoxBackend().initialise();
+    await FMTCDriftBackend().initialise();
     // We don't know what errors will be thrown, we want to handle them all
     // later
     // ignore: avoid_catches_without_on_clauses
