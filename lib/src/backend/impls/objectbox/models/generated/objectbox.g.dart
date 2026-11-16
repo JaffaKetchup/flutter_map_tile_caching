@@ -334,11 +334,8 @@ final _entities = <obx_int.ModelEntity>[
 ///
 /// Note: for desktop apps it is recommended to specify a unique [directory].
 ///
-/// See [obx.Store.new] for an explanation of all parameters.
-///
-/// For Flutter apps, also calls `loadObjectBoxLibraryAndroidCompat()` from
-/// the ObjectBox Flutter library to fix loading the native ObjectBox library
-/// on Android 6 and older.
+/// Use [obx.Store.new] directly to use all its options. See its
+/// documentation for an explanation of all parameters.
 Future<obx.Store> openStore({
   String? directory,
   int? maxDBSizeInKB,
@@ -348,7 +345,6 @@ Future<obx.Store> openStore({
   bool queriesCaseSensitiveDefault = true,
   String? macosApplicationGroup,
 }) async {
-  await loadObjectBoxLibraryAndroidCompat();
   return obx.Store(
     getObjectBoxModel(),
     directory: directory ?? (await defaultStoreDirectory()).path,
@@ -365,6 +361,11 @@ Future<obx.Store> openStore({
 /// [obx.Store.new].
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
+    // If this version is not found, it means that this file was generated
+    // with an older version of the ObjectBox Dart generator.
+    // Please regenerate this file with the current generator version.
+    // Typically, this is done with `dart run build_runner build`.
+    generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
     lastEntityId: const obx_int.IdUid(5, 5692106664767803360),
     lastIndexId: const obx_int.IdUid(5, 2172676985778936605),
@@ -426,9 +427,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
           6,
           0,
         );
-        final storeNameParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 8, '');
+        final storeNameParam = const fb.StringReader(asciiOptimization: true)
+            .vTableGet(buffer, rootOffset, 8, '');
         final creationTimeParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 10, 0),
         );
@@ -502,9 +502,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
       objectFromFB: (obx.Store store, ByteData fbData) {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
-        final nameParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 6, '');
+        final nameParam = const fb.StringReader(asciiOptimization: true)
+            .vTableGet(buffer, rootOffset, 6, '');
         final maxLengthParam = const fb.Int64Reader().vTableGetNullable(
           buffer,
           rootOffset,
@@ -534,9 +533,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
           14,
           0,
         );
-        final metadataJsonParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 16, '');
+        final metadataJsonParam = const fb.StringReader(asciiOptimization: true)
+            .vTableGet(buffer, rootOffset, 16, '');
         final object = ObjectBoxStore(
           name: nameParam,
           maxLength: maxLengthParam,
@@ -578,14 +576,11 @@ obx_int.ModelDefinition getObjectBoxModel() {
       objectFromFB: (obx.Store store, ByteData fbData) {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
-        final urlParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 6, '');
-        final bytesParam =
-            const fb.Uint8ListReader(
-                  lazy: false,
-                ).vTableGet(buffer, rootOffset, 8, Uint8List(0))
-                as Uint8List;
+        final urlParam = const fb.StringReader(asciiOptimization: true)
+            .vTableGet(buffer, rootOffset, 6, '');
+        final bytesParam = const fb.Uint8ListReader(
+          lazy: false,
+        ).vTableGet(buffer, rootOffset, 8, Uint8List(0)) as Uint8List;
         final lastModifiedParam = DateTime.fromMillisecondsSinceEpoch(
           const fb.Int64Reader().vTableGet(buffer, rootOffset, 10, 0),
         );

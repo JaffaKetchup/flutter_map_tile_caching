@@ -18,6 +18,11 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
+## [10.3.0] - 2026/11/16
+
+* Upgraded ObjectBox to v6 (preview), which adds Swift Package Manager support on iOS/macOS, so apps no longer need CocoaPods for FMTC
+* Requires Flutter 3.44+ / Dart 3.12+ and Android 7.0 (API 24)+, as ObjectBox v6 does
+
 ## [10.1.2] - 2025/11/17
 
 * Upgraded ObjectBox dependencies to permit v5.0.0 - fixes [issue #194](https://github.com/JaffaKetchup/flutter_map_tile_caching/issues/194)

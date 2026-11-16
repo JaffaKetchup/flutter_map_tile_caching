@@ -59,9 +59,8 @@ class SuccessfulTileEvent extends TileEvent
     required super.wasRetryAttempt,
     required this.tileImage,
     required this.fetchResponse,
-    required bool wasBufferFlushed,
-  })  : _wasBufferFlushed = wasBufferFlushed,
-        super._();
+    required this._wasBufferFlushed,
+  })  : super._();
 
   @override
   final Uint8List tileImage;

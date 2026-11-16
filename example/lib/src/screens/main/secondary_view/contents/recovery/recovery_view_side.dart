@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'components/recoverable_regions_list/recoverable_regions_list.dart';
 

@@ -148,7 +148,7 @@ class _ObjectBoxBackendImpl implements FMTCObjectBoxBackendInternal {
         _sendPort = res!['sendPort'];
         return null;
       },
-      onError: (err, stackTrace) {
+      onError: (Object err, StackTrace stackTrace) {
         _workerHandler.cancel();
         _workerComplete.complete();
 

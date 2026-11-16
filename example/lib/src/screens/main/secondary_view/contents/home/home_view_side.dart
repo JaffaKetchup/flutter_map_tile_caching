@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../layouts/side/components/panel.dart';
 import 'components/map_configurator/map_configurator.dart';

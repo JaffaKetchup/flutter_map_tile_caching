@@ -3,6 +3,7 @@ include: jaffa_lints.yaml
 analyzer:
   exclude:
     - lib/**.g.dart
+    - build/**
   # language:
   #  strict-inference: true
   #  strict-raw-types: true

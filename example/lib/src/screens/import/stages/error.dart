@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class ImportErrorStage extends StatelessWidget {
   const ImportErrorStage({super.key, required this.error});

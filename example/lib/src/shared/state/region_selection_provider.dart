@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:math';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:material_ui/material_ui.dart';
 
 enum RegionSelectionMethod {
   useMapCenter,

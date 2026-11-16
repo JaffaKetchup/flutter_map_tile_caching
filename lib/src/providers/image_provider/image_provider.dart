@@ -113,7 +113,6 @@ class _FMTCImageProvider extends ImageProvider<_FMTCImageProvider> {
             networkFetchDuration: currentTLIR.networkFetchDuration,
           )
           // `Map` is mutable, so must notify manually
-          // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
           ..notifyListeners();
       }
     }
