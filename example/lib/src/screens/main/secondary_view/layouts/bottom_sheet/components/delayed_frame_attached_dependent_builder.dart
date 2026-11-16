@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Builds [builder] whenever [listenable] fires a notififcation, but also
 /// rebuilds [builder] after at least one frame, to allow [listenable] (which is

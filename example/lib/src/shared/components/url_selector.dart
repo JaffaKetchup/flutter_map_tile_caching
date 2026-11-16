@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:async/async.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../misc/shared_preferences.dart';
 import '../misc/store_metadata_keys.dart';

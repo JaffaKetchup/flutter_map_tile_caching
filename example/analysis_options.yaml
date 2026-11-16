@@ -1,3 +1,7 @@
+analyzer:
+  exclude:
+    - android/**
+    - windows/**
 include: ../analysis_options.yaml
 
 linter:

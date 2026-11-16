@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../../../../../shared/misc/exts/size_formatter.dart';
 import 'components/column_headers_and_inheritable_settings.dart';

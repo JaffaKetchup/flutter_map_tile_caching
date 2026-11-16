@@ -1003,7 +1003,6 @@ Future<void> _worker(
           );
 
           // We don't care what type, we always need to clean up and rethrow
-          // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           exportingRoot.close();
           if (workingDir.existsSync()) {

@@ -30,10 +30,9 @@ class DownloadProgress {
     required this.maxTilesCount,
     required this.elapsedDuration,
     required this.tilesPerSecond,
-    required int? tilesPerSecondLimit,
-    required bool retryFailedRequestTiles,
-  })  : _tilesPerSecondLimit = tilesPerSecondLimit,
-        _retryFailedRequestTiles = retryFailedRequestTiles;
+    required this._tilesPerSecondLimit,
+    required this._retryFailedRequestTiles,
+  });
 
   /// Setup an initial download progress
   ///
@@ -42,8 +41,8 @@ class DownloadProgress {
   /// are not modified for a download by update.
   const DownloadProgress._initial({
     required this.maxTilesCount,
-    required int? tilesPerSecondLimit,
-    required bool retryFailedRequestTiles,
+    required this._tilesPerSecondLimit,
+    required this._retryFailedRequestTiles,
   })  : successfulTilesCount = 0,
         successfulTilesSize = 0,
         bufferedTilesCount = 0,
@@ -56,9 +55,7 @@ class DownloadProgress {
         failedRequestTilesCount = 0,
         retryTilesQueuedCount = 0,
         elapsedDuration = Duration.zero,
-        tilesPerSecond = 0,
-        _tilesPerSecondLimit = tilesPerSecondLimit,
-        _retryFailedRequestTiles = retryFailedRequestTiles;
+        tilesPerSecond = 0;
 
   /// Create a new progress object based on the existing one, due to a new tile
   /// event

@@ -18,7 +18,7 @@ Many thanks to my sponsors, no matter how much or how little they donated. Spons
 
 # Changelog
 
-## [10.2.0] - 2026/11/16
+## [10.3.0] - 2026/11/16
 
 * Upgraded ObjectBox to v6 (preview), which adds Swift Package Manager support on iOS/macOS, so apps no longer need CocoaPods for FMTC
 * Requires Flutter 3.44+ / Dart 3.12+ and Android 7.0 (API 24)+, as ObjectBox v6 does

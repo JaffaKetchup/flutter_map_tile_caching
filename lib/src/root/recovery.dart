@@ -44,12 +44,9 @@ class RootRecovery {
   final Set<int> _downloadsOngoing = {};
 
   /// {@macro fmtc.backend.watchRecovery}
-  Stream<void> watch({
-    bool triggerImmediately = false,
-  }) =>
-      FMTCBackendAccess.internal.watchRecovery(
-        triggerImmediately: triggerImmediately,
-      );
+  Stream<void> watch({bool triggerImmediately = false}) => FMTCBackendAccess
+      .internal
+      .watchRecovery(triggerImmediately: triggerImmediately);
 
   /// List all recoverable regions, and whether each one has failed
   ///
@@ -58,13 +55,12 @@ class RootRecovery {
   ///
   /// {@macro fmtc.rootRecovery.failedDefinition}
   Future<Iterable<({bool isFailed, RecoveredRegion region})>>
-      get recoverableRegions async =>
-          FMTCBackendAccess.internal.listRecoverableRegions().then(
-                (rs) => rs.map(
-                  (r) =>
-                      (isFailed: !_downloadsOngoing.contains(r.id), region: r),
-                ),
-              );
+  get recoverableRegions async =>
+      FMTCBackendAccess.internal.listRecoverableRegions().then(
+        (rs) => rs.map(
+          (r) => (isFailed: !_downloadsOngoing.contains(r.id), region: r),
+        ),
+      );
 
   /// Get a specific region, even if it doesn't need recovering
   ///
@@ -72,8 +68,9 @@ class RootRecovery {
   Future<({bool isFailed, RecoveredRegion region})?> getRecoverableRegion(
     int id,
   ) async {
-    final region =
-        await FMTCBackendAccess.internal.getRecoverableRegion(id: id);
+    final region = await FMTCBackendAccess.internal.getRecoverableRegion(
+      id: id,
+    );
 
     return (isFailed: !_downloadsOngoing.contains(region.id), region: region);
   }
